@@ -1,0 +1,13 @@
+/Win32
+/*.local
+/*.res
+/__history
+/*.identcache
+__recovery
+*.bak
+Win64
+__history
+*.identcache
+*.local
+Win32
+/demo/MiniMerge/output

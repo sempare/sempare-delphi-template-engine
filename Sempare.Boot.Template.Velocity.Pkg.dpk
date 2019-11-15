@@ -1,0 +1,48 @@
+package Sempare.Boot.Template.Velocity.Pkg;
+
+{$R *.res}
+{$IFDEF IMPLICITBUILDING This IFDEF should not be used by users}
+{$ALIGN 8}
+{$ASSERTIONS ON}
+{$BOOLEVAL OFF}
+{$DEBUGINFO OFF}
+{$EXTENDEDSYNTAX ON}
+{$IMPORTEDDATA ON}
+{$IOCHECKS ON}
+{$LOCALSYMBOLS ON}
+{$LONGSTRINGS ON}
+{$OPENSTRINGS ON}
+{$OPTIMIZATION OFF}
+{$OVERFLOWCHECKS OFF}
+{$RANGECHECKS OFF}
+{$REFERENCEINFO ON}
+{$SAFEDIVIDE OFF}
+{$STACKFRAMES ON}
+{$TYPEDADDRESS OFF}
+{$VARSTRINGCHECKS ON}
+{$WRITEABLECONST OFF}
+{$MINENUMSIZE 1}
+{$IMAGEBASE $400000}
+{$DEFINE DEBUG}
+{$ENDIF IMPLICITBUILDING}
+{$IMPLICITBUILD ON}
+
+requires
+  rtl;
+
+contains
+  Sempare.Boot.Template.Velocity.AST in 'src\Sempare.Boot.Template.Velocity.AST.pas',
+  Sempare.Boot.Template.Velocity.Common in 'src\Sempare.Boot.Template.Velocity.Common.pas',
+  Sempare.Boot.Template.Velocity.Context in 'src\Sempare.Boot.Template.Velocity.Context.pas',
+  Sempare.Boot.Template.Velocity.Evaluate in 'src\Sempare.Boot.Template.Velocity.Evaluate.pas',
+  Sempare.Boot.Template.Velocity.Functions in 'src\Sempare.Boot.Template.Velocity.Functions.pas',
+  Sempare.Boot.Template.Velocity.Lexer in 'src\Sempare.Boot.Template.Velocity.Lexer.pas',
+  Sempare.Boot.Template.Velocity.Parser in 'src\Sempare.Boot.Template.Velocity.Parser.pas',
+  Sempare.Boot.Template.Velocity in 'src\Sempare.Boot.Template.Velocity.pas',
+  Sempare.Boot.Template.Velocity.PrettyPrint in 'src\Sempare.Boot.Template.Velocity.PrettyPrint.pas',
+  Sempare.Boot.Template.Velocity.Rtti in 'src\Sempare.Boot.Template.Velocity.Rtti.pas',
+  Sempare.Boot.Template.Velocity.Scope in 'src\Sempare.Boot.Template.Velocity.Scope.pas',
+  Sempare.Boot.Template.Velocity.Util in 'src\Sempare.Boot.Template.Velocity.Util.pas',
+  Sempare.Boot.Template.Velocity.Visitor in 'src\Sempare.Boot.Template.Velocity.Visitor.pas';
+
+end.
