@@ -48,7 +48,7 @@ Template engines are used often in in the technology where text needs to be cust
 - mail merge 
 - notification messages 
 
-The Sempare Boot Velocity template engine is small templating engine for [Delphi](https://www.embarcadero.com/products/delphi) that allows for templates to be created easily and efficiently -  providing a simple and easy to use interface.
+The Sempare Boot Velocity Template Engine is small templating engine for [Delphi](https://www.embarcadero.com/products/delphi) that allows for templates to be created easily and efficiently by providing a simple and easy to use interface.
 
 Example usage:
 ```
@@ -75,12 +75,13 @@ In the example above, you can see that the '<%' start and '%>' end the scripting
 - statements
   - if, elif, else statements
   - for and while statements statements
-  - include statements
-  - function calls
+  - include statement
+  - with statement
+  - function/method calls
 - expressions
   - simple expression evaluation
   - variable references
-  - call methods
+  - call functions/methods
   - dereference records, classes, arrays and dynamic arrays
 - safety
   - max runtime protection
@@ -92,10 +93,10 @@ In the example above, you can see that the '<%' start and '%>' end the scripting
 
 Sempare Boot Velocity is not intended to be a fully featured general purpose programming language such as PHP where the script itself could be a self contained programming language.
 
-Sempare Boot Velocity aims to provide just enough functionality to make dealing with the 'view' aspects of a template. Any enhanced functionality required from the scripting environment should be provided by the function calls back to Delphi itself.
+Sempare Boot Velocity aims to provide just enough functionality to allow you to easily work with the 'view' aspects of a template. Any enhanced functionality required from the scripting environment should be provided by the function calls written in Pascal.
 
 ## Requirements
-This should work with most modern versions of [Delphi](https://www.embarcadero.com/products/delphi). No special features have been used, so it should work on Free Pascal or require minimal changes.
+This should work with most modern versions of [Delphi](https://www.embarcadero.com/products/delphi). No special features have been used, so it should work on Free Pascal or require minimal changes (in the todo list)
 
 Tests currently run on Delphi 10.3.3 using the DUnitX TestFramework.
 
@@ -113,7 +114,7 @@ The Sempare Boot Velocity template engine relates to the following projects:
 - [Sempare Boot CLI](https://github.com/sempare/sempare.boot.oss)
 -->
 
-To see a full list of Sempare Boot projects visit https://www.sempare.ltd/sempare.boot
+To see a full list of Sempare Boot projects visit https://www.sempare.ltd/sempare.boot (coming soon 2020)
 
 ## Feedback
 
@@ -123,13 +124,12 @@ You can also raise issues on [GitHub](https://github.com/sempare/sempare.boot.ve
 
 If you would like to support the development of this project, please feel free to make a financial contribution. Please contact info@sempare.ltd for more information.
 
-Most features have some basic tests in place. If a bug has been discovered, please include a basic test/scenario replicating the issue if possible as this will ease the investigation process. At the end of this document
-is a listing of todo, design decisions and known bugs.
+Most features have some basic tests in place. If a bug has been discovered, please include a basic test/scenario replicating the issue if possible as this will ease the investigation process. At the end of this document is a listing of todo, design decisions and known bugs.
 
 ## Components
-Sempare Boot Velocity uses interfaces extensively. This makes memory management much easier as interfaced objects are reference counted.
+Sempare Boot Velocity uses interfaces extensively. This makes memory management much easier as interfaced objects are reference counted and alls for code to be more readable as minimal try/catch/finally block are required.
 
-To make using Velocity easy, you need to just include a reference to Sempare.Boot.Template.Velocity:
+To make using Velocity easy, you need to just include a reference to the _Sempare.Boot.Template.Velocity_ unit:
 ```
 uses
     Sempare.Boot.Template.Velocity;
@@ -171,28 +171,51 @@ end;
 ```
 The Velocity class provides many other useful methods:
 ```
-    class function PrettyPrint(const ATemplate: ITemplate): string; static;
+   Velocity = class
+  public
+    class function Context(AOptions: TVelocityEvaluationOptions = []): IVelocityContext; inline; static;
+    class function Parser(const AContext: IVelocityContext): IVelocityParser; overload; inline; static;
+    class function Parser(): IVelocityParser; overload; inline; static;
+    class function PrettyPrint(const ATemplate: IVelocityTemplate): string; inline; static;
 
-    class procedure Eval(const ATemplate: string; const AStream: TStream; const AOptions: TEvalOptions = []); overload; static;
-    class procedure Eval<T>(const ATemplate: string; const AValue: T; const AStream: TStream; const AOptions: TEvalOptions = []); overload; static;
-    class procedure Eval<T>(const ATemplate: ITemplate; const AValue: T; const AStream: TStream; const AOptions: TEvalOptions = []); overload; static;
-    class procedure Eval(const ATemplate: ITemplate; const AStream: TStream; const AOptions: TEvalOptions = []); overload; static;
-    class procedure Eval<T>(const AContext: IVelocityContext; const ATemplate: ITemplate; const AValue: T; const AStream: TStream); overload; static;
+    // EVAL output to stream
+
+    class procedure Eval(const ATemplate: string; const AStream: TStream; const AOptions: TVelocityEvaluationOptions = []); overload; static;
+    class procedure Eval<T>(const ATemplate: string; const AValue: T; const AStream: TStream; const AOptions: TVelocityEvaluationOptions = []); overload; static;
+    class procedure Eval<T>(const ATemplate: IVelocityTemplate; const AValue: T; const AStream: TStream; const AOptions: TVelocityEvaluationOptions = []); overload; static;
+    class procedure Eval(const ATemplate: IVelocityTemplate; const AStream: TStream; const AOptions: TVelocityEvaluationOptions = []); overload; static;
+    class procedure Eval<T>(const AContext: IVelocityContext; const ATemplate: IVelocityTemplate; const AValue: T; const AStream: TStream); overload; static;
     class procedure Eval<T>(const AContext: IVelocityContext; const ATemplate: string; const AValue: T; const AStream: TStream); overload; static;
     class procedure Eval(const AContext: IVelocityContext; const ATemplate: string; const AStream: TStream); overload; static;
+    class procedure Eval(const AContext: IVelocityContext; const ATemplate: IVelocityTemplate; const AStream: TStream); overload; static;
 
-    class function Eval(const ATemplate: string; const AOptions: TEvalOptions = []): string; overload; static;
-    class function Eval<T>(const ATemplate: string; const AValue: T; const AOptions: TEvalOptions = []): string; overload; static;
-    class function Eval<T>(const ATemplate: ITemplate; const AValue: T; const AOptions: TEvalOptions = []): string; overload; static;
-    class function Eval(const ATemplate: ITemplate; const AOptions: TEvalOptions = []): string; overload; static;
-    class function Eval<T>(const AContext: IVelocityContext; const ATemplate: ITemplate; const AValue: T): string; overload; static;
+    // EVAL returning string
+
+    class function Eval(const ATemplate: string; const AOptions: TVelocityEvaluationOptions = []): string; overload; static;
+    class function Eval<T>(const ATemplate: string; const AValue: T; const AOptions: TVelocityEvaluationOptions = []): string; overload; static;
+    class function Eval<T>(const ATemplate: IVelocityTemplate; const AValue: T; const AOptions: TVelocityEvaluationOptions = []): string; overload; static;
+    class function Eval(const ATemplate: IVelocityTemplate; const AOptions: TVelocityEvaluationOptions = []): string; overload; static;
+
+    class function Eval<T>(const AContext: IVelocityContext; const ATemplate: IVelocityTemplate; const AValue: T): string; overload; static;
     class function Eval<T>(const AContext: IVelocityContext; const ATemplate: string; const AValue: T): string; overload; static;
     class function Eval(const AContext: IVelocityContext; const ATemplate: string): string; overload; static;
+    class function Eval(const AContext: IVelocityContext; const ATemplate: IVelocityTemplate): string; overload; static;
 
-    class function Parse(const AString: string): ITemplate; overload; static;
-    class function Parse(const AStream: TStream): ITemplate; overload; static;
-    class function Parse(const AContext: IVelocityContext; const AString: string): ITemplate; overload; static;
-    class function Parse(const AContext: IVelocityContext; const AStream: TStream): ITemplate; overload; static;
+    // PARSING
+
+    // string operations
+    class function Parse(const AString: string): IVelocityTemplate; overload; static;
+    class function Parse(const AContext: IVelocityContext; const AString: string): IVelocityTemplate; overload; static;
+
+    // stream operations
+    class function Parse(const AStream: TStream): IVelocityTemplate; overload; static;
+    class function Parse(const AContext: IVelocityContext; const AStream: TStream): IVelocityTemplate; overload; static;
+
+    // file operations
+    class function ParseFile(const AFile: string): IVelocityTemplate; overload; static;
+    class function ParseFile(const AContext: IVelocityContext; const AFile: string): IVelocityTemplate; overload; static;
+
+  end;
 
 ```
 ### IVelocityContext
@@ -422,17 +445,19 @@ begin
 	info.level1.level2.value := 'test';
 	info.level1.level2.level3.level4.value := 'hello';	
 	Velocity.Eval('<% level1.level2.level3.level4.value %> <% level1.level2.level3.level4.value %> <% level1.level2.level3.level4.value %>', info)
+
 	// can be replaced with
 	Velocity.Eval('<% with level1.level2.level3.level4 %><% value %> <% value %> <% value %><% end %>', info)
 
 ```
 
+The _with()_ statement will push all fields/properties in a record/class into a new scope/stack frame. 
+
 ### template
 
 Localised templates can also be defined locally within a template.
 
-The _include_() statement is used to render a local template as is the normal behaviour.
-Note that local templates override templates defined in a context.
+The _include_() statement is used to render a local template as is the normal behaviour. Note that local templates take precedence over templates defined in a context when they are being resolved.
 
 Using the TInfo structure above it could be appli
 ```
@@ -442,7 +467,6 @@ Using the TInfo structure above it could be appli
 <% include ('mytemplate', level1.level2) %>	
 <% include ('mytemplate', level1.level2).level3.level4 %>	
 ```
-
 
 ## Expressions
 You can use different types of expressions.
@@ -460,7 +484,7 @@ Numeric operators (+, -, /, *, mod) work on numeric values.
 The + operator also works on strings so you can append values.
 
 # The special _ variable
-A special variable _ (underscore) is set allowing non record structures to be passed to the template structure for evaluation. 
+A special variable _ (underscore) is defined to allow access to the variable/record/class passed into the template evaluator. 
 
 ```
 <% for i in _ %> <% i %><% end %>
@@ -558,8 +582,10 @@ e.g. A signature of SSNN would mean that:
 - param 2 is a number
 - param 3 is a number
 
+Note an alias TVelocityValue is made (which is System.Rtti.TValue). This is exposed so you don't need to add an extra include to System.Rtti in your unit when using Velocity and adding functions, although you can if you want to.
+
 ## Scope
-Scopes are created in 'if', 'for', and 'while' statements. Referencing a variable that is not in the current scope will propogate to parent scopes.
+Scopes are created in 'if', 'for', 'with' and 'while' statements. Referencing a variable that is not in the current scope will propogate to parent scopes.
 
 ## Tricks
 
@@ -680,6 +706,10 @@ The template engine allows for the following options:
   - tabs are converted to spaces (before the strip recurring spaces feature kicks in)
 - eoNoDefaultFunctions
   - Disables default functions from being added to the context.
+- eoNoPosition
+  - disposes of positional information that should minimise memory footprint
+- eoEvalEarly
+  - evaluate statements/expressions at parse time where possible 
 
 ## Debugging the script behaviour
 We use the pretty print feature to peek into the parsed abstract syntax tree of the template.
@@ -753,21 +783,14 @@ A 'number' is currently limited to being an integer value (e.g. 1, 2, 3).
 ### no repeat/until
 - repeat/until is not included as a 'while' loop can accomplish the same.
 
-### include
-- include requires '(' and ')' as an extension would be to allow the template to be rendered given a specific variable reference
-
 ### no bytecode
 
-the evaluator is a very simple. it could be a feature to convert to a form of byte code, but seems like overkill for now.
+The evaluator is a very simple. Parsing is fairly quick, so byte code is considered overkill.
 
 ## Known restrictions / limitations / bugs
 
 ### Lack of floating point double support
-Numbers are limited to integer values. This has been done to minimise the temptation to do more calculations in the templating layer.
-
-Division is integer division for the same reason mentioned above.
-
-### indexing support for arrays is lacking
+Parsed numbers are limited to integer values, but values returned from function/method calls preserve their types. This has been done to minimise the temptation to do more calculations in the templating layer.
 
 ### optimisation on variable dereferencing
 
@@ -780,32 +803,30 @@ if the structure is large, this may not be ideal. further, for arrays to be dere
   - to strip recurring newlines 
   - to strip empty lines
   - to trim lines
-- evaluate expressions at parse time where constants are used
+- evaluate expressions at parse time based on context variables is pending
 - validation
   - identify required variables ahead of time where possible.
   - review validation implentation on function calls
 - newline to custom newline encoding. e.g. nl -> &lt;br>nl
 - grammar
   - in expression, so could do something like 'if a in b'
-- create templates at runtime (local to the current template)
 - interactive script debugger
 - create bindings to data sources like TDataSource, TFDMemTable, TFDQuery, etc...
 - create design time components for those that like them
-
+		- TemplateComponent (wrapper around TVelocityTemplate)
+			- TemplateVariable (to allow for live bindings)
+- cleanup (as usual always to be done)
+- review generic usage on Velocity class to minimise size of binary.
+- review free pascal and support for older versions of Delphi
+- review variable not found error - could be custom value, custom error.
 ### potential grammar extensions from above
 
 ```
-stmt     : // all of the current stmt elements
-         | template
-         ;
          
-template : 'template' expr stmts 'end'
-         ;
          
 expr     : // all of the current expr elements
          | expr 'in' expr
          | '[' exprlist ']'
-         | template
          ;
          
 ```
