@@ -38,7 +38,6 @@ interface
 {$MODE Delphi}
 {$ENDIF}
 
-
 uses
   System.Generics.Collections,
   Sempare.Boot.Template.Velocity.AST,
@@ -135,6 +134,24 @@ begin
         raise Exception.Create(msg);
     end;
   end;
+end;
+
+function InternalSplit(const AArgs: TArray<TVelocityValue>): TVelocityValue;
+begin
+  AssertArgCount(GFunctionInfo['split'], AArgs);
+  result := asstring(AArgs[0]).split(AArgs[1]);
+end;
+
+function InternalLowercase(const AArgs: TArray<TVelocityValue>): TVelocityValue;
+begin
+  AssertArgCount(GFunctionInfo['lowercase'], AArgs);
+  result := asstring(AArgs[0]).tolower;
+end;
+
+function InternalUppercase(const AArgs: TArray<TVelocityValue>): TVelocityValue;
+begin
+  AssertArgCount(GFunctionInfo['uppercase'], AArgs);
+  result := asstring(AArgs[0]).toupper;
 end;
 
 function InternalTrim(const AArgs: TArray<TVelocityValue>): TVelocityValue;
@@ -307,6 +324,11 @@ initialization
 
 GFunctionInfo := TDictionary<string, TVelocityFunctionInfo>.Create;
 
+// TODO: join, ucfirst, ucwords, rev
+
+RegFunc('lowercase', 'SS', 1, 1, InternalLowercase);
+RegFunc('uppercase', 'SS', 1, 1, InternalUppercase);
+RegFunc('split', 'SS', 2, 2, InternalSplit);
 RegFunc('trim', 'SS', 1, 1, InternalTrim);
 RegFunc('substr', 'SSNN', 2, 3, InternalSubStr);
 RegFunc('substring', 'SSNN', 2, 3, InternalSubString);
