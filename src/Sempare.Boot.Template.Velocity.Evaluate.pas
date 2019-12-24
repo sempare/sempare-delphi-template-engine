@@ -539,9 +539,8 @@ function TEvaluationVelocityVisitor.Deref(const AVar, ADeref: TValue): TValue;
   var
     ClassType: TClass;
   begin
-    // TODO: could make this more generic with some sort of registry with custom handlers
     ClassType := obj.AsObject.ClassType;
-    if ClassType.QualifiedClassName.StartsWith('System.Generics.Collections.TDictionary<System.string') then
+    if ClassType.QualifiedClassName.StartsWith('System.Generics.Collections.TDictionary') then
     begin
       exit(processDictionary(obj, ADeref));
     end;
@@ -796,7 +795,6 @@ procedure scopeRecord(const ARttiType: TRttiType; const ARecord: TValue); forwar
     obj: tobject;
   begin
     obj := ARecord.AsObject;
-    // TODO: find another way if possible to find generic type info
     if obj.ClassType.QualifiedClassName.StartsWith('System.Generics.Collections.TDictionary<System.string') then
     begin
       scopeDictionary(ARttiType, obj);
