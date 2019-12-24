@@ -650,7 +650,6 @@ function Inspect(const AExpr: IExpr): IExpr; forward;
 
 begin
   sym := FLookahead;
-  // TODO: review what we can do at parse time
   result := Inspect(TVariableExpr.Create(sym.Position, matchValue(VsID)));
 end;
 
@@ -1353,7 +1352,7 @@ begin
   RuleStmts(CurrentContainer, []);
   match(VsEOF);
   result := CurrentContainer;
-  if eoDebug in FContext.Options then
+  if eoPrettyPrint in FContext.Options then
     writeln(Velocity.PrettyPrint(result));
 end;
 

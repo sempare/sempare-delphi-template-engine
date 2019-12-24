@@ -56,6 +56,7 @@ const
   eoStripRecurringEmptyLine = TVelocityEvaluationOption.eoStripRecurringEmptyLine;
   eoTrimLines = TVelocityEvaluationOption.eoTrimLines;
   eoDebug = TVelocityEvaluationOption.eoDebug;
+  eoPrettyPrint = TVelocityEvaluationOption.eoPrettyPrint;
 
 type
   TVelocityEvaluationOptions = Sempare.Boot.Template.Velocity.Context.TVelocityEvaluationOptions;

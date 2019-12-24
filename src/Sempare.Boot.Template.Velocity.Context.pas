@@ -54,7 +54,8 @@ type
     eoStripRecurringNewline, // TODO
     eoStripRecurringEmptyLine, // TODO
     eoTrimLines, // TODO
-    eoDebug, //
+    eoDebug, // TODO
+    eoPrettyPrint, //
     eoStripRecurringSpaces, //
     eoConvertTabsToSpaces, //
     eoNoDefaultFunctions //
