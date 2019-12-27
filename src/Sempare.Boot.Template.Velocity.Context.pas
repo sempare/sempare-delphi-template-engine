@@ -38,7 +38,6 @@ interface
 {$MODE Delphi}
 {$ENDIF}
 
-
 uses
   System.Rtti,
   System.SysUtils,
@@ -433,19 +432,15 @@ begin
   FLock.Enter;
   try
     result := FTemplates.TryGetValue(AName, ATemplate);
-    if not result then
-    begin
-      if assigned(FTemplateResolver) then
-      begin
-        ATemplate := FTemplateResolver(self, AName);
-        if ATemplate <> nil then
-        begin
-          AddTemplate(AName, ATemplate);
-          exit(true);
-        end;
-        exit(false);
-      end;
-    end;
+    if result then
+      exit(true);
+    if not assigned(FTemplateResolver) then
+      exit(false);
+    ATemplate := FTemplateResolver(self, AName);
+    if ATemplate = nil then
+      exit(false);
+    AddTemplate(AName, ATemplate);
+    exit(true);
   finally
     FLock.Leave;
   end;
