@@ -47,6 +47,8 @@ type
     [Test]
     procedure TestExprNum;
     [Test]
+    procedure TestExprNumFloat;
+    [Test]
     procedure TestExprStr;
     [Test]
     procedure TestSimpleVariable;
@@ -86,6 +88,11 @@ end;
 procedure TTestVelocityExpr.TestExprNum;
 begin
   Velocity.parse('before <% a := 123 %> after ');
+end;
+
+procedure TTestVelocityExpr.TestExprNumFloat;
+begin
+  Velocity.parse('before <% a := 123.45 %> after ');
 end;
 
 procedure TTestVelocityExpr.TestExprStr;

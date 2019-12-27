@@ -218,7 +218,7 @@ begin
   ctx := Velocity.Context;
   ctx.TemplateResolver := function(const AContext: IVelocityContext; const ATemplate: string): IVelocityTemplate
     begin
-      result := Velocity.parse(AContext, '_<% _ %>_');
+      result := Velocity.parse(AContext, '_' + ATemplate + '_');
     end;
   Assert.AreEqual('_abc__def__abc_', Velocity.Eval(ctx, '<% include(''abc'') %><% include(''def'') %><% include(''abc'') %>'));
 end;

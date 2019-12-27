@@ -52,27 +52,8 @@ uses
   Sempare.Boot.Template.Velocity.Visitor;
 
 type
-  TContainerOption = (coInLoop = 1, coContinue = 2, coBreak = 4, coContinueOrBreak = 6);
-  TContainerOptions = set of TContainerOption;
-
-  // TContainerStack will replace the PreserveValue usage
-  TContainerStack = class
-  private
-    FContainerStack: TStack<TContainerOptions>;
-  public
-    constructor Create;
-    destructor Destroy; override;
-
-    function BreakOrContinue: boolean;
-
-    function pop: TContainerOptions;
-    procedure push(const AOptions: TContainerOptions);
-    function peek: TContainerOptions;
-
-    procedure SetOption(const aoption: TContainerOption; const AValue: boolean);
-    function GetOption(const aoption: TContainerOption): boolean;
-    property Option[const aoption: TContainerOption]: boolean read GetOption write SetOption; default;
-  end;
+  TLoopOption = (coInLoop = 1, coContinue = 2, coBreak = 4, coContinueOrBreak = 6);
+  TLoopOptions = set of TLoopOption;
 
   TEvaluationVelocityVisitor = class(TBaseVelocityVisitor)
   private
@@ -135,7 +116,10 @@ uses
   Sempare.Boot.Template.Velocity.Rtti,
   Sempare.Boot.Template.Velocity.Util;
 
-{ TEvaluationVelocityVisitor }
+const
+  BREAK_OR_CONTINUE: TLoopOptions = [coContinue, coBreak];
+
+  { TEvaluationVelocityVisitor }
 
 constructor TEvaluationVelocityVisitor.Create(const AContext: IVelocityContext; const AValue: TValue; const AStream: TStream);
 var
@@ -219,22 +203,22 @@ begin
     boMinus:
       begin
         AssertNumeric(Position(AExpr.LeftExpr), left, right);
-        res := left.AsExtended - right.AsExtended;
+        res := Asnum(left) - Asnum(right);
       end;
     boDiv:
       begin
         AssertNumeric(Position(AExpr.LeftExpr), left, right);
-        res := left.AsExtended / right.AsExtended;
+        res := Asnum(left) / Asnum(right);
       end;
     boMult:
       begin
         AssertNumeric(Position(AExpr.LeftExpr), left, right);
-        res := left.AsExtended * right.AsExtended;
+        res := Asnum(left) * Asnum(right);
       end;
     boMod:
       begin
         AssertNumeric(Position(AExpr.LeftExpr), left, right);
-        res := left.AsInt64 mod right.AsInt64;
+        res := asint(left) mod asint(right);
       end;
     roEQ:
       res := isEqual(left, right);
@@ -385,12 +369,8 @@ var
 
   procedure visitdynarray;
   var
-    at: TRttiDynamicArrayType;
     i: integer;
-    p: pointer;
   begin
-    at := T as TRttiDynamicArrayType;
-
     for i := 0 to Eval.GetArrayLength - 1 do
     begin
       if FBreak then
@@ -467,7 +447,7 @@ function TEvaluationVelocityVisitor.Deref(const AVar, ADeref: TValue): TValue;
     i: integer;
     RttiType: TRttiArrayType;
   begin
-    i := AsInt(ADeref);
+    i := asint(ADeref);
     RttiType := GRttiContext.GetType(obj.TypeInfo) as TRttiArrayType;
     result := obj.GetArrayElement(i - (RttiType.Dimensions[0] as TRttiOrdinalType).MinValue);
   end;
@@ -476,7 +456,7 @@ function TEvaluationVelocityVisitor.Deref(const AVar, ADeref: TValue): TValue;
   var
     i: integer;
   begin
-    i := AsInt(ADeref);
+    i := asint(ADeref);
     result := obj.GetArrayElement(i);
   end;
 
@@ -600,7 +580,7 @@ var
 begin
   AExprList.Accept(self);
 
-  Count := AsInt(FEvalStack.pop());
+  Count := asint(FEvalStack.pop());
   if Count <> AExprList.Count then // this should not happen
     RaiseError(nil, 'Number of arguments mismatch');
 
@@ -629,10 +609,10 @@ begin
   LBreak := Preseve.Value(FBreak, false);
 
   acceptvisitor(AStmt.LowExpr, self);
-  lowVal := FEvalStack.pop.AsInt64;
+  lowVal := asint(FEvalStack.pop);
 
   acceptvisitor(AStmt.HighExpr, self);
-  highVal := FEvalStack.pop.AsInt64;
+  highVal := asint(FEvalStack.pop);
 
   case AStmt.ForOp of
     foTo:
@@ -917,68 +897,6 @@ begin
     acceptvisitor(AExpr.TrueExpr, self)
   else
     acceptvisitor(AExpr.FalseExpr, self);
-end;
-
-{ TContainerStack }
-
-const
-  BREAK_OR_CONTINUE: TContainerOptions = [coContinue, coBreak];
-
-function TContainerStack.BreakOrContinue: boolean;
-var
-  o: TContainerOptions;
-begin
-  o := peek;
-  result := (coContinue in o) or (coBreak in o);
-end;
-
-constructor TContainerStack.Create;
-begin
-  FContainerStack := TStack<TContainerOptions>.Create;
-end;
-
-destructor TContainerStack.Destroy;
-begin
-  FContainerStack.Free;
-  inherited;
-end;
-
-function TContainerStack.GetOption(const aoption: TContainerOption): boolean;
-begin
-
-end;
-
-function TContainerStack.peek: TContainerOptions;
-begin
-  if FContainerStack.Count = 0 then
-    result := []
-  else
-    result := FContainerStack.peek;
-end;
-
-function TContainerStack.pop: TContainerOptions;
-begin
-  if FContainerStack.Count = 0 then
-    result := []
-  else
-    result := FContainerStack.pop;
-end;
-
-procedure TContainerStack.push(const AOptions: TContainerOptions);
-begin
-  FContainerStack.push(AOptions);
-end;
-
-procedure TContainerStack.SetOption(const aoption: TContainerOption; const AValue: boolean);
-var
-  o: TContainerOptions;
-begin
-  o := pop;
-  if AValue then
-    o := o + [aoption]
-  else
-    o := o - [aoption];
-  push(o);
 end;
 
 end.
