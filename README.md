@@ -88,6 +88,8 @@ In the example above, you can see that the '<%' start and '%>' end the scripting
 - customisation 
   - custom script token replacement
   - add custom functions
+- lazy template resolution
+- parse time evaluation of expressions/statements
 
 ## Objectives
 

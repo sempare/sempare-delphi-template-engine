@@ -38,7 +38,6 @@ interface
 {$MODE Delphi}
 {$ENDIF}
 
-
 uses
   System.Classes,
   System.SysUtils,
@@ -131,7 +130,7 @@ type
   public
     constructor Create(const APosition: IPosition; const AToken: TVelocitySymbol; const AString: string);
     procedure SetValue(const Avalue: string);
-    function GetValue: string;    inline;
+    function GetValue: string; inline;
   end;
 
 function CreateVelocityLexer(const AContext: IVelocityContext; const AStream: TStream; const AFilename: string; const AManageStream: Boolean): IVelocityLexer;
@@ -315,6 +314,8 @@ begin
           Exit(SimpleToken(VsCloseSquareBracket));
         '.':
           Exit(SimpleToken(VsDOT));
+        '?':
+          Exit(SimpleToken(vsQUESTION));
         '+':
           Exit(SimpleToken(VsPLUS));
         '-':
@@ -349,16 +350,16 @@ begin
               GetInput;
             end;
             SwallowInput;
-            Result := ValueToken(vsString);
-            Exit;
+            Exit(ValueToken(vsString));
           end;
         ':':
           if Expecting('=') then
           begin
             SwallowInput;
-            Result := SimpleToken(VsCOLONEQ);
-            Exit;
-          end;
+            Exit(SimpleToken(VsCOLONEQ));
+          end
+          else
+            Exit(SimpleToken(vsCOLON));
       else
         if Fcurrent.Input = FEndScript[1] then
         begin

@@ -60,6 +60,10 @@ type
     procedure TestSimpleForin;
     [Test]
     procedure TestStructure;
+    [Test]
+    procedure TestNested;
+    [Test]
+    procedure TestNestedBreak;
 
   end;
 
@@ -123,6 +127,16 @@ var
 begin
   x.count := 10;
   Assert.AreEqual('0 2 4 6 8 10 ', Velocity.Eval('<% for i := 0 to count %><% if i mod 2 = 1 %><% continue %><% end %><% i %> <% end %>', x));
+end;
+
+procedure TTestVelocityFor.TestNested;
+begin
+  Assert.AreEqual('1:5,6,;2:5,6,;3:5,6,;', Velocity.Eval('<% for i := 1 to 3 %><% i %>:<% for j := 5 to 6 %><% j %>,<% end %>;<% end%>'));
+end;
+
+procedure TTestVelocityFor.TestNestedBreak;
+begin
+  Assert.AreEqual('1:5,6,;2:5,6,;3:5,6,;', Velocity.Eval('<% for i := 1 to 3 %><% i %>:<% for j := 5 to 10 %><% if j > 6%><%break%><%end%><% j %>,<% end %>;<% end%>'));
 end;
 
 procedure TTestVelocityFor.TestWhileWithBreak;

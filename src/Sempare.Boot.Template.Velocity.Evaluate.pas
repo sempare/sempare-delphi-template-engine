@@ -105,13 +105,14 @@ type
     procedure Visit(const AExpr: IVariableDerefExpr); overload; override;
     procedure Visit(const AExpr: IValueExpr); overload; override;
     procedure Visit(const AExprList: IExprList); overload; override;
+    procedure Visit(const AExpr: ITernaryExpr); overload; override;
+    procedure Visit(const AExpr: IEncodeExpr); overload; override;
 
     procedure Visit(const AStmt: IAssignStmt); overload; override;
     procedure Visit(const AStmt: IContinueStmt); overload; override;
     procedure Visit(const AStmt: IBreakStmt); overload; override;
     procedure Visit(const AStmt: IEndStmt); overload; override;
     procedure Visit(const AStmt: IIncludeStmt); overload; override;
-    procedure Visit(const AExpr: IEncodeExpr); overload; override;
 
     procedure Visit(const AStmt: IPrintStmt); overload; override;
     procedure Visit(const AStmt: IIfStmt); overload; override;
@@ -907,6 +908,15 @@ begin
   acceptvisitor(AStmt.Container, self);
 
   FScopeStack.pop;
+end;
+
+procedure TEvaluationVelocityVisitor.Visit(const AExpr: ITernaryExpr);
+begin
+  acceptvisitor(AExpr.Condition, self);
+  if AsBoolean(FEvalStack.pop) then
+    acceptvisitor(AExpr.TrueExpr, self)
+  else
+    acceptvisitor(AExpr.FalseExpr, self);
 end;
 
 { TContainerStack }

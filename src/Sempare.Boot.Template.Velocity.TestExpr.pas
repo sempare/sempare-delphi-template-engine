@@ -41,9 +41,6 @@ type
 
   [TestFixture]
   TTestVelocityExpr = class
-  private
-    procedure Test<T>(const AValue: T; const AExpect: string; const ATemplate: string);
-
   public
     [Test]
     procedure TestExprBool;
@@ -53,6 +50,10 @@ type
     procedure TestExprStr;
     [Test]
     procedure TestSimpleVariable;
+
+    [Test]
+    procedure TestTernary;
+
   end;
 
 implementation
@@ -71,17 +72,15 @@ uses
   Sempare.Boot.Template.Velocity.PrettyPrint,
   Sempare.Boot.Template.Velocity.Lexer;
 
-procedure TTestVelocityExpr.Test<T>(const AValue: T; const AExpect: string; const ATemplate: string);
-var
-  c: IVelocityTemplate;
-begin
-  c := Velocity.parse(ATemplate);
-  Assert.AreEqual(AExpect, Velocity.Eval(c, AValue));
-end;
-
 procedure TTestVelocityExpr.TestSimpleVariable;
 begin
   Velocity.parse('before <% abc %> after');
+end;
+
+procedure TTestVelocityExpr.TestTernary;
+begin
+  Assert.AreEqual('a', Velocity.Eval('<% true?''a'':''b'' %>'));
+  Assert.AreEqual('b', Velocity.Eval('<% false?''a'':''b'' %>'));
 end;
 
 procedure TTestVelocityExpr.TestExprNum;

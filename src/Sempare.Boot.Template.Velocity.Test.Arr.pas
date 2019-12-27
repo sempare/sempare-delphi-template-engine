@@ -41,8 +41,6 @@ type
 
   [TestFixture]
   TTestVelocityArr = class
-  private
-    procedure Test<T>(const AValue: T; const AExpect: string; const ATemplate: string);
 
   public
     [Test]
@@ -73,14 +71,6 @@ uses
   Sempare.Boot.Template.Velocity.Common,
   Sempare.Boot.Template.Velocity.PrettyPrint,
   Sempare.Boot.Template.Velocity.Lexer;
-
-procedure TTestVelocityArr.Test<T>(const AValue: T; const AExpect, ATemplate: string);
-var
-  c: IVelocityTemplate;
-begin
-  c := Velocity.parse(ATemplate);
-  Assert.AreEqual(AExpect, Velocity.Eval(c, AValue));
-end;
 
 procedure TTestVelocityArr.TestArray;
 var

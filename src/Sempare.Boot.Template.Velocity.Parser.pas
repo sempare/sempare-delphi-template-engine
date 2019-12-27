@@ -347,6 +347,20 @@ type
     destructor Destroy; override;
   end;
 
+  TTernaryExpr = class(TAbstractExpr, ITernaryExpr)
+  private
+    FCondition: IExpr;
+    FTrueExpr: IExpr;
+    FFalseExpr: IExpr;
+    function GetCondition: IExpr; inline;
+    function GetTrueExpr: IExpr; inline;
+    function GetFalseExpr: IExpr; inline;
+
+    procedure Accept(const AVisitor: IVelocityVisitor); override;
+  public
+    constructor Create(const APosition: IPosition; const ACondition: IExpr; const ATrueExpr: IExpr; const AFalseExpr: IExpr);
+  end;
+
   TUnaryExpr = class(TAbstractExpr, IUnaryExpr)
   private
     FUnaryOp: TUnaryOp;
@@ -411,6 +425,8 @@ type
     // id: ID := expr
     // id: ID ( exprlist )
     function ruleIdStmt: IStmt;
+
+    function ruleExprStmt: IStmt;
 
     // include: INCLUDE ( expr )
     function ruleIncludeStmt: IStmt;
@@ -852,6 +868,7 @@ end;
 function TVelocityParser.RuleStmt: IStmt;
 var
   symbol: IvelocitySymbol;
+  expr: IExpr;
 begin
   symbol := FLookahead;
   result := nil;
@@ -886,7 +903,7 @@ begin
     VsID:
       result := ruleIdStmt;
   else
-    RaiseError(symbol.Position, 'Invalid statement');
+    result := ruleExprStmt;
   end;
 end;
 
@@ -1009,6 +1026,7 @@ var
   BinOp: TBinOp;
   symbol: IvelocitySymbol;
   right: IExpr;
+  trueExpr, falseExpr: IExpr;
 begin
   symbol := FLookahead;
   result := self.RulePrimaryExpr;
@@ -1051,6 +1069,25 @@ begin
     else
       result := TBinopExpr.Create(symbol.Position, result, BinOp, right);
   end;
+
+  if FLookahead.Token = vsQUESTION then
+  begin
+    match(vsQUESTION);
+    trueExpr := self.RuleExpr();
+    match(vsColon);
+    falseExpr := self.RuleExpr();
+
+    if (eoEvalEarly in FContext.Options) and IsValue(result) then
+    begin
+      if AsBoolean(AsValue(result)) then
+        result := trueExpr
+      else
+        result := falseExpr;
+    end
+    else
+      result := TTernaryExpr.Create(symbol.Position, result, trueExpr, falseExpr);
+  end;
+
 end;
 
 function TVelocityParser.RuleForStmt: IStmt;
@@ -1281,6 +1318,15 @@ begin
     match(vsComma);
     result.AddExpr(RuleExpr);
   end;
+end;
+
+function TVelocityParser.ruleExprStmt: IStmt;
+var
+  symbol: IvelocitySymbol;
+begin
+  symbol := FLookahead;
+  result := RulePrintStmtVariable(TEncodeExpr.Create(symbol.Position, RuleExpr));
+  match(VsEndScript);
 end;
 
 function TVelocityParser.CurrentContainer: IVelocityTemplate;
@@ -1953,6 +1999,36 @@ end;
 function TWithStmt.GetExpr: IExpr;
 begin
   result := FExpr;
+end;
+
+{ TIfExpr }
+
+procedure TTernaryExpr.Accept(const AVisitor: IVelocityVisitor);
+begin
+  AVisitor.Visit(self);
+end;
+
+constructor TTernaryExpr.Create(const APosition: IPosition; const ACondition, ATrueExpr, AFalseExpr: IExpr);
+begin
+  inherited Create(APosition);
+  FCondition := ACondition;
+  FTrueExpr := ATrueExpr;
+  FFalseExpr := AFalseExpr;
+end;
+
+function TTernaryExpr.GetCondition: IExpr;
+begin
+  result := FCondition;
+end;
+
+function TTernaryExpr.GetFalseExpr: IExpr;
+begin
+  result := FFalseExpr;
+end;
+
+function TTernaryExpr.GetTrueExpr: IExpr;
+begin
+  result := FTrueExpr;
 end;
 
 end.

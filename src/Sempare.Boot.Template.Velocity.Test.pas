@@ -64,6 +64,8 @@ type
     procedure TestUnderscoreIn;
     [Test]
     procedure TestSubTemplate;
+    [Test]
+    procedure TestDynamicLoader;
   end;
 
 implementation
@@ -187,9 +189,8 @@ var
 begin
   info.header.company := 'sempare ltd';
   info.footer.copyright := 2019;
-  Assert.AreEqual('sempare ltd  Copyright (c) 2019', Velocity.Eval('<% template ''prefix'' %><%company%><% end %>' +
-  '<% template ''suffix'' %> Copyright (c) <%copyright%><% end %>' +
-  '<%include(''prefix'', _.header)%> <%include(''suffix'', _.footer)%>', info));
+  Assert.AreEqual('sempare ltd  Copyright (c) 2019', Velocity.Eval('<% template ''prefix'' %><%company%><% end %>' + '<% template ''suffix'' %> Copyright (c) <%copyright%><% end %>' +
+    '<%include(''prefix'', _.header)%> <%include(''suffix'', _.footer)%>', info));
 end;
 
 procedure TTestVelocity.TestTabToSpace;
@@ -208,6 +209,18 @@ begin
   ctx := Velocity.Context;
   ctx.Options := [eoStripRecurringSpaces, eoConvertTabsToSpaces];
   Assert.AreEqual(' hello world', Velocity.Eval(ctx, #9' hello '#9'  world'));
+end;
+
+procedure TTestVelocity.TestDynamicLoader;
+var
+  ctx: IVelocityContext;
+begin
+  ctx := Velocity.Context;
+  ctx.TemplateResolver := function(const AContext: IVelocityContext; const ATemplate: string): IVelocityTemplate
+    begin
+      result := Velocity.parse(AContext, '_<% _ %>_');
+    end;
+  Assert.AreEqual('_abc__def__abc_', Velocity.Eval(ctx, '<% include(''abc'') %><% include(''def'') %><% include(''abc'') %>'));
 end;
 
 procedure TTestVelocity.TestUnderscoreIn;

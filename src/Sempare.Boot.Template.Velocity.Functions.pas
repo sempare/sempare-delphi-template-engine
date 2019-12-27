@@ -55,6 +55,7 @@ var
 implementation
 
 uses
+  System.StrUtils,
   System.SysUtils,
   System.Math,
   System.Rtti,
@@ -139,7 +140,7 @@ end;
 function InternalSplit(const AArgs: TArray<TVelocityValue>): TVelocityValue;
 begin
   AssertArgCount(GFunctionInfo['split'], AArgs);
-  result := asstring(AArgs[0]).split(AArgs[1]);
+  result := TValue.From(asstring(AArgs[0]).split([asstring(AArgs[1])]));
 end;
 
 function InternalLowercase(const AArgs: TArray<TVelocityValue>): TVelocityValue;

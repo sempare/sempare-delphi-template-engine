@@ -76,6 +76,7 @@ type
     VsCONTINUE, //
     VsPRINT, //
     VsINCLUDE, //
+    VSRequire, //
     VsEND, //
 
     // for statements
@@ -101,6 +102,10 @@ type
     VsAND, //
     VsOR, //
     VsNOT, //
+
+    // ternary
+    vsQUESTION, //
+    vsCOLON, //
 
     // comparison operations
     VsEQ, //
@@ -306,6 +311,16 @@ type
     property Variable: string read GetVariable;
   end;
 
+  ITernaryExpr = interface(IExpr)
+    ['{112A2FAA-B411-4F31-B873-B85EFC26AC5B}']
+    function GetCondition: IExpr;
+    function GetTrueExpr: IExpr;
+    function GetFalseExpr: IExpr;
+    property Condition: IExpr read GetCondition;
+    property TrueExpr: IExpr read GetTrueExpr;
+    property FalseExpr: IExpr read GetFalseExpr;
+  end;
+
   TDerefType = (dtObject, dtArray);
 
   IVariableDerefExpr = interface(IExpr)
@@ -388,6 +403,9 @@ type
     procedure Visit(const AExpr: IUnaryExpr); overload;
     procedure Visit(const AExpr: IVariableExpr); overload;
     procedure Visit(const AExpr: IValueExpr); overload;
+    procedure Visit(const AExpr: ITernaryExpr); overload;
+
+
     procedure Visit(const AExpr: IVariableDerefExpr); overload;
     procedure Visit(const AExprList: IExprList); overload;
     procedure Visit(const AStmt: IStmt); overload;
