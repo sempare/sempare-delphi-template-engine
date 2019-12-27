@@ -168,7 +168,7 @@ end;
 
 class function Velocity.Parse(const AString: string): IVelocityTemplate;
 begin
-  result := Parser.Parse(AString);
+  result := Parse(Context(), AString);
 end;
 
 class function Velocity.Parser: IVelocityParser;
@@ -223,7 +223,7 @@ end;
 
 class function Velocity.Parse(const AContext: IVelocityContext; const AString: string): IVelocityTemplate;
 begin
-  result := Parser(AContext).Parse(AString);
+  result := Parser(AContext).Parse(tstringstream.Create(AString));
 end;
 
 class function Velocity.Eval(const ATemplate: string; const AOptions: TVelocityEvaluationOptions): string;
@@ -253,14 +253,14 @@ end;
 
 class function Velocity.Eval<T>(const AContext: IVelocityContext; const ATemplate: IVelocityTemplate; const AValue: T): string;
 var
-  S: tstringstream;
+  s: tstringstream;
 begin
-  S := tstringstream.Create;
+  s := tstringstream.Create;
   try
-    Eval(AContext, ATemplate, AValue, S);
-    result := S.DataString;
+    Eval(AContext, ATemplate, AValue, s);
+    result := s.DataString;
   finally
-    S.Free;
+    s.Free;
   end;
 end;
 

@@ -45,8 +45,7 @@ uses
 
 type
   IVelocityParser = interface
-    function Parse(const AStream: TStream; const AManagedStream: boolean = true): IVelocityTemplate; overload;
-    function Parse(const AString: string): IVelocityTemplate; overload;
+    function Parse(const AStream: TStream; const AManagedStream: boolean = true): IVelocityTemplate;
   end;
 
 function CreateVelocityParser(Const AContext: IVelocityContext): IVelocityParser;
@@ -71,11 +70,11 @@ type
   private
     FArray: TArray<IVelocityVisitorHost>;
     function GetItem(const AOffset: integer): IVelocityVisitorHost;
-    function GetCount: integer; inline;
+    function GetCount: integer;
     procedure Add(const AItem: IVelocityVisitorHost);
-    function GetLastItem: IVelocityVisitorHost; inline;
+    function GetLastItem: IVelocityVisitorHost;
 
-    procedure Accept(const AVisitor: IVelocityVisitor); inline;
+    procedure Accept(const AVisitor: IVelocityVisitor);
   public
 
   end;
@@ -398,7 +397,7 @@ type
     function LookaheadValue: string;
     function matchValue(const ASymbol: TVelocitySymbol): string;
     procedure match(const ASymbol: TVelocitySymbol);
-    function MatchNumber(const ASymbol: TVelocitySymbol): integer;
+    function MatchNumber(const ASymbol: TVelocitySymbol): extended;
 
   private
     // stmts: (text|script)*
@@ -497,8 +496,7 @@ type
   public
     constructor Create(Const AContext: IVelocityContext);
     destructor Destroy; override;
-    function Parse(const AStream: TStream; const AManagedStream: boolean): IVelocityTemplate; overload;
-    function Parse(const AString: string): IVelocityTemplate; overload;
+    function Parse(const AStream: TStream; const AManagedStream: boolean): IVelocityTemplate;
   end;
 
 function IsValue(const AExpr: IExpr): boolean;
@@ -1365,9 +1363,9 @@ begin
   RaiseError(symbol.Position, format('Parsing error expecting %s', [VelocitySymbolToString(ASymbol)]));
 end;
 
-function TVelocityParser.MatchNumber(const ASymbol: TVelocitySymbol): integer;
+function TVelocityParser.MatchNumber(const ASymbol: TVelocitySymbol): extended;
 begin
-  result := strtoint(matchValue(ASymbol));
+  result := strtofloat(matchValue(ASymbol));
 end;
 
 function TVelocityParser.matchValue(const ASymbol: TVelocitySymbol): string;
@@ -1382,11 +1380,6 @@ begin
     exit;
   end;
   RaiseError(symbol.Position, format('Parsing error expecting %s', [VelocitySymbolToString(ASymbol)]));
-end;
-
-function TVelocityParser.Parse(const AString: string): IVelocityTemplate;
-begin
-  result := Parse(tstringstream.Create(AString), true);
 end;
 
 function TVelocityParser.Parse(const AStream: TStream; const AManagedStream: boolean): IVelocityTemplate;
