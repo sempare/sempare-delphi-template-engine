@@ -41,8 +41,6 @@ type
 
   // [TestFixture]
   TTestVelocity = class
-  private
-    procedure Test<T>(const AValue: T; const AExpect: string; const ATemplate: string);
   public
     [Test]
     procedure TestComment;
@@ -86,13 +84,6 @@ uses
 
 { TTestVelocity }
 
-procedure TTestVelocity.Test<T>(const AValue: T; const AExpect: string; const ATemplate: string);
-var
-  c: IVelocityTemplate;
-begin
-  c := Velocity.parse(ATemplate);
-  Assert.AreEqual(AExpect, Velocity.Eval(c, AValue));
-end;
 
 procedure TTestVelocity.TestComment;
 var

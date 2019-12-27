@@ -41,9 +41,6 @@ type
 
   [TestFixture]
   TTestVelocityAssign = class
-  private
-    procedure Test<T>(const AValue: T; const AExpect: string; const ATemplate: string);
-
   public
     [Test]
     procedure TestAssignFunctionCall;
@@ -66,14 +63,6 @@ uses
   Sempare.Boot.Template.Velocity.Common,
   Sempare.Boot.Template.Velocity.PrettyPrint,
   Sempare.Boot.Template.Velocity.Lexer;
-
-procedure TTestVelocityAssign.Test<T>(const AValue: T; const AExpect: string; const ATemplate: string);
-var
-  c: IVelocityTemplate;
-begin
-  c := Velocity.parse(ATemplate);
-  Assert.AreEqual(AExpect, Velocity.Eval(c, AValue));
-end;
 
 procedure TTestVelocityAssign.TestSimpleAssignment;
 begin

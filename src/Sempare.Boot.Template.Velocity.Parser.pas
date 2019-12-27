@@ -866,7 +866,6 @@ end;
 function TVelocityParser.RuleStmt: IStmt;
 var
   symbol: IvelocitySymbol;
-  expr: IExpr;
 begin
   symbol := FLookahead;
   result := nil;
@@ -1170,7 +1169,6 @@ function TVelocityParser.ruleIdStmt: IStmt;
 var
   symbol: IvelocitySymbol;
   expr: IExpr;
-  method: string;
 begin
   symbol := FLookahead;
   expr := self.RuleIdentifierExpr;

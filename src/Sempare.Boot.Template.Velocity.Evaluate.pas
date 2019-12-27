@@ -74,7 +74,6 @@ type
     procedure CheckRunTime(const APosition: IPosition);
     function ExprListArgs(const AExprList: IExprList): TArray<TValue>;
 
-    function Deref(const AVar: TValue; const ADeref: TValue): TValue;
   public
     constructor Create(const AContext: IVelocityContext; const AValue: TValue; const AStream: TStream); overload;
     constructor Create(const AContext: IVelocityContext; const AScope: TVariableScope; const AStream: TStream); overload;
@@ -438,119 +437,6 @@ begin
 
   if AContext.QueryInterface(IVelocityContextForScope, apply) = s_ok then
     apply.ApplyTo(FScopeStack.peek);
-end;
-
-function TEvaluationVelocityVisitor.Deref(const AVar, ADeref: TValue): TValue;
-
-  function ProcessArray(obj: TValue; const ADeref: TValue): TValue;
-  var
-    i: integer;
-    RttiType: TRttiArrayType;
-  begin
-    i := asint(ADeref);
-    RttiType := GRttiContext.GetType(obj.TypeInfo) as TRttiArrayType;
-    result := obj.GetArrayElement(i - (RttiType.Dimensions[0] as TRttiOrdinalType).MinValue);
-  end;
-
-  function ProcessDynArray(obj: TValue; const ADeref: TValue): TValue;
-  var
-    i: integer;
-  begin
-    i := asint(ADeref);
-    result := obj.GetArrayElement(i);
-  end;
-
-  function GetFieldOrProperty(const APtr: pointer; RttiType: TRttiType; const ADeref: TValue): TValue;
-  var
-    RttiField: TRttiField;
-    RttiProp: TRttiProperty;
-    ref: string;
-  begin
-    ref := AsString(ADeref);
-    RttiField := RttiType.GetField(ref);
-    if RttiField <> nil then
-      exit(RttiField.GetValue(APtr));
-    RttiProp := RttiType.GetProperty(ref);
-    if RttiProp <> nil then
-      exit(RttiProp.GetValue(APtr));
-  end;
-
-  function processDictionary(const obj: TValue; const ADeref: TValue): TValue;
-  var
-    RttiType: TRttiType;
-    RttiMethod: TRttiMethod;
-  begin
-    RttiType := GRttiContext.GetType(obj.TypeInfo);
-    // for RttiMethod in RttiType.GetMethods do
-    // writeln(RttiMethod.Name);
-    RttiMethod := RttiType.GetMethod('GetItem');
-    result := RttiMethod.Invoke(obj.AsObject, [ADeref]);
-  end;
-
-  function processJson(const obj: TValue; const ADeref: TValue): TValue;
-  var
-    jsonobj: tjsonobject;
-    jsonval: tjsonvalue;
-    key: string;
-  begin
-    jsonobj := obj.AsObject as tjsonobject;
-    key := AsString(ADeref);
-    jsonval := jsonobj.GetValue(key);
-    if jsonval is TJSONBool then
-    begin
-      result := jsonval.AsType<boolean>();
-    end
-    else if jsonval is TJSONString then
-    begin
-      result := jsonval.AsType<string>();
-    end
-    else if jsonval is TJSONNumber then
-    begin
-      result := jsonval.AsType<extended>();
-    end
-    else if jsonval is tjsonobject then
-    begin
-      result := jsonval;
-    end
-    else
-      result := nil;
-  end;
-
-  function ProcessClass(const obj: TValue; const ADeref: TValue): TValue;
-  var
-    ClassType: TClass;
-  begin
-    ClassType := obj.AsObject.ClassType;
-    if ClassType.QualifiedClassName.StartsWith('System.Generics.Collections.TDictionary') then
-    begin
-      exit(processDictionary(obj, ADeref));
-    end;
-    if ClassType = tjsonobject then
-    begin
-      exit(processJson(obj, ADeref));
-    end;
-
-    result := GetFieldOrProperty(obj.AsObject, GRttiContext.GetType(obj.TypeInfo), ADeref);
-  end;
-
-  function ProcessRecord(const obj: TValue; const ADeref: TValue): TValue;
-  begin
-    result := GetFieldOrProperty(obj.GetReferenceToRawData, GRttiContext.GetType(obj.TypeInfo), ADeref);
-  end;
-
-begin
-  case AVar.Kind of
-    tkClass:
-      result := ProcessClass(AVar, ADeref);
-    tkRecord:
-      result := ProcessRecord(AVar, ADeref);
-    tkArray:
-      result := ProcessArray(AVar, ADeref);
-    tkDynArray:
-      result := ProcessDynArray(AVar, ADeref);
-  else
-    raise Exception.Create('Cannot dereference variable');
-  end;
 end;
 
 destructor TEvaluationVelocityVisitor.Destroy;

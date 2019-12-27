@@ -41,8 +41,6 @@ type
 
   [TestFixture]
   TTestVelocityJson = class
-  private
-    procedure Test<T>(const AValue: T; const AExpect: string; const ATemplate: string);
   public
     [test]
     procedure TestJson;
@@ -64,14 +62,6 @@ uses
   Sempare.Boot.Template.Velocity.Common,
   Sempare.Boot.Template.Velocity.PrettyPrint,
   Sempare.Boot.Template.Velocity.Lexer;
-
-procedure TTestVelocityJson.Test<T>(const AValue: T; const AExpect, ATemplate: string);
-var
-  c: IVelocityTemplate;
-begin
-  c := Velocity.parse(ATemplate);
-  Assert.AreEqual(AExpect, Velocity.Eval(c, AValue));
-end;
 
 procedure TTestVelocityJson.TestJson;
 var

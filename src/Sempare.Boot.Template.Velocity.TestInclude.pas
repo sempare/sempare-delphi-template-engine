@@ -41,8 +41,6 @@ type
 
   [TestFixture]
   TTestVelocityInclude = class
-  private
-    procedure Test<T>(const AValue: T; const AExpect: string; const ATemplate: string);
   public
     [Test]
     procedure TestInclude;
@@ -65,13 +63,6 @@ uses
   Sempare.Boot.Template.Velocity.PrettyPrint,
   Sempare.Boot.Template.Velocity.Lexer;
 
-procedure TTestVelocityInclude.Test<T>(const AValue: T; const AExpect: string; const ATemplate: string);
-var
-  c: IVelocityTemplate;
-begin
-  c := Velocity.parse(ATemplate);
-  Assert.AreEqual(AExpect, Velocity.Eval(c, AValue));
-end;
 
 type
   THeaderContentFooter = record
