@@ -69,6 +69,9 @@ uses
   TypInfo,
   System.Generics.Collections;
 
+var
+  GKeywords: TDictionary<string, TVelocitySymbol>;
+
 type
   TVelocityLexer = class(TInterfacedObject, IVelocityLexer)
   type
@@ -86,16 +89,16 @@ type
   private
     FNextToken: IVelocitySymbol;
     FStream: TStream;
-    FLine: Integer;
-    Fpos: Integer;
+    FLine: integer;
+    Fpos: integer;
     Ffilename: string;
     FLookahead: TPair;
     Fcurrent: TPair;
     FManageStream: Boolean;
     FState: TState;
     FAccumulator: TStringBuilder;
-    FPrevLineOffset: Integer;
-    FLineOffset: Integer;
+    FPrevLineOffset: integer;
+    FLineOffset: integer;
     FStartScript: string;
     FEndScript: string;
     FOptions: TVelocityEvaluationOptions;
@@ -117,7 +120,7 @@ type
   private
     FToken: TVelocitySymbol;
     FPosition: IPosition;
-    function GetPosition: IPosition; inline;
+    function GetPosition: IPosition;
   public
     constructor Create(const APosition: IPosition; const AToken: TVelocitySymbol);
     procedure SetToken(const AToken: TVelocitySymbol);
@@ -130,7 +133,7 @@ type
   public
     constructor Create(const APosition: IPosition; const AToken: TVelocitySymbol; const AString: string);
     procedure SetValue(const Avalue: string);
-    function GetValue: string; inline;
+    function GetValue: string;
   end;
 
 function CreateVelocityLexer(const AContext: IVelocityContext; const AStream: TStream; const AFilename: string; const AManageStream: Boolean): IVelocityLexer;
@@ -140,7 +143,7 @@ end;
 
 function VelocitySymbolToString(const ASymbol: TVelocitySymbol): string;
 begin
-  Result := GetEnumName(TypeInfo(TVelocitySymbol), Integer(ASymbol));
+  Result := GetEnumName(TypeInfo(TVelocitySymbol), integer(ASymbol));
 end;
 
 { TVelocityLexer }
@@ -217,8 +220,8 @@ end;
 
 function TVelocityLexer.GetScriptToken: IVelocitySymbol;
 var
-  Line: Integer;
-  Position: Integer;
+  Line: integer;
+  Position: integer;
 
   function MakePosition: IPosition;
   begin
@@ -238,6 +241,12 @@ var
   begin
     Result := TVelocityValueSymbol.Create(MakePosition, ASymbol, FAccumulator.ToString);
     FAccumulator.Clear;
+    GetInput;
+  end;
+
+  procedure Accumulate;
+  begin
+    FAccumulator.Append(FLookahead.Input);
     GetInput;
   end;
 
@@ -267,12 +276,8 @@ begin
     begin
       FAccumulator.Append(Fcurrent.Input);
       while Expecting(VARIABLE_END) do
-      begin
-        FAccumulator.Append(FLookahead.Input);
-        GetInput;
-      end;
-      Result := ValueToken(VsID);
-      Exit;
+        Accumulate;
+      Exit(ValueToken(VsID));
     end
 {$WARN WIDECHAR_REDUCED OFF}
     else if Fcurrent.Input in NUMBER then
@@ -280,31 +285,28 @@ begin
     begin
       FAccumulator.Append(Fcurrent.Input);
       while Expecting(NUMBER) do
+        Accumulate;
+      if FLookahead.Input = '.' then
       begin
-        FAccumulator.Append(FLookahead.Input);
-        GetInput;
+        Accumulate;
+        while Expecting(NUMBER) do
+          Accumulate;
       end;
-      Result := ValueToken(VsNumber);
-      Exit;
+      Exit(ValueToken(VsNumber));
     end
     else
-
       case Fcurrent.Input of
         ',':
           Exit(SimpleToken(vsComma));
         '(':
           begin
-            if Expecting('*') then
-            begin
+            if not Expecting('*') then
+              Exit(SimpleToken(VsOpenRoundBracket));
+            SwallowInput;
+            while not((Fcurrent.Input = '*') and Expecting(')')) do
               SwallowInput;
-              while not((Fcurrent.Input = '*') and Expecting(')')) do
-              begin
-                SwallowInput;
-              end;
-              SwallowInput;
-              Exit(SimpleToken(VsComment));
-            end;
-            Exit(SimpleToken(VsOpenRoundBracket));
+            SwallowInput;
+            Exit(SimpleToken(VsComment));
           end;
         ')':
           Exit(SimpleToken(VsCloseRoundBracket));
@@ -345,10 +347,7 @@ begin
         '''':
           begin
             while FLookahead.Input <> '''' do
-            begin
-              FAccumulator.Append(FLookahead.Input);
-              GetInput;
-            end;
+              Accumulate;
             SwallowInput;
             Exit(ValueToken(vsString));
           end;
@@ -397,8 +396,8 @@ end;
 
 function TVelocityLexer.GetTextToken: IVelocitySymbol;
 var
-  Line: Integer;
-  Position: Integer;
+  Line: integer;
+  Position: integer;
   last, cur: Char;
 
   function MakePosition: IPosition;
@@ -525,54 +524,17 @@ begin
 end;
 
 procedure TVelocityValueSymbol.SetValue(const Avalue: string);
+var
+  token: TVelocitySymbol;
 begin
   FValue := Avalue;
   if GetToken <> VsID then
     Exit;
-  if Avalue = 'if' then
-    SetToken(VsIF)
-  else if Avalue = 'elif' then
-    SetToken(VsELIF)
-  else if Avalue = 'else' then
-    SetToken(vsElse)
-  else if Avalue = 'while' then
-    SetToken(vsWhile)
-  else if Avalue = 'with' then
-    SetToken(vsWith)
-  else if Avalue = 'template' then
-    SetToken(vsTemplate)
-  else if Avalue = 'print' then
-    SetToken(vsPRINT)
-  else if Avalue = 'for' then
-    SetToken(VsFOR)
-  else if Avalue = 'break' then
-    SetToken(VsBREAK)
-  else if Avalue = 'continue' then
-    SetToken(VsCONTINUE)
-  else if Avalue = 'in' then
-    SetToken(VsIN)
-  else if Avalue = 'end' then
-    SetToken(VsEND)
-  else if Avalue = 'include' then
-    SetToken(VsINCLUDE)
-  else if Avalue = 'to' then
-    SetToken(vsTo)
-  else if Avalue = 'downto' then
-    SetToken(vsDownto)
-  else if Avalue = 'end' then
-    SetToken(VsEND)
-  else if Avalue = 'true' then
-    SetToken(VsBoolean)
-  else if Avalue = 'false' then
-    SetToken(VsBoolean)
-  else if Avalue = 'and' then
-    SetToken(VsAND)
-  else if Avalue = 'or' then
-    SetToken(VsOR)
-  else if Avalue = 'not' then
-    SetToken(VsNOT)
-  else if Avalue = 'mod' then
-    SetToken(VsMOD)
+  if GKeywords.TryGetValue(Avalue, token) then
+  begin
+    SetToken(token);
+    Exit;
+  end;
 end;
 
 { TVelocityLexer.TPair }
@@ -582,5 +544,40 @@ begin
   Input := Ainput;
   Eof := Aeof;
 end;
+
+procedure AddHashedKeyword(const akeyword: string; const ASymbol: TVelocitySymbol);
+begin
+  GKeywords.Add(akeyword, ASymbol);
+end;
+
+initialization
+
+GKeywords := TDictionary<string, TVelocitySymbol>.Create;
+AddHashedKeyword('if', VsIF);
+AddHashedKeyword('elif', VsELIF);
+AddHashedKeyword('else', vsElse);
+AddHashedKeyword('while', vsWhile);
+AddHashedKeyword('with', vsWith);
+AddHashedKeyword('template', vsTemplate);
+AddHashedKeyword('print', vsPRINT);
+AddHashedKeyword('for', VsFOR);
+AddHashedKeyword('break', VsBREAK);
+AddHashedKeyword('continue', VsCONTINUE);
+AddHashedKeyword('in', VsIN);
+AddHashedKeyword('end', VsEND);
+AddHashedKeyword('include', VsINCLUDE);
+AddHashedKeyword('to', vsTo);
+AddHashedKeyword('downto', vsDownto);
+AddHashedKeyword('true', VsBoolean);
+AddHashedKeyword('false', VsBoolean);
+
+AddHashedKeyword('and', VsAND);
+AddHashedKeyword('or', VsOR);
+AddHashedKeyword('not', VsNOT);
+AddHashedKeyword('mod', VsMOD);
+
+finalization
+
+GKeywords.Free;
 
 end.
