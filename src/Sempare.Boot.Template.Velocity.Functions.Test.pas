@@ -72,6 +72,16 @@ type
 
     [Test]
     procedure TestInt();
+    [Test]
+    procedure TestSplit();
+    [Test]
+    procedure TestLowercase();
+    [Test]
+    procedure TestUppercase();
+    [Test]
+    procedure TestRev();
+    [Test]
+    procedure TestUCFirst();
   end;
 
 implementation
@@ -106,7 +116,7 @@ begin
     begin
       result := 43821;
     end);
-    ctx.AddFunction('fmtdt', GFunctionInfo.Items['fmtdt'].FN);
+  ctx.AddFunction('fmtdt', GFunctionInfo.Items['fmtdt'].FN);
   Assert.AreEqual(formatdatetime('2019-12-22', now), Velocity.Eval(ctx, '<% fmtdt(''yyyy-mm-dd'', dtnow()) %>'));
 end;
 
@@ -122,9 +132,26 @@ begin
   Assert.AreEqual('5', Velocity.Eval('<% len(''01234'') %>'));
 end;
 
+procedure TFunctionTest.TestLowercase;
+begin
+  Assert.AreEqual('hello', Velocity.Eval('<% lowercase(''HeLlo'') %>'));
+end;
+
 procedure TFunctionTest.TestPos;
 begin
   Assert.AreEqual('4', Velocity.Eval('<% pos(''3'',''0123456789'') %>'));
+end;
+
+procedure TFunctionTest.TestRev;
+begin
+  Assert.AreEqual('dlrow', Velocity.Eval('<% rev(''world'') %>'));
+  Assert.AreEqual('ddccbbaa', Velocity.Eval('<% rev(''aabbccdd'') %>'));
+end;
+
+procedure TFunctionTest.TestSplit;
+begin
+  Assert.AreEqual('hello', Velocity.Eval('<% split(''hello_world'', ''_'')[0] %>'));
+  Assert.AreEqual('world', Velocity.Eval('<% split(''hello_world'', ''_'')[1] %>'));
 end;
 
 procedure TFunctionTest.TestStr;
@@ -151,6 +178,17 @@ end;
 procedure TFunctionTest.TestTrim;
 begin
   Assert.AreEqual('trimmed', Velocity.Eval('<% trim(''   trimmed   '') %>'));
+end;
+
+procedure TFunctionTest.TestUCFirst;
+begin
+  Assert.AreEqual('Hello', Velocity.Eval('<% ucfirst(''HELLO'') %>'));
+  Assert.AreEqual('Hello', Velocity.Eval('<% ucfirst(''helLO'') %>'));
+end;
+
+procedure TFunctionTest.TestUppercase;
+begin
+  Assert.AreEqual('HELLO', Velocity.Eval('<% uppercase(''HeLlo'') %>'));
 end;
 
 initialization

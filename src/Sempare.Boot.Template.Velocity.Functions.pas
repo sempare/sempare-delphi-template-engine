@@ -264,6 +264,39 @@ begin
   result := asstring(AArgs[0]);
 end;
 
+function rev(const AStr: string): string;
+var
+  i, j, m: integer;
+begin
+  setlength(result, length(AStr));
+  m := length(AStr) div 2 + 1;
+  i := 1;
+  j := length(AStr);
+  while i <= m do
+  begin
+    result[i] := AStr[j];
+    result[j] := AStr[i];
+    inc(i);
+    dec(j);
+  end;
+end;
+
+function InternalUCFirst(const AArgs: TArray<TVelocityValue>): TVelocityValue;
+var
+  s: string;
+begin
+  AssertArgCount(GFunctionInfo['ucfirst'], AArgs);
+  s := lowercase(asstring(AArgs[0]));
+  s[1] := uppercase(s[1])[1];
+  result := s;
+end;
+
+function InternalReverse(const AArgs: TArray<TVelocityValue>): TVelocityValue;
+begin
+  AssertArgCount(GFunctionInfo['rev'], AArgs);
+  result := rev(asstring(AArgs[0]));
+end;
+
 function InternalIsNull(const AArgs: TArray<TVelocityValue>): TVelocityValue;
 begin
   AssertArgCount(GFunctionInfo['isnull'], AArgs);
@@ -325,8 +358,8 @@ initialization
 
 GFunctionInfo := TDictionary<string, TVelocityFunctionInfo>.Create;
 
-// TODO: join, ucfirst, ucwords, rev
-
+RegFunc('ucfirst', 'S', 1, 1, InternalUCFirst);
+RegFunc('rev', 'S', 1, 1, InternalReverse);
 RegFunc('lowercase', 'SS', 1, 1, InternalLowercase);
 RegFunc('uppercase', 'SS', 1, 1, InternalUppercase);
 RegFunc('split', 'SS', 2, 2, InternalSplit);
