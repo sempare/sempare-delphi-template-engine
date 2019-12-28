@@ -620,11 +620,18 @@ function Inspect(const AExpr: IExpr): IExpr; forward;
   end;
 
   function matchArrayDeref(const AExpr: IExpr): IExpr;
+  var
+    idxExpr: IExpr;
   begin
     match(VsOpenSquareBracket);
-    result := TVariableDerefExpr.Create(sym.Position, dtArray, AExpr, RuleExpr);
+    idxExpr := RuleExpr;
+    result := TVariableDerefExpr.Create(sym.Position, dtArray, AExpr, idxExpr);
     match(VsCloseSquareBracket);
-    result := Inspect(result);
+
+    if (eoEvalVarsEarly in FContext.Options) and IsValue(AExpr) and IsValue(idxExpr) then
+      result := TValueExpr.Create(sym.Position, deref(AsValue(AExpr), AsValue(idxExpr)))
+    else
+      result := Inspect(result);
   end;
 
   function MatchDeref(const AExpr: IExpr): IExpr;
@@ -640,10 +647,14 @@ function Inspect(const AExpr: IExpr): IExpr; forward;
       if FLookahead.Token = VsOpenRoundBracket then
         result := self.ruleMethodExpr(AExpr, derefexpr)
       else
-        result := TVariableDerefExpr.Create(sym.Position, dtObject, AExpr, derefexpr);
+      begin
+        if (eoEvalVarsEarly in FContext.Options) and IsValue(AExpr) and IsValue(derefexpr) then
+          result := TValueExpr.Create(sym.Position, deref(AsValue(AExpr), AsValue(derefexpr)))
+        else
+          result := TVariableDerefExpr.Create(sym.Position, dtObject, AExpr, derefexpr);
+      end;
 
-      result := Inspect(result);
-      exit;
+      exit(Inspect(result));
     end;
     RaiseError(Position(AExpr), 'Identified expected');
   end;
@@ -662,9 +673,18 @@ function Inspect(const AExpr: IExpr): IExpr; forward;
     end;
   end;
 
+var
+  Variable: string;
+  VarVal: TValue;
+
 begin
   sym := FLookahead;
-  result := Inspect(TVariableExpr.Create(sym.Position, matchValue(VsID)));
+  Variable := matchValue(VsID);
+  if (eoEvalVarsEarly in FContext.Options) and FContext.TryGetVariable(Variable, VarVal) then
+    result := TValueExpr.Create(sym.Position, VarVal)
+  else
+    result := TVariableExpr.Create(sym.Position, Variable);
+  result := Inspect(result);
 end;
 
 const

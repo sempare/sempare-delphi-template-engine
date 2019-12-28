@@ -50,6 +50,7 @@ type
   TVelocityEvaluationOption = ( //
     eoNoPosition, //
     eoEvalEarly, //
+    eoEvalVarsEarly, //
     eoStripRecurringNewline, // TODO
     eoStripRecurringEmptyLine, // TODO
     eoTrimLines, // TODO
@@ -75,6 +76,7 @@ type
     function GetTemplateResolver: TTemplateResolver;
     procedure SetTemplateResolver(const AResolver: TTemplateResolver);
 
+    function TryGetVariable(const AName: string; out AValue: TValue): boolean;
     function GetVariable(const AName: string): TValue;
     procedure SetVariable(const AName: string; const AValue: TValue);
 
@@ -169,6 +171,7 @@ type
     function GetTemplateResolver: TTemplateResolver;
     procedure SetTemplateResolver(const AResolver: TTemplateResolver);
 
+    function TryGetVariable(const AName: string; out AValue: TValue): boolean;
     function GetVariable(const AName: string): TValue;
     procedure SetVariable(const AName: string; const AValue: TValue);
 
@@ -441,6 +444,16 @@ begin
       exit(false);
     AddTemplate(AName, ATemplate);
     exit(true);
+  finally
+    FLock.Leave;
+  end;
+end;
+
+function TVelocityContext.TryGetVariable(const AName: string; out AValue: TValue): boolean;
+begin
+  FLock.Enter;
+  try
+    result := FScope.TryGetValue(AName, AValue);
   finally
     FLock.Leave;
   end;
