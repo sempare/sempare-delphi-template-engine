@@ -10,6 +10,39 @@ Open Source: https://github.com/sempare/sempare.boot.velocity.oss
 
 Version: 1.0
 
+## Introduction
+
+Template engines are used often in in the technology where text needs to be customised by substituting variables with values from a data source. Examples where this may take place:
+- web sites using template engines (or languages)
+- code generation
+- mail merge 
+- notification messages 
+
+The Sempare Boot Velocity Template Engine is small templating engine for [Delphi](https://www.embarcadero.com/products/delphi) (Object Pascal) that allows for templates to be created easily and efficiently by providing a simple and easy to use interface.
+
+Example usage:
+```
+program Example;
+uses
+	Sempare.Boot.Template.Velocity;
+type
+    TInformation = record
+        name: string;
+        favourite_sport : string;
+    end;
+begin
+    var template := Velocity.parse('My name is <% name %>. My favourite sport is <% favourite_sport %>.');
+    var information : TInformation;
+    information.name := 'conrad';
+    information.favourite_sport := 'ultimate';
+    writeln(Velocity.eval(template, information));	
+end.
+```
+
+In the example above, you can see that the '<%' start and '%>' end the scripting statement respectively. Within a scripting statement, you can reference variables, assign variables, use conditions, for and while loops, and include other templates.
+
+**NOTE** In examples in this documentation, I may use the latest Delphi syntax, such as inline variable declarations. These may are note backward compatible as they were introduced in Delphi 10.2 and are used to shorten the code/examples being illustrated. The codebase will attempt to be as backward compatible as possible.
+
 ## Contents
 1. [Introduction](#Introduction)
 2. [Features](#Features)
@@ -40,41 +73,12 @@ Version: 1.0
 16. [Design considerations](#Design-considerations)
 17. [Known restrictions / limitations / bugs](#known-restrictions--limitations--bugs)
 18. [Todo](#Todo)
-## Introduction
 
-Template engines are used often in in the technology where text needs to be customised by substituting variables with values from a data source. Examples where this may take place:
-- web sites using template engines (or languages)
-- code generation
-- mail merge 
-- notification messages 
-
-The Sempare Boot Velocity Template Engine is small templating engine for [Delphi](https://www.embarcadero.com/products/delphi) that allows for templates to be created easily and efficiently by providing a simple and easy to use interface.
-
-Example usage:
-```
-program Example;
-uses
-	Sempare.Boot.Template.Velocity;
-type
-    TInformation = record
-        name: string;
-        favourite_sport : string;
-    end;
-begin
-    var template := Velocity.parse('My name is <% name %>. My favourite sport is <% favourite_sport %>.');
-    var information : TInformation;
-    information.name := 'conrad';
-    information.favourite_sport := 'ultimate';
-    writeln(Velocity.eval(template, information));	
-end.
-```
-
-In the example above, you can see that the '<%' start and '%>' end the scripting statement respectively. Within a scripting statement, you can reference variables, assign variables, use conditions, for and while loops, and include other templates.
 
 ## Features
 - statements
   - if, elif, else statements
-  - for and while statements statements
+  - for and while statements
   - include statement
   - with statement
   - function/method calls
@@ -83,6 +87,7 @@ In the example above, you can see that the '<%' start and '%>' end the scripting
   - variable references
   - call functions/methods
   - dereference records, classes, arrays and dynamic arrays
+  - ternary operator
 - safety
   - max runtime protection
 - customisation 
@@ -98,7 +103,10 @@ Sempare Boot Velocity is not intended to be a fully featured general purpose pro
 Sempare Boot Velocity aims to provide just enough functionality to allow you to easily work with the 'view' aspects of a template. Any enhanced functionality required from the scripting environment should be provided by the function calls written in Pascal.
 
 ## Requirements
-This should work with most modern versions of [Delphi](https://www.embarcadero.com/products/delphi). No special features have been used, so it should work on Free Pascal or require minimal changes (in the todo list)
+
+This should work with most modern versions of [Delphi](https://www.embarcadero.com/products/delphi). 
+
+An attempt has been made not to use the latest features to ease backward compatability, but I only have access to a few Delphi versions.
 
 Tests currently run on Delphi 10.3.3 using the DUnitX TestFramework.
 
@@ -114,33 +122,39 @@ The Sempare Boot Velocity template engine relates to the following projects:
 - [Sempare Boot Http](https://github.com/sempare/sempare.boot.http.oss)
 - [Sempare Boot Build](https://github.com/sempare/sempare.boot.build.oss)
 - [Sempare Boot CLI](https://github.com/sempare/sempare.boot.oss)
--->
 
-To see a full list of Sempare Boot projects visit https://www.sempare.ltd/sempare.boot (coming soon 2020)
+
+To see a full list of Sempare Boot projects visit https://www.sempare.ltd/sempare.boot (coming soon 2020)-->
 
 ## Feedback
 
-If you have a support subscription, you can contact us via support@sempare.ltd and we will address the issue ASAP. 
+You can raise issues on [GitHub](https://github.com/sempare/sempare.boot.velocity.oss) and they will be addressed based on priority.
 
-You can also raise issues on [GitHub](https://github.com/sempare/sempare.boot.velocity.oss) and they will be addressed based on priority.
+If you have a support subscription, you can contact us via support@sempare.ltd and we will address the issue ASAP. 
 
 If you would like to support the development of this project, please feel free to make a financial contribution. Please contact info@sempare.ltd for more information.
 
-Most features have some basic tests in place. If a bug has been discovered, please include a basic test/scenario replicating the issue if possible as this will ease the investigation process. At the end of this document is a listing of todo, design decisions and known bugs.
+Most features have some basic tests in place. If a bug is been discovered, please include a basic test/scenario replicating the issue if possible as this will ease the investigation process. At the end of this document is a listing of todo, design decisions and known bugs.
 
 ## Components
+
 Sempare Boot Velocity uses interfaces extensively. This makes memory management much easier as interfaced objects are reference counted and alls for code to be more readable as minimal try/catch/finally block are required.
 
-To make using Velocity easy, you need to just include a reference to the _Sempare.Boot.Template.Velocity_ unit:
+To ease the use of Sempare Boot Velocity, you need to just include a reference to the _Sempare.Boot.Template.Velocity_ unit:
 ```
 uses
     Sempare.Boot.Template.Velocity;
 ```
 
-Components of interest that are exposed to you are:
+Key components of interest that are exposed to you are:
 - Velocity
 - IVelocityContext
 - IVelocityTemplate
+
+Other components:
+- TVelocityEvaluationOption
+- TVelocityEvaluationOptions
+- TVelocityValue
 
 ### Velocity
 
@@ -255,14 +269,14 @@ The output of the Velocity parser is an object implementing the IVelocityTemplat
 ##### Thread Safety
 The Sempare Boot Velocity template engine should be totally thread safe. There is no shared state besides potential references a shared Velocity context.
 
-Components that should be safe to share are instances of _IVelocityContext_ and _IVelocityTemplate_.
+Components that should be safe to share are instances of _IVelocityContext_ and _IVelocityTemplate_. 
 
 ##### Example use case
+
 In a threaded environement like a web server, the following would take place:
 - the context and templates are initialised at startup.
 - templates are mapped to various routes used by various route controllers
 - controller methods would interact with a database service and pass data to the template engine.
-
 
 ## Statements
 
@@ -290,6 +304,7 @@ Within a script block, you can create temporary variables for use within the tem
 <% bool := false %>
 ```
 ### if
+
 You may want to conditionally include content:
 ```
 Some text
@@ -314,8 +329,10 @@ some text
 <% end %>
     the end
 ```
+
 ### for
-The 'for' loop comes in two forms as it does in Delphi:
+
+The 'for to/downto' loop comes in two forms as it does in Object Pascal:
 ```
 increasing integers from 1 to 10
 <% for i := 1 to 10 %>
@@ -327,8 +344,10 @@ decreasing integers from 10 down to 1
     number <% i %>
 <% end %>
 ```
-NOTE: Loop variables can be updated within the scope of the block without the loop integrity being compromised. 
-The other 'for' variation is as follows:
+**NOTE** Loop variables can be updated within the scope of the block without the loop integrity being compromised. 
+
+
+The other 'for in' variation is as follows:
 ```
 Attendees:
 <%for i in _ %> 
@@ -352,14 +371,18 @@ begin
   info.Free;
 end;
 ```
+
 The above produces the output:
 ```
 Attendees:
    conrad 10
    christa 20
 ```
+
 ### while
+
 While blocks are very flexibe looping constructs based on a boolean condition being true.
+
 ```
 <% i := 1 %>
 <% while i <= 3 %>
@@ -367,13 +390,14 @@ While blocks are very flexibe looping constructs based on a boolean condition be
    <% i := 1 + 1%>
 <% end %
 ```
+
 This produces the following:
 ```
    1
    2
    3
 ```
-NOTE: you must ensure the terminating condition is eventually true so that the template can be rendered.
+**NOTE** you must ensure the terminating condition is eventually true so that the template can be rendered.
 
 ## break / continue
 
@@ -385,10 +409,12 @@ An example using 'continue':
  <% if i mod 2 = 1 %><% continue %><% end %><% i %>
 <% end %>
 ```
+
 This will produce:
 ```
 0 2 4 6 8 10 
 ```
+
 An example using 'break':
 ```
 <% i := 0 %>
@@ -402,6 +428,7 @@ This will produce
 ```
 
 ### include
+
 You may want to decompose templates into reusable parts. You register templates on a Velocity context. 
 
 ```
@@ -467,10 +494,11 @@ Using the TInfo structure above it could be appli
 	<% value %>
 <% end %>
 <% include ('mytemplate', level1.level2) %>	
-<% include ('mytemplate', level1.level2).level3.level4 %>	
+<% include ('mytemplate', level1.level2.level3.level4) %>	
 ```
 
 ## Expressions
+
 You can use different types of expressions.
 
 Conditional expressions:
@@ -491,7 +519,8 @@ A special variable _ (underscore) is defined to allow access to the variable/rec
 ```
 <% for i in _ %> <% i %><% end %>
 ```
-where the Delphi code could be:
+
+The following Delphi code illustrates the usage:
 ```
 begin
   var l := TList<string>.Create;
@@ -500,8 +529,8 @@ begin
   L.Free;
 end;
 ```
-When a variable is referenced, the evaluation scope will be referenced. if the variable is not found, the variable will be
-referenced on _.
+
+If the variable is not found, the variable will be referenced on _.
 
 This means that <% a %> will be the same as <% _.a %>.
 
@@ -549,15 +578,61 @@ str() casts a variable to a string. isstr() checks if a variable is a string.
 ```
 ## int(any) / isint(any)
 int() casts a number to an integer. isint() checks if a variable is an integer.
-## Custom functions
+
+## num(any) / isnum(any)
+num() casts the variable to a number. isnum() checks if a variable is an interfer or vloat.
+
+## split(string, sep)
+
+Split the string using a seperator returning an array of string.
+
+```
+<% split('hello world', ' ')[0] %>
+```
+
+## rev(string)
+
+Reverse a string.
+
+```
+<% rev('abc') %>
+```
+
+## ucfirst(string)
+
+Uppercase the first letter of a string with the rest being lowercase.
+
+```
+<% ucfirst('hello') %>
+```
+
+## uppercase(string)
+
+Uppercase a string.
+
+```
+<% uppercase('heLlo') %>
+```
+
+## lowercase(string)
+
+Lowercase a string.
+```
+<% lowercase('heLlo') %>
+```
+
+### Custom functions
+
 Defining new functions is very easy by adding it to the context.
 ```
     ctx.AddFunction('trim', 1,
-      function(const Args: TArray<TValue>): TValue
+      function(const Args: TArray<TVelocityValue>): TVelocityValue
       begin
         result := trim(AsString(Args[0]));
       end);
 ```
+
+
 The AddFunction method has a few signature:
 ```
     procedure AddFunction(const AFunctionInfo: TVelocityFunctionInfo); overload;
@@ -592,7 +667,8 @@ Scopes are created in 'if', 'for', 'with' and 'while' statements. Referencing a 
 ## Tricks
 
 ### Reference variables dynamically
-You can dereference variables dyanmically
+
+You can dereference variables dyanmically using the array dereferencing syntax:
 ```
 type
     TRecord = record
@@ -611,7 +687,7 @@ begin
     writeln(Velocity.Eval('<%for i := 1 to 4 %><% v['v' + i] %><% end %>'));
 end;
 ```
-will produce
+The above example will produce:
 ```
 abcd
 ```
@@ -620,6 +696,7 @@ abcd
 A quick win would be to use buffered stream so that characters in the buffer are processed quickly.
 
 ## Configuration
+
 Configuration is done through the context. If you want to rely on the defaults, many of the eval methods don't require a context to be explictly provided and they will create create a default context for use.
 ```
     var ctx := Velocity.Context();
@@ -682,7 +759,7 @@ be propulated in the context as illustrated:
 ctx.Variable['company'] := 'Sempare Limited'; 
 ```
 ### Reusing Templates
-Using the _include()_ statement, you can reference precompiled registered templates.
+Using the _include()_ statement, you can reference precompiled templates that are registered on the context:
 
 ```
 ctx.RegisterTemplate('header', Velocity.Parse('<% title %>')) 
@@ -690,8 +767,7 @@ ctx.RegisterTemplate('footer', Velocity.Parse('Copyright (c) <% year %> <% compa
 ```
 ### Dynamic Template Resolution
 
-Templates don't need to be precompiled. They can also be located when being parsed by setting
-the template resolver property on the context.
+Templates don't need to be precompiled. They can also be located when being parsed by setting the template resolver property on the context:
 ```
 ctx.TemplateResolver = function(const AContext : IVelocityTemplate; const AName : string) : IVelocityTemplate
 begin
@@ -712,9 +788,11 @@ The template engine allows for the following options:
   - disposes of positional information that should minimise memory footprint
 - eoEvalEarly
   - evaluate statements/expressions at parse time where possible 
+- eoEvalVarsEarly
+  - evaluate statements/expressions at parse time that reference variables from the context where possible 
 
 ## Debugging the script behaviour
-We use the pretty print feature to peek into the parsed abstract syntax tree of the template.
+There is no debugger, but we use the pretty print feature to peek into the parsed abstract syntax tree of the template to confirm what we expect:
 ```
 writeln(Velocity.PrettyPrint(Velocity.Parse('<%if true%>true<%else%>false<%end%>')));
 ```
@@ -778,7 +856,7 @@ literal  : 'true'
          ;
 ```
 The 'string' literal is anything contained within single quoted string.
-A 'number' is currently limited to being an integer value (e.g. 1, 2, 3).
+A 'number' can be an integer (1,2,3...) or a float.
 
 ## Design considerations
 
@@ -791,13 +869,7 @@ The evaluator is a very simple. Parsing is fairly quick, so byte code is conside
 
 ## Known restrictions / limitations / bugs
 
-### Lack of floating point double support
-Parsed numbers are limited to integer values, but values returned from function/method calls preserve their types. This has been done to minimise the temptation to do more calculations in the templating layer.
-
-### optimisation on variable dereferencing
-
-this needs to be reviewed. the current implementation is not ideal as the TVariableScope is constantly populated with contents of any structure.
-if the structure is large, this may not be ideal. further, for arrays to be dereferenced, the key needs to also be able to be numeric.
+- floats are limited to the format [0-9]([.][0-9]+).
 
 ## Todo
 - add options
@@ -805,7 +877,6 @@ if the structure is large, this may not be ideal. further, for arrays to be dere
   - to strip recurring newlines 
   - to strip empty lines
   - to trim lines
-- evaluate expressions at parse time based on context variables is pending
 - validation
   - identify required variables ahead of time where possible.
   - review validation implentation on function calls
