@@ -869,7 +869,7 @@ The evaluator is a very simple. Parsing is fairly quick, so byte code is conside
 
 ## Known restrictions / limitations / bugs
 
-- floats are limited to the format [0-9]([.][0-9]+).
+- numbers are limited to the regex format _[0-9]\([.][0-9]+)_.
 
 ## Todo
 - add options
