@@ -64,6 +64,8 @@ type
     procedure TestSubTemplate;
     [Test]
     procedure TestDynamicLoader;
+    [Test]
+    procedure TestVariableNotFound;
   end;
 
 implementation
@@ -222,6 +224,11 @@ begin
   L.AddRange(['1', '2', '3']);
   Assert.AreEqual('123', Velocity.Eval('<% for v in _ %><% v %><% end %>', L));
   L.Free;
+end;
+
+procedure TTestVelocity.TestVariableNotFound;
+begin
+   Assert.AreEqual('', Velocity.Eval('<% abc %>'));
 end;
 
 initialization

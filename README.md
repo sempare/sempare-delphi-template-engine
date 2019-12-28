@@ -873,7 +873,6 @@ The evaluator is a very simple. Parsing is fairly quick, so byte code is conside
 
 ## Todo
 - add options
-  - to not fail but use a default value (blank) if a variable is not resolved
   - to strip recurring newlines 
   - to strip empty lines
   - to trim lines
