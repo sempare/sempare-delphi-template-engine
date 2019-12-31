@@ -11,3 +11,4 @@ __history
 *.local
 Win32
 /demo/MiniMerge/output
+lib
