@@ -62,6 +62,7 @@ uses
   Sempare.Boot.Template.Velocity.Evaluate,
   Sempare.Boot.Template.Velocity.Common,
   Sempare.Boot.Template.Velocity.PrettyPrint,
+  Sempare.Boot.Template.Velocity.Functions,
   Sempare.Boot.Template.Velocity.Lexer;
 
 procedure TTestVelocityAssign.TestSimpleAssignment;
@@ -69,22 +70,28 @@ begin
   Velocity.parse('before <% abc := true %> after  <% abc %> final');
 end;
 
+type
+  TDoSomething = class
+  public
+    class function sum(const AValues: array of extended): extended; static;
+  end;
+
+class function TDoSomething.sum(const AValues: array of extended): extended;
+var
+  v: double;
+begin
+  result := 0;
+  for v in AValues do
+    result := result + v;
+end;
+
 procedure TTestVelocityAssign.TestAssignFunctionCall;
 var
   ctx: IVelocityContext;
 begin
   ctx := Velocity.Context;
-  ctx.AddFunction('doSomething', 3,
-    function(const Args: TArray<Tvalue>): Tvalue
-    var
-      S, i: integer;
-    begin
-      S := 0;
-      for i := low(Args) to high(Args) do
-        S := S + round(asnum(Args[i]));
-      result := S;
-    end);
-  Velocity.parse(ctx, 'before <% abc := doSomething(3,4,5) %> after  <% abc %> final');
+  ctx.Functions.addfunctions(TDoSomething);
+  Velocity.parse(ctx, 'before <% abc := sum(3,4,5) %> after  <% abc %> final');
 end;
 
 initialization

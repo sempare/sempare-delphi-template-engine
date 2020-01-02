@@ -56,6 +56,7 @@ type
     procedure Visit(const AExpr: IValueExpr); overload; virtual;
     procedure Visit(const AExprList: IExprList); overload; virtual;
     procedure Visit(const AExpr: ITernaryExpr); overload; virtual;
+    procedure Visit(const AExpr: IArrayExpr); overload; virtual;
 
     procedure Visit(const AStmt: IStmt); overload; virtual;
     procedure Visit(const AStmt: IAssignStmt); overload; virtual;
@@ -222,6 +223,11 @@ begin
 end;
 
 procedure TBaseVelocityVisitor.Visit(const AStmt: IWithStmt);
+begin
+
+end;
+
+procedure TBaseVelocityVisitor.Visit(const AExpr: IArrayExpr);
 begin
 
 end;

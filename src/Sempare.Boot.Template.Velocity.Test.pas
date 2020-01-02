@@ -53,8 +53,6 @@ type
     [Test]
     procedure TestStartEndToken;
     [Test]
-    procedure TestStructure;
-    [Test]
     procedure TestTabToSpace;
     [Test]
     procedure TestTabToSpaceAndNoSpace;
@@ -66,6 +64,8 @@ type
     procedure TestDynamicLoader;
     [Test]
     procedure TestVariableNotFound;
+    [Test]
+    procedure TestArray;
   end;
 
 implementation
@@ -86,23 +86,20 @@ uses
 
 { TTestVelocity }
 
+procedure TTestVelocity.TestArray;
+begin
+  Assert.AreEqual('1', Velocity.Eval('<% a:= [1,''hello world'', 2] %><% a[0]%>'));
+  Assert.AreEqual('hello world', Velocity.Eval('<% a:= [1,''hello world'', 2] %><% a[1]%>'));
+  Assert.AreEqual('2', Velocity.Eval('<% a:= [1,''hello world'', 2] %><% a[2]%>'));
+end;
 
 procedure TTestVelocity.TestComment;
-var
-  S: tstringstream;
-
 begin
-  S := tstringstream.create;
-  try
-    Velocity.Eval( //
-      'before ' + //
-      '<% (* this is '#13#10#13#10'a comment *) %>' + //
-      'after ' //
-      , S);
-  finally
-    S.Free;
-  end;
-
+  Assert.AreEqual('before after ', Velocity.Eval( //
+    'before ' + //
+    '<% (* this is '#13#10#13#10'a comment *) %>' + //
+    'after ' //
+    ));
 end;
 
 procedure TTestVelocity.TestHtmlEncoding;
@@ -128,16 +125,10 @@ type
   end;
 var
   r: TRec;
-  S: tstringstream;
 begin
   r.Val := 'a value';
-  S := tstringstream.create;
-  try
-    Velocity.Eval('<% val := ''test'' %>', r, S);
-    Assert.AreEqual('a value', r.Val);
-  finally
-    S.Free;
-  end;
+  Velocity.Eval('<% val := ''test'' %>', r);
+  Assert.AreEqual('a value', r.Val);
 end;
 
 procedure TTestVelocity.TestNoSpace;
@@ -157,11 +148,6 @@ begin
   ctx.StartToken := '{{';
   ctx.EndToken := '}}';
   Assert.AreEqual('hello', Velocity.Eval(ctx, '{{ if true }}hello{{else}}bye{{end}}'));
-end;
-
-procedure TTestVelocity.TestStructure;
-begin
-
 end;
 
 type
@@ -228,7 +214,7 @@ end;
 
 procedure TTestVelocity.TestVariableNotFound;
 begin
-   Assert.AreEqual('', Velocity.Eval('<% abc %>'));
+  Assert.AreEqual('', Velocity.Eval('<% abc %>'));
 end;
 
 initialization

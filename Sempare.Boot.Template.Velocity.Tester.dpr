@@ -46,7 +46,7 @@ uses
   DUnitX.TestFramework,
   Sempare.Boot.Template.Velocity.Functions.Test in 'src\Sempare.Boot.Template.Velocity.Functions.Test.pas',
   Sempare.Boot.Template.Velocity.Lexer.Test in 'src\Sempare.Boot.Template.Velocity.Lexer.Test.pas',
-  Sempare.Boot.Template.Velocity.Scope.Test in 'src\Sempare.Boot.Template.Velocity.Scope.Test.pas',
+  Sempare.Boot.Template.Velocity.StackFrame.Test in 'src\Sempare.Boot.Template.Velocity.StackFrame.Test.pas',
   Sempare.Boot.Template.Velocity.Test in 'src\Sempare.Boot.Template.Velocity.Test.pas',
   Sempare.Boot.Template.Velocity.TestIf in 'src\Sempare.Boot.Template.Velocity.TestIf.pas',
   Sempare.Boot.Template.Velocity.TestFor in 'src\Sempare.Boot.Template.Velocity.TestFor.pas',

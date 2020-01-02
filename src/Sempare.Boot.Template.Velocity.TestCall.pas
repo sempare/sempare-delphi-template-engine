@@ -52,19 +52,18 @@ type
 implementation
 
 uses
-  SysUtils,
-  System.Rtti,
-  System.Json,
-  System.Generics.Collections,
-  System.Classes,
-  Sempare.Boot.Template.Velocity,
-  Sempare.Boot.Template.Velocity.Rtti,
-  Sempare.Boot.Template.Velocity.AST,
-  Sempare.Boot.Template.Velocity.Evaluate,
-  Sempare.Boot.Template.Velocity.Common,
-  Sempare.Boot.Template.Velocity.PrettyPrint,
-  Sempare.Boot.Template.Velocity.Lexer;
+  Sempare.Boot.Template.Velocity;
 
+type
+  TAdder = class
+  public
+    class function add(const a, b: extended): extended; static;
+  end;
+
+class function TAdder.add(const a, b: extended): extended;
+begin
+  result := a + b;
+end;
 
 procedure TTestVelocityCall.TestFunctionCall;
 
@@ -72,11 +71,7 @@ var
   ctx: IVelocityContext;
 begin
   ctx := Velocity.Context;
-  ctx.AddFunction('add', 2,
-    function(const Args: TArray<Tvalue>): Tvalue
-    begin
-      result := asnum(Args[0]) + asnum(Args[1]);
-    end);
+  ctx.functions.addfunctions(TAdder);
   Assert.AreEqual('before 22 coool after ', Velocity.Eval(ctx, 'before <% add(15,7) %> <% trim(''   coool   '') %> after '));
 end;
 

@@ -39,18 +39,14 @@ interface
 {$ENDIF}
 
 uses
-  System.Generics.Collections,
-  Sempare.Boot.Template.Velocity.AST,
-  Sempare.Boot.Template.Velocity.Context,
-  Sempare.Boot.Template.Velocity.Rtti;
+  System.Rtti,
+  Sempare.Boot.Template.Velocity.Context;
 
-procedure AssertArgCount(const AArgInfo: TVelocityFunctionInfo; const AArgs: TArray<TVelocityValue>);
-
-procedure RegisterDefaultFunctions(Const AContext: IVelocityContext);
-procedure AddDefaultFunction(const FN: TVelocityFunctionInfo);
+function CreateVelocityFunctions(const ARegisterDefaults: boolean = true): IVelocityFunctions;
+function ToArrayTVarRec(const AArgs: TArray<TValue>): TArray<TVarrec>;
 
 var
-  GFunctionInfo: TDictionary<string, TVelocityFunctionInfo>;
+  GFunctions: IVelocityFunctions;
 
 implementation
 
@@ -58,8 +54,60 @@ uses
   System.StrUtils,
   System.SysUtils,
   System.Math,
-  System.Rtti,
-  System.TypInfo;
+  System.TypInfo,
+  System.Generics.Collections,
+  Sempare.Boot.Template.Velocity.Rtti;
+
+type
+  TVelocityFunctions = class(TInterfacedObject, IVelocityFunctions)
+  private
+    FFunctions: TDictionary<string, TArray<TRttiMethod>>;
+  public
+    constructor Create;
+    destructor Destroy; override;
+
+    function GetIsEmpty: boolean;
+
+    procedure AddFunctions(const AClass: TClass);
+    procedure RegisterDefaults;
+
+    function TryGetValue(const AName: string; out AMethods: TArray<TRttiMethod>): boolean;
+    function Add(const AMethod: TRttiMethod): boolean;
+  end;
+
+function CreateVelocityFunctions(const ARegisterDefaults: boolean): IVelocityFunctions;
+begin
+  result := TVelocityFunctions.Create;
+  if ARegisterDefaults then
+    result.RegisterDefaults;
+end;
+
+function TVelocityFunctions.Add(const AMethod: TRttiMethod): boolean;
+var
+  methods: TArray<TRttiMethod>;
+  name: string;
+begin
+  result := AMethod.IsStatic and AMethod.IsClassMethod and (AMethod.ReturnType.TypeKind <> tkProcedure);
+  if not result then
+    exit;
+
+  name := AMethod.name.ToLower;
+  FFunctions.TryGetValue(name, methods);
+  insert(AMethod, methods, 0);
+  FFunctions.AddOrSetValue(name, methods);
+end;
+
+procedure TVelocityFunctions.AddFunctions(const AClass: TClass);
+var
+  RttiType: TRttiType;
+  RttiMethod: TRttiMethod;
+begin
+  RttiType := GRttiContext.GetType(AClass);
+  for RttiMethod in RttiType.GetMethods do
+  begin
+    Add(RttiMethod);
+  end;
+end;
 
 const
   ARGTYPE_STRING = 'S';
@@ -113,158 +161,142 @@ begin
   end;
 end;
 
-procedure AssertArgCount(const AArgInfo: TVelocityFunctionInfo; const AArgs: TArray<TVelocityValue>);
-var
-  i: integer;
-  msg: string;
-begin
-  if (AArgInfo.MinArgs >= 0) and (AArgInfo.MinArgs = AArgInfo.MaxArgs) and (AArgInfo.MinArgs <> length(AArgs)) then
-    raise Exception.CreateFmt('''%s'' expected %d parameters but was given %d.', [AArgInfo.Name, AArgInfo.MinArgs, length(AArgs)])
-  else
-  begin
-    if (AArgInfo.MinArgs >= 0) and (length(AArgs) < AArgInfo.MinArgs) then
-      raise Exception.CreateFmt('''%s'' expected at least %d parameters but was given %d.', [AArgInfo.Name, AArgInfo.MinArgs, length(AArgs)]);
-    if (AArgInfo.MaxArgs >= 0) and (length(AArgs) > AArgInfo.MaxArgs) then
-      raise Exception.CreateFmt('''%s'' expected at most %d parameters but was given %d.', [AArgInfo.Name, AArgInfo.MaxArgs, length(AArgs)]);
+type
+  TInternalFuntions = class
+  public
+    class function Split(const AString: sTring; const ASep: string): TArray<string>; static;
+    class function Lowercase(const AString: string): string; static;
+    class function Uppercase(const AString: string): string; static;
+    class function Trim(const AString: string): string; static;
+    class function SubStr(const AString: string; AStartOffset: integer): string; overload; static;
+    class function SubStr(const AString: string; AStartOffset, ALength: integer): string; overload; static;
+    class function SubString(const AString: string; AStartOffset, AEndOffset: integer): string; overload; static;
+    class function SubString(const AString: string; AStartOffset: integer): string; overload; static;
+    class function Pos(const search, Str: string; offset: integer): integer; overload; static;
+    class function Pos(const search, Str: string): integer; overload; static;
+    class function Len(const AString: string): integer; static;
+    class function Fmt(const AArgs: TArray<TValue>): string; static;
+    class function FmtDt(const AFormat: string; const ADateTime: TDateTime): string; static;
+    class function DtNow: TDateTime; static;
+    class function Int(const AValue: TValue): integer; static;
+    class function Str(const AValue: TValue): string; static;
+    class function UCFirst(const AString: string): string; static;
+    class function Rev(const AString: string): string; static;
+    class function IsNull(const AValue: TValue): boolean; static;
+    class function IsStr(const AValue: TValue): boolean; static;
+    class function Isint(const AValue: TValue): boolean; static;
+    class function isBool(const AValue): boolean; static;
+    class function IsNum(const AValue: TValue): boolean; static;
   end;
-  if length(AArgInfo.Signature) > 1 then
-  begin
-    for i := 2 to min(length(AArgInfo.Signature), length(AArgs) + 1) do
-    begin
-      if not IsValidArg(i - 1, AArgInfo.Signature[i], AArgs[i - 2], msg) then
-        raise Exception.Create(msg);
-    end;
-  end;
+
+class function TInternalFuntions.Pos(const search, Str: string): integer;
+begin
+  result := System.Pos(search, Str);
 end;
 
-function InternalSplit(const AArgs: TArray<TVelocityValue>): TVelocityValue;
+class function TInternalFuntions.Split(const AString: sTring; const ASep: string): TArray<string>;
 begin
-  AssertArgCount(GFunctionInfo['split'], AArgs);
-  result := TValue.From(asstring(AArgs[0]).split([asstring(AArgs[1])]));
+  result := AString.Split([ASep]);
 end;
 
-function InternalLowercase(const AArgs: TArray<TVelocityValue>): TVelocityValue;
+class function TInternalFuntions.Lowercase(const AString: string): string;
 begin
-  AssertArgCount(GFunctionInfo['lowercase'], AArgs);
-  result := asstring(AArgs[0]).tolower;
+  result := AString.ToLower;
 end;
 
-function InternalUppercase(const AArgs: TArray<TVelocityValue>): TVelocityValue;
+class function TInternalFuntions.Uppercase(const AString: string): string;
 begin
-  AssertArgCount(GFunctionInfo['uppercase'], AArgs);
-  result := asstring(AArgs[0]).toupper;
+  result := AString.ToUpper;
 end;
 
-function InternalTrim(const AArgs: TArray<TVelocityValue>): TVelocityValue;
+class function TInternalFuntions.Trim(const AString: string): string;
 begin
-  AssertArgCount(GFunctionInfo['trim'], AArgs);
-  result := Trim(asstring(AArgs[0]));
+  result := AString.Trim;
 end;
 
-function InternalSubStr(const AArgs: TArray<TVelocityValue>): TVelocityValue;
-var
-  s: string;
-  so, l: integer;
+class function TInternalFuntions.SubStr(const AString: string; AStartOffset: integer; ALength: integer): string;
 begin
-  AssertArgCount(GFunctionInfo['substr'], AArgs);
-  s := asstring(AArgs[0]);
-  so := asInt(AArgs[1]);
-  if so < 0 then
-    so := length(s) + so + 1;
-  if length(AArgs) = 2 then
-    l := length(s)
-  else
-    l := asInt(AArgs[2]);
-  if l < 0 then
-    l := 0;
-  result := copy(s, so, l);
+  if AStartOffset < 0 then
+    AStartOffset := length(AString) + AStartOffset + 1;
+  if ALength < 0 then
+    ALength := 0;
+  result := copy(AString, AStartOffset, ALength);
 end;
 
-function InternalSubString(const AArgs: TArray<TVelocityValue>): TVelocityValue;
-var
-  s: string;
-  so, eo: integer;
+class function TInternalFuntions.SubString(const AString: string; AStartOffset: integer): string;
 begin
-  AssertArgCount(GFunctionInfo['substring'], AArgs);
-  s := asstring(AArgs[0]);
-  so := asInt(AArgs[1]);
-  if so < 0 then
-    so := length(s) + so + 1;
-  if length(AArgs) = 2 then
-    eo := length(s)
-  else
-    eo := asInt(AArgs[2]);
-  if eo < 0 then
-    eo := length(s) + eo + 1;
-  result := copy(s, so, eo - so + 1);
+  result := SubString(AString, AStartOffset, length(AString));
 end;
 
-function InternalPos(const AArgs: TArray<TVelocityValue>): TVelocityValue;
-var
-  offset: integer;
-  search, str: string;
+class function TInternalFuntions.SubStr(const AString: string; AStartOffset: integer): string;
 begin
-  AssertArgCount(GFunctionInfo['pos'], AArgs);
-  search := asstring(AArgs[0]);
-  str := asstring(AArgs[1]);
-  if length(AArgs) = 2 then
-    exit(pos(search, str));
-  offset := asInt(AArgs[2]);
+  result := SubStr(AString, AStartOffset, length(AString));
+end;
+
+class function TInternalFuntions.SubString(const AString: string; AStartOffset: integer; AEndOffset: integer): string;
+begin
+  if AStartOffset < 0 then
+    AStartOffset := length(AString) + AStartOffset + 1;
+  if AEndOffset < 0 then
+    AEndOffset := length(AString) + AEndOffset + 1;
+  result := copy(AString, AStartOffset, AEndOffset - AStartOffset + 1);
+end;
+
+class function TInternalFuntions.Pos(const search: String; const Str: string; offset: integer): integer;
+begin
   if offset < 0 then
-    result := pos(search, str, length(str) + offset)
-  else
-    result := pos(search, str, offset);
+    offset := offset + length(Str);
+  result := System.Pos(search, Str, offset);
 end;
 
-function InternalLen(const AArgs: TArray<TVelocityValue>): TVelocityValue;
+class function TInternalFuntions.Len(const AString: string): integer;
 begin
-  AssertArgCount(GFunctionInfo['len'], AArgs);
-  result := length(asstring(AArgs[0]));
+  result := length(AString);
 end;
 
-function InternalFmt(const AArgs: TArray<TVelocityValue>): TVelocityValue;
+function UnWrap(const AArg: TValue): TValue;
+begin
+  if AArg.TypeInfo = TypeInfo(TValue) then
+    result := UnWrap(AArg.AsType<TValue>())
+  else
+    result := AArg;
+end;
+
+function ToArrayTVarRec(const AArgs: TArray<TValue>): TArray<TVarrec>;
 var
-  args: TArray<TVarRec>;
   i: integer;
 begin
-  AssertArgCount(GFunctionInfo['fmt'], AArgs);
-  setlength(args, length(AArgs) - 1);
-  for i := 1 to length(AArgs) - 1 do
-    args[i - 1] := AArgs[i].AsVarRec;
-  result := format(asstring(AArgs[0]), args);
+  setlength(result, length(AArgs));
+  for i := low(AArgs) to high(AArgs) do
+    result[i] := UnWrap(AArgs[i]).AsVarRec;
 end;
 
-function InternalFmtDate(const AArgs: TArray<TVelocityValue>): TVelocityValue;
-var
-  dt: tdatetime;
+class function TInternalFuntions.Fmt(const AArgs: TArray<TValue>): string;
 begin
-  AssertArgCount(GFunctionInfo['fmtdt'], AArgs);
-  if length(AArgs) = 1 then
-    dt := now
-  else
-    dt := AsDateTime(AArgs[1]);
-  result := FormatDateTime(asstring(AArgs[0]), dt);
+  result := format(asstring(AArgs[0]), ToArrayTVarRec(copy(AArgs, 1, length(AArgs) - 1)));
 end;
 
-function InternalNow(const AArgs: TArray<TVelocityValue>): TVelocityValue;
+class function TInternalFuntions.FmtDt(const AFormat: string; const ADateTime: TDateTime): string;
 begin
-  AssertArgCount(GFunctionInfo['dtnow'], AArgs);
-  result := now;
+  result := FormatDateTime(AFormat, ADateTime);
 end;
 
-function InternalInt(const AArgs: TArray<TVelocityValue>): TVelocityValue;
+class function TInternalFuntions.DtNow(): TDateTime;
 begin
-  AssertArgCount(GFunctionInfo['int'], AArgs);
-  result := asInt(AArgs[0]);
+  result := System.SysUtils.Now;
 end;
 
-function InternalStr(const AArgs: TArray<TVelocityValue>): TVelocityValue;
+class function TInternalFuntions.Int(const AValue: TValue): integer;
 begin
-  AssertArgCount(GFunctionInfo['str'], AArgs);
-  result := asstring(AArgs[0]);
+  result := asInt(AValue);
 end;
 
-function rev(const AStr: string): string;
+class function TInternalFuntions.Str(const AValue: TValue): string;
+begin
+  result := asstring(AValue);
+end;
+
+function reverse(const AStr: string): string;
 var
   i, j, m: integer;
 begin
@@ -281,106 +313,74 @@ begin
   end;
 end;
 
-function InternalUCFirst(const AArgs: TArray<TVelocityValue>): TVelocityValue;
-var
-  s: string;
+class function TInternalFuntions.UCFirst(const AString: string): string;
 begin
-  AssertArgCount(GFunctionInfo['ucfirst'], AArgs);
-  s := lowercase(asstring(AArgs[0]));
-  s[1] := uppercase(s[1])[1];
-  result := s;
+  result := Lowercase(AString);
+  result[1] := Uppercase(result[1])[1];
 end;
 
-function InternalReverse(const AArgs: TArray<TVelocityValue>): TVelocityValue;
+class function TInternalFuntions.Rev(const AString: string): string;
 begin
-  AssertArgCount(GFunctionInfo['rev'], AArgs);
-  result := rev(asstring(AArgs[0]));
+  result := reverse(AString);
 end;
 
-function InternalIsNull(const AArgs: TArray<TVelocityValue>): TVelocityValue;
+class function TInternalFuntions.IsNull(const AValue: TValue): boolean;
 begin
-  AssertArgCount(GFunctionInfo['isnull'], AArgs);
-  result := isnull(AArgs[0]);
+  result := IsNull(AValue);
 end;
 
-function InternalIsStr(const AArgs: TArray<TVelocityValue>): TVelocityValue;
+class function TInternalFuntions.IsStr(const AValue: TValue): boolean;
 begin
-  AssertArgCount(GFunctionInfo['isstr'], AArgs);
-  result := isStrLike(AArgs[0]);
+  result := isStrLike(AValue);
 end;
 
-function InternalIsint(const AArgs: TArray<TVelocityValue>): TVelocityValue;
+class function TInternalFuntions.Isint(const AValue: TValue): boolean;
 begin
-  AssertArgCount(GFunctionInfo['isint'], AArgs);
-  result := isIntLike(AArgs[0]);
+  result := isIntLike(AValue);
 end;
 
-function InternalIsBool(const AArgs: TArray<TVelocityValue>): TVelocityValue;
+class function TInternalFuntions.isBool(const AValue): boolean;
 begin
-  AssertArgCount(GFunctionInfo['isbool'], AArgs);
-  result := isBool(AArgs[0]);
+  result := isBool(AValue);
 end;
 
-function InternalIsNUM(const AArgs: TArray<TVelocityValue>): TVelocityValue;
+class function TInternalFuntions.IsNum(const AValue: TValue): boolean;
 begin
-  AssertArgCount(GFunctionInfo['isnum'], AArgs);
-  result := isnumlike(AArgs[0]);
+  result := isnumlike(AValue);
 end;
 
-procedure RegisterDefaultFunctions(Const AContext: IVelocityContext);
-var
-  FN: TVelocityFunctionInfo;
+constructor TVelocityFunctions.Create;
 begin
-  for FN in GFunctionInfo.Values do
-    AContext.AddFunction(FN);
+  FFunctions := TDictionary < string, TArray < TRttiMethod >>.Create;
 end;
 
-procedure AddDefaultFunction(const FN: TVelocityFunctionInfo);
-
+destructor TVelocityFunctions.Destroy;
 begin
-  GFunctionInfo.AddOrSetValue(FN.Name, FN);
+  FFunctions.Free;
+  inherited;
 end;
 
-procedure RegFunc(const AName: string; const ASig: string; const AMinArgs, AMaxArgs: integer; const AFN: TVelocityFunction);
-var
-  FN: TVelocityFunctionInfo;
-
+function TVelocityFunctions.GetIsEmpty: boolean;
 begin
-  FN.Name := AName;
-  FN.Signature := ASig;
-  FN.MinArgs := AMinArgs;
-  FN.MaxArgs := AMaxArgs;
-  FN.FN := AFN;
-  AddDefaultFunction(FN);
+  result := FFunctions.Count > 0;
+end;
+
+procedure TVelocityFunctions.RegisterDefaults;
+begin
+  AddFunctions(TInternalFuntions);
+end;
+
+function TVelocityFunctions.TryGetValue(const AName: string; out AMethods: TArray<TRttiMethod>): boolean;
+begin
+  result := FFunctions.TryGetValue(AName, AMethods);
 end;
 
 initialization
 
-GFunctionInfo := TDictionary<string, TVelocityFunctionInfo>.Create;
-
-RegFunc('ucfirst', 'S', 1, 1, InternalUCFirst);
-RegFunc('rev', 'S', 1, 1, InternalReverse);
-RegFunc('lowercase', 'SS', 1, 1, InternalLowercase);
-RegFunc('uppercase', 'SS', 1, 1, InternalUppercase);
-RegFunc('split', 'SS', 2, 2, InternalSplit);
-RegFunc('trim', 'SS', 1, 1, InternalTrim);
-RegFunc('substr', 'SSNN', 2, 3, InternalSubStr);
-RegFunc('substring', 'SSNN', 2, 3, InternalSubString);
-RegFunc('pos', 'SSSN', 2, 3, InternalPos);
-RegFunc('len', 'NS', 1, 1, InternalLen);
-RegFunc('fmt', 'SS', 2, -1, InternalFmt);
-RegFunc('fmtdt', 'SSD', 1, 2, InternalFmtDate);
-RegFunc('dtnow', 'D', 0, 0, InternalNow);
-RegFunc('int', 'NS', 1, 1, InternalInt);
-RegFunc('str', '', 1, 1, InternalStr);
-RegFunc('isnull', '', 1, 1, InternalIsNull);
-RegFunc('isstr', '', 1, 1, InternalIsStr);
-RegFunc('isbool', '', 1, 1, InternalIsBool);
-RegFunc('isint', '', 1, 1, InternalIsint);
-RegFunc('isnum', '', 1, 1, InternalIsNUM);
+GFunctions := CreateVelocityFunctions();
 
 finalization
 
-GFunctionInfo.Free;
+GFunctions := nil;
 
 end.

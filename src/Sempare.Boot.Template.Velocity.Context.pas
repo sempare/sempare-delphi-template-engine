@@ -43,10 +43,23 @@ uses
   System.SysUtils,
   System.Generics.Collections,
   Sempare.Boot.Template.Velocity.AST,
-  Sempare.Boot.Template.Velocity.Scope,
+  Sempare.Boot.Template.Velocity.StackFrame,
   Sempare.Boot.Template.Velocity.Common;
 
 type
+  IVelocityFunctions = interface
+    ['{D80C777C-086E-4680-A97B-92B8FA08C995}']
+
+    function GetIsEmpty : boolean;
+    procedure AddFunctions(const AClass: TClass);
+    procedure RegisterDefaults;
+
+    function TryGetValue(const AName: string; out AMethod: TArray<TRttiMethod>): boolean;
+    function Add(const AMethod: TRttiMethod) : boolean;
+
+    property IsEmpty : boolean read GetIsEmpty;
+  end;
+
   TVelocityEvaluationOption = ( //
     eoNoPosition, //
     eoEvalEarly, //
@@ -88,13 +101,9 @@ type
     function GetScriptEndToken: string;
     procedure SetScriptEndToken(const AToken: string);
 
-    function TryGetFunction(const AName: string; out AFunction: TVelocityFunctionInfo): boolean;
-    procedure AddFunction(const AFunctionInfo: TVelocityFunctionInfo); overload;
-    procedure AddFunction(const AFunctionName: string; const AFunction: TVelocityFunction); overload;
-    procedure AddFunction(const AFunctionName: string; const ANumArgs: integer; const AFunction: TVelocityFunction); overload;
-    procedure AddFunction(const AFunctionName: string; const ASignature: string; const AFunction: TVelocityFunction); overload;
-    procedure AddFunction(const AFunctionName: string; const ASignature: string; const AMinArgs, AMaxArgs: integer; const AFunction: TVelocityFunction); overload;
-    procedure AddFunction(const AFunctionName: string; const AMinArgs, AMaxArgs: integer; const AFunction: TVelocityFunction); overload;
+    function TryGetFunction(const AName: string; out AFunction: TArray<TRttiMethod>): boolean;
+    procedure SetFunctions(const AFunctions: IVelocityFunctions);
+    function GetFunctions(): IVelocityFunctions; overload;
 
     function GetMaxRunTimeMs: integer;
     procedure SetMaxRunTimeMs(const ATimeMS: integer);
@@ -109,6 +118,7 @@ type
     function GetNewLine: string;
     procedure SetNewLine(const ANewLine: string);
 
+    property Functions: IVelocityFunctions read GetFunctions write SetFunctions;
     property NewLine: string read GetNewLine write SetNewLine;
     property TemplateResolver: TTemplateResolver read GetTemplateResolver write SetTemplateResolver;
     property MaxRunTimeMs: integer read GetMaxRunTimeMs write SetMaxRunTimeMs;
@@ -123,7 +133,7 @@ type
 
   IVelocityContextForScope = interface
     ['{65466282-2814-42EF-935E-DC45F7B8A3A9}']
-    procedure ApplyTo(const AScope: TVariableScope);
+    procedure ApplyTo(const AScope: TStackFrame);
   end;
 
 function CreateVelocityContext(const AOptions: TVelocityEvaluationOptions = []): IVelocityContext;
@@ -151,8 +161,8 @@ type
     FStartToken: string;
     FEndToken: string;
     FEncoding: TEncoding;
-    FFunctions: TDictionary<string, TVelocityFunctionInfo>;
-    FDefaultFunctionsApplied: boolean;
+    FFunctions: IVelocityFunctions;
+    FFunctionsSet: boolean;
     FVariableEncoder: TVelocityEncodeFunction;
     FMaxRuntimeMs: integer;
     FLock: TCriticalSection;
@@ -190,18 +200,14 @@ type
     function GetVariableEncoder: TVelocityEncodeFunction;
     procedure SetVariableEncoder(const AEncoder: TVelocityEncodeFunction);
 
-    function TryGetFunction(const AName: string; out AFunction: TVelocityFunctionInfo): boolean;
-    procedure AddFunction(const AFunctionInfo: TVelocityFunctionInfo); overload;
-    procedure AddFunction(const AFunctionName: string; const ANumArgs: integer; const AFunction: TVelocityFunction); overload;
-    procedure AddFunction(const AFunctionName: string; const ASignature: string; const AFunction: TVelocityFunction); overload;
-    procedure AddFunction(const AFunctionName: string; const AMinArgs, AMaxArgs: integer; const AFunction: TVelocityFunction); overload;
-    procedure AddFunction(const AFunctionName: string; const ASignature: string; const AMinArgs, AMaxArgs: integer; const AFunction: TVelocityFunction); overload;
-    procedure AddFunction(const AFunctionName: string; const AFunction: TVelocityFunction); overload;
+    function TryGetFunction(const AName: string; out AFunction: TArray<TRttiMethod>): boolean;
+    procedure SetFunctions(const AFunctions: IVelocityFunctions);
+    function GetFunctions(): IVelocityFunctions; overload;
 
     function GetNewLine: string;
     procedure SetNewLine(const ANewLine: string);
 
-    procedure ApplyTo(const AScope: TVariableScope);
+    procedure ApplyTo(const AScope: TStackFrame);
   end;
 
 function CreateVelocityContext(const AOptions: TVelocityEvaluationOptions): IVelocityContext;
@@ -210,61 +216,6 @@ begin
 end;
 
 { TVelocityContext }
-
-procedure TVelocityContext.AddFunction(const AFunctionInfo: TVelocityFunctionInfo);
-begin
-  FLock.Enter;
-  try
-    FFunctions.AddOrSetValue(AFunctionInfo.Name.ToLower, AFunctionInfo);
-  finally
-    FLock.Leave;
-  end;
-end;
-
-procedure TVelocityContext.AddFunction(const AFunctionName: string; const ANumArgs: integer; const AFunction: TVelocityFunction);
-var
-  fn: TVelocityFunctionInfo;
-begin
-  fn.Name := AFunctionName;
-  fn.MinArgs := ANumArgs;
-  fn.MaxArgs := ANumArgs;
-  fn.fn := AFunction;
-  AddFunction(fn);
-end;
-
-procedure TVelocityContext.AddFunction(const AFunctionName, ASignature: string; const AFunction: TVelocityFunction);
-var
-  fn: TVelocityFunctionInfo;
-begin
-  fn.Name := AFunctionName;
-  fn.MinArgs := length(ASignature) - 1;
-  fn.MaxArgs := fn.MinArgs;
-  fn.fn := AFunction;
-  AddFunction(fn);
-end;
-
-procedure TVelocityContext.AddFunction(const AFunctionName: string; const AMinArgs, AMaxArgs: integer; const AFunction: TVelocityFunction);
-var
-  fn: TVelocityFunctionInfo;
-begin
-  fn.Name := AFunctionName;
-  fn.MinArgs := AMinArgs;
-  fn.MaxArgs := AMinArgs;
-  fn.fn := AFunction;
-  AddFunction(fn);
-end;
-
-procedure TVelocityContext.AddFunction(const AFunctionName, ASignature: string; const AMinArgs, AMaxArgs: integer; const AFunction: TVelocityFunction);
-var
-  fn: TVelocityFunctionInfo;
-begin
-  fn.Name := AFunctionName;
-  fn.MinArgs := AMinArgs;
-  fn.MaxArgs := AMinArgs;
-  fn.Signature := ASignature;
-  fn.fn := AFunction;
-  AddFunction(fn);
-end;
 
 procedure TVelocityContext.AddTemplate(const AName: string; const ATemplate: IVelocityTemplate);
 begin
@@ -276,7 +227,7 @@ begin
   end;
 end;
 
-procedure TVelocityContext.ApplyTo(const AScope: TVariableScope);
+procedure TVelocityContext.ApplyTo(const AScope: TStackFrame);
 var
   p: TPair<string, TValue>;
 begin
@@ -295,7 +246,7 @@ begin
   FEndToken := GDefaultCloseTag;
   FTemplates := TDictionary<string, IVelocityTemplate>.Create;
   FScope := TDictionary<string, TValue>.Create;
-  FFunctions := TDictionary<string, TVelocityFunctionInfo>.Create;
+  FFunctions := GFunctions;
   FLock := TCriticalSection.Create;
   FNewLine := GNewLine;
 end;
@@ -304,20 +255,21 @@ destructor TVelocityContext.Destroy;
 begin
   FTemplates.Free;
   FScope.Free;
-  FFunctions.Free;
+  FFunctions := nil;
   FLock.Free;
   inherited;
 end;
 
-function TVelocityContext.TryGetFunction(const AName: string; out AFunction: TVelocityFunctionInfo): boolean;
+function TVelocityContext.TryGetFunction(const AName: string; out AFunction: TArray<TRttiMethod>): boolean;
 begin
-  if not FDefaultFunctionsApplied and not(eoNoDefaultFunctions in FOptions) then
-  begin
-    RegisterDefaultFunctions(self);
-    FDefaultFunctionsApplied := true;
-  end;
   FLock.Enter;
   try
+    if not FFunctionsSet and not(eoNoDefaultFunctions in FOptions) then
+    begin
+      if FFunctions.IsEmpty then
+        FFunctions.RegisterDefaults;
+      FFunctionsSet := true;
+    end;
     result := FFunctions.TryGetValue(AName.ToLower, AFunction);
   finally
     FLock.Leave;
@@ -327,6 +279,11 @@ end;
 function TVelocityContext.GetEncoding: TEncoding;
 begin
   result := FEncoding;
+end;
+
+function TVelocityContext.GetFunctions: IVelocityFunctions;
+begin
+  result := FFunctions;
 end;
 
 function TVelocityContext.GetMaxRunTimeMs: integer;
@@ -383,6 +340,12 @@ end;
 procedure TVelocityContext.SetEncoding(const AEncoding: TEncoding);
 begin
   FEncoding := AEncoding;
+end;
+
+procedure TVelocityContext.SetFunctions(const AFunctions: IVelocityFunctions);
+begin
+  FFunctions := AFunctions;
+  FFunctionsSet := true;
 end;
 
 procedure TVelocityContext.SetMaxRunTimeMs(const ATimeMS: integer);
@@ -465,18 +428,6 @@ begin
     begin
       result := TNetEncoding.HTML.Encode(AValue);
     end;
-end;
-
-procedure TVelocityContext.AddFunction(const AFunctionName: string; const AFunction: TVelocityFunction);
-var
-  fn: TVelocityFunctionInfo;
-begin
-  fn.Name := AFunctionName;
-  fn.MinArgs := -1;
-  fn.MaxArgs := -1;
-  fn.Signature := '';
-  fn.fn := AFunction;
-  AddFunction(fn);
 end;
 
 end.

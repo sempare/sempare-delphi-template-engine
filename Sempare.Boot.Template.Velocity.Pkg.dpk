@@ -41,21 +41,21 @@
 {$EXTENDEDSYNTAX ON}
 {$IMPORTEDDATA ON}
 {$IOCHECKS ON}
-{$LOCALSYMBOLS OFF}
+{$LOCALSYMBOLS ON}
 {$LONGSTRINGS ON}
 {$OPENSTRINGS ON}
-{$OPTIMIZATION ON}
+{$OPTIMIZATION OFF}
 {$OVERFLOWCHECKS OFF}
 {$RANGECHECKS OFF}
-{$REFERENCEINFO OFF}
+{$REFERENCEINFO ON}
 {$SAFEDIVIDE OFF}
-{$STACKFRAMES OFF}
+{$STACKFRAMES ON}
 {$TYPEDADDRESS OFF}
 {$VARSTRINGCHECKS ON}
 {$WRITEABLECONST OFF}
 {$MINENUMSIZE 1}
 {$IMAGEBASE $400000}
-{$DEFINE RELEASE}
+{$DEFINE DEBUG}
 {$ENDIF IMPLICITBUILDING}
 {$IMPLICITBUILD ON}
 
@@ -73,7 +73,7 @@ contains
   Sempare.Boot.Template.Velocity in 'src\Sempare.Boot.Template.Velocity.pas',
   Sempare.Boot.Template.Velocity.PrettyPrint in 'src\Sempare.Boot.Template.Velocity.PrettyPrint.pas',
   Sempare.Boot.Template.Velocity.Rtti in 'src\Sempare.Boot.Template.Velocity.Rtti.pas',
-  Sempare.Boot.Template.Velocity.Scope in 'src\Sempare.Boot.Template.Velocity.Scope.pas',
+  Sempare.Boot.Template.Velocity.StackFrame in 'src\Sempare.Boot.Template.Velocity.StackFrame.pas',
   Sempare.Boot.Template.Velocity.Util in 'src\Sempare.Boot.Template.Velocity.Util.pas',
   Sempare.Boot.Template.Velocity.Visitor in 'src\Sempare.Boot.Template.Velocity.Visitor.pas';
 

@@ -69,6 +69,7 @@ type
     procedure Visit(const AExprList: IExprList); overload; override;
     procedure Visit(const AExpr: IEncodeExpr); overload; override;
     procedure Visit(const AExpr: ITernaryExpr); overload; override;
+    procedure Visit(const AExpr: IArrayExpr); overload; override;
 
     procedure Visit(const AStmt: IAssignStmt); overload; override;
     procedure Visit(const AStmt: IContinueStmt); overload; override;
@@ -360,7 +361,7 @@ end;
 
 procedure TPrettyPrintVelocityVisitor.Visit(const AStmt: IFunctionCallExpr);
 begin
-  write('%s', [AStmt.FunctionInfo.Name]);
+  write('%s', [AStmt.FunctionInfo[0].Name]);
   Visit(AStmt.ExprList);
 end;
 
@@ -401,6 +402,20 @@ begin
   delta(-4);
   tab();
   writeln('<% end %>');
+end;
+
+procedure TPrettyPrintVelocityVisitor.Visit(const AExpr: IArrayExpr);
+var
+  i: integer;
+begin
+  write('[');
+  for i := 0 to AExpr.Value.Count - 1 do
+  begin
+    if i > 0 then
+      write(',');
+    AcceptVisitor(AExpr.Value.Expr[i], self);
+  end;
+  write(']');
 end;
 
 procedure TPrettyPrintVelocityVisitor.Visit(const AExpr: ITernaryExpr);

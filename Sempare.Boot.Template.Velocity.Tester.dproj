@@ -175,7 +175,6 @@
     <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
         <DCC_RemoteDebug>false</DCC_RemoteDebug>
         <VerInfo_Locale>1033</VerInfo_Locale>
-        <DCC_DebugDCUs>false</DCC_DebugDCUs>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <DCC_LocalDebugSymbols>false</DCC_LocalDebugSymbols>
@@ -193,7 +192,7 @@
         </DelphiCompile>
         <DCCReference Include="src\Sempare.Boot.Template.Velocity.Functions.Test.pas"/>
         <DCCReference Include="src\Sempare.Boot.Template.Velocity.Lexer.Test.pas"/>
-        <DCCReference Include="src\Sempare.Boot.Template.Velocity.Scope.Test.pas"/>
+        <DCCReference Include="src\Sempare.Boot.Template.Velocity.StackFrame.Test.pas"/>
         <DCCReference Include="src\Sempare.Boot.Template.Velocity.Test.pas"/>
         <DCCReference Include="src\Sempare.Boot.Template.Velocity.TestIf.pas"/>
         <DCCReference Include="src\Sempare.Boot.Template.Velocity.TestFor.pas"/>

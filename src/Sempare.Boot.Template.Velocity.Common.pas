@@ -72,140 +72,26 @@ type
 function AsVisitorHost(const ATemplate: IVelocityTemplate): IVelocityVisitorHost; inline; overload;
 function AsVisitorHost(const AExpr: IExpr): IVelocityVisitorHost; inline; overload;
 function AsVisitorHost(const AStmt: IStmt): IVelocityVisitorHost; inline; overload;
+
 procedure AcceptVisitor(const ATemplate: IVelocityTemplate; const AVisitor: IVelocityVisitor); overload;
 procedure AcceptVisitor(const AExpr: IExpr; const AVisitor: IVelocityVisitor); overload;
 procedure AcceptVisitor(const AStmt: IStmt; const AVisitor: IVelocityVisitor); overload;
+
 function Position(const AStmt: IStmt): IPosition; inline; overload;
 function Position(const AExpr: IExpr): IPosition; inline; overload;
 function Position(const APositional: IPosition): string; inline; overload;
+
 procedure RaiseError(const APositional: IPosition; const AFormat: string; const AArgs: array of const); overload;
 procedure RaiseError(const APositional: IPosition; const AFormat: string); overload;
-procedure AssertBoolean(const APositional: IPosition; const ALeft: TValue); overload;
-procedure AssertBoolean(const APositional: IPosition; const ALeft: TValue; const ARight: TValue); overload;
-procedure AssertNumeric(const APositional: IPosition; const ALeft: TValue); overload;
-procedure AssertNumeric(const APositional: IPosition; const ALeft: TValue; const ARight: TValue); overload;
-procedure AssertString(const APositional: IPosition; const AValue: TValue);
 
-function Deref(const AVar, ADeref: TValue): TValue;
+
 
 implementation
 
-uses
-  System.JSON,
-  Sempare.Boot.Template.Velocity.Rtti;
+//uses
+//  System.JSON,
+//  Sempare.Boot.Template.Velocity.Rtti;
 
-function Deref(const AVar, ADeref: TValue): TValue;
-
-  function ProcessArray(obj: TValue; const ADeref: TValue): TValue;
-  var
-    i: integer;
-    RttiType: TRttiArrayType;
-  begin
-    i := asint(ADeref);
-    RttiType := GRttiContext.GetType(obj.TypeInfo) as TRttiArrayType;
-    result := obj.GetArrayElement(i - (RttiType.Dimensions[0] as TRttiOrdinalType).MinValue);
-  end;
-
-  function ProcessDynArray(obj: TValue; const ADeref: TValue): TValue;
-  var
-    i: integer;
-  begin
-    i := asint(ADeref);
-    result := obj.GetArrayElement(i);
-  end;
-
-  function GetFieldOrProperty(const APtr: pointer; RttiType: TRttiType; const ADeref: TValue): TValue;
-  var
-    RttiField: TRttiField;
-    RttiProp: TRttiProperty;
-    ref: string;
-  begin
-    ref := AsString(ADeref);
-    RttiField := RttiType.GetField(ref);
-    if RttiField <> nil then
-      exit(RttiField.GetValue(APtr));
-    RttiProp := RttiType.GetProperty(ref);
-    if RttiProp <> nil then
-      exit(RttiProp.GetValue(APtr));
-  end;
-
-  function processDictionary(const obj: TValue; const ADeref: TValue): TValue;
-  var
-    RttiType: TRttiType;
-    RttiMethod: TRttiMethod;
-  begin
-    RttiType := GRttiContext.GetType(obj.TypeInfo);
-    // for RttiMethod in RttiType.GetMethods do
-    // writeln(RttiMethod.Name);
-    RttiMethod := RttiType.GetMethod('GetItem');
-    result := RttiMethod.Invoke(obj.AsObject, [ADeref]);
-  end;
-
-  function processJson(const obj: TValue; const ADeref: TValue): TValue;
-  var
-    jsonobj: tjsonobject;
-    jsonval: tjsonvalue;
-    key: string;
-  begin
-    jsonobj := obj.AsObject as tjsonobject;
-    key := AsString(ADeref);
-    jsonval := jsonobj.GetValue(key);
-    if jsonval is TJSONBool then
-    begin
-      result := jsonval.AsType<boolean>();
-    end
-    else if jsonval is TJSONString then
-    begin
-      result := jsonval.AsType<string>();
-    end
-    else if jsonval is TJSONNumber then
-    begin
-      result := jsonval.AsType<extended>();
-    end
-    else if jsonval is tjsonobject then
-    begin
-      result := jsonval;
-    end
-    else
-      result := nil;
-  end;
-
-  function ProcessClass(const obj: TValue; const ADeref: TValue): TValue;
-  var
-    ClassType: TClass;
-  begin
-    ClassType := obj.AsObject.ClassType;
-    if ClassType.QualifiedClassName.StartsWith('System.Generics.Collections.TDictionary') then
-    begin
-      exit(processDictionary(obj, ADeref));
-    end;
-    if ClassType = tjsonobject then
-    begin
-      exit(processJson(obj, ADeref));
-    end;
-
-    result := GetFieldOrProperty(obj.AsObject, GRttiContext.GetType(obj.TypeInfo), ADeref);
-  end;
-
-  function ProcessRecord(const obj: TValue; const ADeref: TValue): TValue;
-  begin
-    result := GetFieldOrProperty(obj.GetReferenceToRawData, GRttiContext.GetType(obj.TypeInfo), ADeref);
-  end;
-
-begin
-  case AVar.Kind of
-    tkClass:
-      result := ProcessClass(AVar, ADeref);
-    tkRecord:
-      result := ProcessRecord(AVar, ADeref);
-    tkArray:
-      result := ProcessArray(AVar, ADeref);
-    tkDynArray:
-      result := ProcessDynArray(AVar, ADeref);
-  else
-    raise Exception.Create('Cannot dereference variable');
-  end;
-end;
 
 function AsVisitorHost(const ATemplate: IVelocityTemplate): IVelocityVisitorHost; overload;
 begin
@@ -276,40 +162,6 @@ begin
   RaiseError(APositional, AFormat, []);
 end;
 
-procedure AssertBoolean(const APositional: IPosition; const ALeft: TValue); overload;
-begin
-  if isBool(ALeft) then
-    exit;
-  RaiseError(APositional, 'Boolean type expected');
-end;
-
-procedure AssertBoolean(const APositional: IPosition; const ALeft: TValue; const ARight: TValue); overload;
-begin
-  if isBool(ALeft) and isBool(ARight) then
-    exit;
-  RaiseError(APositional, 'Boolean types expected');
-end;
-
-procedure AssertNumeric(const APositional: IPosition; const ALeft: TValue); overload;
-begin
-  if isNumLike(ALeft) then
-    exit;
-  RaiseError(APositional, 'Numeric type expected');
-end;
-
-procedure AssertNumeric(const APositional: IPosition; const ALeft: TValue; const ARight: TValue); overload;
-begin
-  if isNumLike(ALeft) and isNumLike(ARight) then
-    exit;
-  RaiseError(APositional, 'Numeric types expected');
-end;
-
-procedure AssertString(const APositional: IPosition; const AValue: TValue);
-begin
-  if isStrLike(AValue) then
-    exit;
-  RaiseError(APositional, 'String type expected');
-end;
 
 { EVelocityEvaluationError }
 

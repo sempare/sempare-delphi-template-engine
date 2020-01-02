@@ -45,31 +45,22 @@ type
 
     [Test]
     procedure TestTrim();
-
     [Test]
     procedure TestSubStr();
-
     [Test]
     procedure TestSubString();
-
     [Test]
     procedure TestPos();
-
     [Test]
     procedure TestLen();
-
     [Test]
     procedure TestDtNow();
-
     [Test]
     procedure TestFmt();
-
     [Test]
     procedure TestFmtDate();
-
     [Test]
     procedure TestStr();
-
     [Test]
     procedure TestInt();
     [Test]
@@ -89,6 +80,7 @@ implementation
 uses
   System.SysUtils,
   Sempare.Boot.Template.Velocity.Functions,
+  Sempare.Boot.Template.Velocity.Context,
   Sempare.Boot.Template.Velocity;
 
 { TFunctionTest }
@@ -106,24 +98,34 @@ begin
   Assert.AreEqual('hello world', Velocity.Eval('<% fmt(''%s %s'', ''hello'', ''world'') %>'));
 end;
 
+type
+  TDTNow = class
+  public
+    class function dtnow: tdatetime; static;
+  end;
+
+class function TDTNow.dtnow: tdatetime;
+begin
+  result := 43821;
+end;
+
 procedure TFunctionTest.TestFmtDate;
 var
   ctx: IVelocityContext;
+  Functions: IVelocityFunctions;
 begin
+  Functions := CreateVelocityFunctions;
+  Functions.RegisterDefaults;
+  Functions.AddFunctions(TDTNow);
+
   ctx := Velocity.Context([eoNoDefaultFunctions]);
-  ctx.AddFunction('dtnow',
-    function(const AArgs: TArray<TVelocityValue>): TVelocityValue
-    begin
-      result := 43821;
-    end);
-  ctx.AddFunction('fmtdt', GFunctionInfo.Items['fmtdt'].FN);
-  Assert.AreEqual(formatdatetime('2019-12-22', now), Velocity.Eval(ctx, '<% fmtdt(''yyyy-mm-dd'', dtnow()) %>'));
+  ctx.Functions := Functions;
+  Assert.AreEqual('2019-12-22', Velocity.Eval(ctx, '<% fmtdt(''yyyy-mm-dd'', dtnow()) %>'));
 end;
 
 procedure TFunctionTest.TestInt;
 begin
   Assert.AreEqual('123', Velocity.Eval('<% int(''123'') %>'));
-
 end;
 
 procedure TFunctionTest.TestLen;

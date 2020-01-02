@@ -45,7 +45,7 @@ uses
   System.Diagnostics,
   System.Generics.Collections,
   Sempare.Boot.Template.Velocity.AST,
-  Sempare.Boot.Template.Velocity.Scope,
+  Sempare.Boot.Template.Velocity.StackFrame,
   Sempare.Boot.Template.Velocity.Common,
   Sempare.Boot.Template.Velocity.PrettyPrint,
   Sempare.Boot.Template.Velocity.Context,
@@ -59,7 +59,7 @@ type
   private
     FPretty: IVelocityVisitor;
     FStopWatch: TStopWatch;
-    FScopeStack: TObjectStack<TVariableScope>;
+    FScopeStack: TObjectStack<TStackFrame>;
     FEvalStack: TStack<TValue>;
     FStream: TStream;
     FStreamWriter: TStreamWriter;
@@ -73,10 +73,12 @@ type
     function EncodeVariable(const AValue: TValue): TValue;
     procedure CheckRunTime(const APosition: IPosition);
     function ExprListArgs(const AExprList: IExprList): TArray<TValue>;
+    function Invoke(const AFuncCall: IFunctionCallExpr; const AArgs: TArray<TValue>): TValue; overload;
+    function Invoke(const AExpr: IMethodCallExpr; const AObject: TObject; const AArgs: TArray<TValue>): TValue; overload;
 
   public
     constructor Create(const AContext: IVelocityContext; const AValue: TValue; const AStream: TStream); overload;
-    constructor Create(const AContext: IVelocityContext; const AScope: TVariableScope; const AStream: TStream); overload;
+    constructor Create(const AContext: IVelocityContext; const AScope: TStackFrame; const AStream: TStream); overload;
     destructor Destroy; override;
 
     procedure Visit(const AExpr: IBinopExpr); overload; override;
@@ -87,6 +89,9 @@ type
     procedure Visit(const AExprList: IExprList); overload; override;
     procedure Visit(const AExpr: ITernaryExpr); overload; override;
     procedure Visit(const AExpr: IEncodeExpr); overload; override;
+    procedure Visit(const AExpr: IFunctionCallExpr); overload; override;
+    procedure Visit(const AExpr: IMethodCallExpr); overload; override;
+    procedure Visit(const AExpr: IArrayExpr); overload; override;
 
     procedure Visit(const AStmt: IAssignStmt); overload; override;
     procedure Visit(const AStmt: IContinueStmt); overload; override;
@@ -99,8 +104,6 @@ type
     procedure Visit(const AStmt: IWhileStmt); overload; override;
     procedure Visit(const AStmt: IForInStmt); overload; override;
     procedure Visit(const AStmt: IForRangeStmt); overload; override;
-    procedure Visit(const AStmt: IFunctionCallExpr); overload; override;
-    procedure Visit(const AStmt: IMethodCallExpr); overload; override;
 
     procedure Visit(const AStmt: IProcessTemplateStmt); overload; override;
     procedure Visit(const AStmt: IDefineTemplateStmt); overload; override;
@@ -122,9 +125,9 @@ const
 
 constructor TEvaluationVelocityVisitor.Create(const AContext: IVelocityContext; const AValue: TValue; const AStream: TStream);
 var
-  Scope: TVariableScope;
+  Scope: TStackFrame;
 begin
-  Scope := TVariableScope.Create(AValue, nil);
+  Scope := TStackFrame.Create(AValue, nil);
   Create(AContext, Scope, AStream);
 end;
 
@@ -180,6 +183,8 @@ begin
   right := FEvalStack.pop;
   left := FEvalStack.pop;
   case AExpr.BinOp of
+    boIN:
+      res := contains(Position(AExpr.RightExpr), left, right);
     boAND:
       begin
         AssertBoolean(Position(AExpr.LeftExpr), left, right);
@@ -259,7 +264,7 @@ end;
 
 procedure TEvaluationVelocityVisitor.Visit(const AExpr: IVariableExpr);
 var
-  Scope: TVariableScope;
+  Scope: TStackFrame;
   val: TValue;
 begin
   if FAllowRootDeref then
@@ -312,7 +317,7 @@ var
   InLoop: IPreserveValue<boolean>;
   LContinue: IPreserveValue<boolean>;
   LBreak: IPreserveValue<boolean>;
-  e: tobject;
+  e: TObject;
   v: string;
   val, Eval: TValue;
   T: TRttiType;
@@ -413,7 +418,7 @@ begin
     RaiseError(APosition, 'Max runtime of %dms has been exceeded.', [FContext.MaxRunTimeMs]);
 end;
 
-constructor TEvaluationVelocityVisitor.Create(const AContext: IVelocityContext; const AScope: TVariableScope; const AStream: TStream);
+constructor TEvaluationVelocityVisitor.Create(const AContext: IVelocityContext; const AScope: TStackFrame; const AStream: TStream);
 var
   apply: IVelocityContextForScope;
 begin
@@ -432,7 +437,7 @@ begin
   FStreamWriter := TStreamWriter.Create(FStream, FContext.Encoding);
 
   FEvalStack := TStack<TValue>.Create;
-  FScopeStack := TObjectStack<TVariableScope>.Create;
+  FScopeStack := TObjectStack<TStackFrame>.Create;
   FScopeStack.push(AScope);
 
   if AContext.QueryInterface(IVelocityContextForScope, apply) = s_ok then
@@ -460,21 +465,20 @@ end;
 
 function TEvaluationVelocityVisitor.ExprListArgs(const AExprList: IExprList): TArray<TValue>;
 var
-  args: TArray<TValue>;
   i: integer;
   Count: integer;
+  v: TValue;
 begin
   AExprList.Accept(self);
 
   Count := asint(FEvalStack.pop());
   if Count <> AExprList.Count then // this should not happen
     RaiseError(nil, 'Number of arguments mismatch');
-
-  for i := 1 to Count do
+  setlength(result, Count);
+  for i := 0 to Count - 1 do
   begin
-    insert(FEvalStack.pop, args, length(args));
+    result[i] := FEvalStack.pop;
   end;
-  result := args;
 end;
 
 procedure TEvaluationVelocityVisitor.Visit(const AStmt: IForRangeStmt);
@@ -580,32 +584,101 @@ begin
   FStreamWriter.Write(AsString(FEvalStack.pop));
 end;
 
-procedure TEvaluationVelocityVisitor.Visit(const AStmt: IFunctionCallExpr);
-var
-  args: TArray<TValue>;
+function CastArg(const AValue: TValue; const AType: TRttiType): TValue;
 begin
-  args := ExprListArgs(AStmt.exprlist);
-  try
-    FEvalStack.push(AStmt.Invoke(args));
-  except
-    on e: Exception do
-      RaiseError(Position(AStmt), e.Message);
+  case AType.TypeKind of
+    tkInteger, tkInt64:
+      if not(AValue.Kind in [tkInteger, tkInt64]) then
+        exit(asint(AValue));
+    tkFloat:
+      if AValue.Kind <> tkFloat then
+        exit(Asnum(AValue));
+    tkString, tkWideString, tkAnsiString, tkUnicodeString:
+      if not(AValue.Kind in [tkString, tkWideString, tkAnsiString, tkUnicodeString]) then
+        exit(AsString(AValue));
+    tkEnumeration:
+      if AType.Handle = TypeInfo(boolean) then
+        exit(AsBoolean(AValue));
+    tkrecord:
+      if AType.Handle = TypeInfo(tvarrec) then
+        exit(AValue.AsVarRec);
+  end;
+  exit(AValue);
+end;
+
+function GetArgs(const AMethod: TRttiMethod; const AArgs: TArray<TValue>): TArray<TValue>;
+var
+  arg: TRttiParameter;
+  i: integer;
+begin
+  if (length(AMethod.GetParameters) = 1) and (AMethod.GetParameters[0].ParamType.TypeKind = tkDynArray) then
+  begin
+    setlength(result, 1);
+    result[0] := TValue.From(AArgs);
+    exit;
+  end;
+  setlength(result, length(AArgs));
+  i := 0;
+  for arg in AMethod.GetParameters do
+  begin
+    result[i] := CastArg(AArgs[i], arg.ParamType);
+    inc(i);
   end;
 end;
 
-procedure TEvaluationVelocityVisitor.Visit(const AStmt: IMethodCallExpr);
+function TEvaluationVelocityVisitor.Invoke(const AFuncCall: IFunctionCallExpr; const AArgs: TArray<TValue>): TValue;
+var
+  m: TRttiMethod;
+begin
+  if length(AFuncCall.FunctionInfo) = 1 then
+    m := AFuncCall.FunctionInfo[0]
+  else
+  begin
+    for m in AFuncCall.FunctionInfo do
+      if length(m.GetParameters) = length(AArgs) then
+        break;
+  end;
+  if length(m.GetParameters) = 0 then
+    result := m.Invoke(nil, [])
+  else
+    result := m.Invoke(nil, GetArgs(m, AArgs));
+end;
+
+procedure TEvaluationVelocityVisitor.Visit(const AExpr: IFunctionCallExpr);
+begin
+  try
+    FEvalStack.push(Invoke(AExpr, ExprListArgs(AExpr.exprlist)));
+  except
+    on e: Exception do
+      RaiseError(Position(AExpr), e.Message);
+  end;
+end;
+
+function TEvaluationVelocityVisitor.Invoke(const AExpr: IMethodCallExpr; const AObject: TObject; const AArgs: TArray<TValue>): TValue;
+var
+  RttiType: TRttiType;
+begin
+  if AExpr.RttiMethod = nil then
+  begin
+    RttiType := GRttiContext.GetType(AObject.ClassType);
+    AExpr.RttiMethod := RttiType.GetMethod(AExpr.Method);
+  end;
+  result := AExpr.RttiMethod.Invoke(AObject, AArgs);
+end;
+
+procedure TEvaluationVelocityVisitor.Visit(const AExpr: IMethodCallExpr);
 var
   obj: TValue;
   args: TArray<TValue>;
 begin
-  acceptvisitor(AStmt.ObjectExpr, self);
+  acceptvisitor(AExpr.ObjectExpr, self);
   obj := FEvalStack.pop;
-  args := ExprListArgs(AStmt.exprlist);
+  args := ExprListArgs(AExpr.exprlist);
   try
-    FEvalStack.push(AStmt.Invoke(obj.AsObject, args));
+    FEvalStack.push(Invoke(AExpr, obj.AsObject, args));
   except
     on e: Exception do
-      RaiseError(Position(AStmt), e.Message);
+      RaiseError(Position(AExpr), e.Message);
   end;
 end;
 
@@ -633,10 +706,10 @@ end;
 procedure TEvaluationVelocityVisitor.Visit(const AStmt: IWithStmt);
 
 var
-  VarScope: TVariableScope;
+  VarScope: TStackFrame;
 
 procedure scopeClass(const ARttiType: TRttiType; const ARecord: TValue); forward;
-procedure scopeDictionary(const ARttiType: TRttiType; const ADict: tobject); forward;
+procedure scopeDictionary(const ARttiType: TRttiType; const ADict: TObject); forward;
 procedure scopeJsonObject(const ARttiType: TRttiType; const AObj: tjsonobject); forward;
 procedure scopeRecord(const ARttiType: TRttiType; const ARecord: TValue); forward;
 
@@ -648,7 +721,7 @@ procedure scopeRecord(const ARttiType: TRttiType; const ARecord: TValue); forwar
     case RttiType.TypeKind of
       tkClass, tkClassRef:
         scopeClass(RttiType, ARecord);
-      tkRecord:
+      tkrecord:
         scopeRecord(RttiType, ARecord);
     else
       raise Exception.Create('Scope must be defined on a class or record.');
@@ -659,7 +732,7 @@ procedure scopeRecord(const ARttiType: TRttiType; const ARecord: TValue); forwar
   var
     field: TRttiField;
     prop: TRttiProperty;
-    obj: tobject;
+    obj: TObject;
   begin
     obj := ARecord.AsObject;
     if obj.ClassType.QualifiedClassName.StartsWith('System.Generics.Collections.TDictionary<System.string') then
@@ -681,9 +754,9 @@ procedure scopeRecord(const ARttiType: TRttiType; const ARecord: TValue); forwar
       VarScope[prop.Name] := prop.GetValue(obj);
   end;
 
-  procedure scopeDictionary(const ARttiType: TRttiType; const ADict: tobject);
+  procedure scopeDictionary(const ARttiType: TRttiType; const ADict: TObject);
   var
-    e: tobject;
+    e: TObject;
     T: TRttiType;
     m, movenext: TRttiMethod;
     current: TRttiProperty;
@@ -774,6 +847,16 @@ begin
   acceptvisitor(AStmt.Container, self);
 
   FScopeStack.pop;
+end;
+
+procedure TEvaluationVelocityVisitor.Visit(const AExpr: IArrayExpr);
+var
+  exprs: TArray<TValue>;
+  v: TValue;
+begin
+  exprs := ExprListArgs(AExpr.Value);
+  v := TValue.From < TArray < TValue >> (exprs);
+  FEvalStack.push(v);
 end;
 
 procedure TEvaluationVelocityVisitor.Visit(const AExpr: ITernaryExpr);

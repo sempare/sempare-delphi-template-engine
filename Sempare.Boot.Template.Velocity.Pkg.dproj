@@ -149,7 +149,7 @@
         <DCCReference Include="src\Sempare.Boot.Template.Velocity.pas"/>
         <DCCReference Include="src\Sempare.Boot.Template.Velocity.PrettyPrint.pas"/>
         <DCCReference Include="src\Sempare.Boot.Template.Velocity.Rtti.pas"/>
-        <DCCReference Include="src\Sempare.Boot.Template.Velocity.Scope.pas"/>
+        <DCCReference Include="src\Sempare.Boot.Template.Velocity.StackFrame.pas"/>
         <DCCReference Include="src\Sempare.Boot.Template.Velocity.Util.pas"/>
         <DCCReference Include="src\Sempare.Boot.Template.Velocity.Visitor.pas"/>
         <BuildConfiguration Include="Release">

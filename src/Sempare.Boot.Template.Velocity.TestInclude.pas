@@ -57,6 +57,7 @@ uses
   System.Classes,
   Sempare.Boot.Template.Velocity,
   Sempare.Boot.Template.Velocity.Rtti,
+  Sempare.Boot.Template.Velocity.Context,
   Sempare.Boot.Template.Velocity.AST,
   Sempare.Boot.Template.Velocity.Evaluate,
   Sempare.Boot.Template.Velocity.Common,

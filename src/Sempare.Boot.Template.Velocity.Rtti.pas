@@ -37,12 +37,11 @@ interface
 {$IF defined(FPC)}
 {$MODE Delphi}
 {$ENDIF}
-
-
 // Moved from Sempare.Boot.Rtti to make this standalone
 
 uses
-  System.Rtti;
+  System.Rtti,
+  Sempare.Boot.Template.Velocity.AST;
 
 function AsBoolean(const AValue: TValue): boolean;
 function AsString(const AValue: TValue): string;
@@ -55,10 +54,22 @@ function isStrLike(const AValue: TValue): boolean;
 function isIntLike(const AValue: TValue): boolean;
 function isNumLike(const AValue: TValue): boolean;
 function isNull(const AValue: TValue): boolean;
+function isEnumerable(const AValue: TValue): boolean;
+function Contains(const APosition: IPosition; const ALeft, ARight: TValue): boolean;
 
 function isEqual(const left: TValue; const right: TValue): boolean;
 function isLessThan(const left: TValue; const right: TValue): boolean;
 function isGreaterThan(const left: TValue; const right: TValue): boolean;
+
+procedure AssertBoolean(const APositional: IPosition; const ALeft: TValue); overload;
+procedure AssertBoolean(const APositional: IPosition; const ALeft: TValue; const ARight: TValue); overload;
+
+procedure AssertNumeric(const APositional: IPosition; const ALeft: TValue); overload;
+procedure AssertNumeric(const APositional: IPosition; const ALeft: TValue; const ARight: TValue); overload;
+procedure AssertString(const APositional: IPosition; const AValue: TValue);
+procedure AssertArray(const APositional: IPosition; const AValue: TValue);
+
+function Deref(const AVar, ADeref: TValue): TValue;
 
 var
   EQUALITY_PRECISION: extended = 1E-8;
@@ -68,7 +79,10 @@ implementation
 
 uses
   System.Math,
-  System.SysUtils;
+  System.SysUtils,
+  System.JSON,
+  System.Generics.Collections,
+  Sempare.Boot.Template.Velocity.Common;
 
 const
   INT_LIKE: set of TTypeKind = [tkInteger, tkInt64];
@@ -78,6 +92,119 @@ const
 function isNull(const AValue: TValue): boolean;
 begin
   result := AValue.IsEmpty;
+end;
+
+function Contains(const APosition: IPosition; const ALeft, ARight: TValue): boolean;
+
+  procedure visitobject;
+  var
+    val: TValue;
+    e: TObject;
+    m, movenext: TRttiMethod;
+    T: TRttiType;
+    current: TRttiProperty;
+  begin
+    m := T.GetMethod('GetEnumerator');
+    if m = nil then
+      RaiseError(APosition, 'GetEnumerator not found on object.');
+    val := m.Invoke(ARight.AsObject, []).AsObject;
+    if val.IsEmpty then
+      raise Exception.Create('Value is not enumerable');
+    e := val.AsObject;
+    T := GRttiContext.GetType(e.ClassType);
+    movenext := T.GetMethod('MoveNext');
+    current := T.GetProperty('Current');
+    result := false;
+    while movenext.Invoke(e, []).AsBoolean do
+    begin
+      val := current.GetValue(e);
+      if val.TypeInfo = TypeInfo(TValue) then
+        val := val.Astype<TValue>();
+      if isEqual(ALeft, val) then
+      begin
+        result := true;
+        exit;
+      end;
+    end;
+    exit;
+  end;
+
+  procedure visitarray;
+  var
+    at: TRttiArrayType;
+    Dt: TRttiOrdinalType;
+    i, ai: integer;
+    T: TRttiType;
+    v: TValue;
+  begin
+    at := T as TRttiArrayType;
+    if at.DimensionCount > 1 then
+      RaiseError(APosition, 'Only one dimensional arrays are supported.');
+    Dt := at.Dimensions[0] as TRttiOrdinalType;
+    result := false;
+    for i := 0 to ARight.GetArrayLength - 1 do
+    begin
+      v := ARight.GetArrayElement(i);
+      if v.TypeInfo = TypeInfo(TValue) then
+        v := v.Astype<TValue>();
+      if isEqual(ALeft, v) then
+      begin
+        result := true;
+        exit;
+      end;
+    end;
+  end;
+
+  procedure visitdynarray;
+  var
+    i: integer;
+    v: TValue;
+  begin
+    result := false;
+    for i := 0 to ARight.GetArrayLength - 1 do
+    begin
+      v := ARight.GetArrayElement(i);
+      if v.TypeInfo = TypeInfo(TValue) then
+        v := v.Astype<TValue>();
+      if isEqual(ALeft, v) then
+      begin
+        result := true;
+        exit;
+      end;
+    end;
+  end;
+
+var
+  T: TRttiType;
+begin
+  if not isEnumerable(ARight) then
+    RaiseError(APosition, 'Expression must be enumerable');
+
+  T := GRttiContext.GetType(ARight.TypeInfo);
+
+  case T.TypeKind of
+    tkClass, tkClassRef:
+      visitobject;
+    tkArray:
+      visitarray;
+    tkDynArray:
+      visitdynarray;
+  else
+    RaiseError(APosition, 'GetEnumerator not found on object.');
+  end;
+end;
+
+function isEnumerable(const AValue: TValue): boolean;
+
+begin
+  case AValue.Kind of
+    tkDynArray, tkArray:
+      result := true;
+    tkClass, tkClassRef:
+      result := GRttiContext.GetType(AValue.TypeInfo).GetMethod('GetEnumerator') <> nil;
+  else
+    result := false;
+  end;
 end;
 
 function isStrLike(const AValue: TValue): boolean;
@@ -171,7 +298,30 @@ begin
 
 end;
 
+function ArrayAsString(const AValue: TValue): string;
+var
+  s: tstringbuilder;
+  i: integer;
+begin
+  s := tstringbuilder.Create;
+  s.append('[');
+  try
+    for i := 0 to AValue.GetArrayLength - 1 do
+    begin
+      if i > 0 then
+        s.append(',');
+      s.append(AsString(AValue.GetArrayElement(i)));
+    end;
+    s.append(']');
+    result := s.ToString;
+  finally
+    s.Free;
+  end;
+end;
+
 function AsString(const AValue: TValue): string;
+var
+  v: string;
 begin
   if AValue.TypeInfo = TypeInfo(boolean) then
     if AValue.AsBoolean then
@@ -190,6 +340,13 @@ begin
         exit(floattostr(AValue.AsExtended));
     tkString, tkWideString, tkUnicodeString, tkLString:
       exit(AValue.AsString);
+    tkDynArray, tkArray:
+      exit(ArrayAsString(AValue));
+    tkrecord:
+      if AValue.TypeInfo = TypeInfo(TValue) then
+        exit(AsString(AValue.Astype<TValue>()))
+      else
+        exit(GRttiContext.GetType(AValue.TypeInfo).Name);
   else
     exit('');
   end;
@@ -207,7 +364,161 @@ begin
   else
     exit(now);
   end;
+end;
 
+function Deref(const AVar, ADeref: TValue): TValue;
+
+  function ProcessArray(obj: TValue; const ADeref: TValue): TValue;
+  var
+    i: integer;
+    RttiType: TRttiArrayType;
+  begin
+    i := AsInt(ADeref);
+    RttiType := GRttiContext.GetType(obj.TypeInfo) as TRttiArrayType;
+    result := obj.GetArrayElement(i - (RttiType.Dimensions[0] as TRttiOrdinalType).MinValue);
+  end;
+
+  function ProcessDynArray(obj: TValue; const ADeref: TValue): TValue;
+  var
+    i: integer;
+  begin
+    i := AsInt(ADeref);
+    result := obj.GetArrayElement(i);
+  end;
+
+  function GetFieldOrProperty(const APtr: pointer; RttiType: TRttiType; const ADeref: TValue): TValue;
+  var
+    RttiField: TRttiField;
+    RttiProp: TRttiProperty;
+    ref: string;
+  begin
+    ref := AsString(ADeref);
+    RttiField := RttiType.GetField(ref);
+    if RttiField <> nil then
+      exit(RttiField.GetValue(APtr));
+    RttiProp := RttiType.GetProperty(ref);
+    if RttiProp <> nil then
+      exit(RttiProp.GetValue(APtr));
+  end;
+
+  function processDictionary(const obj: TValue; const ADeref: TValue): TValue;
+  var
+    RttiType: TRttiType;
+    RttiMethod: TRttiMethod;
+  begin
+    RttiType := GRttiContext.GetType(obj.TypeInfo);
+    // for RttiMethod in RttiType.GetMethods do
+    // writeln(RttiMethod.Name);
+    RttiMethod := RttiType.GetMethod('GetItem');
+    result := RttiMethod.Invoke(obj.AsObject, [ADeref]);
+  end;
+
+  function processJson(const obj: TValue; const ADeref: TValue): TValue;
+  var
+    jsonobj: tjsonobject;
+    jsonval: tjsonvalue;
+    key: string;
+  begin
+    jsonobj := obj.AsObject as tjsonobject;
+    key := AsString(ADeref);
+    jsonval := jsonobj.GetValue(key);
+    if jsonval is TJSONBool then
+    begin
+      result := jsonval.Astype<boolean>();
+    end
+    else if jsonval is TJSONString then
+    begin
+      result := jsonval.Astype<string>();
+    end
+    else if jsonval is TJSONNumber then
+    begin
+      result := jsonval.Astype<extended>();
+    end
+    else if jsonval is tjsonobject then
+    begin
+      result := jsonval;
+    end
+    else
+      result := nil;
+  end;
+
+  function ProcessClass(const obj: TValue; const ADeref: TValue): TValue;
+  var
+    ClassType: TClass;
+  begin
+    ClassType := obj.AsObject.ClassType;
+    if ClassType.QualifiedClassName.StartsWith('System.Generics.Collections.TDictionary') then
+    begin
+      exit(processDictionary(obj, ADeref));
+    end;
+    if ClassType = tjsonobject then
+    begin
+      exit(processJson(obj, ADeref));
+    end;
+
+    result := GetFieldOrProperty(obj.AsObject, GRttiContext.GetType(obj.TypeInfo), ADeref);
+  end;
+
+  function ProcessRecord(const obj: TValue; const ADeref: TValue): TValue;
+  begin
+    result := GetFieldOrProperty(obj.GetReferenceToRawData, GRttiContext.GetType(obj.TypeInfo), ADeref);
+  end;
+
+begin
+  case AVar.Kind of
+    tkClass:
+      result := ProcessClass(AVar, ADeref);
+    tkrecord:
+      result := ProcessRecord(AVar, ADeref);
+    tkArray:
+      result := ProcessArray(AVar, ADeref);
+    tkDynArray:
+      result := ProcessDynArray(AVar, ADeref);
+  else
+    raise Exception.Create('Cannot dereference variable');
+  end;
+end;
+
+procedure AssertBoolean(const APositional: IPosition; const ALeft: TValue); overload;
+begin
+  if isBool(ALeft) then
+    exit;
+  RaiseError(APositional, 'Boolean type expected');
+end;
+
+procedure AssertBoolean(const APositional: IPosition; const ALeft: TValue; const ARight: TValue); overload;
+begin
+  if isBool(ALeft) and isBool(ARight) then
+    exit;
+  RaiseError(APositional, 'Boolean types expected');
+end;
+
+procedure AssertNumeric(const APositional: IPosition; const ALeft: TValue); overload;
+begin
+  if isNumLike(ALeft) then
+    exit;
+  RaiseError(APositional, 'Numeric type expected');
+end;
+
+procedure AssertNumeric(const APositional: IPosition; const ALeft: TValue; const ARight: TValue); overload;
+begin
+  if isNumLike(ALeft) and isNumLike(ARight) then
+    exit;
+  RaiseError(APositional, 'Numeric types expected');
+end;
+
+procedure AssertString(const APositional: IPosition; const AValue: TValue);
+begin
+  if isStrLike(AValue) then
+    exit;
+  RaiseError(APositional, 'String type expected');
+end;
+
+procedure AssertArray(const APositional: IPosition; const AValue: TValue);
+begin
+  if isEnumerable(AValue) then
+    exit;
+  RaiseError(APositional, 'Enumerable type expected');
 end;
 
 initialization

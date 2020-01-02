@@ -64,6 +64,8 @@ type
   TVelocityValue = Sempare.Boot.Template.Velocity.AST.TVelocityValue;
   IVelocityContext = Sempare.Boot.Template.Velocity.Context.IVelocityContext;
   IVelocityTemplate = Sempare.Boot.Template.Velocity.AST.IVelocityTemplate;
+  IVelocityFunctions = Sempare.Boot.Template.Velocity.Context.IVelocityFunctions;
+
 
   Velocity = class
   public

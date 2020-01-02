@@ -30,7 +30,7 @@
  * limitations under the License.                                             *
  *                                                                            *
  ****************************************************************************%*)
-unit Sempare.Boot.Template.Velocity.Scope;
+unit Sempare.Boot.Template.Velocity.StackFrame;
 
 interface
 
@@ -45,20 +45,20 @@ uses
   System.Json;
 
 type
-  TVariableScope = class
+  TStackFrame = class
   private
-    FParent: TVariableScope;
+    FParent: TStackFrame;
     FScope: TDictionary<string, TValue>;
 
-    function FindScope(const AKey: string): TVariableScope;
+    function FindScope(const AKey: string): TStackFrame;
     function GetItem(const AKey: string): TValue;
 
     procedure SetItem(const AKey: string; const Value: TValue);
   public
-    constructor Create(const AParent: TVariableScope = nil); overload;
-    constructor Create(const ARecord: TValue; const AParent: TVariableScope = nil); overload;
+    constructor Create(const AParent: TStackFrame = nil); overload;
+    constructor Create(const ARecord: TValue; const AParent: TStackFrame = nil); overload;
     destructor Destroy; override;
-    function Clone(): TVariableScope;
+    function Clone(): TStackFrame;
 
     function Root: TValue;
 
@@ -73,31 +73,31 @@ uses
 
 { TScope }
 
-function TVariableScope.Clone: TVariableScope;
+function TStackFrame.Clone: TStackFrame;
 begin
-  result := TVariableScope.Create(self);
+  result := TStackFrame.Create(self);
 end;
 
-constructor TVariableScope.Create(const AParent: TVariableScope);
+constructor TStackFrame.Create(const AParent: TStackFrame);
 begin
   FParent := AParent;
   FScope := TDictionary<string, TValue>.Create;
 end;
 
-constructor TVariableScope.Create(const ARecord: TValue; const AParent: TVariableScope);
+constructor TStackFrame.Create(const ARecord: TValue; const AParent: TStackFrame);
 begin
   Create(AParent);
   FScope.Add('_', ARecord);
 end;
 
-destructor TVariableScope.Destroy;
+destructor TStackFrame.Destroy;
 begin
   FreeAndNil(FScope);
   FParent := nil;
   inherited;
 end;
 
-function TVariableScope.FindScope(const AKey: string): TVariableScope;
+function TStackFrame.FindScope(const AKey: string): TStackFrame;
 begin
   result := self;
   while not result.FScope.ContainsKey(AKey) do
@@ -108,10 +108,10 @@ begin
   end;
 end;
 
-function TVariableScope.GetItem(const AKey: string): TValue;
+function TStackFrame.GetItem(const AKey: string): TValue;
 var
   l: string;
-  Scope: TVariableScope;
+  Scope: TStackFrame;
 begin
   l := AKey.ToLower;
   Scope := FindScope(l);
@@ -119,16 +119,16 @@ begin
     Scope.FScope.TryGetValue(l, result);
 end;
 
-function TVariableScope.Root: TValue;
+function TStackFrame.Root: TValue;
 begin
   result := GetItem('_');
 end;
 
-procedure TVariableScope.SetItem(const AKey: string; const Value: TValue);
+procedure TStackFrame.SetItem(const AKey: string; const Value: TValue);
 
 var
   l: string;
-  Scope: TVariableScope;
+  Scope: TStackFrame;
 begin
   l := AKey.ToLower;
   Scope := FindScope(l);

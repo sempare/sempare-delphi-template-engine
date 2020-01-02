@@ -267,6 +267,16 @@ type
     constructor Create(const APosition: IPosition; const AValue: TValue);
   end;
 
+  TArrayExpr = class(TAbstractExpr, IArrayExpr)
+  private
+    FValue: IExprList;
+    function GetValue: IExprList;
+    procedure Accept(const AVisitor: IVelocityVisitor); override;
+
+  public
+    constructor Create(const APosition: IPosition; const AValue: IExprList);
+  end;
+
   TVariableExpr = class(TAbstractExpr, IVariableExpr)
   private
     FVariable: string;
@@ -300,17 +310,15 @@ type
 
   TFunctionCallExpr = class(TAbstractExpr, IFunctionCallExpr)
   private
-    FFunctionInfo: TVelocityFunctionInfo;
+    FFunctionInfo: TArray<TRttiMethod>;
     FExprList: IExprList;
 
-    function GetFunctionInfo: TVelocityFunctionInfo; inline;
+    function GetFunctionInfo: TArray<TRttiMethod>; inline;
     function GetExprList: IExprList; inline;
     procedure Accept(const AVisitor: IVelocityVisitor); override;
 
-    function Invoke(const AArgs: TArray<TValue>): TValue;
-
   public
-    constructor Create(const APosition: IPosition; AFunction: TVelocityFunctionInfo; const ExprList: IExprList);
+    constructor Create(const APosition: IPosition; AFunction: TArray<TRttiMethod>; const ExprList: IExprList);
   end;
 
   TMethodCallExpr = class(TAbstractExpr, IMethodCallExpr)
@@ -323,9 +331,10 @@ type
     function GetMethod: string; inline;
     function GetObject: IExpr; inline;
     function GetExprList: IExprList; inline;
-    procedure Accept(const AVisitor: IVelocityVisitor); override;
+    function GetRttiMethod: TRttiMethod;
+    procedure SetRttiMethod(const ARttiMethod: TRttiMethod);
 
-    function Invoke(const AObject: TObject; const AArgs: TArray<TValue>): TValue;
+    procedure Accept(const AVisitor: IVelocityVisitor); override;
 
   public
     constructor Create(const APosition: IPosition; const AObjectExpr: IExpr; const AMethod: string; const AExprList: IExprList);
@@ -388,7 +397,6 @@ type
     FAllowElIf: boolean;
     FHasElse: boolean;
     FInFor: boolean;
-    FBinopPrecedents: TDictionary<TBinOp, integer>;
 
     function PushContainer: IVelocityTemplate;
     function PopContainer: IVelocityTemplate;
@@ -447,7 +455,7 @@ type
     function RuleElIfStmt: IStmt;
 
     // exprlist: expr (, expr)*
-    function RuleExprList: IExprList;
+    function RuleExprList(const AEndToken: TVelocitySymbol = VsCloseRoundBracket): IExprList;
 
     // assign: ID := expr
     function RuleAssignStmt(const ASymbol: IExpr): IStmt;
@@ -539,40 +547,18 @@ begin
   end;
 end;
 
+const
+  pInvalid: byte = 255;
+
+var
+  GVelocityBinOps: array [TVelocitySymbol] of TBinOp;
+  GBinopPrecedents: array [TBinOp] of byte;
+
 function VelocityBinop(const ASymbol: TVelocitySymbol; out BinOp: TBinOp): boolean;
 
 begin
-  result := true;
-  case ASymbol of
-    VsAND:
-      BinOp := boAND;
-    vsOR:
-      BinOp := boOR;
-    VsPLUS:
-      BinOp := boPlus;
-    VsMinus:
-      BinOp := boMinus;
-    VsMULT:
-      BinOp := boMult;
-    VsDIV:
-      BinOp := boDiv;
-    VsMOD:
-      BinOp := boMod;
-    vsLT:
-      BinOp := roLT;
-    vsLTE:
-      BinOp := roLTE;
-    vsGT:
-      BinOp := roGT;
-    vsGTE:
-      BinOp := roGTE;
-    vsEQ:
-      BinOp := roEQ;
-    VsNotEQ:
-      BinOp := roNotEQ;
-  else
-    result := false;
-  end;
+  BinOp := GVelocityBinOps[ASymbol];
+  result := BinOp <> boInvalid;
 end;
 
 function GetVelocityParser(Const AContext: IVelocityContext): IVelocityParser;
@@ -586,26 +572,6 @@ constructor TVelocityParser.Create(Const AContext: IVelocityContext);
 begin
   FContext := AContext;
   FContainerStack := TStack<IVelocityTemplate>.Create;
-  FBinopPrecedents := TDictionary<TBinOp, integer>.Create;
-
-  FBinopPrecedents.Add(TBinOp.boOR, 1);
-  FBinopPrecedents.Add(TBinOp.boAND, 2);
-
-  FBinopPrecedents.Add(TBinOp.roEQ, 5);
-  FBinopPrecedents.Add(TBinOp.roNotEQ, 5);
-
-  FBinopPrecedents.Add(TBinOp.roLT, 10);
-  FBinopPrecedents.Add(TBinOp.roLTE, 10);
-  FBinopPrecedents.Add(TBinOp.roGT, 10);
-  FBinopPrecedents.Add(TBinOp.roGTE, 10);
-
-  FBinopPrecedents.Add(TBinOp.boPlus, 15);
-  FBinopPrecedents.Add(TBinOp.boMinus, 15);
-
-  FBinopPrecedents.Add(TBinOp.boMult, 20);
-  FBinopPrecedents.Add(TBinOp.boDiv, 20);
-  FBinopPrecedents.Add(TBinOp.boMod, 20);
-
 end;
 
 function TVelocityParser.RuleIdentifierExpr: IExpr;
@@ -1044,19 +1010,22 @@ var
   symbol: IvelocitySymbol;
   right: IExpr;
   trueExpr, falseExpr: IExpr;
+  evaluated: boolean;
 begin
   symbol := FLookahead;
   result := self.RulePrimaryExpr;
   // this loop is a nicer way of applying precedents rather than having more rules like traditional factor, term, etc...
   while VelocityBinop(FLookahead.Token, BinOp) do
   begin
-    prec := self.FBinopPrecedents[BinOp];
+    prec := GBinopPrecedents[BinOp];
     if prec < minPrec then
       break;
     match(FLookahead.Token);
     right := self.RuleExpr(prec);
+    evaluated := false;
     if (eoEvalEarly in FContext.Options) and IsValue(result) and IsValue(right) then
     begin
+      evaluated := true;
       case BinOp of
         boAND:
           result := TValueExpr.Create(symbol.Position, AsBoolean(AsValue(result)) and AsBoolean(AsValue(right)));
@@ -1081,9 +1050,11 @@ begin
           result := TValueExpr.Create(symbol.Position, asnum(AsValue(result)) / asnum(AsValue(right)));
         boMod:
           result := TValueExpr.Create(symbol.Position, AsInt(AsValue(result)) mod AsInt(AsValue(right)));
+      else
+        evaluated := false;
       end;
-    end
-    else
+    end;
+    if not evaluated then
       result := TBinopExpr.Create(symbol.Position, result, BinOp, right);
   end;
 
@@ -1162,27 +1133,15 @@ end;
 
 function TVelocityParser.ruleFunctionExpr(const ASymbol: string): IExpr;
 var
-  fn: TVelocityFunctionInfo;
-  f: TFunctionCallExpr;
-var
+  fn: TArray<TRttiMethod>;
   symbol: IvelocitySymbol;
 begin
   symbol := FLookahead;
   if not FContext.TryGetFunction(ASymbol, fn) then
     RaiseError(symbol.Position, 'Function %s not registered in context.', [ASymbol]);
   match(VsOpenRoundBracket);
-  f := TFunctionCallExpr.Create(symbol.Position, fn, RuleExprList);
-  result := f;
+  result := TFunctionCallExpr.Create(symbol.Position, fn, RuleExprList);
   match(VsCloseRoundBracket);
-  if (fn.MinArgs > 0) and (fn.MinArgs = fn.MaxArgs) and (f.FExprList.Count <> fn.MaxArgs) then
-    RaiseError(symbol.Position, 'Function %s expects %d parameters but %d was given.', [ASymbol, fn.MinArgs, f.FExprList.Count])
-  else
-  begin
-    if (fn.MinArgs > 0) and (f.FExprList.Count < fn.MinArgs) then
-      RaiseError(symbol.Position, 'Function %s expects at least %d parameters but %d was given.', [ASymbol, fn.MinArgs, f.FExprList.Count]);
-    if (fn.MaxArgs > 0) and (f.FExprList.Count > fn.MaxArgs) then
-      RaiseError(symbol.Position, 'Function %s expects at most %d parameters but %d was given.', [ASymbol, fn.MinArgs, f.FExprList.Count]);
-  end;
 end;
 
 function TVelocityParser.ruleIdStmt: IStmt;
@@ -1270,6 +1229,12 @@ var
 begin
   symbol := FLookahead;
   case FLookahead.Token of
+    VsOpenSquareBracket:
+      begin
+        match(VsOpenSquareBracket);
+        result := TArrayExpr.Create(symbol.Position, RuleExprList(VsCloseSquareBracket));
+        match(VsCloseSquareBracket);
+      end;
     VsOpenRoundBracket:
       begin
         match(VsOpenRoundBracket);
@@ -1321,13 +1286,13 @@ begin
   result := TPrintStmt.Create(symbol.Position, AExpr);
 end;
 
-function TVelocityParser.RuleExprList: IExprList;
+function TVelocityParser.RuleExprList(const AEndToken: TVelocitySymbol): IExprList;
 var
   symbol: IvelocitySymbol;
 begin
   symbol := FLookahead;
   result := TExprList.Create(symbol.Position);
-  if FLookahead.Token <> VsCloseRoundBracket then
+  if FLookahead.Token <> AEndToken then
     result.AddExpr(RuleExpr);
   while FLookahead.Token = vsComma do
   begin
@@ -1353,7 +1318,6 @@ end;
 
 destructor TVelocityParser.Destroy;
 begin
-  FBinopPrecedents.Free;
   FContainerStack.Free;
   inherited;
 end;
@@ -1514,7 +1478,7 @@ begin
   AVisitor.Visit(self);
 end;
 
-constructor TFunctionCallExpr.Create(const APosition: IPosition; AFunction: TVelocityFunctionInfo; const ExprList: IExprList);
+constructor TFunctionCallExpr.Create(const APosition: IPosition; AFunction: TArray<TRttiMethod>; const ExprList: IExprList);
 
 begin
   inherited Create(APosition);
@@ -1522,17 +1486,12 @@ begin
   FExprList := ExprList;
 end;
 
-function TFunctionCallExpr.Invoke(const AArgs: TArray<TValue>): TValue;
-begin
-  result := FFunctionInfo.fn(AArgs);
-end;
-
 function TFunctionCallExpr.GetExprList: IExprList;
 begin
   result := FExprList;
 end;
 
-function TFunctionCallExpr.GetFunctionInfo: TVelocityFunctionInfo;
+function TFunctionCallExpr.GetFunctionInfo: TArray<TRttiMethod>;
 begin
   result := FFunctionInfo;
 end;
@@ -1916,16 +1875,14 @@ begin
   result := FObjectExpr;
 end;
 
-function TMethodCallExpr.Invoke(const AObject: TObject; const AArgs: TArray<TValue>): TValue;
-var
-  RttiType: TRttiType;
+function TMethodCallExpr.GetRttiMethod: TRttiMethod;
 begin
-  if FRttiMethod = nil then
-  begin
-    RttiType := GRttiContext.GetType(AObject.ClassType);
-    FRttiMethod := RttiType.GetMethod(FMethod);
-  end;
-  result := FRttiMethod.Invoke(AObject, AArgs);
+  result := FRttiMethod;
+end;
+
+procedure TMethodCallExpr.SetRttiMethod(const ARttiMethod: TRttiMethod);
+begin
+  FRttiMethod := ARttiMethod;
 end;
 
 { TEncodeStmt }
@@ -2041,5 +1998,72 @@ function TTernaryExpr.GetTrueExpr: IExpr;
 begin
   result := FTrueExpr;
 end;
+
+{ TArrayExpr }
+
+procedure TArrayExpr.Accept(const AVisitor: IVelocityVisitor);
+begin
+  AVisitor.Visit(self);
+end;
+
+constructor TArrayExpr.Create(const APosition: IPosition; const AValue: IExprList);
+begin
+  inherited Create(APosition);
+  FValue := AValue;
+end;
+
+function TArrayExpr.GetValue: IExprList;
+begin
+  result := FValue;
+end;
+
+procedure initOps;
+var
+  s: TVelocitySymbol;
+  bo: TBinOp;
+begin
+  for s := Low(TVelocitySymbol) to High(TVelocitySymbol) do
+    GVelocityBinOps[s] := boInvalid;
+  for bo := Low(TBinOp) to High(TBinOp) do
+    GBinopPrecedents[bo] := pInvalid;
+  GVelocityBinOps[vsin] := boIN;
+  GVelocityBinOps[VsAND] := boAND;
+  GVelocityBinOps[vsOR] := boOR;
+  GVelocityBinOps[VsPLUS] := boPlus;
+  GVelocityBinOps[VsMinus] := boMinus;
+  GVelocityBinOps[VsMULT] := boMult;
+  GVelocityBinOps[VsDIV] := boDiv;
+  GVelocityBinOps[VsMOD] := boMod;
+  GVelocityBinOps[vsLT] := roLT;
+  GVelocityBinOps[vsLTE] := roLTE;
+  GVelocityBinOps[vsGT] := roGT;
+  GVelocityBinOps[vsGTE] := roGTE;
+  GVelocityBinOps[vsEQ] := roEQ;
+  GVelocityBinOps[VsNotEQ] := roNotEQ;
+
+  GBinopPrecedents[TBinOp.boOR] := 1;
+  GBinopPrecedents[TBinOp.boAND] := 2;
+  GBinopPrecedents[TBinOp.boIN] := 2;
+
+  GBinopPrecedents[TBinOp.roEQ] := 5;
+  GBinopPrecedents[TBinOp.roNotEQ] := 5;
+
+  GBinopPrecedents[TBinOp.roLT] := 10;
+  GBinopPrecedents[TBinOp.roLTE] := 10;
+  GBinopPrecedents[TBinOp.roGT] := 10;
+  GBinopPrecedents[TBinOp.roGTE] := 10;
+
+  GBinopPrecedents[TBinOp.boPlus] := 15;
+  GBinopPrecedents[TBinOp.boMinus] := 15;
+
+  GBinopPrecedents[TBinOp.boMult] := 20;
+  GBinopPrecedents[TBinOp.boDiv] := 20;
+  GBinopPrecedents[TBinOp.boMod] := 20;
+
+end;
+
+initialization
+
+initOps;
 
 end.

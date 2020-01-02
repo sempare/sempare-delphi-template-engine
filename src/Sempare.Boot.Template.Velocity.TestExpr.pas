@@ -52,9 +52,10 @@ type
     procedure TestExprStr;
     [Test]
     procedure TestSimpleVariable;
-
     [Test]
     procedure TestTernary;
+    [Test]
+    procedure TestInExpr;
 
   end;
 
@@ -98,6 +99,17 @@ end;
 procedure TTestVelocityExpr.TestExprStr;
 begin
   Velocity.parse('before <% a := ''hello world'' %> after ');
+end;
+
+procedure TTestVelocityExpr.TestInExpr;
+begin
+  Assert.AreEqual('false', Velocity.Eval('<% 0 in [1,2,3] %>'));
+  Assert.AreEqual('true', Velocity.Eval('<% 1 in [1,2,3] %>'));
+  Assert.AreEqual('true', Velocity.Eval('<% 2 in [1,2,3] %>'));
+  Assert.AreEqual('true', Velocity.Eval('<% 3 in [1,2,3] %>'));
+  Assert.AreEqual('false', Velocity.Eval('<% 4 in [1,2,3] %>'));
+  Assert.AreEqual('true', Velocity.Eval('<% ''hello world'' in [1,''hello world'',3] %>'));
+  Assert.AreEqual('false', Velocity.Eval('<% ''hello'' in [1,''hello world'',3] %>'));
 end;
 
 procedure TTestVelocityExpr.TestExprBool;

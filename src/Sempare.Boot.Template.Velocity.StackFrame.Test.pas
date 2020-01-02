@@ -30,7 +30,7 @@
  * limitations under the License.                                             *
  *                                                                            *
  ****************************************************************************%*)
-unit Sempare.Boot.Template.Velocity.Scope.Test;
+unit Sempare.Boot.Template.Velocity.StackFrame.Test;
 
 interface
 
@@ -53,15 +53,15 @@ implementation
 uses
   System.Rtti,
   Sempare.Boot.Template.Velocity.Context,
-  Sempare.Boot.Template.Velocity.Scope,
+  Sempare.Boot.Template.Velocity.StackFrame,
   Sempare.Boot.Template.Velocity;
 
 procedure TTestVelocityScope.TestScopeClass;
 
 var
-  S, s2: TVariableScope;
+  S, s2: TStackFrame;
 begin
-  S := TVariableScope.create();
+  S := TStackFrame.create();
   S['root'] := 'root123';
   S['name'] := 'conrad';
   Assert.AreEqual('root123', S.Item['root'].AsString);
