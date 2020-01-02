@@ -34,10 +34,6 @@ unit Sempare.Boot.Template.Velocity.Context;
 
 interface
 
-{$IF defined(FPC)}
-{$MODE Delphi}
-{$ENDIF}
-
 uses
   System.Rtti,
   System.SysUtils,
@@ -82,6 +78,7 @@ type
 
   IVelocityContext = interface
     ['{979D955C-B4BD-46BB-9430-1E74CBB999D4}']
+
     function TryGetTemplate(const AName: string; out ATemplate: IVelocityTemplate): boolean;
     function GetTemplate(const AName: string): IVelocityTemplate;
     procedure AddTemplate(const AName: string; const ATemplate: IVelocityTemplate);

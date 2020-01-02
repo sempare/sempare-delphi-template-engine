@@ -34,20 +34,16 @@ unit Sempare.Boot.Template.Velocity.Lexer;
 
 interface
 
-{$IF defined(FPC)}
-{$MODE Delphi}
-{$ENDIF}
-
 uses
   System.Classes,
   System.SysUtils,
   Sempare.Boot.Template.Velocity.AST,
-  Sempare.Boot.Template.Velocity.Common,
   Sempare.Boot.Template.Velocity.Context;
 
 type
   IVelocityValueSymbol = interface(IVelocitySymbol)
     ['{930E9892-38AA-4030-83CC-4069667B2E6E}']
+
     function GetValue: string;
     procedure SetValue(const Avalue: string);
     property Value: string read GetValue write SetValue;
@@ -57,6 +53,7 @@ type
 
   IVelocityLexer = interface
     ['{839FAB50-B21E-4C31-ACAA-2E50AEAA1456}']
+
     function GetToken: IVelocitySymbol;
   end;
 
@@ -67,7 +64,8 @@ implementation
 
 uses
   TypInfo,
-  System.Generics.Collections;
+  System.Generics.Collections,
+  Sempare.Boot.Template.Velocity.Common;
 
 var
   GKeywords: TDictionary<string, TVelocitySymbol>;

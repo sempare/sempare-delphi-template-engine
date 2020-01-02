@@ -34,16 +34,10 @@ unit Sempare.Boot.Template.Velocity;
 
 interface
 
-{$IF defined(FPC)}
-{$MODE Delphi}
-{$ENDIF}
-
 uses
   System.Classes,
-  System.Rtti,
   Sempare.Boot.Template.Velocity.Context,
   Sempare.Boot.Template.Velocity.AST,
-  Sempare.Boot.Template.Velocity.Common,
   Sempare.Boot.Template.Velocity.Parser;
 
 const
@@ -65,7 +59,6 @@ type
   IVelocityContext = Sempare.Boot.Template.Velocity.Context.IVelocityContext;
   IVelocityTemplate = Sempare.Boot.Template.Velocity.AST.IVelocityTemplate;
   IVelocityFunctions = Sempare.Boot.Template.Velocity.Context.IVelocityFunctions;
-
 
   Velocity = class
   public
@@ -117,6 +110,7 @@ implementation
 
 uses
   System.SysUtils,
+  Sempare.Boot.Template.Velocity.Common,
   Sempare.Boot.Template.Velocity.Evaluate,
   Sempare.Boot.Template.Velocity.PrettyPrint;
 
@@ -140,7 +134,7 @@ end;
 
 class procedure Velocity.Eval<T>(const AContext: IVelocityContext; const ATemplate: IVelocityTemplate; const AValue: T; const AStream: TStream);
 begin
-  AcceptVisitor(ATemplate, TEvaluationVelocityVisitor.Create(AContext, TValue.From<T>(AValue), AStream));
+  AcceptVisitor(ATemplate, TEvaluationVelocityVisitor.Create(AContext, TVelocityValue.From<T>(AValue), AStream));
 end;
 
 class procedure Velocity.Eval(const ATemplate: IVelocityTemplate; const AStream: TStream; const AOptions: TVelocityEvaluationOptions);

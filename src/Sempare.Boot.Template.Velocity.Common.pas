@@ -34,13 +34,8 @@ unit Sempare.Boot.Template.Velocity.Common;
 
 interface
 
-{$IF defined(FPC)}
-{$MODE Delphi}
-{$ENDIF}
-
 uses
   System.SysUtils,
-  System.Rtti,
   Sempare.Boot.Template.Velocity.AST;
 
 type
@@ -84,14 +79,7 @@ function Position(const APositional: IPosition): string; inline; overload;
 procedure RaiseError(const APositional: IPosition; const AFormat: string; const AArgs: array of const); overload;
 procedure RaiseError(const APositional: IPosition; const AFormat: string); overload;
 
-
-
 implementation
-
-//uses
-//  System.JSON,
-//  Sempare.Boot.Template.Velocity.Rtti;
-
 
 function AsVisitorHost(const ATemplate: IVelocityTemplate): IVelocityVisitorHost; overload;
 begin

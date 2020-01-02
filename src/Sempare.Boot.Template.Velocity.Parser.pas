@@ -34,10 +34,6 @@ unit Sempare.Boot.Template.Velocity.Parser;
 
 interface
 
-{$IF defined(FPC)}
-{$MODE Delphi}
-{$ENDIF}
-
 uses
   System.Classes,
   Sempare.Boot.Template.Velocity.AST,
@@ -45,6 +41,8 @@ uses
 
 type
   IVelocityParser = interface
+    ['{DAF8A08D-9158-4D2C-9E76-BE80E9DA50A3}']
+
     function Parse(const AStream: TStream; const AManagedStream: boolean = true): IVelocityTemplate;
   end;
 

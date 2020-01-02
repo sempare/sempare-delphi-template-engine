@@ -34,10 +34,6 @@ unit Sempare.Boot.Template.Velocity.Functions;
 
 interface
 
-{$IF defined(FPC)}
-{$MODE Delphi}
-{$ENDIF}
-
 uses
   System.Rtti,
   Sempare.Boot.Template.Velocity.Context;
@@ -51,10 +47,7 @@ var
 implementation
 
 uses
-  System.StrUtils,
   System.SysUtils,
-  System.Math,
-  System.TypInfo,
   System.Generics.Collections,
   Sempare.Boot.Template.Velocity.Rtti;
 

@@ -34,16 +34,12 @@ unit Sempare.Boot.Template.Velocity.Util;
 
 interface
 
-{$IF defined(FPC)}
-{$MODE Delphi}
-{$ENDIF}
-
-
 // This is copied from Sempare.Boot.Common.PreserveValue to make standalone.
 
 type
   IPreserveValue<T> = interface
     ['{32528639-7ADF-4F69-AE33-E56CA47024F8}']
+
     // A helper to allow a reference to be maintained
     // so that the object does not get optimised out
     procedure KeepAlive;

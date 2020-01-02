@@ -34,15 +34,9 @@ unit Sempare.Boot.Template.Velocity.StackFrame;
 
 interface
 
-{$IF defined(FPC)}
-{$MODE Delphi}
-{$ENDIF}
-
-
 uses
   System.Generics.Collections,
-  System.Rtti,
-  System.Json;
+  System.Rtti;
 
 type
   TStackFrame = class
@@ -68,10 +62,9 @@ type
 implementation
 
 uses
-  System.SysUtils,
-  Sempare.Boot.Template.Velocity.Rtti;
+  System.SysUtils;
 
-{ TScope }
+{ TStackFrame }
 
 function TStackFrame.Clone: TStackFrame;
 begin

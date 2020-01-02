@@ -34,10 +34,6 @@ unit Sempare.Boot.Template.Velocity.AST;
 
 interface
 
-{$IF defined(FPC)}
-{$MODE Delphi}
-{$ENDIF}
-
 uses
   System.Rtti;
 

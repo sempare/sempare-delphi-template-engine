@@ -34,10 +34,6 @@ unit Sempare.Boot.Template.Velocity.PrettyPrint;
 
 interface
 
-{$IF defined(FPC)}
-{$MODE Delphi}
-{$ENDIF}
-
 uses
   System.SysUtils,
   Sempare.Boot.Template.Velocity.AST,
@@ -96,55 +92,25 @@ function UnaryToStr(const ASymbol: TUnaryOp): string;
 
 implementation
 
+var
+  GUnaryStrings: array [TUnaryOp] of string;
+  GBinopStrings: array [TBinOp] of string;
+  GForOpStrings: array [TForOp] of string;
+
 function UnaryToStr(const ASymbol: TUnaryOp): string;
 begin
-  case ASymbol of
-    uoMinus:
-      result := '-';
-    uoNot:
-      result := 'not ';
-  end;
+  result := GUnaryStrings[ASymbol];
 end;
 
 function BinOpToStr(const ASymbol: TBinOp): string;
 begin
-  case ASymbol of
-    boAND:
-      result := 'and';
-    boOR:
-      result := 'or';
-    boPlus:
-      result := '+';
-    boMinus:
-      result := '-';
-    boDiv:
-      result := '/';
-    boMult:
-      result := '*';
-    boMod:
-      result := 'mod';
-    roEQ:
-      result := '=';
-    roNotEQ:
-      result := '<>';
-    roLT:
-      result := '<';
-    roLTE:
-      result := '<=';
-    roGT:
-      result := '>';
-    roGTE:
-      result := '>=';
-  end;
+  result := GBinopStrings[ASymbol];
 end;
-
-const
-  FOROP_TO_STR: array [TForOp] of string = ('to', 'downto', 'in');
 
 function ForopToStr(const ASymbol: TForOp): string;
 
 begin
-  result := FOROP_TO_STR[ASymbol];
+  result := GForOpStrings[ASymbol];
 end;
 
 { TPrettyPrintVelocityVisitor }
@@ -426,5 +392,29 @@ begin
   write(':');
   AcceptVisitor(AExpr.FalseExpr, self);
 end;
+
+initialization
+
+GUnaryStrings[uoMinus] := '-';
+GUnaryStrings[uoNot] := 'not ';
+
+GForOpStrings[TForOp.foTo] := 'to';
+GForOpStrings[TForOp.foDownto] := 'downto';
+GForOpStrings[TForOp.foIn] := 'in';
+
+GBinopStrings[boAND] := 'and';
+GBinopStrings[boOR] := 'or';
+GBinopStrings[boPlus] := '+';
+GBinopStrings[boMinus] := '-';
+GBinopStrings[boDiv] := '/';
+GBinopStrings[boMult] := '*';
+GBinopStrings[boMod] := 'mod';
+GBinopStrings[roEQ] := '=';
+GBinopStrings[roNotEQ] := '<>';
+GBinopStrings[roLT] := '<';
+GBinopStrings[roLTE] := '<=';
+GBinopStrings[roGT] := '>';
+GBinopStrings[roGTE] := '>=';
+GBinopStrings[boIN] := 'in';
 
 end.

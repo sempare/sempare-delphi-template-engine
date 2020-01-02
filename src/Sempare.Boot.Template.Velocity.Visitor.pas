@@ -34,10 +34,6 @@ unit Sempare.Boot.Template.Velocity.Visitor;
 
 interface
 
-{$IF defined(FPC)}
-{$MODE Delphi}
-{$ENDIF}
-
 uses
   Sempare.Boot.Template.Velocity.AST,
   Sempare.Boot.Template.Velocity.Common;
