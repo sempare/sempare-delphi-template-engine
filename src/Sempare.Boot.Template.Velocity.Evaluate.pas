@@ -59,13 +59,12 @@ type
     FEvalStack: TStack<TValue>;
     FStream: TStream;
     FStreamWriter: TStreamWriter;
-    FInLoop: boolean;
-    FContinue: boolean;
-    FBreak: boolean;
+    FLoopOptions: TLoopOptions;
     FContext: IVelocityContext;
     FAllowRootDeref: boolean;
     FLocalTemplates: TDictionary<string, IVelocityTemplate>;
 
+    function HasBreakOrContinue: boolean; inline;
     function EncodeVariable(const AValue: TValue): TValue;
     procedure CheckRunTime(const APosition: IPosition);
     function ExprListArgs(const AExprList: IExprList): TArray<TValue>;
@@ -146,7 +145,7 @@ end;
 
 procedure TEvaluationVelocityVisitor.Visit(const AStmt: IContinueStmt);
 begin
-  FContinue := true;
+  include(FLoopOptions, TLoopOption.coContinue);
 end;
 
 procedure TEvaluationVelocityVisitor.Visit(const AExpr: IVariableDerefExpr);
@@ -271,6 +270,8 @@ begin
     begin
       val := Deref(Scope.Root, AExpr.variable);
     end;
+    if val.IsEmpty and (eoThrowWhenVariableNotFound in FContext.Options) then
+      RaiseError(Position(AExpr), 'Variable could not be found.');
   end
   else
   begin
@@ -281,28 +282,24 @@ end;
 
 procedure TEvaluationVelocityVisitor.Visit(const AStmt: IBreakStmt);
 begin
-  FBreak := true;
+  include(FLoopOptions, TLoopOption.coBreak);
 end;
 
 procedure TEvaluationVelocityVisitor.Visit(const AStmt: IWhileStmt);
 var
-  InLoop: IPreserveValue<boolean>;
-  LContinue: IPreserveValue<boolean>;
-  LBreak: IPreserveValue<boolean>;
+  LoopOptions: IPreserveValue<TLoopOptions>;
 begin
-  if FBreak or FContinue then
+  if HasBreakOrContinue then
     exit;
-  InLoop := Preseve.Value<boolean>(FInLoop, true);
-  LContinue := Preseve.Value<boolean>(FContinue, false);
-  LBreak := Preseve.Value<boolean>(FBreak, false);
+  LoopOptions := Preseve.Value<TLoopOptions>(FLoopOptions, [coInLoop]);
   FScopeStack.push(FScopeStack.peek.Clone);
   while true do
   begin
     acceptvisitor(AStmt.Condition, self);
-    if not AsBoolean(FEvalStack.pop) or FBreak then
+    if not AsBoolean(FEvalStack.pop) or (coBreak in FLoopOptions) then
       break;
     CheckRunTime(Position(AStmt));
-    FContinue := false;
+    exclude(FLoopOptions, coContinue);
     acceptvisitor(AStmt.Container, self);
   end;
   FScopeStack.pop;
@@ -310,9 +307,7 @@ end;
 
 procedure TEvaluationVelocityVisitor.Visit(const AStmt: IForInStmt);
 var
-  InLoop: IPreserveValue<boolean>;
-  LContinue: IPreserveValue<boolean>;
-  LBreak: IPreserveValue<boolean>;
+  LoopOptions: IPreserveValue<TLoopOptions>;
   e: TObject;
   v: string;
   val, Eval: TValue;
@@ -335,10 +330,10 @@ var
 
     while movenext.Invoke(e, []).AsBoolean do
     begin
-      if FBreak then
+      if coBreak in FLoopOptions then
         break;
       FScopeStack.peek[v] := current.GetValue(e);
-      FContinue := false;
+      exclude(FLoopOptions, coContinue);
       CheckRunTime(Position(AStmt));
       acceptvisitor(AStmt.Container, self);
     end;
@@ -357,11 +352,11 @@ var
 
     for i := 0 to Eval.GetArrayLength - 1 do
     begin
-      if FBreak then
+      if coBreak in FLoopOptions then
         break;
       ai := i + Dt.MinValue;
       FScopeStack.peek[v] := ai;
-      FContinue := false;
+      exclude(FLoopOptions, coContinue);
       CheckRunTime(Position(AStmt));
       acceptvisitor(AStmt.Container, self);
     end;
@@ -373,21 +368,19 @@ var
   begin
     for i := 0 to Eval.GetArrayLength - 1 do
     begin
-      if FBreak then
+      if coBreak in FLoopOptions then
         break;
       FScopeStack.peek[v] := i;
-      FContinue := false;
+      exclude(FLoopOptions, coContinue);
       CheckRunTime(Position(AStmt));
       acceptvisitor(AStmt.Container, self);
     end;
   end;
 
 begin
-  if FBreak or FContinue then
+  if HasBreakOrContinue then
     exit;
-  InLoop := Preseve.Value(FInLoop, true);
-  LContinue := Preseve.Value(FContinue, false);
-  LBreak := Preseve.Value(FBreak, false);
+  LoopOptions := Preseve.Value<TLoopOptions>(FLoopOptions, [coInLoop]);
   FScopeStack.push(FScopeStack.peek.Clone);
   v := AStmt.variable;
 
@@ -425,9 +418,7 @@ begin
 
   FLocalTemplates := TDictionary<string, IVelocityTemplate>.Create;
 
-  FInLoop := false;
-  FContinue := false;
-  FBreak := false;
+  FLoopOptions := [];
   FContext := AContext;
   FStream := AStream;
   FStreamWriter := TStreamWriter.Create(FStream, FContext.Encoding);
@@ -477,22 +468,23 @@ begin
   end;
 end;
 
+function TEvaluationVelocityVisitor.HasBreakOrContinue: boolean;
+begin
+  result := (coContinue in FLoopOptions) or (coBreak in FLoopOptions);
+end;
+
 procedure TEvaluationVelocityVisitor.Visit(const AStmt: IForRangeStmt);
 var
-  InLoop: IPreserveValue<boolean>;
-  LContinue: IPreserveValue<boolean>;
-  LBreak: IPreserveValue<boolean>;
+  LoopOptions: IPreserveValue<TLoopOptions>;
   i, lowVal, highVal: int64;
   delta: integer;
   v: string;
 
 begin
-  if FBreak or FContinue then
+  if HasBreakOrContinue then
     exit;
   v := AStmt.variable;
-  InLoop := Preseve.Value(FInLoop, true);
-  LContinue := Preseve.Value(FContinue, false);
-  LBreak := Preseve.Value(FBreak, false);
+  LoopOptions := Preseve.Value<TLoopOptions>(FLoopOptions, [coInLoop]);
 
   acceptvisitor(AStmt.LowExpr, self);
   lowVal := asint(FEvalStack.pop);
@@ -513,9 +505,9 @@ begin
   while i <= highVal do
   begin
     FScopeStack.peek[v] := i;
-    if FBreak then
+    if coBreak in FLoopOptions then
       break;
-    FContinue := false;
+    exclude(FLoopOptions, coContinue);
     CheckRunTime(Position(AStmt));
     acceptvisitor(AStmt.Container, self);
     inc(i, delta);
@@ -534,7 +526,7 @@ end;
 
 procedure TEvaluationVelocityVisitor.Visit(const AStmt: IIfStmt);
 begin
-  if FBreak or FContinue then
+  if HasBreakOrContinue then
     exit;
   acceptvisitor(AStmt.Condition, self);
   if AsBoolean(FEvalStack.pop) then
@@ -554,7 +546,7 @@ var
   T: IVelocityTemplate;
 
 begin
-  if FBreak or FContinue then
+  if HasBreakOrContinue then
     exit;
   acceptvisitor(AStmt.Expr, self);
   name := FEvalStack.pop.AsString;
@@ -574,7 +566,7 @@ end;
 
 procedure TEvaluationVelocityVisitor.Visit(const AStmt: IPrintStmt);
 begin
-  if FBreak or FContinue then
+  if HasBreakOrContinue then
     exit;
   acceptvisitor(AStmt.Expr, self);
   FStreamWriter.Write(AsString(FEvalStack.pop));

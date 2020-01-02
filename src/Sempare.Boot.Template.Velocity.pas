@@ -46,11 +46,12 @@ const
   eoNoDefaultFunctions = TVelocityEvaluationOption.eoNoDefaultFunctions;
   eoNoPosition = TVelocityEvaluationOption.eoNoPosition;
   eoEvalEarly = TVelocityEvaluationOption.eoEvalEarly;
-  eoStripRecurringNewline = TVelocityEvaluationOption.eoStripRecurringNewline;
-  eoStripRecurringEmptyLine = TVelocityEvaluationOption.eoStripRecurringEmptyLine;
-  eoTrimLines = TVelocityEvaluationOption.eoTrimLines;
-  eoDebug = TVelocityEvaluationOption.eoDebug;
+  // eoStripRecurringNewline = TVelocityEvaluationOption.eoStripRecurringNewline;
+  // eoStripRecurringEmptyLine = TVelocityEvaluationOption.eoStripRecurringEmptyLine;
+  // eoTrimLines = TVelocityEvaluationOption.eoTrimLines;
+  // eoDebug = TVelocityEvaluationOption.eoDebug;
   eoPrettyPrint = TVelocityEvaluationOption.eoPrettyPrint;
+  eoThrowWhenVariableNotFound = TVelocityEvaluationOption.eoThrowWhenVariableNotFound;
 
 type
   TVelocityEvaluationOptions = Sempare.Boot.Template.Velocity.Context.TVelocityEvaluationOptions;
@@ -192,7 +193,7 @@ end;
 
 class procedure Velocity.Eval<T>(const AContext: IVelocityContext; const ATemplate: string; const AValue: T; const AStream: TStream);
 begin
-  Eval(AContext, Velocity.Parse(ATemplate), AValue, AStream);
+  Eval(AContext, Parse(ATemplate), AValue, AStream);
 end;
 
 class function Velocity.Parse(const AContext: IVelocityContext; const AStream: TStream): IVelocityTemplate;
@@ -219,7 +220,7 @@ end;
 
 class function Velocity.Parse(const AContext: IVelocityContext; const AString: string): IVelocityTemplate;
 begin
-  result := Parser(AContext).Parse(tstringstream.Create(AString));
+  result := Parser(AContext).Parse(TStringStream.Create(AString));
 end;
 
 class function Velocity.Eval(const ATemplate: string; const AOptions: TVelocityEvaluationOptions): string;

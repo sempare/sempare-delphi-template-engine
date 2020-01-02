@@ -60,14 +60,15 @@ type
     eoNoPosition, //
     eoEvalEarly, //
     eoEvalVarsEarly, //
-    eoStripRecurringNewline, // TODO
-    eoStripRecurringEmptyLine, // TODO
-    eoTrimLines, // TODO
-    eoDebug, // TODO
+    //eoStripRecurringNewline, // TODO
+    //eoStripRecurringEmptyLine, // TODO
+    //eoTrimLines, // TODO
+    //eoDebug, // TODO
     eoPrettyPrint, //
     eoStripRecurringSpaces, //
     eoConvertTabsToSpaces, //
-    eoNoDefaultFunctions //
+    eoNoDefaultFunctions, //
+    eoThrowWhenVariableNotFound //
     );
 
   TVelocityEvaluationOptions = set of TVelocityEvaluationOption;
