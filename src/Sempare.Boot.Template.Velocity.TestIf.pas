@@ -55,6 +55,10 @@ type
     procedure TestSimpleIf;
     [Test]
     procedure TestSimpleIfFalse;
+    [Test]
+    procedure TestIfWithBreak;
+    [Test]
+    procedure TestIfWithContinue;
   end;
 
 implementation
@@ -75,6 +79,24 @@ begin
   Assert.AreEqual('ok', Velocity.Eval('<% if not val %>ok<% end %>', data));
   data.Val := 'something';
   Assert.AreEqual('ok', Velocity.Eval('<% if val %>ok<% end %>', data));
+end;
+
+procedure TTestVelocityIf.TestIfWithBreak;
+begin
+  Assert.WillRaise(
+    procedure
+    begin
+      Velocity.parse('<% if (true) %> <% break%> <% end %> ');
+    end);
+end;
+
+procedure TTestVelocityIf.TestIfWithContinue;
+begin
+  Assert.WillRaise(
+    procedure
+    begin
+      Velocity.parse('<% if (true) %> <% continue%> <% end %> ');
+    end);
 end;
 
 procedure TTestVelocityIf.TestNestedIf;
