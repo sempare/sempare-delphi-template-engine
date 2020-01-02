@@ -106,6 +106,22 @@ type
 
   end;
 
+  TNLState = (nlsStartOfLine, nlsHasText, nlsNewLine);
+
+  TNewLineStreamWriter = class(TStreamWriter)
+  private
+    FOptions: TVelocityEvaluationOptions;
+    FNL: string;
+    FState: TNLState;
+    FBuffer: TStringBuilder;
+  public
+    constructor Create(const AStream: TStream; const AEncoding: TEncoding; const ANL: string; const AOptions: TVelocityEvaluationOptions);
+    destructor Destroy; override;
+  protected
+    procedure Write(const AString: string); override;
+
+  end;
+
 implementation
 
 uses
@@ -421,7 +437,11 @@ begin
   FLoopOptions := [];
   FContext := AContext;
   FStream := AStream;
-  FStreamWriter := TStreamWriter.Create(FStream, FContext.Encoding);
+
+  if (eoStripRecurringNewline in FContext.Options) or (eoTrimLines in FContext.Options) then
+    FStreamWriter := TNewLineStreamWriter.Create(FStream, FContext.Encoding, FContext.NewLine, FContext.Options)
+  else
+    FStreamWriter := TStreamWriter.Create(FStream, FContext.Encoding);
 
   FEvalStack := TStack<TValue>.Create;
   FScopeStack := TObjectStack<TStackFrame>.Create;
@@ -855,5 +875,131 @@ begin
   else
     acceptvisitor(AExpr.FalseExpr, self);
 end;
+
+{ TNewLineStreamWriter }
+
+constructor TNewLineStreamWriter.Create(const AStream: TStream; const AEncoding: TEncoding; const ANL: string; const AOptions: TVelocityEvaluationOptions);
+begin
+  inherited Create(AStream, AEncoding);
+  FBuffer := TStringBuilder.Create;
+  FOptions := AOptions;
+  FNL := ANL;
+  FState := nlsStartOfLine;
+end;
+
+var
+  WHITESPACE: set of char;
+  NL: set of char;
+
+destructor TNewLineStreamWriter.Destroy;
+begin
+  if eoTrimLines in FOptions then
+  begin
+    while (FBuffer.length >= 1) and (FBuffer.Chars[FBuffer.length - 1] in WHITESPACE) do
+      FBuffer.length := FBuffer.length - 1;
+  end;
+  if FBuffer.length > 0 then
+  begin
+    inherited write(FBuffer.ToString);
+  end;
+  FBuffer.Free;
+  inherited;
+end;
+
+procedure TNewLineStreamWriter.Write(const AString: string);
+var
+  c, c2: char;
+  i: integer;
+
+begin
+  for c in AString do
+  begin
+    case FState of
+      nlsStartOfLine:
+
+        if c in WHITESPACE then
+        begin
+          if not(eoTrimLines in FOptions) then
+          begin
+            FBuffer.Append(c);
+            FState := nlsHasText;
+          end;
+        end
+        else if c in NL then
+        begin
+          if not(eoStripRecurringNewline in FOptions) then
+          begin
+            FBuffer.Append(c);
+            FState := nlsNewLine;
+            inherited write(FBuffer.ToString);
+            FBuffer.clear;
+          end;
+        end
+        else
+        begin
+          FBuffer.Append(c);
+          FState := nlsHasText;
+        end;
+
+      nlsHasText:
+        if c in WHITESPACE then
+        begin
+          FBuffer.Append(c);
+          FState := nlsHasText;
+        end
+        else if c in NL then
+        begin
+          if eoTrimLines in FOptions then
+          begin
+            while (FBuffer.length >= 1) and (FBuffer.Chars[FBuffer.length - 1] in WHITESPACE) do
+              FBuffer.length := FBuffer.length - 1;
+          end;
+          FBuffer.Append(c);
+          FState := nlsNewLine;
+          inherited write(FBuffer.ToString);
+          FBuffer.clear;
+
+        end
+        else
+        begin
+          FBuffer.Append(c);
+          FState := nlsHasText;
+        end;
+
+      nlsNewLine:
+
+        if c in WHITESPACE then
+        begin
+          if not(eoTrimLines in FOptions) then
+          begin
+            FBuffer.Append(c);
+            FState := nlsNewLine;
+          end;
+        end
+        else if c in NL then
+        begin
+          if not(eoStripRecurringNewline in FOptions) then
+          begin
+            FBuffer.Append(c);
+            FState := nlsNewLine;
+            inherited write(FBuffer.ToString);
+            FBuffer.clear;
+
+          end;
+        end
+        else
+        begin
+          FBuffer.Append(c);
+          FState := nlsHasText;
+        end;
+    end;
+
+  end;
+end;
+
+initialization
+
+WHITESPACE := [' '] + [#9];
+NL := [#10] + [#13];
 
 end.

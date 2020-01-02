@@ -46,9 +46,8 @@ const
   eoNoDefaultFunctions = TVelocityEvaluationOption.eoNoDefaultFunctions;
   eoNoPosition = TVelocityEvaluationOption.eoNoPosition;
   eoEvalEarly = TVelocityEvaluationOption.eoEvalEarly;
-  // eoStripRecurringNewline = TVelocityEvaluationOption.eoStripRecurringNewline;
-  // eoStripRecurringEmptyLine = TVelocityEvaluationOption.eoStripRecurringEmptyLine;
-  // eoTrimLines = TVelocityEvaluationOption.eoTrimLines;
+  eoStripRecurringNewline = TVelocityEvaluationOption.eoStripRecurringNewline;
+  eoTrimLines = TVelocityEvaluationOption.eoTrimLines;
   // eoDebug = TVelocityEvaluationOption.eoDebug;
   eoPrettyPrint = TVelocityEvaluationOption.eoPrettyPrint;
   eoThrowWhenVariableNotFound = TVelocityEvaluationOption.eoThrowWhenVariableNotFound;

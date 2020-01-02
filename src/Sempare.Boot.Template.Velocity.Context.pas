@@ -60,9 +60,8 @@ type
     eoNoPosition, //
     eoEvalEarly, //
     eoEvalVarsEarly, //
-    //eoStripRecurringNewline, // TODO
-    //eoStripRecurringEmptyLine, // TODO
-    //eoTrimLines, // TODO
+    eoStripRecurringNewline, // TODO
+    eoTrimLines, // TODO
     //eoDebug, // TODO
     eoPrettyPrint, //
     eoStripRecurringSpaces, //
