@@ -61,17 +61,7 @@ implementation
 
 uses
   SysUtils,
-  System.Rtti,
-  System.Json,
-  System.Generics.Collections,
-  System.Classes,
-  Sempare.Boot.Template.Velocity,
-  Sempare.Boot.Template.Velocity.Rtti,
-  Sempare.Boot.Template.Velocity.AST,
-  Sempare.Boot.Template.Velocity.Evaluate,
-  Sempare.Boot.Template.Velocity.Common,
-  Sempare.Boot.Template.Velocity.PrettyPrint,
-  Sempare.Boot.Template.Velocity.Lexer;
+  Sempare.Boot.Template.Velocity;
 
 type
   TStrCond = record
@@ -135,53 +125,36 @@ end;
 
 procedure TTestVelocityIf.TestElIf;
 var
-  S: tstringstream;
   T: IVelocityTemplate;
   r: TElIf;
 begin
-  S := tstringstream.create;
-  try
+  T := Velocity.parse( //
+    '<% if val=1 %>' + //
+    'one' + //
+    '<% elif val=2 %>' + //
+    '         <% if other %>2<% else %>two<% end %>' + //
+    '<% else %>' + //
+    '         <% if other %>3<% else %>three<% end %>' + //
+    '<% end %>');
+  // writeln(Velocity.PrettyPrint(T));
+  r.Val := 1;
+  Assert.AreEqual('one', Velocity.Eval(T, r));
 
-    T := Velocity.parse( //
-      '<% if val=1 %>' + //
-      'one' + //
-      '<% elif val=2 %>' + //
-      '         <% if other %>2<% else %>two<% end %>' + //
-      '<% else %>' + //
-      '         <% if other %>3<% else %>three<% end %>' + //
-      '<% end %>');
-    // writeln(Velocity.PrettyPrint(T));
-    r.Val := 1;
-    Velocity.Eval(T, r, S);
-    Assert.AreEqual('one', S.DataString);
+  r.Val := 2;
+  r.other := true;
+  Assert.AreEqual('2', trim(Velocity.Eval(T, r)));
 
-    S.clear;
-    r.Val := 2;
-    r.other := true;
-    Velocity.Eval(T, r, S);
-    Assert.AreEqual('2', trim(S.DataString));
+  r.Val := 2;
+  r.other := false;
+  Assert.AreEqual('two', trim(Velocity.Eval(T, r)));
 
-    S.clear;
-    r.Val := 2;
-    r.other := false;
-    Velocity.Eval(T, r, S);
-    Assert.AreEqual('two', trim(S.DataString));
+  r.Val := 3;
+  r.other := true;
+  Assert.AreEqual('3', trim(Velocity.Eval(T, r)));
 
-    S.clear;
-    r.Val := 3;
-    r.other := true;
-    Velocity.Eval(T, r, S);
-    Assert.AreEqual('3', trim(S.DataString));
-
-    S.clear;
-    r.Val := 3;
-    r.other := false;
-    Velocity.Eval(T, r, S);
-    Assert.AreEqual('three', trim(S.DataString));
-
-  finally
-    S.Free;
-  end;
+  r.Val := 3;
+  r.other := false;
+  Assert.AreEqual('three', trim(Velocity.Eval(T, r)));
 
 end;
 

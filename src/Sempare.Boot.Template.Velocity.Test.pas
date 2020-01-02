@@ -71,18 +71,8 @@ type
 implementation
 
 uses
-  SysUtils,
-  System.Rtti,
-  System.Json,
   System.Generics.Collections,
-  System.Classes,
-  Sempare.Boot.Template.Velocity,
-  Sempare.Boot.Template.Velocity.Rtti,
-  Sempare.Boot.Template.Velocity.AST,
-  Sempare.Boot.Template.Velocity.Evaluate,
-  Sempare.Boot.Template.Velocity.Common,
-  Sempare.Boot.Template.Velocity.PrettyPrint,
-  Sempare.Boot.Template.Velocity.Lexer;
+  Sempare.Boot.Template.Velocity;
 
 { TTestVelocity }
 

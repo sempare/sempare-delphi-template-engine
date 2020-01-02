@@ -78,9 +78,7 @@ type
 implementation
 
 uses
-  System.SysUtils,
   Sempare.Boot.Template.Velocity.Functions,
-  Sempare.Boot.Template.Velocity.Context,
   Sempare.Boot.Template.Velocity;
 
 { TFunctionTest }

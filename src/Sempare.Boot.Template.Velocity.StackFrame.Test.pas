@@ -51,10 +51,7 @@ type
 implementation
 
 uses
-  System.Rtti,
-  Sempare.Boot.Template.Velocity.Context,
-  Sempare.Boot.Template.Velocity.StackFrame,
-  Sempare.Boot.Template.Velocity;
+  Sempare.Boot.Template.Velocity.StackFrame;
 
 procedure TTestVelocityScope.TestScopeClass;
 
