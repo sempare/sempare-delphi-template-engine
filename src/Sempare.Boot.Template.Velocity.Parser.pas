@@ -384,17 +384,16 @@ type
 
   TVelocitySymbolSet = set of TVelocitySymbol;
 
+  TParserOption = (poAllowEnd, poAllowElse, poAllowElIf, poHasElse, poInLoop);
+  TParserOptions = set of TParserOption;
+
   TVelocityParser = class(TInterfacedObject, IVelocityParser)
   private
     FContext: IVelocityContext;
     FLookahead: IvelocitySymbol;
     FLexer: IVelocityLexer;
     FContainerStack: TStack<IVelocityTemplate>;
-    FAllowEnd: boolean;
-    FAllowElse: boolean;
-    FAllowElIf: boolean;
-    FHasElse: boolean;
-    FInFor: boolean;
+    FOptions: TParserOptions;
 
     function PushContainer: IVelocityTemplate;
     function PopContainer: IVelocityTemplate;
@@ -406,99 +405,31 @@ type
     function MatchNumber(const ASymbol: TVelocitySymbol): extended;
 
   private
-    // stmts: (text|script)*
     procedure RuleStmts(const Container: IVelocityTemplate; const AEndToken: TVelocitySymbolSet);
-
-    // stmt: if
-    // stmt: elif
-    // stmt: assign
-    // stmt: variable
-    // stmt: for
-    // stmt: while
-    // stmt: with
-    // stmt: print
-    // stmt: id
-    // stmt: include
-    // stmt: break                 # only valid in FOR/WHILE block
-    // stmt: continue              # only valid in FOR/WHILE block
-    // stmt: else                  # only valid in IF block
     function RuleStmt(): IStmt;
-
     function RuleCommentStmt: IStmt;
-
-    // id: ID
-    // id: ID := expr
-    // id: ID ( exprlist )
     function ruleIdStmt: IStmt;
-
     function ruleExprStmt: IStmt;
-
-    // include: INCLUDE ( expr )
     function ruleIncludeStmt: IStmt;
-
-    // print: PRINT(expr);
     function RulePrintStmt: IStmt;
-
-    // end: END
     function ruleEndStmt: IStmt;
-
-    // continue: CONTINUE
     function ruleContinueStmt: IStmt;
-
-    // break: BREAK
     function ruleBreakStmt: IStmt;
-
-    // if: IF (expr)
     function RuleIfStmt: IStmt;
     function RuleElIfStmt: IStmt;
-
-    // exprlist: expr (, expr)*
     function RuleExprList(const AEndToken: TVelocitySymbol = VsCloseRoundBracket): IExprList;
-
-    // assign: ID := expr
     function RuleAssignStmt(const ASymbol: IExpr): IStmt;
-
     function RulePrintStmtVariable(const AExpr: IExpr): IStmt; overload;
-
-    // for: FOR ID IN ID stmts END
-    // for: FOR ID := expr (TO|DOWNTO) expr stmts END
     function RuleForStmt: IStmt;
-
-    // while: WHILE (expr) stmts END
     function RuleWhileStmt: IStmt;
-
-    // while: WITH (expr) stmts END
     function RuleWithStmt: IStmt;
-
-    // while: template (expr) stmts END
     function RuleTemplateStmt: IStmt;
-
-    // expr: primary (relop expr)*
     function RuleExpr(const minPrec: integer = 0): IExpr;
-
-    // primary: ( expr )
-    // primary: - expr
-    // primary: NOT expr
-    // primary: id
-    // primary: literal
     function RulePrimaryExpr: IExpr;
-
-    // literal: BOOL
-    // literal: NUM
-    // literal: STR
     function RuleLiteralExpr: IExpr;
-
-    // id: function
-    // id: ID
-    // id: ID.ID
     function RuleIdentifierExpr: IExpr;
-
-    // ID ( expr_list )
     function ruleFunctionExpr(const ASymbol: string): IExpr;
-
-    // expr.method ( expr_list )
     function ruleMethodExpr(const AExpr: IExpr; const AMethodExpr: IExpr): IExpr;
-
   public
     constructor Create(Const AContext: IVelocityContext);
     destructor Destroy; override;
@@ -568,6 +499,7 @@ end;
 
 constructor TVelocityParser.Create(Const AContext: IVelocityContext);
 begin
+  FOptions := [];
   FContext := AContext;
   FContainerStack := TStack<IVelocityTemplate>.Create;
 end;
@@ -661,17 +593,11 @@ var
   TrueContainer: IVelocityTemplate;
   FalseContainer: IVelocityTemplate;
   ContainerAdd: ITemplateAdd;
-  AllowElse: IPreserveValue<boolean>;
-  HasElse: IPreserveValue<boolean>;
-  AllowEnd: IPreserveValue<boolean>;
-  AllowElIf: IPreserveValue<boolean>;
+  Options: IPreserveValue<TParserOptions>;
   symbol: IvelocitySymbol;
 begin
   // TODO: review parse time evaluation. if condition is false, then block can be excluded
-  AllowElse := Preseve.Value(FAllowElse, true);
-  HasElse := Preseve.Value(FHasElse, false);
-  AllowEnd := Preseve.Value(FAllowEnd, true);
-  AllowElIf := Preseve.Value(FAllowElIf, true);
+  Options := Preseve.Value<TParserOptions>(FOptions, FOptions + [poAllowElse, poAllowEnd, poAllowElIf]);
   symbol := FLookahead;
   match(VsIF);
   Condition := RuleExpr;
@@ -825,10 +751,10 @@ function TVelocityParser.RuleTemplateStmt: IStmt;
 var
   expr: IExpr;
   symbol: IvelocitySymbol;
-  AllowEnd: IPreserveValue<boolean>;
+  Options: IPreserveValue<TParserOptions>;
   Container: IVelocityTemplate;
 begin
-  AllowEnd := Preseve.Value(FAllowEnd, true);
+  Options := Preseve.Value<TParserOptions>(FOptions, FOptions + [poAllowEnd]);
   symbol := FLookahead;
 
   match(vstemplate);
@@ -904,7 +830,7 @@ begin
   symbol := FLookahead;
   match(vsBreak);
   match(VsEndScript);
-  if not FInFor then
+  if not(poInLoop in FOptions) then
     RaiseError(symbol.Position, 'Continue should be in a for/while Stmt');
   result := TBreakStmt.Create(symbol.Position);
 end;
@@ -926,7 +852,7 @@ begin
   symbol := FLookahead;
   match(vsContinue);
   match(VsEndScript);
-  if not FInFor then
+  if not(poInLoop in FOptions) then
     RaiseError(symbol.Position, 'Continue should be in a for/while Stmt');
 
   result := TContinueStmt.Create(symbol.Position);
@@ -939,19 +865,15 @@ var
   TrueContainer: IVelocityTemplate;
   FalseContainer: IVelocityTemplate;
 
-  AllowElse: IPreserveValue<boolean>;
-  HasElse: IPreserveValue<boolean>;
-  AllowEnd: IPreserveValue<boolean>;
+  Options: IPreserveValue<TParserOptions>;
 var
   symbol: IvelocitySymbol;
 begin
   symbol := FLookahead;
-  if not FAllowElIf then
+  if not(poAllowElIf in FOptions) then
     RaiseError(symbol.Position, 'ElIF expected');
 
-  AllowElse := Preseve.Value(FAllowElse, true);
-  HasElse := Preseve.Value(FHasElse, false);
-  AllowEnd := Preseve.Value(FAllowEnd, true);
+  Options := Preseve.Value<TParserOptions>(FOptions, FOptions + [poAllowElse, poHasElse, poAllowEnd]);
 
   match(VsELIF);
 
@@ -996,7 +918,7 @@ var
 begin
   symbol := FLookahead;
   // NOTE: we do not match anything as we want lookahead functions to continue to work
-  if not FAllowEnd then
+  if not(poAllowEnd in FOptions) then
     RaiseError(symbol.Position, 'End not expected');
   result := TEndStmt.Create(symbol.Position);
 end;
@@ -1082,17 +1004,13 @@ var
   range: IExpr;
   lowValue, highValue: IExpr;
   ForOp: TForOp;
-  InFor: IPreserveValue<boolean>;
-  AllowEnd: IPreserveValue<boolean>;
-  AllowElIf: IPreserveValue<boolean>;
+  Options: IPreserveValue<TParserOptions>;
   Container: IVelocityTemplate;
 var
   symbol: IvelocitySymbol;
 begin
   symbol := FLookahead;
-  InFor := Preseve.Value(FInFor, true);
-  AllowEnd := Preseve.Value(FAllowEnd, true);
-  AllowElIf := Preseve.Value(FAllowElIf, false);
+  Options := Preseve.Value<TParserOptions>(FOptions, FOptions + [poInLoop, poAllowEnd]);
   match(VsFor);
   PushContainer;
   Container := CurrentContainer;
@@ -1164,15 +1082,11 @@ end;
 function TVelocityParser.RuleWhileStmt: IStmt;
 var
   Condition: IExpr;
-  InFor: IPreserveValue<boolean>;
-  AllowEnd: IPreserveValue<boolean>;
-  AllowElIf: IPreserveValue<boolean>;
+  Options: IPreserveValue<TParserOptions>;
   symbol: IvelocitySymbol;
 begin
   symbol := FLookahead;
-  InFor := Preseve.Value(FInFor, true);
-  AllowEnd := Preseve.Value(FAllowEnd, true);
-  AllowElIf := Preseve.Value(FAllowElIf, false);
+  Options := Preseve.Value<TParserOptions>(FOptions, FOptions + [poInLoop, poAllowEnd]);
   PushContainer;
 
   match(vsWhile);
@@ -1196,10 +1110,10 @@ function TVelocityParser.RuleWithStmt: IStmt;
 var
   expr: IExpr;
   symbol: IvelocitySymbol;
-  AllowEnd: IPreserveValue<boolean>;
+  Options: IPreserveValue<TParserOptions>;
   Container: IVelocityTemplate;
 begin
-  AllowEnd := Preseve.Value(FAllowEnd, true);
+  Options := Preseve.Value<TParserOptions>(FOptions, FOptions + [poAllowEnd]);
 
   symbol := FLookahead;
 
