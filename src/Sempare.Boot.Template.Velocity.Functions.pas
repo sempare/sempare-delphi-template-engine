@@ -102,58 +102,6 @@ begin
   end;
 end;
 
-const
-  ARGTYPE_STRING = 'S';
-  ARGTYPE_NUMBER = 'N';
-  ARGTYPE_DATETIME = 'D';
-  ARGTYPE_BOOLEAN = 'B';
-  ARGTYPE_INTEGER = 'I';
-
-function IsValidArg(const AArgNo: integer; const ASig: char; const AValue: TValue; out AMsg: string): boolean;
-{$IF  defined(DEBUG)}
-var
-  s: string;
-{$ENDIF}
-begin
-{$IF  defined(DEBUG)}
-  s := asstring(AValue);
-{$ENDIF}
-  case ASig of
-    ARGTYPE_STRING:
-      begin
-        result := isStrLike(AValue);
-        if not result then
-          AMsg := format('Parameter %d expected to be a string', [AArgNo]);
-      end;
-    ARGTYPE_DATETIME:
-      begin
-        result := isnumlike(AValue);
-        if not result then
-          AMsg := format('Parameter %d expected to be a datetime', [AArgNo]);
-      end;
-    ARGTYPE_BOOLEAN:
-      begin
-        result := isBool(AValue);
-        if not result then
-          AMsg := format('Parameter %d expected to be a boolean', [AArgNo]);
-      end;
-    ARGTYPE_NUMBER:
-      begin
-        result := isnumlike(AValue);
-        if not result then
-          AMsg := format('Parameter %d expected to be numeric', [AArgNo]);
-      end;
-    ARGTYPE_INTEGER:
-      begin
-        result := isIntLike(AValue);
-        if not result then
-          AMsg := format('Parameter %d expected to be an integer', [AArgNo]);
-      end;
-  else
-    result := false;
-  end;
-end;
-
 type
   TInternalFuntions = class
   public
@@ -180,6 +128,12 @@ type
     class function Isint(const AValue: TValue): boolean; static;
     class function isBool(const AValue): boolean; static;
     class function IsNum(const AValue: TValue): boolean; static;
+    class function StartsWith(const AString, ASearch: string): boolean; overload; static;
+    class function StartsWith(const AString, ASearch: string; const AIgnoreCase: boolean): boolean; overload; static;
+    class function EndsWith(const AString, ASearch: string): boolean; overload; static;
+    class function EndsWith(const AString, ASearch: string; const AIgnoreCase: boolean): boolean; overload; static;
+    class function TypeOf(const AValue: TValue): string; static;
+
   end;
 
 class function TInternalFuntions.Pos(const search, Str: string): integer;
@@ -205,6 +159,11 @@ end;
 class function TInternalFuntions.Trim(const AString: string): string;
 begin
   result := AString.Trim;
+end;
+
+class function TInternalFuntions.TypeOf(const AValue: TValue): string;
+begin
+  result := GRttiContext.GetType(AValue.AsType<TValue>.TypeInfo).QualifiedName;
 end;
 
 class function TInternalFuntions.SubStr(const AString: string; AStartOffset: integer; ALength: integer): string;
@@ -264,6 +223,16 @@ begin
     result[i] := UnWrap(AArgs[i]).AsVarRec;
 end;
 
+class function TInternalFuntions.EndsWith(const AString, ASearch: string): boolean;
+begin
+  result := AString.EndsWith(ASearch, true);
+end;
+
+class function TInternalFuntions.EndsWith(const AString, ASearch: string; const AIgnoreCase: boolean): boolean;
+begin
+  result := AString.EndsWith(ASearch, AIgnoreCase);
+end;
+
 class function TInternalFuntions.Fmt(const AArgs: TArray<TValue>): string;
 begin
   result := format(asstring(AArgs[0]), ToArrayTVarRec(copy(AArgs, 1, length(AArgs) - 1)));
@@ -282,6 +251,16 @@ end;
 class function TInternalFuntions.Int(const AValue: TValue): integer;
 begin
   result := asInt(AValue);
+end;
+
+class function TInternalFuntions.StartsWith(const AString, ASearch: string): boolean;
+begin
+  result := AString.StartsWith(ASearch, true);
+end;
+
+class function TInternalFuntions.StartsWith(const AString, ASearch: string; const AIgnoreCase: boolean): boolean;
+begin
+  result := AString.StartsWith(ASearch, AIgnoreCase);
 end;
 
 class function TInternalFuntions.Str(const AValue: TValue): string;
