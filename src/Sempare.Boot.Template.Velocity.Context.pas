@@ -46,14 +46,12 @@ type
   IVelocityFunctions = interface
     ['{D80C777C-086E-4680-A97B-92B8FA08C995}']
 
-    function GetIsEmpty : boolean;
+    function GetIsEmpty: boolean;
     procedure AddFunctions(const AClass: TClass);
     procedure RegisterDefaults;
-
     function TryGetValue(const AName: string; out AMethod: TArray<TRttiMethod>): boolean;
-    function Add(const AMethod: TRttiMethod) : boolean;
-
-    property IsEmpty : boolean read GetIsEmpty;
+    function Add(const AMethod: TRttiMethod): boolean;
+    property IsEmpty: boolean read GetIsEmpty;
   end;
 
   TVelocityEvaluationOption = ( //
@@ -62,7 +60,7 @@ type
     eoEvalVarsEarly, //
     eoStripRecurringNewlines, //
     eoTrimLines, //
-    //eoDebug, // TODO
+    // eoDebug, // TODO
     eoPrettyPrint, //
     eoStripRecurringSpaces, //
     eoConvertTabsToSpaces, //

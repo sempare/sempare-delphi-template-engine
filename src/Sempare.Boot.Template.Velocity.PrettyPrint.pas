@@ -72,6 +72,7 @@ type
     procedure Visit(const AStmt: IBreakStmt); overload; override;
     procedure Visit(const AStmt: IEndStmt); overload; override;
     procedure Visit(const AStmt: IIncludeStmt); overload; override;
+    procedure Visit(const AStmt: IRequireStmt); overload; override;
     procedure Visit(const AStmt: IPrintStmt); overload; override;
     procedure Visit(const AStmt: IIfStmt); overload; override;
     procedure Visit(const AStmt: IWhileStmt); overload; override;
@@ -297,7 +298,7 @@ end;
 procedure TPrettyPrintVelocityVisitor.Visit(const AExpr: IUnaryExpr);
 begin
   write('%s (', [UnaryToStr(AExpr.UnaryOp)]);
-  AcceptVisitor(AExpr.Expr, self);
+  AcceptVisitor(AExpr.Condition, self);
   write(')');
 end;
 
@@ -370,16 +371,31 @@ begin
   writeln('<% end %>');
 end;
 
+procedure TPrettyPrintVelocityVisitor.Visit(const AStmt: IRequireStmt);
+var
+  i: integer;
+begin
+  tab();
+  write('<% require(');
+  for i := 0 to AStmt.ExprList.Count - 1 do
+  begin
+    if i > 0 then
+      write(',');
+    AcceptVisitor(AStmt.ExprList.Expr[i], self);
+  end;
+  writeln('%>');
+end;
+
 procedure TPrettyPrintVelocityVisitor.Visit(const AExpr: IArrayExpr);
 var
   i: integer;
 begin
   write('[');
-  for i := 0 to AExpr.Value.Count - 1 do
+  for i := 0 to AExpr.ExprList.Count - 1 do
   begin
     if i > 0 then
       write(',');
-    AcceptVisitor(AExpr.Value.Expr[i], self);
+    AcceptVisitor(AExpr.ExprList.Expr[i], self);
   end;
   write(']');
 end;

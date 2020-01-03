@@ -204,6 +204,8 @@
         <DCCReference Include="src\Sempare.Boot.Template.Velocity.TestDictionary.pas"/>
         <DCCReference Include="src\Sempare.Boot.Template.Velocity.Test.Arr.pas"/>
         <DCCReference Include="src\Sempare.Boot.Template.Velocity.TestCall.pas"/>
+        <DCCReference Include="src\Sempare.Boot.Template.Velocity.NewLineOption.Test.pas"/>
+        <DCCReference Include="src\Sempare.Boot.Template.Velocity.Context.Test.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>

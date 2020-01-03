@@ -61,6 +61,7 @@ type
     procedure Visit(const AStmt: IBreakStmt); overload; virtual;
     procedure Visit(const AStmt: IEndStmt); overload; virtual;
     procedure Visit(const AStmt: IIncludeStmt); overload; virtual;
+    procedure Visit(const AStmt: IRequireStmt); overload; virtual;
     procedure Visit(const AStmt: IEncodeExpr); overload; virtual;
     procedure Visit(const AStmt: IPrintStmt); overload; virtual;
     procedure Visit(const AStmt: IIfStmt); overload; virtual;
@@ -219,6 +220,11 @@ begin
 end;
 
 procedure TBaseVelocityVisitor.Visit(const AStmt: IWithStmt);
+begin
+
+end;
+
+procedure TBaseVelocityVisitor.Visit(const AStmt: IRequireStmt);
 begin
 
 end;

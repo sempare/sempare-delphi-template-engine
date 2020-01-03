@@ -68,6 +68,8 @@ type
     procedure TestArray;
     [Test, Ignore]
     procedure TestStmts;
+    [Test]
+    procedure TestRequire;
   end;
 
 implementation
@@ -131,6 +133,22 @@ begin
   ctx := Velocity.Context;
   ctx.Options := [eoStripRecurringSpaces];
   Assert.AreEqual(' hello world ', Velocity.Eval(ctx, '  hello   world    '));
+end;
+
+procedure TTestVelocity.TestRequire;
+type
+  TInfo = record
+    Name: string;
+  end;
+var
+  info: TInfo;
+begin
+  Assert.AreEqual('', Velocity.Eval('<% require(''TInfo'') %>', info));
+  Assert.WillRaise(
+    procedure
+    begin
+      Assert.AreEqual('', Velocity.Eval('<% require(''TNotFound'') %>', info));
+    end);
 end;
 
 procedure TTestVelocity.TestStartEndToken;

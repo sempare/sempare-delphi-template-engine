@@ -150,7 +150,6 @@ begin
   RaiseError(APositional, AFormat, []);
 end;
 
-
 { EVelocityEvaluationError }
 
 constructor EVelocityEvaluationError.Create(const APosition: IPosition; const AMessage: string);

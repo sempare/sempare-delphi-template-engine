@@ -92,13 +92,13 @@ begin
 end;
 
 function Contains(const APosition: IPosition; const ALeft, ARight: TValue): boolean;
-
+var
+  T: TRttiType;
   procedure visitobject;
   var
     val: TValue;
     e: TObject;
     m, movenext: TRttiMethod;
-    T: TRttiType;
     current: TRttiProperty;
   begin
     m := T.GetMethod('GetEnumerator');
@@ -129,15 +129,12 @@ function Contains(const APosition: IPosition; const ALeft, ARight: TValue): bool
   procedure visitarray;
   var
     at: TRttiArrayType;
-    Dt: TRttiOrdinalType;
-    i, ai: integer;
-    T: TRttiType;
+    i: integer;
     v: TValue;
   begin
     at := T as TRttiArrayType;
     if at.DimensionCount > 1 then
       RaiseError(APosition, 'Only one dimensional arrays are supported.');
-    Dt := at.Dimensions[0] as TRttiOrdinalType;
     result := false;
     for i := 0 to ARight.GetArrayLength - 1 do
     begin
@@ -171,8 +168,6 @@ function Contains(const APosition: IPosition; const ALeft, ARight: TValue): bool
     end;
   end;
 
-var
-  T: TRttiType;
 begin
   if not isEnumerable(ARight) then
     RaiseError(APosition, 'Expression must be enumerable');
@@ -317,8 +312,6 @@ begin
 end;
 
 function AsString(const AValue: TValue): string;
-var
-  v: string;
 begin
   if AValue.TypeInfo = TypeInfo(boolean) then
     if AValue.AsBoolean then

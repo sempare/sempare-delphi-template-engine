@@ -44,12 +44,11 @@ type
     );
 
   TBinOp = ( //
-    boInvalid,
+    boInvalid, //
     boAND, boOR, // logical
     boPlus, boMinus, boDiv, boMult, boMod, // numeric
     roEQ, roNotEQ, roLT, roLTE, roGT, roGTE, // comparison
-    boIN
-    );
+    boIN);
 
   TVelocitySymbol = ( //
     // general parsing
@@ -231,6 +230,15 @@ type
     property Expr: IExpr read GetExpr;
   end;
 
+  IExprList = interface;
+
+  IRequireStmt = interface(IStmt)
+    ['{DCFF1F48-C9E7-45A9-BD59-C9767FDAB0D2}']
+    function GetExprList: IExprList;
+
+    property ExprList: IExprList read GetExprList;
+  end;
+
   IEncodeExpr = interface(IExpr)
     ['{F192426F-5D83-4DF7-84C4-182CF90AFFA8}']
 
@@ -335,9 +343,9 @@ type
   IArrayExpr = interface(IExpr)
     ['{3EB3BEBF-9BB0-4E8E-8919-CFE913394427}']
 
-    function GetValue: IExprList;
+    function GetExprList: IExprList;
 
-    property Value: IExprList read GetValue;
+    property ExprList: IExprList read GetExprList;
   end;
 
   IValueExpr = interface(IExpr)
@@ -359,11 +367,11 @@ type
   ITernaryExpr = interface(IExpr)
     ['{112A2FAA-B411-4F31-B873-B85EFC26AC5B}']
 
-    function GetCondition: IExpr;
+    function GetExpr: IExpr;
     function GetTrueExpr: IExpr;
     function GetFalseExpr: IExpr;
 
-    property Condition: IExpr read GetCondition;
+    property Condition: IExpr read GetExpr;
     property TrueExpr: IExpr read GetTrueExpr;
     property FalseExpr: IExpr read GetFalseExpr;
   end;
@@ -373,12 +381,12 @@ type
   IVariableDerefExpr = interface(IExpr)
     ['{9EB744DC-B8FE-4923-B9B1-C07D95C5314F}']
 
-    function GetVariable: IExpr;
+    function GetExpr: IExpr;
     function GetDerefExpr: IExpr;
     function GetDerefType: TDerefType;
 
     property DerefType: TDerefType read GetDerefType;
-    property Variable: IExpr read GetVariable;
+    property Variable: IExpr read GetExpr;
     property DerefExpr: IExpr read GetDerefExpr;
   end;
 
@@ -440,7 +448,7 @@ type
     function GetExpr: IExpr;
 
     property UnaryOp: TUnaryOp read GetUnaryOp;
-    property Expr: IExpr read GetExpr;
+    property Condition: IExpr read GetExpr;
   end;
 
   IVelocityVisitor = interface
@@ -466,6 +474,7 @@ type
     procedure Visit(const AStmt: IBreakStmt); overload;
     procedure Visit(const AStmt: IEndStmt); overload;
     procedure Visit(const AStmt: IIncludeStmt); overload;
+    procedure Visit(const AStmt: IRequireStmt); overload;
     procedure Visit(const AStmt: IEncodeExpr); overload;
     procedure Visit(const AStmt: IPrintStmt); overload;
     procedure Visit(const AStmt: IIfStmt); overload;

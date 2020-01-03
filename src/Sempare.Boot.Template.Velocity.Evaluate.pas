@@ -48,7 +48,7 @@ uses
   Sempare.Boot.Template.Velocity.Visitor;
 
 type
-  TLoopOption = (coContinue , coBreak );
+  TLoopOption = (coContinue, coBreak);
   TLoopOptions = set of TLoopOption;
 
   TEvaluationVelocityVisitor = class(TBaseVelocityVisitor)
@@ -93,6 +93,7 @@ type
     procedure Visit(const AStmt: IBreakStmt); overload; override;
     procedure Visit(const AStmt: IEndStmt); overload; override;
     procedure Visit(const AStmt: IIncludeStmt); overload; override;
+    procedure Visit(const AStmt: IRequireStmt); overload; override;
 
     procedure Visit(const AStmt: IPrintStmt); overload; override;
     procedure Visit(const AStmt: IIfStmt); overload; override;
@@ -114,12 +115,11 @@ type
     FNL: string;
     FState: TNLState;
     FBuffer: TStringBuilder;
+    procedure TrimEndOfLine;
   public
     constructor Create(const AStream: TStream; const AEncoding: TEncoding; const ANL: string; const AOptions: TVelocityEvaluationOptions);
     destructor Destroy; override;
-  protected
     procedure Write(const AString: string); override;
-
   end;
 
 implementation
@@ -129,10 +129,28 @@ uses
   Sempare.Boot.Template.Velocity.Rtti,
   Sempare.Boot.Template.Velocity.Util;
 
-const
-  BREAK_OR_CONTINUE: TLoopOptions = [coContinue, coBreak];
+{$WARN WIDECHAR_REDUCED OFF}
 
-  { TEvaluationVelocityVisitor }
+var
+  WHITESPACE: set of char;
+  NEWLINE: set of char;
+{$WARN WIDECHAR_REDUCED ON}
+
+function IsWhitespace(const AChar: char): boolean; inline;
+begin
+{$WARN WIDECHAR_REDUCED OFF}
+  result := AChar in WHITESPACE;
+{$WARN WIDECHAR_REDUCED ON}
+end;
+
+function IsNewline(const AChar: char): boolean; inline;
+begin
+{$WARN WIDECHAR_REDUCED OFF}
+  result := AChar in NEWLINE;
+{$WARN WIDECHAR_REDUCED ON}
+end;
+
+{ TEvaluationVelocityVisitor }
 
 constructor TEvaluationVelocityVisitor.Create(const AContext: IVelocityContext; const AValue: TValue; const AStream: TStream);
 var
@@ -257,7 +275,7 @@ procedure TEvaluationVelocityVisitor.Visit(const AExpr: IUnaryExpr);
 var
   v: TValue;
 begin
-  acceptvisitor(AExpr.Expr, self);
+  acceptvisitor(AExpr.Condition, self);
   v := FEvalStack.pop;
   case AExpr.UnaryOp of
     uoMinus:
@@ -439,7 +457,7 @@ begin
   FStream := AStream;
 
   if (eoStripRecurringNewlines in FContext.Options) or (eoTrimLines in FContext.Options) then
-    FStreamWriter := TNewLineStreamWriter.Create(FStream, FContext.Encoding, FContext.NewLine, FContext.Options)
+    FStreamWriter := TNewLineStreamWriter.Create(FStream, FContext.Encoding, FContext.NEWLINE, FContext.Options)
   else
     FStreamWriter := TStreamWriter.Create(FStream, FContext.Encoding);
 
@@ -474,7 +492,6 @@ function TEvaluationVelocityVisitor.ExprListArgs(const AExprList: IExprList): TA
 var
   i: integer;
   Count: integer;
-  v: TValue;
 begin
   AExprList.Accept(self);
 
@@ -638,9 +655,9 @@ function TEvaluationVelocityVisitor.Invoke(const AFuncCall: IFunctionCallExpr; c
 var
   m: TRttiMethod;
 begin
-  if length(AFuncCall.FunctionInfo) = 1 then
-    m := AFuncCall.FunctionInfo[0]
-  else
+  // there should always be at least one element
+  m := AFuncCall.FunctionInfo[0];
+  if length(AFuncCall.FunctionInfo) > 1 then
   begin
     for m in AFuncCall.FunctionInfo do
       if length(m.GetParameters) = length(AArgs) then
@@ -857,12 +874,30 @@ begin
   FScopeStack.pop;
 end;
 
+procedure TEvaluationVelocityVisitor.Visit(const AStmt: IRequireStmt);
+var
+  exprs: TArray<TValue>;
+  InputType: string;
+  i: integer;
+begin
+  InputType := GRttiContext.GetType(FScopeStack.peek['_'].TypeInfo).Name.ToLower;
+  exprs := ExprListArgs(AStmt.exprlist);
+  if length(exprs) = 0 then
+    exit;
+  for i := 0 to length(exprs) do
+  begin
+    if AsString(exprs[i]).ToLower = InputType then
+      exit;
+  end;
+  RaiseError(Position(AStmt), 'Input of required tpe not found');
+end;
+
 procedure TEvaluationVelocityVisitor.Visit(const AExpr: IArrayExpr);
 var
   exprs: TArray<TValue>;
   v: TValue;
 begin
-  exprs := ExprListArgs(AExpr.Value);
+  exprs := ExprListArgs(AExpr.exprlist);
   v := TValue.From < TArray < TValue >> (exprs);
   FEvalStack.push(v);
 end;
@@ -887,17 +922,9 @@ begin
   FState := nlsStartOfLine;
 end;
 
-var
-  WHITESPACE: set of char;
-  NL: set of char;
-
 destructor TNewLineStreamWriter.Destroy;
 begin
-  if eoTrimLines in FOptions then
-  begin
-    while (FBuffer.length >= 1) and (FBuffer.Chars[FBuffer.length - 1] in WHITESPACE) do
-      FBuffer.length := FBuffer.length - 1;
-  end;
+  TrimEndOfLine();
   if FBuffer.length > 0 then
   begin
     inherited write(FBuffer.ToString);
@@ -906,100 +933,83 @@ begin
   inherited;
 end;
 
+procedure TNewLineStreamWriter.TrimEndOfLine;
+begin
+  if eoTrimLines in FOptions then
+  begin
+    while (FBuffer.length >= 1) and IsWhitespace(FBuffer.Chars[FBuffer.length - 1]) do
+      FBuffer.length := FBuffer.length - 1;
+  end;
+end;
+
 procedure TNewLineStreamWriter.Write(const AString: string);
 var
-  c, c2: char;
-  i: integer;
+  c: char;
+
+  procedure Append(const ANext: TNLState);
+  begin
+    FBuffer.Append(c);
+    FState := ANext;
+  end;
 
 begin
   for c in AString do
   begin
     case FState of
       nlsStartOfLine:
-
-        if c in WHITESPACE then
+        if IsWhitespace(c) then
         begin
           if not(eoTrimLines in FOptions) then
-          begin
-            FBuffer.Append(c);
-            FState := nlsHasText;
-          end;
+            Append(nlsHasText);
         end
-        else if c in NL then
+        else if IsNewline(c) then
         begin
           if not(eoStripRecurringNewlines in FOptions) then
           begin
-            FBuffer.Append(c);
-            FState := nlsNewLine;
+            Append(nlsNewLine);
             inherited write(FBuffer.ToString);
             FBuffer.clear;
           end;
         end
         else
-        begin
-          FBuffer.Append(c);
-          FState := nlsHasText;
-        end;
-
+          Append(nlsHasText);
       nlsHasText:
-        if c in WHITESPACE then
+        if IsWhitespace(c) then
+          Append(nlsHasText)
+        else if IsNewline(c) then
         begin
-          FBuffer.Append(c);
-          FState := nlsHasText;
-        end
-        else if c in NL then
-        begin
-          if eoTrimLines in FOptions then
-          begin
-            while (FBuffer.length >= 1) and (FBuffer.Chars[FBuffer.length - 1] in WHITESPACE) do
-              FBuffer.length := FBuffer.length - 1;
-          end;
-          FBuffer.Append(c);
+          TrimEndOfLine();
+          FBuffer.Append(FNL);
           FState := nlsNewLine;
           inherited write(FBuffer.ToString);
           FBuffer.clear;
-
         end
         else
-        begin
-          FBuffer.Append(c);
-          FState := nlsHasText;
-        end;
-
+          Append(nlsHasText);
       nlsNewLine:
-
-        if c in WHITESPACE then
+        if IsWhitespace(c) then
         begin
           if not(eoTrimLines in FOptions) then
-          begin
-            FBuffer.Append(c);
-            FState := nlsNewLine;
-          end;
+            Append(nlsNewLine);
         end
-        else if c in NL then
+        else if IsNewline(c) then
         begin
           if not(eoStripRecurringNewlines in FOptions) then
           begin
-            FBuffer.Append(c);
-            FState := nlsNewLine;
+            Append(nlsNewLine);
             inherited write(FBuffer.ToString);
             FBuffer.clear;
-
           end;
         end
         else
-        begin
-          FBuffer.Append(c);
-          FState := nlsHasText;
-        end;
+          Append(nlsHasText);
     end;
-
   end;
 end;
 
 initialization
 
 WHITESPACE := [' '] + [#9];
-NL := [#10] + [#13];
+NEWLINE := [#10] + [#13];
 
 end.
