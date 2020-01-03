@@ -45,7 +45,9 @@ type
     [Test]
     procedure TestRecurringSpaces;
     [Test]
-    procedure TestRecurringNL;
+    procedure TestRecurringNLAndSpaces;
+    [Test]
+    procedure TestRecurringOnlyNL;
   end;
 
 implementation
@@ -58,13 +60,13 @@ uses
 
 { TTestNewLineOption }
 
-procedure TTestNewLineOption.TestRecurringNL;
+procedure TTestNewLineOption.TestRecurringNLAndSpaces;
 var
   s: TStringStream;
   w: TNewLineStreamWriter;
 begin
   s := TStringStream.create;
-  w := TNewLineStreamWriter.create(s, TEncoding.ASCII, #10, [eoTrimLines, eoStripRecurringNewline]);
+  w := TNewLineStreamWriter.create(s, TEncoding.ASCII, #10, [eoTrimLines, eoStripRecurringNewlines]);
   try
     w.Write(#10#10#10#10#10'     hello     '#10#10#10#10'    world   '#10#10#10#10);
   finally
@@ -74,6 +76,21 @@ begin
   end;
 end;
 
+procedure TTestNewLineOption.TestRecurringOnlyNL;
+var
+  s: TStringStream;
+  w: TNewLineStreamWriter;
+begin
+  s := TStringStream.create;
+  w := TNewLineStreamWriter.create(s, TEncoding.ASCII, #10, [eoStripRecurringNewlines]);
+  try
+    w.Write(#10#10#10#10#10'     hello     '#10#10#10#10'    world   '#10#10#10#10);
+  finally
+    w.Free;
+    Assert.AreEqual('     hello     '#10'    world   '#10, s.datastring);
+    s.Free;
+  end;
+end;
 
 procedure TTestNewLineOption.TestRecurringSpaces;
 var

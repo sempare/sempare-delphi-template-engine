@@ -46,11 +46,11 @@ const
   eoNoDefaultFunctions = TVelocityEvaluationOption.eoNoDefaultFunctions;
   eoNoPosition = TVelocityEvaluationOption.eoNoPosition;
   eoEvalEarly = TVelocityEvaluationOption.eoEvalEarly;
-  eoStripRecurringNewline = TVelocityEvaluationOption.eoStripRecurringNewline;
+  eoStripRecurringNewlines = TVelocityEvaluationOption.eoStripRecurringNewlines;
   eoTrimLines = TVelocityEvaluationOption.eoTrimLines;
   // eoDebug = TVelocityEvaluationOption.eoDebug;
   eoPrettyPrint = TVelocityEvaluationOption.eoPrettyPrint;
-  eoThrowWhenVariableNotFound = TVelocityEvaluationOption.eoThrowWhenVariableNotFound;
+  eoRaiseErrorWhenVariableNotFound = TVelocityEvaluationOption.eoRaiseErrorWhenVariableNotFound;
 
 type
   TVelocityEvaluationOptions = Sempare.Boot.Template.Velocity.Context.TVelocityEvaluationOptions;

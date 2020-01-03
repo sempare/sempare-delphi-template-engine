@@ -286,7 +286,7 @@ begin
     begin
       val := Deref(Scope.Root, AExpr.variable);
     end;
-    if val.IsEmpty and (eoThrowWhenVariableNotFound in FContext.Options) then
+    if val.IsEmpty and (eoRaiseErrorWhenVariableNotFound in FContext.Options) then
       RaiseError(Position(AExpr), 'Variable could not be found.');
   end
   else
@@ -438,7 +438,7 @@ begin
   FContext := AContext;
   FStream := AStream;
 
-  if (eoStripRecurringNewline in FContext.Options) or (eoTrimLines in FContext.Options) then
+  if (eoStripRecurringNewlines in FContext.Options) or (eoTrimLines in FContext.Options) then
     FStreamWriter := TNewLineStreamWriter.Create(FStream, FContext.Encoding, FContext.NewLine, FContext.Options)
   else
     FStreamWriter := TStreamWriter.Create(FStream, FContext.Encoding);
@@ -927,7 +927,7 @@ begin
         end
         else if c in NL then
         begin
-          if not(eoStripRecurringNewline in FOptions) then
+          if not(eoStripRecurringNewlines in FOptions) then
           begin
             FBuffer.Append(c);
             FState := nlsNewLine;
@@ -978,7 +978,7 @@ begin
         end
         else if c in NL then
         begin
-          if not(eoStripRecurringNewline in FOptions) then
+          if not(eoStripRecurringNewlines in FOptions) then
           begin
             FBuffer.Append(c);
             FState := nlsNewLine;
