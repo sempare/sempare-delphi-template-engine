@@ -102,6 +102,7 @@ An attempt has been made not to use the latest features to ease backward compata
 ### Using Sempare Boot Velocity in your Delphi project
 
 The project currently includes two project files:
+
 __Sempare.Boot.Template.Velocity.Pkg.dpr__
 
 This project builds a package that should be included into your project.
