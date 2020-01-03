@@ -294,6 +294,8 @@ begin
     end
     else
       case Fcurrent.Input of
+        ';':
+          Exit(SimpleToken(vsSemiColon));
         ',':
           Exit(SimpleToken(vsComma));
         '(':
@@ -551,13 +553,14 @@ end;
 initialization
 
 GKeywords := TDictionary<string, TVelocitySymbol>.Create;
+AddHashedKeyword('require', VsRequire);
 AddHashedKeyword('if', VsIF);
 AddHashedKeyword('elif', VsELIF);
 AddHashedKeyword('else', vsElse);
 AddHashedKeyword('while', vsWhile);
 AddHashedKeyword('with', vsWith);
 AddHashedKeyword('template', vsTemplate);
-AddHashedKeyword('print', vsPRINT);
+AddHashedKeyword('print', VsPRINT);
 AddHashedKeyword('for', VsFOR);
 AddHashedKeyword('break', VsBREAK);
 AddHashedKeyword('continue', VsCONTINUE);

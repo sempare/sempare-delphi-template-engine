@@ -66,6 +66,8 @@ type
     procedure TestVariableNotFound;
     [Test]
     procedure TestArray;
+    [Test, Ignore]
+    procedure TestStmts;
   end;
 
 implementation
@@ -138,6 +140,11 @@ begin
   ctx.StartToken := '{{';
   ctx.EndToken := '}}';
   Assert.AreEqual('hello', Velocity.Eval(ctx, '{{ if true }}hello{{else}}bye{{end}}'));
+end;
+
+procedure TTestVelocity.TestStmts;
+begin
+  Assert.AreEqual('1', Velocity.Eval('<% a := 1; print(a) %>'));
 end;
 
 type

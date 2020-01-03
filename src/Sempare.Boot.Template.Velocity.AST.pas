@@ -121,7 +121,8 @@ type
     VsMOD, //
 
     // for expression list
-    vsComma //
+    vsComma, //
+    vsSemiColon //
     );
 
   IPosition = interface
