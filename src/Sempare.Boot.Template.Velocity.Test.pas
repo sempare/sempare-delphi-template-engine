@@ -74,6 +74,7 @@ implementation
 
 uses
   System.Generics.Collections,
+  Sempare.Boot.Template.Velocity.Context,
   Sempare.Boot.Template.Velocity;
 
 { TTestVelocity }

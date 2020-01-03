@@ -123,7 +123,7 @@ type
   TPrintStmt = class(TAbstractStmt, IPrintStmt)
   private
     FExpr: IExpr;
-    function GetExpr: IExpr; inline;
+    function GetExpr: IExpr;
     procedure Accept(const AVisitor: IVelocityVisitor); override;
   public
     constructor Create(const APosition: IPosition; const AExpr: IExpr);
@@ -132,7 +132,7 @@ type
   TIncludeStmt = class(TAbstractStmt, IIncludeStmt)
   private
     FExpr: IExpr;
-    function GetExpr: IExpr; inline;
+    function GetExpr: IExpr;
     procedure Accept(const AVisitor: IVelocityVisitor); override;
   public
     constructor Create(const APosition: IPosition; const AExpr: IExpr);
@@ -143,9 +143,9 @@ type
     FCondition: IExpr;
     FTrueContainer: IVelocityTemplate;
     FFalseContainer: IVelocityTemplate;
-    function GetCondition: IExpr; inline;
-    function GetTrueContainer: IVelocityTemplate; inline;
-    function GetFalseContainer: IVelocityTemplate; inline;
+    function GetCondition: IExpr;
+    function GetTrueContainer: IVelocityTemplate;
+    function GetFalseContainer: IVelocityTemplate;
 
     procedure Accept(const AVisitor: IVelocityVisitor); override;
   public
@@ -179,7 +179,7 @@ type
     FExpr: IExpr;
     FContainer: IVelocityTemplate;
     function GetContainer: IVelocityTemplate;
-    function GetExpr: IExpr; inline;
+    function GetExpr: IExpr;
     procedure Accept(const AVisitor: IVelocityVisitor); override;
 
   public
@@ -190,8 +190,8 @@ type
   private
     FCondition: IExpr;
     FContainer: IVelocityTemplate;
-    function GetCondition: IExpr; inline;
-    function GetContainer: IVelocityTemplate; inline;
+    function GetCondition: IExpr;
+    function GetContainer: IVelocityTemplate;
     procedure Accept(const AVisitor: IVelocityVisitor); override;
 
   public
@@ -203,9 +203,9 @@ type
     FVariable: string;
     FExpr: IExpr;
     FContainer: IVelocityTemplate;
-    function GetVariable: string; inline;
-    function GetExpr: IExpr; inline;
-    function GetContainer: IVelocityTemplate; inline;
+    function GetVariable: string;
+    function GetExpr: IExpr;
+    function GetContainer: IVelocityTemplate;
     procedure Accept(const AVisitor: IVelocityVisitor); override;
 
   public
@@ -219,11 +219,11 @@ type
     FLowExpr: IExpr;
     FHighExpr: IExpr;
     FContainer: IVelocityTemplate;
-    function GetVariable: string; inline;
-    function GetForOp: TForOp; inline;
-    function GetLowExpr: IExpr; inline;
-    function GetHighExpr: IExpr; inline;
-    function GetContainer: IVelocityTemplate; inline;
+    function GetVariable: string;
+    function GetForOp: TForOp;
+    function GetLowExpr: IExpr;
+    function GetHighExpr: IExpr;
+    function GetContainer: IVelocityTemplate;
     procedure Accept(const AVisitor: IVelocityVisitor); override;
 
   public
@@ -234,8 +234,8 @@ type
   private
     FVariable: string;
     FExpr: IExpr;
-    function GetVariable: string; inline;
-    function GetExpr: IExpr; inline;
+    function GetVariable: string;
+    function GetExpr: IExpr;
     procedure Accept(const AVisitor: IVelocityVisitor); override;
 
   public
@@ -245,9 +245,9 @@ type
   TExprList = class(TAbstractBase, IExprList)
   private
     FExprs: TArray<IExpr>;
-    function GetExpr(const AOffset: integer): IExpr; inline;
+    function GetExpr(const AOffset: integer): IExpr;
     procedure AddExpr(const AExpr: IExpr);
-    function GetExprCount: integer; inline;
+    function GetExprCount: integer;
     procedure Accept(const AVisitor: IVelocityVisitor); override;
   public
   end;
@@ -258,7 +258,7 @@ type
   TValueExpr = class(TAbstractExpr, IValueExpr)
   private
     FValue: TValue;
-    function GetValue: TValue; inline;
+    function GetValue: TValue;
     procedure Accept(const AVisitor: IVelocityVisitor); override;
 
   public
@@ -278,7 +278,7 @@ type
   TVariableExpr = class(TAbstractExpr, IVariableExpr)
   private
     FVariable: string;
-    function GetVariable: string; inline;
+    function GetVariable: string;
     procedure Accept(const AVisitor: IVelocityVisitor); override;
   public
     constructor Create(const APosition: IPosition; const AVariable: string);
@@ -287,7 +287,7 @@ type
   TEncodeExpr = class(TAbstractExpr, IEncodeExpr)
   private
     FExpr: IExpr;
-    function GetExpr: IExpr; inline;
+    function GetExpr: IExpr;
     procedure Accept(const AVisitor: IVelocityVisitor); override;
   public
     constructor Create(const APosition: IPosition; const AExpr: IExpr);
@@ -299,8 +299,8 @@ type
     FDeref: IExpr;
     FDerefType: TDerefType;
     function GetDerefType: TDerefType;
-    function GetVariable: IExpr; inline;
-    function GetDerefExpr: IExpr; inline;
+    function GetVariable: IExpr;
+    function GetDerefExpr: IExpr;
     procedure Accept(const AVisitor: IVelocityVisitor); override;
   public
     constructor Create(const APosition: IPosition; const ADerefType: TDerefType; const AVariable: IExpr; const ADeref: IExpr);
@@ -311,8 +311,8 @@ type
     FFunctionInfo: TArray<TRttiMethod>;
     FExprList: IExprList;
 
-    function GetFunctionInfo: TArray<TRttiMethod>; inline;
-    function GetExprList: IExprList; inline;
+    function GetFunctionInfo: TArray<TRttiMethod>;
+    function GetExprList: IExprList;
     procedure Accept(const AVisitor: IVelocityVisitor); override;
 
   public
@@ -326,9 +326,9 @@ type
     FExprList: IExprList;
     FRttiMethod: TRttiMethod;
 
-    function GetMethod: string; inline;
-    function GetObject: IExpr; inline;
-    function GetExprList: IExprList; inline;
+    function GetMethod: string;
+    function GetObject: IExpr;
+    function GetExprList: IExprList;
     function GetRttiMethod: TRttiMethod;
     procedure SetRttiMethod(const ARttiMethod: TRttiMethod);
 
@@ -343,9 +343,9 @@ type
     FLeft: IExpr;
     FBinop: TBinOp;
     FRight: IExpr;
-    function GetBinOp: TBinOp; inline;
-    function GetLeftExpr: IExpr; inline;
-    function GetRightExpr: IExpr; inline;
+    function GetBinOp: TBinOp;
+    function GetLeftExpr: IExpr;
+    function GetRightExpr: IExpr;
     procedure Accept(const AVisitor: IVelocityVisitor); override;
 
   public
@@ -358,9 +358,9 @@ type
     FCondition: IExpr;
     FTrueExpr: IExpr;
     FFalseExpr: IExpr;
-    function GetCondition: IExpr; inline;
-    function GetTrueExpr: IExpr; inline;
-    function GetFalseExpr: IExpr; inline;
+    function GetCondition: IExpr;
+    function GetTrueExpr: IExpr;
+    function GetFalseExpr: IExpr;
 
     procedure Accept(const AVisitor: IVelocityVisitor); override;
   public
@@ -371,8 +371,8 @@ type
   private
     FUnaryOp: TUnaryOp;
     FExpr: IExpr;
-    function GetExpr: IExpr; inline;
-    function GetUnaryOp: TUnaryOp; inline;
+    function GetExpr: IExpr;
+    function GetUnaryOp: TUnaryOp;
     procedure Accept(const AVisitor: IVelocityVisitor); override;
 
   public
@@ -397,7 +397,7 @@ type
 
     function PushContainer: IVelocityTemplate;
     function PopContainer: IVelocityTemplate;
-    function CurrentContainer: IVelocityTemplate; inline;
+    function CurrentContainer: IVelocityTemplate;
 
     function LookaheadValue: string;
     function matchValue(const ASymbol: TVelocitySymbol): string;
@@ -449,7 +449,7 @@ begin
   result := v.Value;
 end;
 
-function AsVarString(const AExpr: IExpr): string; inline;
+function AsVarString(const AExpr: IExpr): string;
 begin
   result := (AExpr as IVariableExpr).Variable;
 end;

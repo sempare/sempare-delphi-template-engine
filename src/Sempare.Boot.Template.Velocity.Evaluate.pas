@@ -48,7 +48,7 @@ uses
   Sempare.Boot.Template.Velocity.Visitor;
 
 type
-  TLoopOption = (coInLoop = 1, coContinue = 2, coBreak = 4, coContinueOrBreak = 6);
+  TLoopOption = (coContinue , coBreak );
   TLoopOptions = set of TLoopOption;
 
   TEvaluationVelocityVisitor = class(TBaseVelocityVisitor)
@@ -307,7 +307,7 @@ var
 begin
   if HasBreakOrContinue then
     exit;
-  LoopOptions := Preseve.Value<TLoopOptions>(FLoopOptions, [coInLoop]);
+  LoopOptions := Preseve.Value<TLoopOptions>(FLoopOptions, []);
   FScopeStack.push(FScopeStack.peek.Clone);
   while true do
   begin
@@ -396,7 +396,7 @@ var
 begin
   if HasBreakOrContinue then
     exit;
-  LoopOptions := Preseve.Value<TLoopOptions>(FLoopOptions, [coInLoop]);
+  LoopOptions := Preseve.Value<TLoopOptions>(FLoopOptions, []);
   FScopeStack.push(FScopeStack.peek.Clone);
   v := AStmt.variable;
 
@@ -504,7 +504,7 @@ begin
   if HasBreakOrContinue then
     exit;
   v := AStmt.variable;
-  LoopOptions := Preseve.Value<TLoopOptions>(FLoopOptions, [coInLoop]);
+  LoopOptions := Preseve.Value<TLoopOptions>(FLoopOptions, []);
 
   acceptvisitor(AStmt.LowExpr, self);
   lowVal := asint(FEvalStack.pop);
