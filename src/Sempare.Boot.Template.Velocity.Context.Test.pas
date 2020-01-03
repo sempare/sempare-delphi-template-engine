@@ -18,6 +18,7 @@ type
 implementation
 
 uses
+  Sempare.Boot.Template.Velocity.Context,
   Sempare.Boot.Template.Velocity;
 
 { TContextTest }

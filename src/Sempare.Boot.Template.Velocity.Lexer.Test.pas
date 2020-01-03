@@ -52,6 +52,7 @@ implementation
 uses
   System.classes,
   Sempare.Boot.Template.Velocity.AST,
+  Sempare.Boot.Template.Velocity.Context,
   Sempare.Boot.Template.Velocity.Common,
   Sempare.Boot.Template.Velocity.Lexer,
   Sempare.Boot.Template.Velocity;
