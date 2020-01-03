@@ -249,9 +249,9 @@ end;
 
 class function Velocity.Eval<T>(const AContext: IVelocityContext; const ATemplate: IVelocityTemplate; const AValue: T): string;
 var
-  s: tstringstream;
+  s: TStringStream;
 begin
-  s := tstringstream.Create;
+  s := TStringStream.Create;
   try
     Eval(AContext, ATemplate, AValue, s);
     result := s.DataString;
