@@ -36,6 +36,7 @@ interface
 
 uses
   System.Classes,
+  Sempare.Boot.Template.Velocity.Common,
   Sempare.Boot.Template.Velocity.Context,
   Sempare.Boot.Template.Velocity.AST,
   Sempare.Boot.Template.Velocity.Parser;
@@ -46,11 +47,13 @@ const
   eoNoDefaultFunctions = TVelocityEvaluationOption.eoNoDefaultFunctions;
   eoNoPosition = TVelocityEvaluationOption.eoNoPosition;
   eoEvalEarly = TVelocityEvaluationOption.eoEvalEarly;
+  eoEvalVarsEarly = TVelocityEvaluationOption.eoEvalVarsEarly;
   eoStripRecurringNewlines = TVelocityEvaluationOption.eoStripRecurringNewlines;
   eoTrimLines = TVelocityEvaluationOption.eoTrimLines;
   // eoDebug = TVelocityEvaluationOption.eoDebug;
   eoPrettyPrint = TVelocityEvaluationOption.eoPrettyPrint;
   eoRaiseErrorWhenVariableNotFound = TVelocityEvaluationOption.eoRaiseErrorWhenVariableNotFound;
+  eoReplaceNewline = TVelocityEvaluationOption.eoReplaceNewline;
 
 type
   TVelocityEvaluationOptions = Sempare.Boot.Template.Velocity.Context.TVelocityEvaluationOptions;
@@ -59,6 +62,9 @@ type
   IVelocityContext = Sempare.Boot.Template.Velocity.Context.IVelocityContext;
   IVelocityTemplate = Sempare.Boot.Template.Velocity.AST.IVelocityTemplate;
   IVelocityFunctions = Sempare.Boot.Template.Velocity.Context.IVelocityFunctions;
+  TVelocityTemplateResolver = Sempare.Boot.Template.Velocity.Context.TVelocityTemplateResolver;
+  TVelocityEncodeFunction = Sempare.Boot.Template.Velocity.Common.TVelocityEncodeFunction;
+  IVelocityVariables = Sempare.Boot.Template.Velocity.Common.IVelocityVariables;
 
   Velocity = class
   public
@@ -110,7 +116,6 @@ implementation
 
 uses
   System.SysUtils,
-  Sempare.Boot.Template.Velocity.Common,
   Sempare.Boot.Template.Velocity.Evaluate,
   Sempare.Boot.Template.Velocity.PrettyPrint;
 
