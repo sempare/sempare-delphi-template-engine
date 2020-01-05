@@ -782,6 +782,8 @@ begin
   result := nil;
   match(VsStartScript);
   case FLookahead.Token of
+    VsEndScript: // we don't do anything
+      ;
     vsBreak:
       result := ruleBreakStmt;
     vsContinue:
@@ -973,6 +975,18 @@ begin
           result := TValueExpr.Create(symbol.Position, asnum(AsValue(result)) / asnum(AsValue(right)));
         boMod:
           result := TValueExpr.Create(symbol.Position, AsInt(AsValue(result)) mod AsInt(AsValue(right)));
+        roEQ:
+          result := TValueExpr.Create(symbol.Position, isequal(AsValue(result), AsValue(right)));
+        roNotEQ:
+          result := TValueExpr.Create(symbol.Position, not isequal(AsValue(result), AsValue(right)));
+        roLT:
+          result := TValueExpr.Create(symbol.Position, isLessThan(AsValue(result), AsValue(right)));
+        roGTE:
+          result := TValueExpr.Create(symbol.Position, not isLessThan(AsValue(result), AsValue(right)));
+        roGT:
+          result := TValueExpr.Create(symbol.Position, isGreaterThan(AsValue(result), AsValue(right)));
+        roLTE:
+          result := TValueExpr.Create(symbol.Position, not isGreaterThan(AsValue(result), AsValue(right)));
       else
         evaluated := false;
       end;
