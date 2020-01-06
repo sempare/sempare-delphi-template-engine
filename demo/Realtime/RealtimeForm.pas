@@ -30,7 +30,7 @@
  * limitations under the License.                                             *
  *                                                                            *
  ****************************************************************************%*)
- unit RealtimeForm;
+unit RealtimeForm;
 
 interface
 
@@ -41,13 +41,11 @@ uses
   Sempare.Boot.Template.Velocity.Component.Template,
   Sempare.Boot.Template.Velocity.Component.Context, Vcl.StdCtrls, Vcl.OleCtrls,
   SHDocVw, Vcl.Grids,
-  Sempare.Boot.Template.Velocity;
+  Sempare.Boot.Template.Velocity, Vcl.ComCtrls, Vcl.ExtCtrls,
+  Vcl.Imaging.pngimage;
 
 type
   TFormRealTime = class(TForm)
-    lblTemplate: TLabel;
-    lblOutput: TLabel;
-    lblPrettyPrint: TLabel;
     memoOutput: TMemo;
     memoTemplate: TMemo;
     cbStripRecurringSpaces: TCheckBox;
@@ -61,7 +59,6 @@ type
     cbHtml: TCheckBox;
     cbSetEncoding: TCheckBox;
     cbUseHtmlBR: TCheckBox;
-    properties: TStringGrid;
     WebBrowser1: TWebBrowser;
     butClear: TButton;
     butSave: TButton;
@@ -73,6 +70,19 @@ type
     cmbEncoding: TComboBox;
     butSaveAs: TButton;
     SaveDialog1: TSaveDialog;
+    pcTemplate: TPageControl;
+    tsTemplate: TTabSheet;
+    tsPrettyPrint: TTabSheet;
+    Panel1: TPanel;
+    Splitter1: TSplitter;
+    pcOutput: TPageControl;
+    tsOutput: TTabSheet;
+    tsWebBrowser: TTabSheet;
+    gbOptions: TGroupBox;
+    Image1: TImage;
+    lblTitle: TLabel;
+    properties: TStringGrid;
+    GroupBox1: TGroupBox;
     procedure cbConvertTabsToSpacesClick(Sender: TObject);
     procedure cbStripRecurringSpacesClick(Sender: TObject);
     procedure cbTrimLinesClick(Sender: TObject);
@@ -91,6 +101,7 @@ type
     procedure propertiesGetEditText(Sender: TObject; ACol, ARow: Integer; var Value: string);
     procedure propertiesSetEditText(Sender: TObject; ACol, ARow: Integer; const Value: string);
     procedure butSaveAsClick(Sender: TObject);
+    procedure FormResize(Sender: TObject);
   private
     { Private declarations }
     FFilename: string;
@@ -138,6 +149,8 @@ begin
     FFilename := OpenDialog1.FileName;
     memoTemplate.Lines.LoadFromFile(FFilename, Context.Encoding);
     butSave.Enabled := false;
+    pcTemplate.ActivePageIndex := 0;
+    pcOutput.ActivePageIndex := 0;
   end;
 end;
 
@@ -246,12 +259,6 @@ begin
   Template.TemplateText := memoTemplate.Lines.Text;
   properties.Cells[0, 0] := 'Variable';
   properties.Cells[1, 0] := 'Value';
-  properties.Cells[0, 1] := 'firstname';
-  properties.Cells[1, 1] := 'conrad';
-  properties.Cells[0, 2] := 'lastname';
-  properties.Cells[1, 2] := 'vermeulen';
-  properties.Cells[0, 3] := 'script';
-  properties.Cells[1, 3] := '<script>alert(''hello'');</script>';
   memoOutput.Lines.Text := '';
   memoTemplate.Lines.Text := '';
   memoPrettyPrint.Lines.Text := '';
@@ -259,7 +266,15 @@ begin
   cbHtml.Checked := true;
   cbUseHtmlBR.Checked := true;
   WebBrowser1.Enabled := true;
+  pcTemplate.ActivePageIndex := 0;
+  pcOutput.ActivePageIndex := 0;
   Finit := true;
+end;
+
+procedure TFormRealTime.FormResize(Sender: TObject);
+begin
+  if width < 1000 then
+    width := 1000;
 end;
 
 procedure TFormRealTime.GridPropsToContext;
