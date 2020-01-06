@@ -12,3 +12,4 @@ __history
 Win32
 /demo/MiniMerge/output
 lib
+*.res
