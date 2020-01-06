@@ -13,3 +13,4 @@ Win32
 /demo/MiniMerge/output
 lib
 *.res
+/demo/Realtime/out.htm
