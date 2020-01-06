@@ -51,14 +51,32 @@ type
   TLoopOption = (coContinue, coBreak);
   TLoopOptions = set of TLoopOption;
 
+  TNewLineStreamWriter = class(TStreamWriter)
+  type
+    TNLState = (nlsStartOfLine, nlsHasText, nlsNewLine);
+  private
+    FOptions: TVelocityEvaluationOptions;
+    FNL: string;
+    FState: TNLState;
+    FBuffer: TStringBuilder;
+    FIgnoreNewline: boolean;
+    procedure TrimEndOfLine;
+    procedure DoWrite();
+  public
+    constructor Create(const AStream: TStream; const AEncoding: TEncoding; const ANL: string; const AOptions: TVelocityEvaluationOptions);
+    destructor Destroy; override;
+    procedure Write(const AString: string); override;
+    property IgnoreNewLine: boolean read FIgnoreNewline write FIgnoreNewline;
+  end;
+
   TEvaluationVelocityVisitor = class(TBaseVelocityVisitor)
   private
     FPretty: IVelocityVisitor;
     FStopWatch: TStopWatch;
-    FScopeStack: TObjectStack<TStackFrame>;
+    FStackFrames: TObjectStack<TStackFrame>;
     FEvalStack: TStack<TValue>;
     FStream: TStream;
-    FStreamWriter: TStreamWriter;
+    FStreamWriter: TNewLineStreamWriter;
     FLoopOptions: TLoopOptions;
     FContext: IVelocityContext;
     FAllowRootDeref: boolean;
@@ -73,7 +91,7 @@ type
 
   public
     constructor Create(const AContext: IVelocityContext; const AValue: TValue; const AStream: TStream); overload;
-    constructor Create(const AContext: IVelocityContext; const AScope: TStackFrame; const AStream: TStream); overload;
+    constructor Create(const AContext: IVelocityContext; const AStackFrame: TStackFrame; const AStream: TStream); overload;
     destructor Destroy; override;
 
     procedure Visit(const AExpr: IBinopExpr); overload; override;
@@ -107,21 +125,6 @@ type
 
   end;
 
-  TNLState = (nlsStartOfLine, nlsHasText, nlsNewLine);
-
-  TNewLineStreamWriter = class(TStreamWriter)
-  private
-    FOptions: TVelocityEvaluationOptions;
-    FNL: string;
-    FState: TNLState;
-    FBuffer: TStringBuilder;
-    procedure TrimEndOfLine;
-  public
-    constructor Create(const AStream: TStream; const AEncoding: TEncoding; const ANL: string; const AOptions: TVelocityEvaluationOptions);
-    destructor Destroy; override;
-    procedure Write(const AString: string); override;
-  end;
-
 implementation
 
 uses
@@ -131,9 +134,10 @@ uses
 
 {$WARN WIDECHAR_REDUCED OFF}
 
-var
-  WHITESPACE: set of char;
-  NEWLINE: set of char;
+const
+  WHITESPACE: set of char = [#9, ' '];
+  NEWLINE: set of char = [#10, #13];
+
 {$WARN WIDECHAR_REDUCED ON}
 
 function IsWhitespace(const AChar: char): boolean; inline;
@@ -154,10 +158,10 @@ end;
 
 constructor TEvaluationVelocityVisitor.Create(const AContext: IVelocityContext; const AValue: TValue; const AStream: TStream);
 var
-  Scope: TStackFrame;
+  StackFrame: TStackFrame;
 begin
-  Scope := TStackFrame.Create(AValue, nil);
-  Create(AContext, Scope, AStream);
+  StackFrame := TStackFrame.Create(AValue, nil);
+  Create(AContext, StackFrame, AStream);
 end;
 
 procedure TEvaluationVelocityVisitor.Visit(const AExpr: IValueExpr);
@@ -183,7 +187,6 @@ begin
 end;
 
 procedure TEvaluationVelocityVisitor.Visit(const AExpr: IVariableDerefExpr);
-
 var
   Derefvar: TValue;
   variable: TValue;
@@ -198,7 +201,7 @@ begin
   acceptvisitor(AExpr.DerefExpr, self);
   Derefvar := FEvalStack.pop;
 
-  FEvalStack.push(Deref(variable, Derefvar));
+  FEvalStack.push(Deref(variable, Derefvar, eoRaiseErrorWhenVariableNotFound in FContext.Options));
 end;
 
 procedure TEvaluationVelocityVisitor.Visit(const AExpr: IBinopExpr);
@@ -253,17 +256,17 @@ begin
         AssertNumeric(Position(AExpr.LeftExpr), left, right);
         res := asint(left) mod asint(right);
       end;
-    roEQ:
+    boEQ:
       res := isEqual(left, right);
-    roNotEQ:
+    boNotEQ:
       res := not isEqual(left, right);
-    roLT:
+    boLT:
       res := isLessThan(left, right);
-    roLTE:
+    boLTE:
       res := not isGreaterThan(left, right);
-    roGT:
+    boGT:
       res := isGreaterThan(left, right);
-    roGTE:
+    boGTE:
       res := not isLessThan(left, right);
   else
     RaiseError(Position(AExpr.LeftExpr), 'Binop not supported');
@@ -293,16 +296,16 @@ end;
 
 procedure TEvaluationVelocityVisitor.Visit(const AExpr: IVariableExpr);
 var
-  Scope: TStackFrame;
+  StackFrame: TStackFrame;
   val: TValue;
 begin
   if FAllowRootDeref then
   begin
-    Scope := FScopeStack.peek;
-    val := Scope[AExpr.variable];
+    StackFrame := FStackFrames.peek;
+    val := StackFrame[AExpr.variable];
     if val.IsEmpty then
     begin
-      val := Deref(Scope.Root, AExpr.variable);
+      val := Deref(StackFrame.Root, AExpr.variable, eoRaiseErrorWhenVariableNotFound in FContext.Options);
     end;
     if val.IsEmpty and (eoRaiseErrorWhenVariableNotFound in FContext.Options) then
       RaiseError(Position(AExpr), 'Variable could not be found.');
@@ -326,7 +329,7 @@ begin
   if HasBreakOrContinue then
     exit;
   LoopOptions := Preseve.Value<TLoopOptions>(FLoopOptions, []);
-  FScopeStack.push(FScopeStack.peek.Clone);
+  FStackFrames.push(FStackFrames.peek.Clone);
   while true do
   begin
     acceptvisitor(AStmt.Condition, self);
@@ -336,7 +339,7 @@ begin
     exclude(FLoopOptions, coContinue);
     acceptvisitor(AStmt.Container, self);
   end;
-  FScopeStack.pop;
+  FStackFrames.pop;
 end;
 
 procedure TEvaluationVelocityVisitor.Visit(const AStmt: IForInStmt);
@@ -366,7 +369,7 @@ var
     begin
       if coBreak in FLoopOptions then
         break;
-      FScopeStack.peek[v] := current.GetValue(e);
+      FStackFrames.peek[v] := current.GetValue(e);
       exclude(FLoopOptions, coContinue);
       CheckRunTime(Position(AStmt));
       acceptvisitor(AStmt.Container, self);
@@ -389,7 +392,7 @@ var
       if coBreak in FLoopOptions then
         break;
       ai := i + Dt.MinValue;
-      FScopeStack.peek[v] := ai;
+      FStackFrames.peek[v] := ai;
       exclude(FLoopOptions, coContinue);
       CheckRunTime(Position(AStmt));
       acceptvisitor(AStmt.Container, self);
@@ -404,7 +407,7 @@ var
     begin
       if coBreak in FLoopOptions then
         break;
-      FScopeStack.peek[v] := i;
+      FStackFrames.peek[v] := i;
       exclude(FLoopOptions, coContinue);
       CheckRunTime(Position(AStmt));
       acceptvisitor(AStmt.Container, self);
@@ -415,7 +418,7 @@ begin
   if HasBreakOrContinue then
     exit;
   LoopOptions := Preseve.Value<TLoopOptions>(FLoopOptions, []);
-  FScopeStack.push(FScopeStack.peek.Clone);
+  FStackFrames.push(FStackFrames.peek.Clone);
   v := AStmt.variable;
 
   acceptvisitor(AStmt.Expr, self);
@@ -432,7 +435,7 @@ begin
   else
     RaiseError(Position(AStmt), 'GetEnumerator not found on object.');
   end;
-  FScopeStack.pop;
+  FStackFrames.pop;
 end;
 
 procedure TEvaluationVelocityVisitor.CheckRunTime(const APosition: IPosition);
@@ -441,7 +444,7 @@ begin
     RaiseError(APosition, 'Max runtime of %dms has been exceeded.', [FContext.MaxRunTimeMs]);
 end;
 
-constructor TEvaluationVelocityVisitor.Create(const AContext: IVelocityContext; const AScope: TStackFrame; const AStream: TStream);
+constructor TEvaluationVelocityVisitor.Create(const AContext: IVelocityContext; const AStackFrame: TStackFrame; const AStream: TStream);
 var
   apply: IVelocityContextForScope;
 begin
@@ -456,17 +459,14 @@ begin
   FContext := AContext;
   FStream := AStream;
 
-  if (eoStripRecurringNewlines in FContext.Options) or (eoTrimLines in FContext.Options) then
-    FStreamWriter := TNewLineStreamWriter.Create(FStream, FContext.Encoding, FContext.NEWLINE, FContext.Options)
-  else
-    FStreamWriter := TStreamWriter.Create(FStream, FContext.Encoding);
+  FStreamWriter := TNewLineStreamWriter.Create(FStream, FContext.Encoding, FContext.NEWLINE, FContext.Options);
 
   FEvalStack := TStack<TValue>.Create;
-  FScopeStack := TObjectStack<TStackFrame>.Create;
-  FScopeStack.push(AScope);
+  FStackFrames := TObjectStack<TStackFrame>.Create;
+  FStackFrames.push(AStackFrame);
 
   if AContext.QueryInterface(IVelocityContextForScope, apply) = s_ok then
-    apply.ApplyTo(FScopeStack.peek);
+    apply.ApplyTo(FStackFrames.peek);
 end;
 
 destructor TEvaluationVelocityVisitor.Destroy;
@@ -475,7 +475,7 @@ begin
   FStreamWriter.Free;
   FStopWatch.Stop;
   FEvalStack.Free;
-  FScopeStack.Free;
+  FStackFrames.Free;
   FContext := nil;
   FPretty := nil;
   inherited;
@@ -537,11 +537,11 @@ begin
   else
     raise Exception.Create('ForOp not supported');
   end;
-  FScopeStack.push(FScopeStack.peek.Clone);
+  FStackFrames.push(FStackFrames.peek.Clone);
   i := lowVal;
   while i <= highVal do
   begin
-    FScopeStack.peek[v] := i;
+    FStackFrames.peek[v] := i;
     if coBreak in FLoopOptions then
       break;
     exclude(FLoopOptions, coContinue);
@@ -549,7 +549,7 @@ begin
     acceptvisitor(AStmt.Container, self);
     inc(i, delta);
   end;
-  FScopeStack.pop;
+  FStackFrames.pop;
 end;
 
 procedure TEvaluationVelocityVisitor.Visit(const AStmt: IAssignStmt);
@@ -558,7 +558,7 @@ var
 begin
   v := AStmt.variable;
   acceptvisitor(AStmt.Expr, self);
-  FScopeStack.peek[v] := FEvalStack.pop;
+  FStackFrames.peek[v] := FEvalStack.pop;
 end;
 
 procedure TEvaluationVelocityVisitor.Visit(const AStmt: IIfStmt);
@@ -590,11 +590,11 @@ begin
 
   if FLocalTemplates.TryGetValue(name, T) or FContext.TryGetTemplate(name, T) then
   begin
-    FScopeStack.push(FScopeStack.peek.Clone());
+    FStackFrames.push(FStackFrames.peek.Clone());
     try
       Visit(T);
     finally
-      FScopeStack.pop;
+      FStackFrames.pop;
     end;
   end
   else
@@ -714,8 +714,13 @@ begin
 end;
 
 procedure TEvaluationVelocityVisitor.Visit(const AStmt: IProcessTemplateStmt);
+var
+  prevState: boolean;
 begin
+  prevState := FStreamWriter.IgnoreNewLine;
+  FStreamWriter.IgnoreNewLine := not AStmt.AllowNewLine;
   acceptvisitor(AStmt.Container, self);
+  FStreamWriter.IgnoreNewLine := prevState;
 end;
 
 procedure TEvaluationVelocityVisitor.Visit(const AStmt: IDefineTemplateStmt);
@@ -731,29 +736,29 @@ end;
 procedure TEvaluationVelocityVisitor.Visit(const AStmt: IWithStmt);
 
 var
-  VarScope: TStackFrame;
+  StackFrame: TStackFrame;
 
-procedure scopeClass(const ARttiType: TRttiType; const ARecord: TValue); forward;
-procedure scopeDictionary(const ARttiType: TRttiType; const ADict: TObject); forward;
-procedure scopeJsonObject(const ARttiType: TRttiType; const AObj: tjsonobject); forward;
-procedure scopeRecord(const ARttiType: TRttiType; const ARecord: TValue); forward;
+procedure ScanClass(const ARttiType: TRttiType; const ARecord: TValue); forward;
+procedure ScanDictionary(const ARttiType: TRttiType; const ADict: TObject); forward;
+procedure ScanJsonObject(const ARttiType: TRttiType; const AObj: tjsonobject); forward;
+procedure ScanRecord(const ARttiType: TRttiType; const ARecord: TValue); forward;
 
-  procedure Scope(const ARecord: TValue);
+  procedure ScanValue(const ARecord: TValue);
   var
     RttiType: TRttiType;
   begin
     RttiType := GRttiContext.GetType(ARecord.TypeInfo);
     case RttiType.TypeKind of
       tkClass, tkClassRef:
-        scopeClass(RttiType, ARecord);
+        ScanClass(RttiType, ARecord);
       tkrecord:
-        scopeRecord(RttiType, ARecord);
+        ScanRecord(RttiType, ARecord);
     else
-      raise Exception.Create('Scope must be defined on a class or record.');
+      raise Exception.Create('StackFrame must be defined on a class or record.');
     end;
   end;
 
-  procedure scopeClass(const ARttiType: TRttiType; const ARecord: TValue);
+  procedure ScanClass(const ARttiType: TRttiType; const ARecord: TValue);
   var
     field: TRttiField;
     prop: TRttiProperty;
@@ -762,24 +767,24 @@ procedure scopeRecord(const ARttiType: TRttiType; const ARecord: TValue); forwar
     obj := ARecord.AsObject;
     if obj.ClassType.QualifiedClassName.StartsWith('System.Generics.Collections.TDictionary<System.string') then
     begin
-      scopeDictionary(ARttiType, obj);
+      ScanDictionary(ARttiType, obj);
       exit;
     end;
     if obj.ClassType = tjsonobject then
     begin
-      scopeJsonObject(ARttiType, tjsonobject(obj));
+      ScanJsonObject(ARttiType, tjsonobject(obj));
       exit;
     end;
     // we can't do anything on generic collections. we can loop using _ if we need to do anything.
     if obj.ClassType.QualifiedClassName.StartsWith('System.Generics.Collections') then
       exit;
     for field in ARttiType.GetFields do
-      VarScope[field.Name] := field.GetValue(obj);
+      StackFrame[field.Name] := field.GetValue(obj);
     for prop in ARttiType.GetProperties do
-      VarScope[prop.Name] := prop.GetValue(obj);
+      StackFrame[prop.Name] := prop.GetValue(obj);
   end;
 
-  procedure scopeDictionary(const ARttiType: TRttiType; const ADict: TObject);
+  procedure ScanDictionary(const ARttiType: TRttiType; const ADict: TObject);
   var
     e: TObject;
     T: TRttiType;
@@ -813,11 +818,11 @@ procedure scopeRecord(const ARttiType: TRttiType; const ARecord: TValue); forwar
       end;
       k := key.GetValue(obj).AsString;
       val := Value.GetValue(obj);
-      VarScope[k] := val;
+      StackFrame[k] := val;
     end;
   end;
 
-  procedure scopeJsonObject(const ARttiType: TRttiType; const AObj: tjsonobject);
+  procedure ScanJsonObject(const ARttiType: TRttiType; const AObj: tjsonobject);
   var
     p: tjsonpair;
     k: string;
@@ -829,35 +834,35 @@ procedure scopeRecord(const ARttiType: TRttiType; const ARecord: TValue); forwar
       v := p.JsonValue;
       if v is TJSONBool then
       begin
-        VarScope[k] := v.AsType<boolean>;
+        StackFrame[k] := v.AsType<boolean>;
       end
       else if v is TJSONString then
       begin
-        VarScope[k] := v.AsType<string>;
+        StackFrame[k] := v.AsType<string>;
       end
       else if v is TJSONNumber then
       begin
-        VarScope[k] := v.AsType<extended>;
+        StackFrame[k] := v.AsType<extended>;
       end
       else if v is tjsonobject then
       begin
-        VarScope[k] := v;
+        StackFrame[k] := v;
       end
       else if v is TJSONNull then
       begin
-        VarScope[k] := nil;
+        StackFrame[k] := nil;
       end;
     end;
   end;
 
-  procedure scopeRecord(const ARttiType: TRttiType; const ARecord: TValue);
+  procedure ScanRecord(const ARttiType: TRttiType; const ARecord: TValue);
   var
     field: TRttiField;
     obj: pointer;
   begin
     obj := ARecord.GetReferenceToRawData;
     for field in ARttiType.GetFields do
-      VarScope[field.Name] := field.GetValue(obj);
+      StackFrame[field.Name] := field.GetValue(obj);
   end;
 
 var
@@ -865,13 +870,13 @@ var
 begin
   acceptvisitor(AStmt.Expr, self);
   Expr := FEvalStack.pop;
-  VarScope := FScopeStack.peek.Clone;
-  FScopeStack.push(VarScope);
+  StackFrame := FStackFrames.peek.Clone;
+  FStackFrames.push(StackFrame);
 
-  Scope(Expr);
+  ScanValue(Expr);
   acceptvisitor(AStmt.Container, self);
 
-  FScopeStack.pop;
+  FStackFrames.pop;
 end;
 
 procedure TEvaluationVelocityVisitor.Visit(const AStmt: IRequireStmt);
@@ -880,7 +885,7 @@ var
   InputType: string;
   i: integer;
 begin
-  InputType := GRttiContext.GetType(FScopeStack.peek['_'].TypeInfo).Name.ToLower;
+  InputType := GRttiContext.GetType(FStackFrames.peek['_'].TypeInfo).Name.ToLower;
   exprs := ExprListArgs(AStmt.exprlist);
   if length(exprs) = 0 then
     exit;
@@ -926,11 +931,17 @@ destructor TNewLineStreamWriter.Destroy;
 begin
   TrimEndOfLine();
   if FBuffer.length > 0 then
-  begin
-    inherited write(FBuffer.ToString);
-  end;
-  FBuffer.Free;
+    DoWrite;
   inherited;
+end;
+
+procedure TNewLineStreamWriter.DoWrite();
+var
+  s: string;
+begin
+  s := FBuffer.ToString;
+  FBuffer.clear;
+  WriteBytes(Encoding.GetBytes(s));
 end;
 
 procedure TNewLineStreamWriter.TrimEndOfLine;
@@ -964,11 +975,10 @@ begin
         end
         else if IsNewline(c) then
         begin
-          if not(eoStripRecurringNewlines in FOptions) then
+          if not FIgnoreNewline and not(eoStripRecurringNewlines in FOptions) then
           begin
             Append(nlsNewLine);
-            inherited write(FBuffer.ToString);
-            FBuffer.clear;
+            DoWrite();
           end;
         end
         else
@@ -978,11 +988,13 @@ begin
           Append(nlsHasText)
         else if IsNewline(c) then
         begin
-          TrimEndOfLine();
-          FBuffer.Append(FNL);
-          FState := nlsNewLine;
-          inherited write(FBuffer.ToString);
-          FBuffer.clear;
+          if not FIgnoreNewline then
+          begin
+            TrimEndOfLine();
+            FBuffer.Append(FNL);
+            FState := nlsNewLine;
+            DoWrite();
+          end;
         end
         else
           Append(nlsHasText);
@@ -994,11 +1006,10 @@ begin
         end
         else if IsNewline(c) then
         begin
-          if not(eoStripRecurringNewlines in FOptions) then
+          if not FIgnoreNewline and not(eoStripRecurringNewlines in FOptions) then
           begin
             Append(nlsNewLine);
-            inherited write(FBuffer.ToString);
-            FBuffer.clear;
+            DoWrite();
           end;
         end
         else
@@ -1006,10 +1017,5 @@ begin
     end;
   end;
 end;
-
-initialization
-
-WHITESPACE := [' '] + [#9];
-NEWLINE := [#10] + [#13];
 
 end.

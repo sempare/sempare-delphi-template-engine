@@ -70,7 +70,6 @@ type
     procedure Visit(const AStmt: IAssignStmt); overload; override;
     procedure Visit(const AStmt: IContinueStmt); overload; override;
     procedure Visit(const AStmt: IBreakStmt); overload; override;
-    procedure Visit(const AStmt: IEndStmt); overload; override;
     procedure Visit(const AStmt: IIncludeStmt); overload; override;
     procedure Visit(const AStmt: IRequireStmt); overload; override;
     procedure Visit(const AStmt: IPrintStmt); overload; override;
@@ -150,11 +149,6 @@ begin
   result := FStringBuilder.ToString;
 end;
 
-procedure TPrettyPrintVelocityVisitor.Visit(const AStmt: IEndStmt);
-begin
-  tab();
-  writeln('<%% end %%>');
-end;
 
 procedure TPrettyPrintVelocityVisitor.Visit(const AStmt: IBreakStmt);
 begin
@@ -165,9 +159,9 @@ end;
 procedure TPrettyPrintVelocityVisitor.Visit(const AStmt: IIfStmt);
 begin
   tab();
-  write('<%% if (');
+  write('<%% if ');
   AcceptVisitor(AStmt.Condition, self);
-  writeln(') %%>');
+  writeln(' %%>');
   delta(4);
   AcceptVisitor(AStmt.TrueContainer, self);
   delta(-4);
@@ -281,9 +275,9 @@ end;
 procedure TPrettyPrintVelocityVisitor.Visit(const AExpr: IVariableDerefExpr);
 begin
   AcceptVisitor(AExpr.Variable, self);
-  write('[''');
+  write('[');
   AcceptVisitor(AExpr.DerefExpr, self);
-  write(''']');
+  write(']');
 end;
 
 procedure TPrettyPrintVelocityVisitor.Visit(const AExpr: IBinopExpr);
@@ -304,12 +298,12 @@ end;
 
 procedure TPrettyPrintVelocityVisitor.Visit(const AExpr: IVariableExpr);
 begin
-  write('[%s]', [AExpr.Variable]);
+  write('%s', [AExpr.Variable]);
 end;
 
 procedure TPrettyPrintVelocityVisitor.Visit(const AExpr: IValueExpr);
 begin
-  write('''%s''', [AExpr.Value.ToString]);
+  write('''%s''', [AExpr.Value.ToString.Replace(#9, '''#9''', [rfReplaceAll]).Replace(#13, '', [rfReplaceAll]).Replace(#10, '''#13#10''', [rfReplaceAll])]);
 end;
 
 procedure TPrettyPrintVelocityVisitor.Visit(const AExprList: IExprList);
@@ -355,7 +349,15 @@ end;
 
 procedure TPrettyPrintVelocityVisitor.Visit(const AStmt: IDefineTemplateStmt);
 begin
-
+  tab();
+  write('<% define ');
+  AcceptVisitor(AStmt.Name, self);
+  writeln(' %>');
+  delta(4);
+  AcceptVisitor(AStmt.Container, self);
+  delta(-4);
+  tab();
+  writeln('<% end %>');
 end;
 
 procedure TPrettyPrintVelocityVisitor.Visit(const AStmt: IWithStmt);
@@ -425,12 +427,12 @@ GBinopStrings[boMinus] := '-';
 GBinopStrings[boDiv] := '/';
 GBinopStrings[boMult] := '*';
 GBinopStrings[boMod] := 'mod';
-GBinopStrings[roEQ] := '=';
-GBinopStrings[roNotEQ] := '<>';
-GBinopStrings[roLT] := '<';
-GBinopStrings[roLTE] := '<=';
-GBinopStrings[roGT] := '>';
-GBinopStrings[roGTE] := '>=';
+GBinopStrings[boEQ] := '=';
+GBinopStrings[boNotEQ] := '<>';
+GBinopStrings[boLT] := '<';
+GBinopStrings[boLTE] := '<=';
+GBinopStrings[boGT] := '>';
+GBinopStrings[boGTE] := '>=';
 GBinopStrings[boIN] := 'in';
 
 end.

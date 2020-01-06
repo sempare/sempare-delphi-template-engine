@@ -85,6 +85,7 @@ type
     end;
 
   private
+    FReader: TStreamReader;
     FNextToken: IVelocitySymbol;
     FStream: TStream;
     FLine: integer;
@@ -148,6 +149,7 @@ end;
 
 constructor TVelocityLexer.Create(const AContext: IVelocityContext; const AStream: TStream; const AFilename: string; const AManageStream: Boolean);
 begin
+  FReader := TStreamReader.Create(AStream, AContext.Encoding, false, 4096);
   FPrevLineOffset := -1;
   FLineOffset := 0;
   FNextToken := nil;
@@ -174,6 +176,7 @@ destructor TVelocityLexer.Destroy;
 begin
   FNextToken := nil;
   FAccumulator.Free;
+  FReader.Free;
   if FManageStream then
     FStream.Free;
   inherited;
@@ -188,24 +191,21 @@ function TVelocityLexer.Expecting(const Achars: TCharSet): Boolean;
 
 begin
 {$WARN WIDECHAR_REDUCED OFF}
-  Result := FLookahead.Input in Achars;
+  Result := not FLookahead.Eof and (FLookahead.Input in Achars);
 {$WARN WIDECHAR_REDUCED ON}
 end;
 
 procedure TVelocityLexer.GetInput;
-var
-  C: Ansichar;
 begin
   Fcurrent := FLookahead;
   if FLookahead.Eof then
     Exit;
-  FLookahead.Eof := FStream.Position >= FStream.Size;
+  FLookahead.Eof := freader.EndOfStream;
   if FLookahead.Eof then
     FLookahead.Input := #0
   else
   begin
-    FStream.Read(C, Sizeof(Ansichar));
-    FLookahead.Input := Char(C);
+    FLookahead.Input := char(FReader.Read());
     if FLookahead.Input = #10 then
     begin
       Inc(FLine);
@@ -303,7 +303,7 @@ begin
             if not Expecting('*') then
               Exit(SimpleToken(VsOpenRoundBracket));
             SwallowInput;
-            while not((Fcurrent.Input = '*') and Expecting(')')) do
+            while not FLookahead.Eof and not((Fcurrent.Input = '*') and Expecting(')')) do
               SwallowInput;
             SwallowInput;
             Exit(SimpleToken(VsComment));
@@ -346,7 +346,7 @@ begin
           Exit(SimpleToken(VsEQ));
         '''':
           begin
-            while FLookahead.Input <> '''' do
+            while not FLookahead.Eof and (FLookahead.Input <> '''') do
               Accumulate;
             SwallowInput;
             Exit(ValueToken(vsString));
@@ -554,6 +554,7 @@ initialization
 
 GKeywords := TDictionary<string, TVelocitySymbol>.Create;
 AddHashedKeyword('require', VsRequire);
+AddHashedKeyword('ignorenl', VsIgnoreNL);
 AddHashedKeyword('if', VsIF);
 AddHashedKeyword('elif', VsELIF);
 AddHashedKeyword('else', vsElse);

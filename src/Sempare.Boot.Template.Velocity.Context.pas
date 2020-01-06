@@ -60,6 +60,7 @@ type
     eoEvalVarsEarly, //
     eoStripRecurringNewlines, //
     eoTrimLines, //
+    eoReplaceNewline, //
     // eoDebug, // TODO
     eoPrettyPrint, //
     eoStripRecurringSpaces, //
@@ -72,17 +73,17 @@ type
 
   IVelocityContext = interface;
 
-  TTemplateResolver = reference to function(const AContext: IVelocityContext; const AName: string): IVelocityTemplate;
+  TVelocityTemplateResolver = reference to function(const AContext: IVelocityContext; const AName: string): IVelocityTemplate;
 
   IVelocityContext = interface
     ['{979D955C-B4BD-46BB-9430-1E74CBB999D4}']
 
     function TryGetTemplate(const AName: string; out ATemplate: IVelocityTemplate): boolean;
     function GetTemplate(const AName: string): IVelocityTemplate;
-    procedure AddTemplate(const AName: string; const ATemplate: IVelocityTemplate);
+    procedure SetTemplate(const AName: string; const ATemplate: IVelocityTemplate);
 
-    function GetTemplateResolver: TTemplateResolver;
-    procedure SetTemplateResolver(const AResolver: TTemplateResolver);
+    function GetTemplateResolver: TVelocityTemplateResolver;
+    procedure SetTemplateResolver(const AResolver: TVelocityTemplateResolver);
 
     function TryGetVariable(const AName: string; out AValue: TValue): boolean;
     function GetVariable(const AName: string): TValue;
@@ -109,18 +110,20 @@ type
     procedure UseHtmlVariableEncoder;
     function GetVariableEncoder: TVelocityEncodeFunction;
     procedure SetVariableEncoder(const AEncoder: TVelocityEncodeFunction);
+    function GetVariables: IVelocityVariables;
 
     function GetNewLine: string;
     procedure SetNewLine(const ANewLine: string);
 
     property Functions: IVelocityFunctions read GetFunctions write SetFunctions;
     property NewLine: string read GetNewLine write SetNewLine;
-    property TemplateResolver: TTemplateResolver read GetTemplateResolver write SetTemplateResolver;
+    property TemplateResolver: TVelocityTemplateResolver read GetTemplateResolver write SetTemplateResolver;
     property MaxRunTimeMs: integer read GetMaxRunTimeMs write SetMaxRunTimeMs;
     property VariableEncoder: TVelocityEncodeFunction read GetVariableEncoder write SetVariableEncoder;
     property Variable[const AKey: string]: TValue read GetVariable write SetVariable; default;
+    property Variables: IVelocityVariables read GetVariables;
     property Encoding: TEncoding read GetEncoding write SetEncoding;
-    property Template[const AName: string]: IVelocityTemplate read GetTemplate;
+    property Template[const AName: string]: IVelocityTemplate read GetTemplate write SetTemplate;
     property Options: TVelocityEvaluationOptions read GetOptions write SetOptions;
     property StartToken: string read GetScriptStartToken write SetScriptStartToken;
     property EndToken: string read GetScriptEndToken write SetScriptEndToken;
@@ -134,24 +137,37 @@ type
 function CreateVelocityContext(const AOptions: TVelocityEvaluationOptions = []): IVelocityContext;
 
 var
-  GDefaultRuntimeMS: integer = 6000000;
+  GDefaultRuntimeMS: integer = 60000;
   GDefaultOpenTag: string = '<%';
   GDefaultCloseTag: string = '%>';
   GNewLine: string = #13#10;
+  GDefaultEncoding: TEncoding;
+
+type
+  TUTF8WithoutPreambleEncoding = class(TUTF8Encoding)
+  public
+    function GetPreamble: TBytes; override;
+  end;
+
+
+var
+  UTF8WithoutPreambleEncoding: TUTF8WithoutPreambleEncoding;
 
 implementation
 
 uses
   System.NetEncoding,
   System.SyncObjs,
+  Sempare.Boot.Template.Velocity,
   Sempare.Boot.Template.Velocity.Functions;
 
 type
+
   TVelocityContext = class(TInterfacedObject, IVelocityContext, IVelocityContextForScope)
   private
-    FTemplateResolver: TTemplateResolver;
+    FTemplateResolver: TVelocityTemplateResolver;
     FTemplates: TDictionary<string, IVelocityTemplate>;
-    FScope: TDictionary<string, TValue>;
+    FVariables: IVelocityVariables;
     FOptions: TVelocityEvaluationOptions;
     FStartToken: string;
     FEndToken: string;
@@ -171,14 +187,15 @@ type
 
     function TryGetTemplate(const AName: string; out ATemplate: IVelocityTemplate): boolean;
     function GetTemplate(const AName: string): IVelocityTemplate;
-    procedure AddTemplate(const AName: string; const ATemplate: IVelocityTemplate);
+    procedure SetTemplate(const AName: string; const ATemplate: IVelocityTemplate);
 
-    function GetTemplateResolver: TTemplateResolver;
-    procedure SetTemplateResolver(const AResolver: TTemplateResolver);
+    function GetTemplateResolver: TVelocityTemplateResolver;
+    procedure SetTemplateResolver(const AResolver: TVelocityTemplateResolver);
 
     function TryGetVariable(const AName: string; out AValue: TValue): boolean;
     function GetVariable(const AName: string): TValue;
     procedure SetVariable(const AName: string; const AValue: TValue);
+    function GetVariables: IVelocityVariables;
 
     function GetOptions: TVelocityEvaluationOptions;
     procedure SetOptions(const AOptions: TVelocityEvaluationOptions);
@@ -212,7 +229,7 @@ end;
 
 { TVelocityContext }
 
-procedure TVelocityContext.AddTemplate(const AName: string; const ATemplate: IVelocityTemplate);
+procedure TVelocityContext.SetTemplate(const AName: string; const ATemplate: IVelocityTemplate);
 begin
   FLock.Enter;
   try
@@ -226,7 +243,7 @@ procedure TVelocityContext.ApplyTo(const AScope: TStackFrame);
 var
   p: TPair<string, TValue>;
 begin
-  for p in FScope do
+  for p in FVariables do
   begin
     AScope[p.Key] := p.Value;
   end;
@@ -236,11 +253,11 @@ constructor TVelocityContext.Create(const AOptions: TVelocityEvaluationOptions);
 begin
   FOptions := AOptions;
   FMaxRuntimeMs := GDefaultRuntimeMS;
-  FEncoding := TEncoding.ASCII;
+  SetEncoding(GDefaultEncoding);
   FStartToken := GDefaultOpenTag;
   FEndToken := GDefaultCloseTag;
   FTemplates := TDictionary<string, IVelocityTemplate>.Create;
-  FScope := TDictionary<string, TValue>.Create;
+  FVariables := TVelocityVariables.Create;
   FFunctions := GFunctions;
   FLock := TCriticalSection.Create;
   FNewLine := GNewLine;
@@ -249,7 +266,7 @@ end;
 destructor TVelocityContext.Destroy;
 begin
   FTemplates.Free;
-  FScope.Free;
+  FVariables := nil;
   FFunctions := nil;
   FLock.Free;
   inherited;
@@ -300,7 +317,7 @@ function TVelocityContext.GetVariable(const AName: string): TValue;
 begin
   FLock.Enter;
   try
-    result := FScope[AName];
+    result := FVariables[AName];
   finally
     FLock.Leave;
   end;
@@ -309,6 +326,11 @@ end;
 function TVelocityContext.GetVariableEncoder: TVelocityEncodeFunction;
 begin
   result := FVariableEncoder;
+end;
+
+function TVelocityContext.GetVariables: IVelocityVariables;
+begin
+  result := FVariables;
 end;
 
 function TVelocityContext.GetScriptEndToken: string;
@@ -327,7 +349,7 @@ begin
     result := nil;
 end;
 
-function TVelocityContext.GetTemplateResolver: TTemplateResolver;
+function TVelocityContext.GetTemplateResolver: TVelocityTemplateResolver;
 begin
   result := FTemplateResolver;
 end;
@@ -362,7 +384,7 @@ procedure TVelocityContext.SetVariable(const AName: string; const AValue: TValue
 begin
   FLock.Enter;
   try
-    FScope.AddOrSetValue(AName, AValue);
+    FVariables[AName] := AValue;
   finally
     FLock.Leave;
   end;
@@ -383,7 +405,7 @@ begin
   FStartToken := AToken;
 end;
 
-procedure TVelocityContext.SetTemplateResolver(const AResolver: TTemplateResolver);
+procedure TVelocityContext.SetTemplateResolver(const AResolver: TVelocityTemplateResolver);
 begin
   FTemplateResolver := AResolver;
 end;
@@ -395,12 +417,12 @@ begin
     result := FTemplates.TryGetValue(AName, ATemplate);
     if result then
       exit(true);
-    if not assigned(FTemplateResolver) then
+    if not Assigned(FTemplateResolver) then
       exit(false);
     ATemplate := FTemplateResolver(self, AName);
     if ATemplate = nil then
       exit(false);
-    AddTemplate(AName, ATemplate);
+    SetTemplate(AName, ATemplate);
     exit(true);
   finally
     FLock.Leave;
@@ -411,7 +433,7 @@ function TVelocityContext.TryGetVariable(const AName: string; out AValue: TValue
 begin
   FLock.Enter;
   try
-    result := FScope.TryGetValue(AName, AValue);
+    result := FVariables.TryGetItem(AName, AValue);
   finally
     FLock.Leave;
   end;
@@ -424,5 +446,25 @@ begin
       result := TNetEncoding.HTML.Encode(AValue);
     end;
 end;
+
+{ TUTF8WithoutPreambleEncoding }
+
+function TUTF8WithoutPreambleEncoding.GetPreamble: TBytes;
+begin
+  setlength(result, 0);
+end;
+
+{ TNoEncoding }
+
+initialization
+
+// setup our global
+UTF8WithoutPreambleEncoding := TUTF8WithoutPreambleEncoding.Create;
+
+GDefaultEncoding := TEncoding.UTF8WithoutBOM;
+
+finalization
+
+UTF8WithoutPreambleEncoding.Free;
 
 end.

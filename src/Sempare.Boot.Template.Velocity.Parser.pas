@@ -172,7 +172,12 @@ type
 
   TProcessTemplateStmt = class(TAbstractStmtWithContainer, IProcessTemplateStmt)
   private
+    FAllowNewline: boolean;
+    function GetAllowNewLine: boolean;
+    procedure SetAllowNewLine(const AAllow: boolean);
     procedure Accept(const AVisitor: IVelocityVisitor); override;
+  public
+    constructor Create(const APosition: IPosition; const AContainer: IVelocityTemplate; const AAllowNewLine: boolean = true);
   end;
 
   TDefineTemplateStmt = class(TAbstractStmtWithContainer, IDefineTemplateStmt)
@@ -382,35 +387,36 @@ type
     function PopContainer: IVelocityTemplate;
     function CurrentContainer: IVelocityTemplate;
 
-    function LookaheadValue: string;
+    function lookaheadValue: string;
     function matchValue(const ASymbol: TVelocitySymbol): string;
     procedure match(const ASymbol: TVelocitySymbol);
-    function MatchNumber(const ASymbol: TVelocitySymbol): extended;
+    function matchNumber(const ASymbol: TVelocitySymbol): extended;
 
   private
-    procedure RuleStmts(const Container: IVelocityTemplate; const AEndToken: TVelocitySymbolSet);
-    function RuleStmt(): IStmt;
-    function RuleCommentStmt: IStmt;
+    procedure ruleStmts(const Container: IVelocityTemplate; const AEndToken: TVelocitySymbolSet);
+    function ruleStmt: IStmt;
+    function ruleIgnoreNewline: IStmt;
+    function ruleCommentStmt: IStmt;
     function ruleIdStmt: IStmt;
     function ruleExprStmt: IStmt;
     function ruleIncludeStmt: IStmt;
-    function RulePrintStmt: IStmt;
+    function rulePrintStmt: IStmt;
     function ruleEndStmt: IStmt;
     function ruleContinueStmt: IStmt;
     function ruleBreakStmt: IStmt;
-    function RuleIfStmt: IStmt;
-    function RuleElIfStmt: IStmt;
-    function RuleExprList(const AEndToken: TVelocitySymbol = VsCloseRoundBracket): IExprList;
-    function RuleAssignStmt(const ASymbol: IExpr): IStmt;
-    function RulePrintStmtVariable(const AExpr: IExpr): IStmt; overload;
-    function RuleForStmt: IStmt;
-    function RuleWhileStmt: IStmt;
-    function RuleWithStmt: IStmt;
-    function RuleTemplateStmt: IStmt;
-    function RuleExpr(const minPrec: integer = 0): IExpr;
-    function RulePrimaryExpr: IExpr;
-    function RuleLiteralExpr: IExpr;
-    function RuleIdentifierExpr: IExpr;
+    function ruleIfStmt: IStmt;
+    function ruleElIfStmt: IStmt;
+    function ruleExprList(const AEndToken: TVelocitySymbol = VsCloseRoundBracket): IExprList;
+    function ruleAssignStmt(const ASymbol: IExpr): IStmt;
+    function rulePrintStmtVariable(const AExpr: IExpr): IStmt; overload;
+    function ruleForStmt: IStmt;
+    function ruleWhileStmt: IStmt;
+    function ruleWithStmt: IStmt;
+    function ruleTemplateStmt: IStmt;
+    function ruleExpr(const minPrec: integer = 0): IExpr;
+    function rulePrimaryExpr: IExpr;
+    function ruleLiteralExpr: IExpr;
+    function ruleIdentifierExpr: IExpr;
     function ruleFunctionExpr(const ASymbol: string): IExpr;
     function ruleMethodExpr(const AExpr: IExpr; const AMethodExpr: IExpr): IExpr;
     function ruleRequireStmt: IStmt;
@@ -493,7 +499,7 @@ begin
   FContainerStack := TStack<IVelocityTemplate>.Create;
 end;
 
-function TVelocityParser.RuleIdentifierExpr: IExpr;
+function TVelocityParser.ruleIdentifierExpr: IExpr;
 var
   sym: IvelocitySymbol;
 
@@ -509,12 +515,12 @@ function Inspect(const AExpr: IExpr): IExpr; forward;
     idxExpr: IExpr;
   begin
     match(VsOpenSquareBracket);
-    idxExpr := RuleExpr;
+    idxExpr := ruleExpr;
     result := TVariableDerefExpr.Create(sym.Position, dtArray, AExpr, idxExpr);
     match(VsCloseSquareBracket);
 
     if (eoEvalVarsEarly in FContext.Options) and IsValue(AExpr) and IsValue(idxExpr) then
-      result := TValueExpr.Create(sym.Position, deref(AsValue(AExpr), AsValue(idxExpr)))
+      result := TValueExpr.Create(sym.Position, deref(AsValue(AExpr), AsValue(idxExpr), eoRaiseErrorWhenVariableNotFound in FContext.Options))
     else
       result := Inspect(result);
   end;
@@ -534,7 +540,7 @@ function Inspect(const AExpr: IExpr): IExpr; forward;
       else
       begin
         if (eoEvalVarsEarly in FContext.Options) and IsValue(AExpr) and IsValue(derefexpr) then
-          result := TValueExpr.Create(sym.Position, deref(AsValue(AExpr), AsValue(derefexpr)))
+          result := TValueExpr.Create(sym.Position, deref(AsValue(AExpr), AsValue(derefexpr), eoRaiseErrorWhenVariableNotFound in FContext.Options))
         else
           result := TVariableDerefExpr.Create(sym.Position, dtObject, AExpr, derefexpr);
       end;
@@ -576,7 +582,7 @@ const
   IF_ELIF_END: TVelocitySymbolSet = [VsELIF, vsElse, vsEND];
   IF_END: TVelocitySymbolSet = [vsElse, vsEND];
 
-function TVelocityParser.RuleIfStmt: IStmt;
+function TVelocityParser.ruleIfStmt: IStmt;
 var
   Condition: IExpr;
   TrueContainer: IVelocityTemplate;
@@ -589,14 +595,14 @@ begin
   Options := Preseve.Value<TParserOptions>(FOptions, FOptions + [poAllowElse, poAllowEnd, poAllowElIf]);
   symbol := FLookahead;
   match(VsIF);
-  Condition := RuleExpr;
+  Condition := ruleExpr;
 
   match(VsEndScript);
   // create new container for true condition
   PushContainer;
   TrueContainer := self.CurrentContainer;
 
-  RuleStmts(TrueContainer, IF_ELIF_END);
+  ruleStmts(TrueContainer, IF_ELIF_END);
   PopContainer;
 
   PushContainer;
@@ -607,14 +613,14 @@ begin
   begin
     while (FLookahead.Token = VsELIF) do
     begin
-      ContainerAdd.Add(AsVisitorHost(RuleElIfStmt()));
+      ContainerAdd.Add(AsVisitorHost(ruleElIfStmt()));
     end;
   end
   else if FLookahead.Token = vsElse then
   begin
     match(vsElse);
     match(VsEndScript);
-    RuleStmts(FalseContainer, [vsEND]);
+    ruleStmts(FalseContainer, [vsEND]);
 
   end;
   PopContainer;
@@ -632,6 +638,29 @@ begin
     result := TIfStmt.Create(symbol.Position, Condition, TrueContainer, FalseContainer);
 end;
 
+function TVelocityParser.ruleIgnoreNewline: IStmt;
+var
+  symbol: IvelocitySymbol;
+  Container: IVelocityTemplate;
+  Options : IPreserveValue<TParserOptions>;
+begin
+  Options := Preseve.Value<TParserOptions>(FOptions, FOptions + [poAllowEnd]);
+
+  symbol := FLookahead;
+  match(vsIgnoreNL);
+  match(VsEndScript);
+  PushContainer;
+  Container := CurrentContainer;
+
+  ruleStmts(Container, [vsEND]);
+
+  match(vsEND);
+  match(VsEndScript);
+  PopContainer;
+
+  result := TProcessTemplateStmt.Create(symbol.Position, Container, false);
+end;
+
 function TVelocityParser.ruleIncludeStmt: IStmt;
 var
   symbol: IvelocitySymbol;
@@ -642,12 +671,12 @@ begin
   symbol := FLookahead;
   match(vsInclude);
   match(VsOpenRoundBracket);
-  include := self.RuleExpr;
+  include := self.ruleExpr;
 
   if FLookahead.Token = vsComma then
   begin
     match(vsComma);
-    scope := self.RuleExpr;
+    scope := self.ruleExpr;
   end;
 
   match(VsCloseRoundBracket);
@@ -672,12 +701,12 @@ begin
   symbol := FLookahead;
   match(vsRequire);
   match(VsOpenRoundBracket);
-  result := TRequireStmt.Create(symbol.Position, self.RuleExprList());
+  result := TRequireStmt.Create(symbol.Position, self.ruleExprList());
   match(VsCloseRoundBracket);
   match(VsEndScript);
 end;
 
-function TVelocityParser.RuleLiteralExpr: IExpr;
+function TVelocityParser.ruleLiteralExpr: IExpr;
 var
   symbol: IvelocitySymbol;
 begin
@@ -686,7 +715,7 @@ begin
     vsString:
       result := TValueExpr.Create(symbol.Position, matchValue(vsString));
     vsNumber:
-      result := TValueExpr.Create(symbol.Position, MatchNumber(vsNumber));
+      result := TValueExpr.Create(symbol.Position, matchNumber(vsNumber));
     VsBoolean:
       result := TValueExpr.Create(symbol.Position, matchValue(VsBoolean) = 'true');
   else
@@ -700,11 +729,11 @@ var
 begin
   symbol := FLookahead;
   match(VsOpenRoundBracket);
-  result := TMethodCallExpr.Create(symbol.Position, AExpr, AsVarString(AMethodExpr), RuleExprList);
+  result := TMethodCallExpr.Create(symbol.Position, AExpr, AsVarString(AMethodExpr), ruleExprList);
   match(VsCloseRoundBracket);
 end;
 
-procedure TVelocityParser.RuleStmts(const Container: IVelocityTemplate; const AEndToken: TVelocitySymbolSet);
+procedure TVelocityParser.ruleStmts(const Container: IVelocityTemplate; const AEndToken: TVelocitySymbolSet);
 
 var
   stmt: IStmt;
@@ -719,7 +748,7 @@ var
     txt := matchValue(VsText);
     if txt = '' then
       exit(nil);
-    result := RulePrintStmtVariable(TValueExpr.Create(sym.Position, txt));
+    result := rulePrintStmtVariable(TValueExpr.Create(sym.Position, txt));
   end;
 
 begin
@@ -736,7 +765,7 @@ begin
         stmt := AddPrintStmt;
       VsStartScript:
         begin
-          stmt := RuleStmt;
+          stmt := ruleStmt;
           if stmt = nil then
             loop := false;
         end;
@@ -748,7 +777,7 @@ begin
   end;
 end;
 
-function TVelocityParser.RuleTemplateStmt: IStmt;
+function TVelocityParser.ruleTemplateStmt: IStmt;
 var
   expr: IExpr;
   symbol: IvelocitySymbol;
@@ -759,12 +788,12 @@ begin
   symbol := FLookahead;
 
   match(vstemplate);
-  expr := RuleExpr;
+  expr := ruleExpr;
   match(VsEndScript);
   PushContainer;
   Container := CurrentContainer;
 
-  RuleStmts(CurrentContainer, [vsEND]);
+  ruleStmts(CurrentContainer, [vsEND]);
 
   match(vsEND);
   match(VsEndScript);
@@ -774,7 +803,7 @@ begin
 
 end;
 
-function TVelocityParser.RuleStmt: IStmt;
+function TVelocityParser.ruleStmt: IStmt;
 var
   symbol: IvelocitySymbol;
 begin
@@ -788,8 +817,10 @@ begin
       result := ruleBreakStmt;
     vsContinue:
       result := ruleContinueStmt;
+    vsIgnoreNL:
+      result := ruleIgnoreNewline;
     vsComment:
-      result := RuleCommentStmt;
+      result := ruleCommentStmt;
     vsInclude:
       result := ruleIncludeStmt;
     vsEND:
@@ -797,21 +828,21 @@ begin
     vsElse: // we don't do anything
       ;
     VsIF:
-      result := RuleIfStmt;
+      result := ruleIfStmt;
     VsELIF: // we don't do anything
       ;
     VsFor:
-      result := RuleForStmt;
+      result := ruleForStmt;
     vsPrint:
-      result := RulePrintStmt;
+      result := rulePrintStmt;
     vsWhile:
-      result := RuleWhileStmt;
+      result := ruleWhileStmt;
     vswith:
-      result := RuleWithStmt;
+      result := ruleWithStmt;
     vsRequire:
       result := ruleRequireStmt;
     vstemplate:
-      result := RuleTemplateStmt;
+      result := ruleTemplateStmt;
     VsID:
       result := ruleIdStmt;
   else
@@ -819,13 +850,13 @@ begin
   end;
 end;
 
-function TVelocityParser.RuleAssignStmt(const ASymbol: IExpr): IStmt;
+function TVelocityParser.ruleAssignStmt(const ASymbol: IExpr): IStmt;
 var
   symbol: IvelocitySymbol;
 begin
   symbol := FLookahead;
   match(VsCOLONEQ);
-  result := TAssignStmt.Create(symbol.Position, (ASymbol as IVariableExpr).Variable, RuleExpr);
+  result := TAssignStmt.Create(symbol.Position, (ASymbol as IVariableExpr).Variable, ruleExpr);
 end;
 
 function TVelocityParser.ruleBreakStmt: IStmt;
@@ -840,7 +871,7 @@ begin
   result := TBreakStmt.Create(symbol.Position);
 end;
 
-function TVelocityParser.RuleCommentStmt: IStmt;
+function TVelocityParser.ruleCommentStmt: IStmt;
 var
   symbol: IvelocitySymbol;
 begin
@@ -863,7 +894,7 @@ begin
   result := TContinueStmt.Create(symbol.Position);
 end;
 
-function TVelocityParser.RuleElIfStmt: IStmt;
+function TVelocityParser.ruleElIfStmt: IStmt;
 
 var
   Condition: IExpr;
@@ -882,14 +913,14 @@ begin
 
   match(VsELIF);
 
-  Condition := RuleExpr;
+  Condition := ruleExpr;
 
   match(VsEndScript);
   // create new container for true condition
   PushContainer;
   TrueContainer := self.CurrentContainer;
 
-  RuleStmts(TrueContainer, IF_ELIF_END);
+  ruleStmts(TrueContainer, IF_ELIF_END);
   PopContainer;
 
   if FLookahead.Token = vsElse then
@@ -901,7 +932,7 @@ begin
     PushContainer;
     FalseContainer := self.CurrentContainer;
 
-    RuleStmts(FalseContainer, [vsEND, VsELIF]);
+    ruleStmts(FalseContainer, [vsEND, VsELIF]);
 
     PopContainer;
   end;
@@ -928,7 +959,7 @@ begin
   result := TEndStmt.Create(symbol.Position);
 end;
 
-function TVelocityParser.RuleExpr(const minPrec: integer): IExpr;
+function TVelocityParser.ruleExpr(const minPrec: integer): IExpr;
 var
   prec: integer;
   BinOp: TBinOp;
@@ -938,7 +969,7 @@ var
   evaluated: boolean;
 begin
   symbol := FLookahead;
-  result := self.RulePrimaryExpr;
+  result := rulePrimaryExpr;
   // this loop is a nicer way of applying precedents rather than having more rules like traditional factor, term, etc...
   while VelocityBinop(FLookahead.Token, BinOp) do
   begin
@@ -946,7 +977,7 @@ begin
     if prec < minPrec then
       break;
     match(FLookahead.Token);
-    right := self.RuleExpr(prec);
+    right := ruleExpr(prec);
     evaluated := false;
     if (eoEvalEarly in FContext.Options) and IsValue(result) and IsValue(right) then
     begin
@@ -975,17 +1006,17 @@ begin
           result := TValueExpr.Create(symbol.Position, asnum(AsValue(result)) / asnum(AsValue(right)));
         boMod:
           result := TValueExpr.Create(symbol.Position, AsInt(AsValue(result)) mod AsInt(AsValue(right)));
-        roEQ:
+        boEQ:
           result := TValueExpr.Create(symbol.Position, isequal(AsValue(result), AsValue(right)));
-        roNotEQ:
+        boNotEQ:
           result := TValueExpr.Create(symbol.Position, not isequal(AsValue(result), AsValue(right)));
-        roLT:
+        boLT:
           result := TValueExpr.Create(symbol.Position, isLessThan(AsValue(result), AsValue(right)));
-        roGTE:
+        boGTE:
           result := TValueExpr.Create(symbol.Position, not isLessThan(AsValue(result), AsValue(right)));
-        roGT:
+        boGT:
           result := TValueExpr.Create(symbol.Position, isGreaterThan(AsValue(result), AsValue(right)));
-        roLTE:
+        boLTE:
           result := TValueExpr.Create(symbol.Position, not isGreaterThan(AsValue(result), AsValue(right)));
       else
         evaluated := false;
@@ -998,9 +1029,9 @@ begin
   if FLookahead.Token = vsQUESTION then
   begin
     match(vsQUESTION);
-    trueExpr := self.RuleExpr();
+    trueExpr := ruleExpr();
     match(vsColon);
-    falseExpr := self.RuleExpr();
+    falseExpr := ruleExpr();
 
     if (eoEvalEarly in FContext.Options) and IsValue(result) then
     begin
@@ -1015,7 +1046,7 @@ begin
 
 end;
 
-function TVelocityParser.RuleForStmt: IStmt;
+function TVelocityParser.ruleForStmt: IStmt;
 var
   id: string;
   range: IExpr;
@@ -1036,23 +1067,23 @@ begin
   begin
     ForOp := VelocityForop(FLookahead.Token);
     match(vsin);
-    range := RuleExpr;
+    range := ruleExpr;
   end
   else
   begin
     match(VsCOLONEQ);
-    lowValue := RuleExpr();
+    lowValue := ruleExpr();
     ForOp := VelocityForop(FLookahead.Token);
     if FLookahead.Token in [vsDownto, vsTo] then
       match(FLookahead.Token)
     else
       RaiseError(symbol.Position, 'downto/to token expected in for loop.');
-    highValue := RuleExpr();
+    highValue := ruleExpr();
   end;
 
   match(VsEndScript);
 
-  RuleStmts(Container, [vsEND]);
+  ruleStmts(Container, [vsEND]);
 
   match(vsEND);
   match(VsEndScript);
@@ -1073,7 +1104,7 @@ begin
   if not FContext.TryGetFunction(ASymbol, fn) then
     RaiseError(symbol.Position, 'Function %s not registered in context.', [ASymbol]);
   match(VsOpenRoundBracket);
-  result := TFunctionCallExpr.Create(symbol.Position, fn, RuleExprList);
+  result := TFunctionCallExpr.Create(symbol.Position, fn, ruleExprList);
   match(VsCloseRoundBracket);
 end;
 
@@ -1083,20 +1114,20 @@ var
   expr: IExpr;
 begin
   symbol := FLookahead;
-  expr := self.RuleIdentifierExpr;
+  expr := ruleIdentifierExpr;
   if FLookahead.Token = VsCOLONEQ then
   begin
-    result := RuleAssignStmt(expr);
+    result := ruleAssignStmt(expr);
   end
   else
   begin
     expr := TEncodeExpr.Create(symbol.Position, expr);
-    result := RulePrintStmtVariable(expr);
+    result := rulePrintStmtVariable(expr);
   end;
   match(VsEndScript);
 end;
 
-function TVelocityParser.RuleWhileStmt: IStmt;
+function TVelocityParser.ruleWhileStmt: IStmt;
 var
   Condition: IExpr;
   Options: IPreserveValue<TParserOptions>;
@@ -1107,10 +1138,10 @@ begin
   PushContainer;
 
   match(vsWhile);
-  Condition := RuleExpr;
+  Condition := ruleExpr;
   match(VsEndScript);
 
-  RuleStmts(CurrentContainer, [vsEND]);
+  ruleStmts(CurrentContainer, [vsEND]);
 
   match(vsEND);
   match(VsEndScript);
@@ -1123,7 +1154,7 @@ begin
 
 end;
 
-function TVelocityParser.RuleWithStmt: IStmt;
+function TVelocityParser.ruleWithStmt: IStmt;
 var
   expr: IExpr;
   symbol: IvelocitySymbol;
@@ -1135,13 +1166,13 @@ begin
   symbol := FLookahead;
 
   match(vswith);
-  expr := RuleExpr;
+  expr := ruleExpr;
   match(VsEndScript);
 
   PushContainer;
   Container := CurrentContainer;
 
-  RuleStmts(Container, [vsEND]);
+  ruleStmts(Container, [vsEND]);
 
   match(vsEND);
   match(VsEndScript);
@@ -1151,7 +1182,7 @@ begin
 
 end;
 
-function TVelocityParser.RulePrimaryExpr: IExpr;
+function TVelocityParser.rulePrimaryExpr: IExpr;
 var
   symbol: IvelocitySymbol;
 
@@ -1161,19 +1192,19 @@ begin
     VsOpenSquareBracket:
       begin
         match(VsOpenSquareBracket);
-        result := TArrayExpr.Create(symbol.Position, RuleExprList(VsCloseSquareBracket));
+        result := TArrayExpr.Create(symbol.Position, ruleExprList(VsCloseSquareBracket));
         match(VsCloseSquareBracket);
       end;
     VsOpenRoundBracket:
       begin
         match(VsOpenRoundBracket);
-        result := RuleExpr();
+        result := ruleExpr();
         match(VsCloseRoundBracket);
       end;
     VsMinus:
       begin
         match(VsMinus);
-        result := RuleExpr;
+        result := ruleExpr;
         if (eoEvalEarly in FContext.Options) and IsValue(result) then
           result := TValueExpr.Create(symbol.Position, -asnum(AsValue(result)))
         else
@@ -1182,29 +1213,29 @@ begin
     vsNot:
       begin
         match(vsNot);
-        result := RuleExpr;
+        result := ruleExpr;
         if (eoEvalEarly in FContext.Options) and IsValue(result) then
           result := TValueExpr.Create(symbol.Position, not AsBoolean(AsValue(result)))
         else
           result := TUnaryExpr.Create(symbol.Position, uoNot, result);
       end;
     VsID:
-      result := RuleIdentifierExpr;
+      result := ruleIdentifierExpr;
   else
-    result := RuleLiteralExpr;
+    result := ruleLiteralExpr;
   end;
 end;
 
-function TVelocityParser.RulePrintStmt: IStmt;
+function TVelocityParser.rulePrintStmt: IStmt;
 var
   symbol: IvelocitySymbol;
 begin
   symbol := FLookahead;
   match(vsPrint);
-  result := TPrintStmt.Create(symbol.Position, RuleExpr);
+  result := TPrintStmt.Create(symbol.Position, ruleExpr);
 end;
 
-function TVelocityParser.RulePrintStmtVariable(const AExpr: IExpr): IStmt;
+function TVelocityParser.rulePrintStmtVariable(const AExpr: IExpr): IStmt;
 var
   symbol: IvelocitySymbol;
   val: IValueExpr;
@@ -1215,18 +1246,18 @@ begin
   result := TPrintStmt.Create(symbol.Position, AExpr);
 end;
 
-function TVelocityParser.RuleExprList(const AEndToken: TVelocitySymbol): IExprList;
+function TVelocityParser.ruleExprList(const AEndToken: TVelocitySymbol): IExprList;
 var
   symbol: IvelocitySymbol;
 begin
   symbol := FLookahead;
   result := TExprList.Create(symbol.Position);
   if FLookahead.Token <> AEndToken then
-    result.AddExpr(RuleExpr);
+    result.AddExpr(ruleExpr);
   while FLookahead.Token = vsComma do
   begin
     match(vsComma);
-    result.AddExpr(RuleExpr);
+    result.AddExpr(ruleExpr);
   end;
 end;
 
@@ -1235,7 +1266,7 @@ var
   symbol: IvelocitySymbol;
 begin
   symbol := FLookahead;
-  result := RulePrintStmtVariable(TEncodeExpr.Create(symbol.Position, RuleExpr));
+  result := rulePrintStmtVariable(TEncodeExpr.Create(symbol.Position, ruleExpr));
   match(VsEndScript);
 end;
 
@@ -1251,7 +1282,7 @@ begin
   inherited;
 end;
 
-function TVelocityParser.LookaheadValue: string;
+function TVelocityParser.lookaheadValue: string;
 var
   val: IVelocityValueSymbol;
 begin
@@ -1274,7 +1305,7 @@ begin
   RaiseError(symbol.Position, format('Parsing error expecting %s', [VelocitySymbolToString(ASymbol)]));
 end;
 
-function TVelocityParser.MatchNumber(const ASymbol: TVelocitySymbol): extended;
+function TVelocityParser.matchNumber(const ASymbol: TVelocitySymbol): extended;
 begin
   result := strtofloat(matchValue(ASymbol));
 end;
@@ -1286,7 +1317,7 @@ begin
   symbol := FLookahead;
   if ASymbol = FLookahead.Token then
   begin
-    result := LookaheadValue;
+    result := lookaheadValue;
     FLookahead := FLexer.GetToken;
     exit;
   end;
@@ -1299,7 +1330,7 @@ begin
   PushContainer;
   FLexer := CreateVelocityLexer(FContext, AStream, '', AManagedStream);
   FLookahead := FLexer.GetToken;
-  RuleStmts(CurrentContainer, []);
+  ruleStmts(CurrentContainer, []);
   match(VsEOF);
   result := CurrentContainer;
   if eoPrettyPrint in FContext.Options then
@@ -1308,7 +1339,7 @@ end;
 
 function TVelocityParser.PopContainer: IVelocityTemplate;
 begin
-  result := self.CurrentContainer;
+  result := CurrentContainer;
   FContainerStack.Pop;
 end;
 
@@ -1753,6 +1784,22 @@ begin
   AVisitor.Visit(self);
 end;
 
+constructor TProcessTemplateStmt.Create(const APosition: IPosition; const AContainer: IVelocityTemplate; const AAllowNewLine: boolean);
+begin
+  inherited Create(APosition, AContainer);
+  FAllowNewline := AAllowNewLine;
+end;
+
+function TProcessTemplateStmt.GetAllowNewLine: boolean;
+begin
+  result := FAllowNewline;
+end;
+
+procedure TProcessTemplateStmt.SetAllowNewLine(const AAllow: boolean);
+begin
+  FAllowNewline := AAllow;
+end;
+
 { TDefineTemplateStmt }
 
 procedure TDefineTemplateStmt.Accept(const AVisitor: IVelocityVisitor);
@@ -1837,24 +1884,24 @@ begin
   GVelocityBinOps[VsMULT] := boMult;
   GVelocityBinOps[VsDIV] := boDiv;
   GVelocityBinOps[VsMOD] := boMod;
-  GVelocityBinOps[vsLT] := roLT;
-  GVelocityBinOps[vsLTE] := roLTE;
-  GVelocityBinOps[vsGT] := roGT;
-  GVelocityBinOps[vsGTE] := roGTE;
-  GVelocityBinOps[vsEQ] := roEQ;
-  GVelocityBinOps[VsNotEQ] := roNotEQ;
+  GVelocityBinOps[vsLT] := boLT;
+  GVelocityBinOps[vsLTE] := boLTE;
+  GVelocityBinOps[vsGT] := boGT;
+  GVelocityBinOps[vsGTE] := boGTE;
+  GVelocityBinOps[vsEQ] := boEQ;
+  GVelocityBinOps[VsNotEQ] := boNotEQ;
 
   GBinopPrecedents[TBinOp.boOR] := 1;
   GBinopPrecedents[TBinOp.boAND] := 2;
   GBinopPrecedents[TBinOp.boIN] := 2;
 
-  GBinopPrecedents[TBinOp.roEQ] := 5;
-  GBinopPrecedents[TBinOp.roNotEQ] := 5;
+  GBinopPrecedents[TBinOp.boEQ] := 5;
+  GBinopPrecedents[TBinOp.boNotEQ] := 5;
 
-  GBinopPrecedents[TBinOp.roLT] := 10;
-  GBinopPrecedents[TBinOp.roLTE] := 10;
-  GBinopPrecedents[TBinOp.roGT] := 10;
-  GBinopPrecedents[TBinOp.roGTE] := 10;
+  GBinopPrecedents[TBinOp.boLT] := 10;
+  GBinopPrecedents[TBinOp.boLTE] := 10;
+  GBinopPrecedents[TBinOp.boGT] := 10;
+  GBinopPrecedents[TBinOp.boGTE] := 10;
 
   GBinopPrecedents[TBinOp.boPlus] := 15;
   GBinopPrecedents[TBinOp.boMinus] := 15;

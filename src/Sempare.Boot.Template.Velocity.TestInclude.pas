@@ -76,8 +76,8 @@ var
 begin
   ctx := Velocity.Context;
 
-  ctx.AddTemplate('header', Velocity.parse('header <% header.name %> <% footer.year %>'));
-  ctx.AddTemplate('footer', Velocity.parse('footer Copyright <% footer.year %>'));
+  ctx.Template['header'] := Velocity.parse('header <% header.name %> <% footer.year %>');
+  ctx.Template['footer'] := Velocity.parse('footer Copyright <% footer.year %>');
 
   c := Velocity.parse('<% suffix := ''er''%><% include (''head'' + suffix) %>' + '<%for v in content %>' + '<% v %>' + '<% end %>' + '<% include (''foot'' + suffix) %>');
 

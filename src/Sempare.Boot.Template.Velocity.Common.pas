@@ -36,6 +36,8 @@ interface
 
 uses
   System.SysUtils,
+  System.Generics.Collections,
+  System.Rtti,
   Sempare.Boot.Template.Velocity.AST;
 
 type
@@ -62,6 +64,34 @@ type
   public
     constructor Create(const APosition: IPosition; const AMessage: string);
     property Position: IPosition read FPosition write FPosition implements IPosition;
+  end;
+
+  IVelocityVariables = interface
+    ['{8C2D166D-2AC1-47AB-985E-2CFD5D44271D}']
+    function GetItem(const AKey: string): TVelocityValue;
+    procedure SetItem(const AKey: string; const Value: TVelocityValue);
+    function TryGetItem(const AKey: string; out AValue: TVelocityValue): boolean;
+    function GetEnumerator: TDictionary<string, TValue>.TPairEnumerator;
+    procedure Remove(const AKey: string);
+    procedure Clear;
+    function GetCount: integer;
+    property Count: integer read GetCount;
+    property Items[const AKey: string]: TVelocityValue read GetItem write SetItem; default;
+  end;
+
+  TVelocityVariables = class(TInterfacedObject, IVelocityVariables)
+  private
+    FVariables: TDictionary<string, TVelocityValue>;
+    function GetItem(const AKey: string): TVelocityValue;
+    procedure SetItem(const AKey: string; const Value: TVelocityValue);
+    function GetCount: integer;
+  public
+    constructor Create();
+    destructor Destroy; override;
+    function GetEnumerator: TDictionary<string, TValue>.TPairEnumerator;
+    function TryGetItem(const AKey: string; out AValue: TVelocityValue): boolean;
+    procedure Remove(const AKey: string);
+    procedure Clear;
   end;
 
 function AsVisitorHost(const ATemplate: IVelocityTemplate): IVelocityVisitorHost; inline; overload;
@@ -195,6 +225,54 @@ end;
 procedure TPosition.SetPos(const Apos: integer);
 begin
   FPos := Apos;
+end;
+
+{ TVelocityVariables }
+
+procedure TVelocityVariables.Clear;
+begin
+  FVariables.Clear;
+end;
+
+constructor TVelocityVariables.Create;
+begin
+  FVariables := TDictionary<string, TVelocityValue>.Create;
+end;
+
+destructor TVelocityVariables.Destroy;
+begin
+  FVariables.Free;
+  inherited;
+end;
+
+function TVelocityVariables.GetCount: integer;
+begin
+  result := FVariables.Count;
+end;
+
+function TVelocityVariables.GetEnumerator: TDictionary<string, TValue>.TPairEnumerator;
+begin
+  result := FVariables.GetEnumerator;
+end;
+
+function TVelocityVariables.GetItem(const AKey: string): TVelocityValue;
+begin
+  FVariables.TryGetValue(AKey, result);
+end;
+
+procedure TVelocityVariables.Remove(const AKey: string);
+begin
+  FVariables.Remove(AKey);
+end;
+
+procedure TVelocityVariables.SetItem(const AKey: string; const Value: TVelocityValue);
+begin
+  FVariables.AddOrSetValue(AKey, Value);
+end;
+
+function TVelocityVariables.TryGetItem(const AKey: string; out AValue: TVelocityValue): boolean;
+begin
+  result := FVariables.TryGetValue(AKey, AValue);
 end;
 
 end.

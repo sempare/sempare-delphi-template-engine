@@ -47,7 +47,7 @@ type
     boInvalid, //
     boAND, boOR, // logical
     boPlus, boMinus, boDiv, boMult, boMod, // numeric
-    roEQ, roNotEQ, roLT, roLTE, roGT, roGTE, // comparison
+    boEQ, boNotEQ, boLT, boLTE, boGT, boGTE, // comparison
     boIN);
 
   TVelocitySymbol = ( //
@@ -68,17 +68,18 @@ type
     vsWhile, //
     VsFOR, //
     VsWith, //
-    vsTemplate, //
+    VsTemplate, //
     VsBREAK, //
     VsCONTINUE, //
     VsPRINT, //
     VsINCLUDE, //
     VSRequire, //
+    VSIgnoreNL, //
     VsEND, //
 
     // for statements
     VsIN, //
-    vsTo, //
+    VsTo, //
     vsDownto, //
 
     // assignment statement
@@ -93,7 +94,7 @@ type
     // types
     VsNumber, //
     VsBoolean, //
-    vsString, //
+    VsString, //
 
     // logical operations
     VsAND, //
@@ -101,16 +102,16 @@ type
     VsNOT, //
 
     // ternary
-    vsQUESTION, //
-    vsCOLON, //
+    VsQUESTION, //
+    VsCOLON, //
 
     // comparison operations
     VsEQ, //
     VsNotEQ, //
-    vsLT, //
-    vsLTE, //
-    vsGT, //
-    vsGTE, //
+    VsLT, //
+    VsLTE, //
+    VsGT, //
+    VsGTE, //
 
     // numeric expressions
     VsPLUS, //
@@ -120,8 +121,8 @@ type
     VsMOD, //
 
     // for expression list
-    vsComma, //
-    vsSemiColon //
+    VsComma, //
+    VsSemiColon //
     );
 
   IPosition = interface
@@ -267,8 +268,11 @@ type
     ['{01CB121F-41D3-46DB-971E-032CF5853662}']
 
     function GetContainer: IVelocityTemplate;
+    function GetAllowNewLine: boolean;
+    procedure SetAllowNewLine(const AAllow: boolean);
 
     property Container: IVelocityTemplate read GetContainer;
+    property AllowNewLine: boolean read GetAllowNewLine write SetAllowNewLine;
   end;
 
   IDefineTemplateStmt = interface(IStmt)

@@ -36,6 +36,7 @@ interface
 
 uses
   System.Classes,
+  System.SysUtils,
   Sempare.Boot.Template.Velocity.Common,
   Sempare.Boot.Template.Velocity.Context,
   Sempare.Boot.Template.Velocity.AST,
@@ -65,6 +66,7 @@ type
   TVelocityTemplateResolver = Sempare.Boot.Template.Velocity.Context.TVelocityTemplateResolver;
   TVelocityEncodeFunction = Sempare.Boot.Template.Velocity.Common.TVelocityEncodeFunction;
   IVelocityVariables = Sempare.Boot.Template.Velocity.Common.IVelocityVariables;
+  TUTF8WithoutPreambleEncoding = Sempare.Boot.Template.Velocity.Context.TUTF8WithoutPreambleEncoding;
 
   Velocity = class
   public
@@ -112,10 +114,14 @@ type
 
   end;
 
+  TEncodingHelper = class helper for TEncoding
+    class function GetUTF8WithoutBOM: TEncoding; static;
+    class property UTF8WithoutBOM: TEncoding read GetUTF8WithoutBOM;
+  end;
+
 implementation
 
 uses
-  System.SysUtils,
   Sempare.Boot.Template.Velocity.Evaluate,
   Sempare.Boot.Template.Velocity.PrettyPrint;
 
@@ -139,7 +145,7 @@ end;
 
 class procedure Velocity.Eval<T>(const AContext: IVelocityContext; const ATemplate: IVelocityTemplate; const AValue: T; const AStream: TStream);
 begin
-  AcceptVisitor(ATemplate, TEvaluationVelocityVisitor.Create(AContext, TVelocityValue.From<T>(AValue), AStream));
+  AcceptVisitor(ATemplate, TEvaluationVelocityVisitor.Create(AContext, TVelocityValue.From<T>(AValue), AStream) as IVelocityVisitor);
 end;
 
 class procedure Velocity.Eval(const ATemplate: IVelocityTemplate; const AStream: TStream; const AOptions: TVelocityEvaluationOptions);
@@ -224,7 +230,7 @@ end;
 
 class function Velocity.Parse(const AContext: IVelocityContext; const AString: string): IVelocityTemplate;
 begin
-  result := Parser(AContext).Parse(TStringStream.Create(AString));
+  result := Parser(AContext).Parse(TStringStream.Create(AString, AContext.Encoding, false), true);
 end;
 
 class function Velocity.Eval(const ATemplate: string; const AOptions: TVelocityEvaluationOptions): string;
@@ -256,7 +262,7 @@ class function Velocity.Eval<T>(const AContext: IVelocityContext; const ATemplat
 var
   s: TStringStream;
 begin
-  s := TStringStream.Create;
+  s := TStringStream.Create('', AContext.Encoding, false);
   try
     Eval(AContext, ATemplate, AValue, s);
     result := s.DataString;
@@ -278,6 +284,13 @@ end;
 class procedure Velocity.Eval(const AContext: IVelocityContext; const ATemplate: IVelocityTemplate; const AStream: TStream);
 begin
   Eval(AContext, ATemplate, GEmpty, AStream);
+end;
+
+{ TEncodingHelper }
+
+class function TEncodingHelper.GetUTF8WithoutBOM: TEncoding;
+begin
+  result := UTF8WithoutPreambleEncoding;
 end;
 
 initialization
