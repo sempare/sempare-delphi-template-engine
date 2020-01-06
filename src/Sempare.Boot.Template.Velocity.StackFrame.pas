@@ -42,9 +42,9 @@ type
   TStackFrame = class
   private
     FParent: TStackFrame;
-    FScope: TDictionary<string, TValue>;
+    FVariables: TDictionary<string, TValue>;
 
-    function FindScope(const AKey: string): TStackFrame;
+    function FindStackFrame(const AKey: string): TStackFrame;
     function GetItem(const AKey: string): TValue;
 
     procedure SetItem(const AKey: string; const Value: TValue);
@@ -53,9 +53,7 @@ type
     constructor Create(const ARecord: TValue; const AParent: TStackFrame = nil); overload;
     destructor Destroy; override;
     function Clone(): TStackFrame;
-
     function Root: TValue;
-
     property Item[const AKey: string]: TValue read GetItem write SetItem; default;
   end;
 
@@ -74,26 +72,26 @@ end;
 constructor TStackFrame.Create(const AParent: TStackFrame);
 begin
   FParent := AParent;
-  FScope := TDictionary<string, TValue>.Create;
+  FVariables := TDictionary<string, TValue>.Create;
 end;
 
 constructor TStackFrame.Create(const ARecord: TValue; const AParent: TStackFrame);
 begin
   Create(AParent);
-  FScope.Add('_', ARecord);
+  FVariables.Add('_', ARecord);
 end;
 
 destructor TStackFrame.Destroy;
 begin
-  FreeAndNil(FScope);
+  FreeAndNil(FVariables);
   FParent := nil;
   inherited;
 end;
 
-function TStackFrame.FindScope(const AKey: string): TStackFrame;
+function TStackFrame.FindStackFrame(const AKey: string): TStackFrame;
 begin
   result := self;
-  while not result.FScope.ContainsKey(AKey) do
+  while not result.FVariables.ContainsKey(AKey) do
   begin
     result := result.FParent;
     if result = nil then
@@ -104,12 +102,12 @@ end;
 function TStackFrame.GetItem(const AKey: string): TValue;
 var
   l: string;
-  Scope: TStackFrame;
+  StackFrame: TStackFrame;
 begin
   l := AKey.ToLower;
-  Scope := FindScope(l);
-  if (Scope <> nil) then
-    Scope.FScope.TryGetValue(l, result);
+  StackFrame := FindStackFrame(l);
+  if (StackFrame <> nil) then
+    StackFrame.FVariables.TryGetValue(l, result);
 end;
 
 function TStackFrame.Root: TValue;
@@ -121,14 +119,14 @@ procedure TStackFrame.SetItem(const AKey: string; const Value: TValue);
 
 var
   l: string;
-  Scope: TStackFrame;
+  StackFrame: TStackFrame;
 begin
   l := AKey.ToLower;
-  Scope := FindScope(l);
-  if Scope <> nil then
-    Scope.FScope.AddOrSetValue(l, Value)
+  StackFrame := FindStackFrame(l);
+  if StackFrame <> nil then
+    StackFrame.FVariables.AddOrSetValue(l, Value)
   else
-    FScope.AddOrSetValue(l, Value);
+    FVariables.AddOrSetValue(l, Value);
 end;
 
 end.
