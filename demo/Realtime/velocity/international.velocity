@@ -1,0 +1,35 @@
+<% ignorenl %>
+<html>
+<header>
+<meta charset="UTF-8">
+</header>
+<body>
+
+<% show_translation := true%>
+
+
+<h1>静夜思 (JÌNG YÈ SĪ)”</h1>
+ <% if show_translation %><h2> THOUGHTS IN THE SILENT NIGHT</h2><% end %>
+<p>
+鹅、鹅、鹅，<br>
+(é é é)<br>
+曲项向天歌。<br>
+(qū xiàng xiàng tiān gē)<br>
+白毛浮绿水，<br>
+(bái máo fú lǜ shuǐ)<br>
+红掌拨清波<br>
+(hóng zhǎng bō qīng bō) <br>
+</p>
+<% if show_translation %>
+<h2>Translation</h2>
+<p>
+Goose, goose, goose,<br>
+You bend your neck towards the sky and sing.<br>
+Your white feathers float on the emerald water,<br>
+Your red feet push the clear waves.<br>
+</p>
+<% end %>
+
+</body>
+</html>
+<% end %>
