@@ -84,6 +84,8 @@ In the example above, you can see that the '<%' start and '%>' end the scripting
   - strip recurring spaces and new lines
 - lazy template resolution
 - parse time evaluation of expressions/statements
+- allow use of custom encoding (UTF-8 with BOM, UTF-8 without BOM, ASCII, etc)
+- extensibile rtti interface to easily dereference classes and interfaces (current customisations for IVelocityVariables, TDictionary, TJsonObject) 
 
 ## Objectives
 
