@@ -38,6 +38,7 @@ interface
 
 uses
   System.Rtti,
+  System.TypInfo,
   Sempare.Boot.Template.Velocity.AST;
 
 function AsBoolean(const AValue: TValue): boolean;
@@ -66,7 +67,15 @@ procedure AssertNumeric(const APositional: IPosition; const ALeft: TValue; const
 procedure AssertString(const APositional: IPosition; const AValue: TValue);
 procedure AssertArray(const APositional: IPosition; const AValue: TValue);
 
-function Deref(const AVar, ADeref: TValue): TValue;
+function Deref(const AVar, ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
+
+type
+  TDerefMatchFunction = function(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
+  TDerefMatchInterfaceFunction = function(const AInterface: IInterface): boolean;
+  TDerefFunction = function(const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
+
+procedure RegisterDeref(const AMatch: TDerefMatchFunction; const AFunction: TDerefFunction); overload;
+procedure RegisterDeref(const AMatch: TDerefMatchInterfaceFunction; const AFunction: TDerefFunction); overload;
 
 var
   EQUALITY_PRECISION: extended = 1E-8;
@@ -81,10 +90,24 @@ uses
   System.Generics.Collections,
   Sempare.Boot.Template.Velocity.Common;
 
+var
+  GDerefFunctions: TList<TPair<TDerefMatchFunction, TDerefFunction>>;
+  GDerefInterfaceFunctions: TList<TPair<TDerefMatchInterfaceFunction, TDerefFunction>>;
+
 const
   INT_LIKE: set of TTypeKind = [tkInteger, tkInt64];
   NUMBER_LIKE: set of TTypeKind = [tkInteger, tkInt64, tkfloat];
   STR_LIKE: set of TTypeKind = [tkString, tkWideString, tkUnicodeString, tkLString];
+
+procedure RegisterDeref(const AMatch: TDerefMatchInterfaceFunction; const AFunction: TDerefFunction);
+begin
+  GDerefInterfaceFunctions.add(TPair<TDerefMatchInterfaceFunction, TDerefFunction>.Create(AMatch, AFunction));
+end;
+
+procedure RegisterDeref(const AMatch: TDerefMatchFunction; const AFunction: TDerefFunction);
+begin
+  GDerefFunctions.add(TPair<TDerefMatchFunction, TDerefFunction>.Create(AMatch, AFunction));
+end;
 
 function isNull(const AValue: TValue): boolean;
 begin
@@ -356,7 +379,78 @@ begin
   end;
 end;
 
-function Deref(const AVar, ADeref: TValue): TValue;
+function processVelocityVariables(const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
+var
+  RttiType: TRttiType;
+  RttiMethod: TRttiMethod;
+begin
+  RttiType := GRttiContext.GetType(obj.TypeInfo);
+  RttiMethod := RttiType.GetMethod('GetVariable');
+  try
+    result := RttiMethod.Invoke(obj, [ADeref]);
+  except
+    on e: Exception do
+    begin
+      if ARaiseIfMissing then
+        raise e;
+      result := '';
+    end;
+  end;
+end;
+
+function processDictionary(const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
+var
+  RttiType: TRttiType;
+  RttiMethod: TRttiMethod;
+begin
+  RttiType := GRttiContext.GetType(obj.TypeInfo);
+  RttiMethod := RttiType.GetMethod('GetItem');
+  try
+    result := RttiMethod.Invoke(obj.AsObject, [ADeref]);
+  except
+    on e: Exception do
+    begin
+      if ARaiseIfMissing then
+        raise e;
+      result := '';
+    end;
+  end;
+end;
+
+function processJson(const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
+var
+  jsonobj: tjsonobject;
+  jsonval: tjsonvalue;
+  key: string;
+begin
+  jsonobj := obj.AsObject as tjsonobject;
+  key := AsString(ADeref);
+  jsonval := jsonobj.GetValue(key);
+  if jsonval is TJSONBool then
+  begin
+    result := jsonval.Astype<boolean>();
+  end
+  else if jsonval is TJSONString then
+  begin
+    result := jsonval.Astype<string>();
+  end
+  else if jsonval is TJSONNumber then
+  begin
+    result := jsonval.Astype<extended>();
+  end
+  else if jsonval is tjsonobject then
+  begin
+    result := jsonval;
+  end
+  else
+  begin
+    if ARaiseIfMissing then
+      raise Exception.CreateFmt('Cannot dereference %s in json object.', [key]);
+    result := nil;
+  end;
+end;
+
+function Deref(const AVar, ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
 
   function ProcessArray(obj: TValue; const ADeref: TValue): TValue;
   var
@@ -391,61 +485,19 @@ function Deref(const AVar, ADeref: TValue): TValue;
       exit(RttiProp.GetValue(APtr));
   end;
 
-  function processDictionary(const obj: TValue; const ADeref: TValue): TValue;
-  var
-    RttiType: TRttiType;
-    RttiMethod: TRttiMethod;
-  begin
-    RttiType := GRttiContext.GetType(obj.TypeInfo);
-    // for RttiMethod in RttiType.GetMethods do
-    // writeln(RttiMethod.Name);
-    RttiMethod := RttiType.GetMethod('GetItem');
-    result := RttiMethod.Invoke(obj.AsObject, [ADeref]);
-  end;
-
-  function processJson(const obj: TValue; const ADeref: TValue): TValue;
-  var
-    jsonobj: tjsonobject;
-    jsonval: tjsonvalue;
-    key: string;
-  begin
-    jsonobj := obj.AsObject as tjsonobject;
-    key := AsString(ADeref);
-    jsonval := jsonobj.GetValue(key);
-    if jsonval is TJSONBool then
-    begin
-      result := jsonval.Astype<boolean>();
-    end
-    else if jsonval is TJSONString then
-    begin
-      result := jsonval.Astype<string>();
-    end
-    else if jsonval is TJSONNumber then
-    begin
-      result := jsonval.Astype<extended>();
-    end
-    else if jsonval is tjsonobject then
-    begin
-      result := jsonval;
-    end
-    else
-      result := nil;
-  end;
-
   function ProcessClass(const obj: TValue; const ADeref: TValue): TValue;
   var
     ClassType: TClass;
+    info: PTypeInfo;
+    p: TPair<TDerefMatchFunction, TDerefFunction>;
   begin
     ClassType := obj.AsObject.ClassType;
-    if ClassType.QualifiedClassName.StartsWith('System.Generics.Collections.TDictionary') then
+    info := obj.TypeInfo;
+    for p in GDerefFunctions do
     begin
-      exit(processDictionary(obj, ADeref));
+      if p.key(info, ClassType) then
+        exit(p.Value(obj, ADeref, ARaiseIfMissing));
     end;
-    if ClassType = tjsonobject then
-    begin
-      exit(processJson(obj, ADeref));
-    end;
-
     result := GetFieldOrProperty(obj.AsObject, GRttiContext.GetType(obj.TypeInfo), ADeref);
   end;
 
@@ -454,8 +506,23 @@ function Deref(const AVar, ADeref: TValue): TValue;
     result := GetFieldOrProperty(obj.GetReferenceToRawData, GRttiContext.GetType(obj.TypeInfo), ADeref);
   end;
 
+  function ProcessInterface(const obj: TValue; const ADeref: TValue): TValue;
+  var
+    p: TPair<TDerefMatchInterfaceFunction, TDerefFunction>;
+    i: IInterface;
+  begin
+    i := obj.AsInterface;
+    for p in GDerefInterfaceFunctions do
+    begin
+      if p.key(i) then
+        exit(p.Value(obj, ADeref, ARaiseIfMissing));
+    end;
+  end;
+
 begin
   case AVar.Kind of
+    tkInterface:
+      result := ProcessInterface(AVar, ADeref);
     tkClass:
       result := ProcessClass(AVar, ADeref);
     tkrecord:
@@ -465,7 +532,11 @@ begin
     tkDynArray:
       result := ProcessDynArray(AVar, ADeref);
   else
-    raise Exception.Create('Cannot dereference variable');
+    begin
+      if ARaiseIfMissing then
+        raise Exception.Create('Cannot dereference variable');
+      exit('');
+    end;
   end;
 end;
 
@@ -511,14 +582,44 @@ begin
   RaiseError(APositional, 'Enumerable type expected');
 end;
 
+function MatchDictionary(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
+begin
+  result := AClass.QualifiedClassName.StartsWith('System.Generics.Collections.TDictionary');
+end;
+
+function MatchJsonObject(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
+begin
+  result := AClass = tjsonobject;
+end;
+
+function MatchVelocityVariables(const AInterface: IInterface): boolean;
+begin
+  result := supports(AInterface, IVelocityVariables);
+end;
+
+function MatchVelocityVariableObject(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
+begin
+  result := AClass = TVelocityVariables;
+end;
+
 initialization
 
 GRttiContext := TRttiContext.Create;
 GRttiContext.KeepContext;
 
+GDerefInterfaceFunctions := TList < TPair < TDerefMatchInterfaceFunction, TDerefFunction >>.Create;
+GDerefFunctions := TList < TPair < TDerefMatchFunction, TDerefFunction >>.Create;
+RegisterDeref(MatchVelocityVariableObject, processVelocityVariables);
+RegisterDeref(MatchDictionary, processDictionary);
+RegisterDeref(MatchJsonObject, processJson);
+RegisterDeref(MatchVelocityVariables, processVelocityVariables);
+
 finalization
 
 GRttiContext.DropContext;
 GRttiContext.Free;
+
+GDerefFunctions.Free;
+GDerefInterfaceFunctions.Free;
 
 end.
