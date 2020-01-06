@@ -41,6 +41,8 @@ In the example above, you can see that the '<%' start and '%>' end the scripting
 
 **NOTE** In examples in this documentation I may use the latest Delphi syntax, such as inline variable declarations. These may are note backward compatible as they were introduced in Delphi 10.2 and are used to shorten the code/examples being illustrated. The codebase will attempt to be as backward compatible as possible, but was developed with Delphi 10.3.
 
+[Try the demo](./demo/realtime/README.md) if you want to dive in quick and play with the template engine.
+
 ## Contents
 1. [Introduction](#Introduction)
 2. [Features](#Features)
