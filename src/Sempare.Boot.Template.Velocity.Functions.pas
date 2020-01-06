@@ -119,13 +119,15 @@ type
     class function Fmt(const AArgs: TArray<TValue>): string; static;
     class function FmtDt(const AFormat: string; const ADateTime: TDateTime): string; static;
     class function DtNow: TDateTime; static;
+    class function BoolStr(const AValue: TValue): boolean; static;
+    class function Bool(const AValue: TValue): boolean; static;
     class function Int(const AValue: TValue): integer; static;
     class function Str(const AValue: TValue): string; static;
     class function UCFirst(const AString: string): string; static;
     class function Rev(const AString: string): string; static;
     class function IsNull(const AValue: TValue): boolean; static;
     class function IsStr(const AValue: TValue): boolean; static;
-    class function Isint(const AValue: TValue): boolean; static;
+    class function IsInt(const AValue: TValue): boolean; static;
     class function isBool(const AValue): boolean; static;
     class function IsNum(const AValue: TValue): boolean; static;
     class function StartsWith(const AString, ASearch: string): boolean; overload; static;
@@ -243,6 +245,19 @@ begin
   result := FormatDateTime(AFormat, ADateTime);
 end;
 
+class function TInternalFuntions.Bool(const AValue: TValue): boolean;
+begin
+  result := AsBoolean(AValue);
+end;
+
+class function TInternalFuntions.BoolStr(const AValue: TValue): boolean;
+begin
+  if isStrLike(AValue) then
+    result := asstring(AValue) = 'true'
+  else
+    result := AsBoolean(AValue);
+end;
+
 class function TInternalFuntions.DtNow(): TDateTime;
 begin
   result := System.SysUtils.Now;
@@ -306,7 +321,7 @@ begin
   result := isStrLike(AValue);
 end;
 
-class function TInternalFuntions.Isint(const AValue: TValue): boolean;
+class function TInternalFuntions.IsInt(const AValue: TValue): boolean;
 begin
   result := isIntLike(AValue);
 end;
