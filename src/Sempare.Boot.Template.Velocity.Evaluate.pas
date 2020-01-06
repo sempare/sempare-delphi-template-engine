@@ -201,7 +201,7 @@ begin
   acceptvisitor(AExpr.DerefExpr, self);
   Derefvar := FEvalStack.pop;
 
-  FEvalStack.push(Deref(variable, Derefvar, eoRaiseErrorWhenVariableNotFound in FContext.Options));
+  FEvalStack.push(Deref(Position(AExpr), variable, Derefvar, eoRaiseErrorWhenVariableNotFound in FContext.Options));
 end;
 
 procedure TEvaluationVelocityVisitor.Visit(const AExpr: IBinopExpr);
@@ -305,7 +305,7 @@ begin
     val := StackFrame[AExpr.variable];
     if val.IsEmpty then
     begin
-      val := Deref(StackFrame.Root, AExpr.variable, eoRaiseErrorWhenVariableNotFound in FContext.Options);
+      val := Deref(Position(AExpr), StackFrame.Root, AExpr.variable, eoRaiseErrorWhenVariableNotFound in FContext.Options);
     end;
     if val.IsEmpty and (eoRaiseErrorWhenVariableNotFound in FContext.Options) then
       RaiseError(Position(AExpr), 'Variable could not be found.');

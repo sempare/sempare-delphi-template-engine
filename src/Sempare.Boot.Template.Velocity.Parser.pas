@@ -520,7 +520,7 @@ function Inspect(const AExpr: IExpr): IExpr; forward;
     match(VsCloseSquareBracket);
 
     if (eoEvalVarsEarly in FContext.Options) and IsValue(AExpr) and IsValue(idxExpr) then
-      result := TValueExpr.Create(sym.Position, deref(AsValue(AExpr), AsValue(idxExpr), eoRaiseErrorWhenVariableNotFound in FContext.Options))
+      result := TValueExpr.Create(sym.Position, deref(sym.Position, AsValue(AExpr), AsValue(idxExpr), eoRaiseErrorWhenVariableNotFound in FContext.Options))
     else
       result := Inspect(result);
   end;
@@ -540,7 +540,7 @@ function Inspect(const AExpr: IExpr): IExpr; forward;
       else
       begin
         if (eoEvalVarsEarly in FContext.Options) and IsValue(AExpr) and IsValue(derefexpr) then
-          result := TValueExpr.Create(sym.Position, deref(AsValue(AExpr), AsValue(derefexpr), eoRaiseErrorWhenVariableNotFound in FContext.Options))
+          result := TValueExpr.Create(sym.Position, deref(sym.Position, AsValue(AExpr), AsValue(derefexpr), eoRaiseErrorWhenVariableNotFound in FContext.Options))
         else
           result := TVariableDerefExpr.Create(sym.Position, dtObject, AExpr, derefexpr);
       end;
@@ -642,7 +642,7 @@ function TVelocityParser.ruleIgnoreNewline: IStmt;
 var
   symbol: IvelocitySymbol;
   Container: IVelocityTemplate;
-  Options : IPreserveValue<TParserOptions>;
+  Options: IPreserveValue<TParserOptions>;
 begin
   Options := Preseve.Value<TParserOptions>(FOptions, FOptions + [poAllowEnd]);
 

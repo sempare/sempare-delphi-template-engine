@@ -39,6 +39,7 @@ interface
 uses
   System.Rtti,
   System.TypInfo,
+  System.SysUtils,
   Sempare.Boot.Template.Velocity.AST;
 
 function AsBoolean(const AValue: TValue): boolean;
@@ -67,12 +68,12 @@ procedure AssertNumeric(const APositional: IPosition; const ALeft: TValue; const
 procedure AssertString(const APositional: IPosition; const AValue: TValue);
 procedure AssertArray(const APositional: IPosition; const AValue: TValue);
 
-function Deref(const AVar, ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
+function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
 
 type
   TDerefMatchFunction = function(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
   TDerefMatchInterfaceFunction = function(const AInterface: IInterface): boolean;
-  TDerefFunction = function(const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
+  TDerefFunction = function(const APosition : IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
 
 procedure RegisterDeref(const AMatch: TDerefMatchFunction; const AFunction: TDerefFunction); overload;
 procedure RegisterDeref(const AMatch: TDerefMatchInterfaceFunction; const AFunction: TDerefFunction); overload;
@@ -85,7 +86,6 @@ implementation
 
 uses
   System.Math,
-  System.SysUtils,
   System.JSON,
   System.Generics.Collections,
   Sempare.Boot.Template.Velocity.Common;
@@ -129,7 +129,7 @@ var
       RaiseError(APosition, 'GetEnumerator not found on object.');
     val := m.Invoke(ARight.AsObject, []).AsObject;
     if val.IsEmpty then
-      raise Exception.Create('Value is not enumerable');
+      RaiseError(APosition, 'Value is not enumerable');
     e := val.AsObject;
     T := GRttiContext.GetType(e.ClassType);
     movenext := T.GetMethod('MoveNext');
@@ -379,7 +379,7 @@ begin
   end;
 end;
 
-function processVelocityVariables(const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
+function processVelocityVariables(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
 var
   RttiType: TRttiType;
   RttiMethod: TRttiMethod;
@@ -392,13 +392,13 @@ begin
     on e: Exception do
     begin
       if ARaiseIfMissing then
-        raise e;
+        RaiseError(APosition, 'Cannot dereference variable');
       result := '';
     end;
   end;
 end;
 
-function processDictionary(const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
+function processDictionary(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
 var
   RttiType: TRttiType;
   RttiMethod: TRttiMethod;
@@ -411,13 +411,13 @@ begin
     on e: Exception do
     begin
       if ARaiseIfMissing then
-        raise e;
+        RaiseError(APosition, 'Cannot dereference variable in dictionary');
       result := '';
     end;
   end;
 end;
 
-function processJson(const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
+function processJson(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
 var
   jsonobj: tjsonobject;
   jsonval: tjsonvalue;
@@ -445,12 +445,12 @@ begin
   else
   begin
     if ARaiseIfMissing then
-      raise Exception.CreateFmt('Cannot dereference %s in json object.', [key]);
+      RaiseError(APosition, 'Cannot dereference %s in dictionary', [key]);
     result := nil;
   end;
 end;
 
-function Deref(const AVar, ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
+function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
 
   function ProcessArray(obj: TValue; const ADeref: TValue): TValue;
   var
@@ -496,7 +496,7 @@ function Deref(const AVar, ADeref: TValue; const ARaiseIfMissing: boolean): TVal
     for p in GDerefFunctions do
     begin
       if p.key(info, ClassType) then
-        exit(p.Value(obj, ADeref, ARaiseIfMissing));
+        exit(p.Value(APosition, obj, ADeref, ARaiseIfMissing));
     end;
     result := GetFieldOrProperty(obj.AsObject, GRttiContext.GetType(obj.TypeInfo), ADeref);
   end;
@@ -515,7 +515,7 @@ function Deref(const AVar, ADeref: TValue; const ARaiseIfMissing: boolean): TVal
     for p in GDerefInterfaceFunctions do
     begin
       if p.key(i) then
-        exit(p.Value(obj, ADeref, ARaiseIfMissing));
+        exit(p.Value(APosition, obj, ADeref, ARaiseIfMissing));
     end;
   end;
 
@@ -534,7 +534,7 @@ begin
   else
     begin
       if ARaiseIfMissing then
-        raise Exception.Create('Cannot dereference variable');
+        RaiseError(APosition, 'Cannot dereference variable');
       exit('');
     end;
   end;
