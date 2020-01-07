@@ -3,7 +3,7 @@
         <ProjectGuid>{C3A30EF5-D190-4C24-96E5-895457138902}</ProjectGuid>
         <ProjectVersion>18.8</ProjectVersion>
         <FrameworkType>VCL</FrameworkType>
-        <MainSource>RealTimeDemo.dpr</MainSource>
+        <MainSource>Sempare.Boot.Velocity.Demo.dpr</MainSource>
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Debug</Config>
         <Platform Condition="'$(Platform)'==''">Win32</Platform>
@@ -57,7 +57,7 @@
         <Icon_MainIcon>$(BDS)\bin\delphi_PROJECTICON.ico</Icon_MainIcon>
         <UWP_DelphiLogo44>$(BDS)\bin\Artwork\Windows\UWP\delphi_UwpDefault_44.png</UWP_DelphiLogo44>
         <UWP_DelphiLogo150>$(BDS)\bin\Artwork\Windows\UWP\delphi_UwpDefault_150.png</UWP_DelphiLogo150>
-        <SanitizedProjectName>RealTimeDemo</SanitizedProjectName>
+        <SanitizedProjectName>Sempare_Boot_Velocity_Demo</SanitizedProjectName>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
         <DCC_UsePackage>DBXSqliteDriver;RESTComponents;VCLTMSFNCChartPkgDXE12;TMSPassKitPkgDXE12;DBXInterBaseDriver;FlexCel_Pdf;vclactnband;FMX_FlexCel_Core;vclFireDAC;TMSmCLPkgDXE12;TMSiCLPkgDXE12;tethering;svnui;JvGlobus;FireDACADSDriver;JvPluginSystem;JvMM;TMSScripter;FMXTMSFNCUIPackPkgDXE12;vcltouch;JvBands;vcldb;bindcompfmx;svn;JvJans;JvNet;TMSWEBCorePkgLibDXE12;SKIA_FlexCel_Core;inetdb;JvAppFrm;FlexCel_Report;Sempare.Boot.Template.Velocity.Components.Pkg;FmxTeeUI;JvDotNetCtrls;TMSScripter_Memo;fmx;FireDACIBDriver;fmxdae;vquery260;VCL_FlexCel_Components;JvWizards;dacvcl260;dbexpress;IndyCore;xdata;vclx;JvPageComps;dsnap;TMSMQTTPkgDEDXE12;unidac260;FireDACCommon;FrameStandPackage_10_3;JvDB;VCLTMSFNCUIPackPkgDXE12;VCLTMSFNCCloudPackPkgDXE12;RESTBackendComponents;VCLRESTComponents;soapserver;TMSScripter_Legacy;JclDeveloperTools;Sempare.Boot.AWS.Common.Pkg;TMSLoggingPkgFMXDXE12;remotedb;vclie;TMSScripter_VCL;bindengine;DBXMySQLDriver;CloudService;JvCmp;FireDACMySQLDriver;JvHMI;FireDACCommonODBC;FireDACCommonDriver;TMSFMXWebGMapsPkgDXE12;VCLTMSFNCCorePkgDXE12;inet;IndyIPCommon;bindcompdbx;JvCustom;vcl;IndyIPServer;ADODataProvider;JvXPCtrls;tmsbcl;IndySystem;sparkle;indy10sbridge260;VCLTMSFNCDashboardPackPkgDXE12;dsnapcon;FMXTMSFNCCorePkgDXE12;FireDACDataProvider;FireDACMSAccDriver;fmxFireDAC;vclimg;TeeDB;FireDAC;Jcl;unidacvcl260;JvCore;TMSMQTTPkgDXE12;FlexCel_XlsAdapter;DBXDataProvider;JvCrypt;FireDACSqliteDriver;FireDACPgDriver;FMXTee;crcontrols260;soaprtl;DbxCommonDriver;JvDlgs;JvRuntimeDesign;JvManagedThreads;Tee;FMXTMSFNCDashboardPackPkgDXE12;TMSPassKitPkgDEDXE12;xmlrtl;soapmidas;JvTimeFramework;fmxobj;vclwinx;dac260;rtl;TMSScripter_IDE;DbxClientDriver;FlexCel_Core;CustomIPTransport;vcldsnap;JvSystem;JvStdCtrls;bindcomp;appanalytics;FMXTMSFNCCloudPackPkgDXE12;TMSLoggingPkgVCLDXE12;IndyIPClient;TMSWEBCorePkgDXE12;bindcompvcl;TMSLoggingPkgCoreDXE12;TMSCryptoPkgDXE12;TeeUI;EntityDac;FMX_FlexCel_Components;JvDocking;dbxcds;VclSmp;JvPascalInterpreter;adortl;TMSFMXPackPkgDXE12;FixInsight_10_3;UniDACDataProvider;JclVcl;VCL_FlexCel_Core;aurelius;unidacfmx260;FlexCel_Render;sbridge260;dsnapxml;TMSCryptoPkgDEDXE12;dbrtl;IndyProtocols;inetdbxpress;JvControls;JvPrintPreview;FMXTMSFNCChartPkgDXE12;JclContainers;fmxase;$(DCC_UsePackage)</DCC_UsePackage>
@@ -98,7 +98,7 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
-        <DCCReference Include="RealtimeForm.pas">
+        <DCCReference Include="SempareBootVelocityDemoForm.pas">
             <Form>FormRealTime</Form>
             <FormType>dfm</FormType>
         </DCCReference>
@@ -120,13 +120,19 @@
         <BorlandProject>
             <Delphi.Personality>
                 <Source>
-                    <Source Name="MainSource">RealTimeDemo.dpr</Source>
+                    <Source Name="MainSource">Sempare.Boot.Velocity.Demo.dpr</Source>
                 </Source>
             </Delphi.Personality>
             <Deployment Version="3">
-                <DeployFile LocalName="Win32\Debug\RealTimeDemo.exe" Configuration="Debug" Class="ProjectOutput">
+                <DeployFile LocalName="Win32\Debug\Sempare_Boot_Velocity_Demo.exe" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Win32">
-                        <RemoteName>RealTimeDemo.exe</RemoteName>
+                        <RemoteName>Sempare_Boot_Velocity_Demo.exe</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="Win32\Release\Sempare.Boot.Velocity.Demo.exe" Configuration="Release" Class="ProjectOutput">
+                    <Platform Name="Win32">
+                        <RemoteName>Sempare_Boot_Velocity_Demo.exe</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>

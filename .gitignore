@@ -1,8 +1,4 @@
-/Win32
-/*.local
-/*.res
-/__history
-/*.identcache
+*.res
 __recovery
 *.bak
 Win64
@@ -12,5 +8,4 @@ __history
 Win32
 /demo/MiniMerge/output
 lib
-*.res
-/demo/Realtime/out.htm
+/demo/VelocityDemo/out.htm

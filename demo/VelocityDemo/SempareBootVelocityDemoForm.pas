@@ -30,7 +30,7 @@
  * limitations under the License.                                             *
  *                                                                            *
  ****************************************************************************%*)
-unit RealtimeForm;
+unit SempareBootVelocityDemoForm;
 
 interface
 
@@ -42,7 +42,7 @@ uses
   Sempare.Boot.Template.Velocity.Component.Context, Vcl.StdCtrls, Vcl.OleCtrls,
   SHDocVw, Vcl.Grids,
   Sempare.Boot.Template.Velocity, Vcl.ComCtrls, Vcl.ExtCtrls,
-  Vcl.Imaging.pngimage;
+  Vcl.Imaging.pngimage, Sempare.Boot.Template.Velocity.Common;
 
 type
   TFormRealTime = class(TForm)
@@ -263,6 +263,7 @@ begin
   memoTemplate.Lines.Text := '';
   memoPrettyPrint.Lines.Text := '';
   WebBrowser1.Enabled := true;
+  context.MaxRunTimeMs := 5000;
   cbHtml.Checked := true;
   cbUseHtmlBR.Checked := true;
   WebBrowser1.Enabled := true;

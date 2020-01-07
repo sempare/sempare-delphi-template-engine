@@ -14,12 +14,12 @@ A precompiled binary is in the repository to make it easier to demo and test: [S
 
 
 ```
-$ md5sum.exe  Sempare.Boot.Velocity.Demo.exe
-040c4587110da7f44225baaa9856b6b8 *Sempare.Boot.Velocity.Demo.exe
-
+$ md5sum Sempare.Boot.Velocity.Demo.exe
+6d041e0ca1b6598b1d9a87c5f362594b *Sempare.Boot.Velocity.Demo.exe
 
 $ ls -al Sempare.Boot.Velocity.Demo.exe
--rwxr-xr-x 1 conrad 197121 3404288 Jan  6 19:00 Sempare.Boot.Velocity.Demo.exe*
+-rwxr-xr-x 1 conrad 197121 3405312 Jan  7 12:46 Sempare.Boot.Velocity.Demo.exe*
+
 ```
 
 Note: Use of this demo is at your own risk. I use anti-virus (Kaspersky and Windows Defender), but scan this yourself to be sure.

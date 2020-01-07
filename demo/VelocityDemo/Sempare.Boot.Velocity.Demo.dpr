@@ -30,11 +30,11 @@
  * limitations under the License.                                             *
  *                                                                            *
  ****************************************************************************%*)
-program RealTimeDemo;
+program Sempare.Boot.Velocity.Demo;
 
 uses
   Vcl.Forms,
-  RealtimeForm in 'RealtimeForm.pas' {FormRealTime};
+  SempareBootVelocityDemoForm in 'SempareBootVelocityDemoForm.pas' {FormRealTime};
 
 {$R *.res}
 

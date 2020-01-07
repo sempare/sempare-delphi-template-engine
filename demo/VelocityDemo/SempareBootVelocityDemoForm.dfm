@@ -324,9 +324,10 @@ object FormRealTime: TFormRealTime
       ActivePage = tsPrettyPrint
       Align = alLeft
       TabOrder = 0
-      ExplicitHeight = 247
       object tsTemplate: TTabSheet
         Caption = 'Template'
+        ExplicitLeft = 0
+        ExplicitTop = 0
         ExplicitWidth = 943
         ExplicitHeight = 243
         object memoTemplate: TMemo
@@ -346,8 +347,6 @@ object FormRealTime: TFormRealTime
       object tsPrettyPrint: TTabSheet
         Caption = 'Pretty Print'
         ImageIndex = 1
-        ExplicitWidth = 949
-        ExplicitHeight = 219
         object memoPrettyPrint: TMemo
           Left = 0
           Top = 0
@@ -359,8 +358,6 @@ object FormRealTime: TFormRealTime
           ReadOnly = True
           ScrollBars = ssBoth
           TabOrder = 0
-          ExplicitWidth = 949
-          ExplicitHeight = 219
         end
       end
     end
@@ -372,10 +369,10 @@ object FormRealTime: TFormRealTime
       ActivePage = tsWebBrowser
       Align = alClient
       TabOrder = 1
-      ExplicitWidth = 496
-      ExplicitHeight = 247
       object tsOutput: TTabSheet
         Caption = 'Output'
+        ExplicitLeft = 0
+        ExplicitTop = 0
         ExplicitWidth = 488
         ExplicitHeight = 219
         object memoOutput: TMemo
@@ -389,15 +386,11 @@ object FormRealTime: TFormRealTime
           ReadOnly = True
           ScrollBars = ssBoth
           TabOrder = 0
-          ExplicitWidth = 456
-          ExplicitHeight = 219
         end
       end
       object tsWebBrowser: TTabSheet
         Caption = 'Web Browser'
         ImageIndex = 1
-        ExplicitWidth = 488
-        ExplicitHeight = 219
         object WebBrowser1: TWebBrowser
           Left = 0
           Top = 0
@@ -552,8 +545,6 @@ object FormRealTime: TFormRealTime
       TabOrder = 0
       OnGetEditText = propertiesGetEditText
       OnSetEditText = propertiesSetEditText
-      ExplicitWidth = 181
-      ExplicitHeight = 90
     end
   end
   object context: TSempareBootVelocityContext
