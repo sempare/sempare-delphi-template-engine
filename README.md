@@ -8,6 +8,8 @@ License: [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt)
 
 Open Source: https://github.com/sempare/sempare.boot.velocity.oss
 
+Tutorial: [You Tube](https://www.youtube.com/watch?v=iotzeJv77cY&list=PLjjz4SuVScHreGKEInvrjPtLPMBU6l130)
+
 ## Introduction
 
 Template engines are used often in in the technology where text needs to be customised by substituting variables with values from a data source. Examples where this may take place:
@@ -44,6 +46,8 @@ In the example above, you can see that the '<%' start and '%>' end the scripting
 ## Quickstart
 
 [Try the demo](./demo/VelocityDemo/README.md) if you want to dive in quick and play with the template engine.
+
+Quick tutorials on [You Tube](https://www.youtube.com/watch?v=iotzeJv77cY&list=PLjjz4SuVScHreGKEInvrjPtLPMBU6l130). The playlist has a few videos that are short (most less than a minute). 
 
 ## Contents
 1. [Introduction](#Introduction)

@@ -2,7 +2,7 @@
 
 Copyright (c) 2019 [Sempare Limited](http://www.sempare.ltd), [Conrad Vermeulen](mailto:conrad.vermeulen@gmail.com)
 
-# Realtime Velocity Demo
+# Velocity Demo
 
 This is a Delphi 10.3.3 project.
 
