@@ -30,64 +30,78 @@
  * limitations under the License.                                             *
  *                                                                            *
  ****************************************************************************%*)
-unit Sempare.Boot.Template.Velocity.TestDictionary;
+unit Sempare.Boot.Template.Velocity.Components.Test;
 
 interface
 
 uses
-  DUnitX.TestFramework,
-  System.Generics.Collections;
+  DUnitX.TestFramework;
 
 type
 
   [TestFixture]
-  TTestVelocityDict = class
+  TTestComponent = class
   public
     [Test]
-    procedure TestDictionary;
+    procedure TestContextVariables;
     [Test]
-    procedure TestNestedDictionary;
+    procedure TestEvalVariables;
   end;
-
-type
-  TStringDictionary = TDictionary<string, string>;
-  TNestedDictionary = TObjectDictionary<integer, TDictionary<string, string>>;
 
 implementation
 
 uses
+  Sempare.Boot.Template.Velocity.Components;
 
-  Sempare.Boot.Template.Velocity;
+{ TTestComponent }
 
-procedure TTestVelocityDict.TestDictionary;
+procedure TTestComponent.TestContextVariables;
 var
-  D: TDictionary<string, string>;
+  ctx: TSempareBootVelocityContext;
+  tpl: TSempareBootVelocityTemplate;
+  evalEngine: TSempareBootVelocityEngine;
 begin
-  D := TDictionary<string, string>.create;
-  D.Add('a', 'value');
-  Assert.AreEqual('value', Velocity.Eval('<% a %>', D));
-  D.Free;
+  ctx := TSempareBootVelocityContext.Create(nil);
+  tpl := TSempareBootVelocityTemplate.Create(nil);
+  evalEngine := TSempareBootVelocityEngine.Create(nil);
+  try
+    ctx.Variable['v'] := 'value';
+    tpl.TemplateText := '<% v %>';
+    evalEngine.Context := ctx;
+    evalEngine.Template := tpl;
+    evalEngine.Enabled := true;
+
+    Assert.AreEqual('value', evalEngine.Text);
+  finally
+    ctx.Free;
+    tpl.Free;
+    evalEngine.Free;
+  end;
 end;
 
-procedure TTestVelocityDict.TestNestedDictionary;
+procedure TTestComponent.TestEvalVariables;
 var
-  dict: TNestedDictionary;
+  ctx: TSempareBootVelocityContext;
+  tpl: TSempareBootVelocityTemplate;
+  evalEngine: TSempareBootVelocityEngine;
 begin
-  dict := TNestedDictionary.create();
-  dict.Add(1, TStringDictionary.create());
-  dict.Add(2, TStringDictionary.create());
+  ctx := TSempareBootVelocityContext.Create(nil);
+  tpl := TSempareBootVelocityTemplate.Create(nil);
+  evalEngine := TSempareBootVelocityEngine.Create(nil);
+  try
+    ctx.Variable['v'] := 'value';
+    tpl.TemplateText := '<% v %> <%_.v%>';
+    evalEngine.Variable['v'] := 'another';
+    evalEngine.Context := ctx;
+    evalEngine.Template := tpl;
+    evalEngine.Enabled := true;
 
-  dict[1].Add('v', 'value');
-  dict[2].Add('v', 'another');
-
-  Assert.AreEqual('value', Velocity.Eval('<% _[1][''v'']%>', dict));
-  Assert.AreEqual('another', Velocity.Eval('<% _[2][''v'']%>', dict));
-
-  dict.Free;
+    Assert.AreEqual('value another', evalEngine.Text);
+  finally
+    ctx.Free;
+    tpl.Free;
+    evalEngine.Free;
+  end;
 end;
-
-initialization
-
-TDUnitX.RegisterTestFixture(TTestVelocityDict);
 
 end.

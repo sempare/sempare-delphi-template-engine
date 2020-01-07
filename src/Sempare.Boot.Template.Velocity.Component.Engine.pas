@@ -39,6 +39,7 @@ uses
   System.SysUtils,
   System.Generics.Collections,
   System.Rtti,
+  Sempare.Boot.Template.Velocity.Common,
   Sempare.Boot.Template.Velocity.Component.Context,
   Sempare.Boot.Template.Velocity.Component.Template,
   Sempare.Boot.Template.Velocity;
@@ -50,25 +51,28 @@ type
   private
     FContext: TSempareBootVelocityContext;
     FTemplate: TSempareBootVelocityTemplate;
-    FVariables: TDictionary<string, TValue>;
+    FVariables: TVelocityVariables;
     FText: string;
     FEnabled: boolean;
     procedure SetContext(const Value: TSempareBootVelocityContext);
     procedure SetTemplate(const Value: TSempareBootVelocityTemplate);
-    procedure SetVariables(const Value: TDictionary<string, TValue>);
+    procedure SetVariables(const Value: TVelocityVariables);
     procedure Evaluate;
     function GetText: string;
     procedure SetEnabled(const Value: boolean);
+    function GetVariable(const AKey: string): TVelocityValue;
+    procedure SetVariable(const AKey: string; const Value: TVelocityValue);
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     procedure Clear;
+    property Variable[const AKey: string]: TVelocityValue read GetVariable write SetVariable; default;
   published
     property Text: string read GetText;
     property Enabled: boolean read FEnabled write SetEnabled;
     property Context: TSempareBootVelocityContext read FContext write SetContext;
     property Template: TSempareBootVelocityTemplate read FTemplate write SetTemplate;
-    property Variables: TDictionary<string, TValue> read FVariables write SetVariables;
+    property Variables: TVelocityVariables read FVariables write SetVariables;
   end;
 
 implementation
@@ -86,12 +90,12 @@ end;
 constructor TSempareBootVelocityEngine.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  FVariables := TDictionary<string, TValue>.Create;
+  FVariables := TVelocityVariables.Create;
 end;
 
 destructor TSempareBootVelocityEngine.Destroy;
 begin
-  FVariables.Free;
+  FVariables := nil;
   inherited;
 end;
 
@@ -117,6 +121,11 @@ begin
   result := FText;
 end;
 
+function TSempareBootVelocityEngine.GetVariable(const AKey: string): TVelocityValue;
+begin
+  result := FVariables[AKey];
+end;
+
 procedure TSempareBootVelocityEngine.SetContext(const Value: TSempareBootVelocityContext);
 begin
   FContext := Value;
@@ -137,7 +146,12 @@ begin
   Evaluate;
 end;
 
-procedure TSempareBootVelocityEngine.SetVariables(const Value: TDictionary<string, TValue>);
+procedure TSempareBootVelocityEngine.SetVariable(const AKey: string; const Value: TVelocityValue);
+begin
+  FVariables.SetItem(AKey, Value);
+end;
+
+procedure TSempareBootVelocityEngine.SetVariables(const Value: TVelocityVariables);
 begin
   FVariables := Value;
   Evaluate;

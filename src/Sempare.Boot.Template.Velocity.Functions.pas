@@ -49,6 +49,7 @@ implementation
 uses
   System.SysUtils,
   System.Generics.Collections,
+  Sempare.Boot.Template.Velocity.Common,
   Sempare.Boot.Template.Velocity.Rtti;
 
 type
@@ -105,14 +106,15 @@ end;
 type
   TInternalFuntions = class
   public
-    class function Split(const AString: sTring; const ASep: string): TArray<string>; static;
+    class function Split(const AString: string): TArray<string>; overload; static;
+    class function Split(const AString: string; const ASep: string): TArray<string>; overload; static;
     class function Lowercase(const AString: string): string; static;
     class function Uppercase(const AString: string): string; static;
     class function Trim(const AString: string): string; static;
     class function SubStr(const AString: string; AStartOffset: integer): string; overload; static;
     class function SubStr(const AString: string; AStartOffset, ALength: integer): string; overload; static;
-    class function SubString(const AString: string; AStartOffset, AEndOffset: integer): string; overload; static;
-    class function SubString(const AString: string; AStartOffset: integer): string; overload; static;
+    class function Substring(const AString: string; AStartOffset, AEndOffset: integer): string; overload; static;
+    class function Substring(const AString: string; AStartOffset: integer): string; overload; static;
     class function Pos(const search, Str: string; offset: integer): integer; overload; static;
     class function Pos(const search, Str: string): integer; overload; static;
     class function Len(const AString: string): integer; static;
@@ -143,7 +145,7 @@ begin
   result := System.Pos(search, Str);
 end;
 
-class function TInternalFuntions.Split(const AString: sTring; const ASep: string): TArray<string>;
+class function TInternalFuntions.Split(const AString: string; const ASep: string): TArray<string>;
 begin
   result := AString.Split([ASep]);
 end;
@@ -177,9 +179,9 @@ begin
   result := copy(AString, AStartOffset, ALength);
 end;
 
-class function TInternalFuntions.SubString(const AString: string; AStartOffset: integer): string;
+class function TInternalFuntions.Substring(const AString: string; AStartOffset: integer): string;
 begin
-  result := SubString(AString, AStartOffset, length(AString));
+  result := Substring(AString, AStartOffset, length(AString));
 end;
 
 class function TInternalFuntions.SubStr(const AString: string; AStartOffset: integer): string;
@@ -187,7 +189,7 @@ begin
   result := SubStr(AString, AStartOffset, length(AString));
 end;
 
-class function TInternalFuntions.SubString(const AString: string; AStartOffset: integer; AEndOffset: integer): string;
+class function TInternalFuntions.Substring(const AString: string; AStartOffset: integer; AEndOffset: integer): string;
 begin
   if AStartOffset < 0 then
     AStartOffset := length(AString) + AStartOffset + 1;
@@ -196,7 +198,7 @@ begin
   result := copy(AString, AStartOffset, AEndOffset - AStartOffset + 1);
 end;
 
-class function TInternalFuntions.Pos(const search: String; const Str: string; offset: integer): integer;
+class function TInternalFuntions.Pos(const search: string; const Str: string; offset: integer): integer;
 begin
   if offset < 0 then
     offset := offset + length(Str);
@@ -271,6 +273,11 @@ end;
 class function TInternalFuntions.StartsWith(const AString, ASearch: string): boolean;
 begin
   result := AString.StartsWith(ASearch, true);
+end;
+
+class function TInternalFuntions.Split(const AString: string): TArray<string>;
+begin
+  result := Split(AString, ' ');
 end;
 
 class function TInternalFuntions.StartsWith(const AString, ASearch: string; const AIgnoreCase: boolean): boolean;

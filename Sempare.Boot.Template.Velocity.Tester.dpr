@@ -59,7 +59,8 @@ uses
   Sempare.Boot.Template.Velocity.Test.Arr in 'src\Sempare.Boot.Template.Velocity.Test.Arr.pas',
   Sempare.Boot.Template.Velocity.TestCall in 'src\Sempare.Boot.Template.Velocity.TestCall.pas',
   Sempare.Boot.Template.Velocity.NewLineOption.Test in 'src\Sempare.Boot.Template.Velocity.NewLineOption.Test.pas',
-  Sempare.Boot.Template.Velocity.Context.Test in 'src\Sempare.Boot.Template.Velocity.Context.Test.pas';
+  Sempare.Boot.Template.Velocity.Context.Test in 'src\Sempare.Boot.Template.Velocity.Context.Test.pas',
+  Sempare.Boot.Template.Velocity.Components.Test in 'src\Sempare.Boot.Template.Velocity.Components.Test.pas';
 
 var
   runner: ITestRunner;

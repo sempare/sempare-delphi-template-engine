@@ -37,7 +37,9 @@ interface
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.Grids,
-  System.ImageList, Vcl.ImgList, Vcl.ComCtrls, Vcl.ToolWin, Sempare.Boot.Template.Velocity;
+  System.ImageList, Vcl.ImgList, Vcl.ComCtrls, Vcl.ToolWin,
+  Sempare.Boot.Template.Velocity,
+  Sempare.Boot.Template.Velocity.Common;
 
 type
   TFormVariableEditor = class(TForm)
@@ -60,8 +62,8 @@ type
     { Private declarations }
   public
     { Public declarations }
-    procedure populateGrid(const AVariables: IVelocityVariables);
-    procedure populateDict(const AVariables: IVelocityVariables);
+    procedure populateGrid(const AVariables: TVelocityVariables);
+    procedure populateDict(const AVariables: TVelocityVariables);
   end;
 
 implementation
@@ -123,7 +125,7 @@ begin
   gridProperties.Cells[1, 0] := 'Value';
 end;
 
-procedure TFormVariableEditor.populateDict(const AVariables: IVelocityVariables);
+procedure TFormVariableEditor.populateDict(const AVariables: TVelocityVariables);
 var
   i: Integer;
   k, v: string;
@@ -135,17 +137,17 @@ begin
     if k = '' then
       continue;
     v := trim(gridProperties.Cells[1, i]);
-    AVariables[k] := v;
+    AVariables.SetItem(k, v);
   end;
 end;
 
-procedure TFormVariableEditor.populateGrid(const AVariables: IVelocityVariables);
+procedure TFormVariableEditor.populateGrid(const AVariables: TVelocityVariables);
 var
   p: TPair<string, TVelocityValue>;
   i: Integer;
 begin
   init;
-  gridProperties.RowCount := AVariables.Count + 1;
+  gridProperties.RowCount := AVariables.GetCount + 1;
   i := 1;
   for p in AVariables do
   begin

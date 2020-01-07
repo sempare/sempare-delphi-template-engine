@@ -73,7 +73,7 @@ function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARa
 type
   TDerefMatchFunction = function(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
   TDerefMatchInterfaceFunction = function(const AInterface: IInterface): boolean;
-  TDerefFunction = function(const APosition : IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
+  TDerefFunction = function(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
 
 procedure RegisterDeref(const AMatch: TDerefMatchFunction; const AFunction: TDerefFunction); overload;
 procedure RegisterDeref(const AMatch: TDerefMatchInterfaceFunction; const AFunction: TDerefFunction); overload;
@@ -385,7 +385,7 @@ var
   RttiMethod: TRttiMethod;
 begin
   RttiType := GRttiContext.GetType(obj.TypeInfo);
-  RttiMethod := RttiType.GetMethod('GetVariable');
+  RttiMethod := RttiType.GetMethod('GetItem');
   try
     result := RttiMethod.Invoke(obj, [ADeref]);
   except
@@ -402,16 +402,23 @@ function processDictionary(const APosition: IPosition; const obj: TValue; const 
 var
   RttiType: TRttiType;
   RttiMethod: TRttiMethod;
+  Deref: TValue;
 begin
   RttiType := GRttiContext.GetType(obj.TypeInfo);
   RttiMethod := RttiType.GetMethod('GetItem');
+
+  // values are sometime floats, so cast explicitly
+  Deref := ADeref;
+  if RttiMethod.GetParameters[0].ParamType.TypeKind in [tkInteger, tkInt64] then
+    Deref := AsInt(Deref);
+
   try
-    result := RttiMethod.Invoke(obj.AsObject, [ADeref]);
+    result := RttiMethod.Invoke(obj, [Deref]);
   except
     on e: Exception do
     begin
       if ARaiseIfMissing then
-        RaiseError(APosition, 'Cannot dereference variable in dictionary');
+        RaiseError(APosition, 'Cannot dereference ''%s'' in %s', [AsString(Deref), RttiType.QualifiedName]);
       result := '';
     end;
   end;
@@ -583,8 +590,11 @@ begin
 end;
 
 function MatchDictionary(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
+var
+  Name: string;
 begin
-  result := AClass.QualifiedClassName.StartsWith('System.Generics.Collections.TDictionary');
+  name := AClass.QualifiedClassName;
+  result := name.StartsWith('System.Generics.Collections.TDictionary') or name.StartsWith('System.Generics.Collections.TObjectDictionary');
 end;
 
 function MatchJsonObject(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;

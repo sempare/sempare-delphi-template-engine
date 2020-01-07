@@ -395,6 +395,7 @@ begin
   FVariableEncoder := AEncoder;
 end;
 
+
 procedure TVelocityContext.SetScriptEndToken(const AToken: string);
 begin
   FEndToken := AToken;

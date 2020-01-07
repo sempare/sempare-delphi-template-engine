@@ -56,6 +56,7 @@ implementation
 uses
   System.UITypes,
   Sempare.Boot.Template.Velocity,
+  Sempare.Boot.Template.Velocity.Common,
   Sempare.Boot.Template.Velocity.Design.TemplateEditorForm,
   Sempare.Boot.Template.Velocity.Design.VariableEditorForm;
 
@@ -64,16 +65,15 @@ uses
 procedure TVariablesProperty.Edit;
 var
   FormVariableEditor: TFormVariableEditor;
-  Dict: IVelocityVariables;
+  Dict: TVelocityVariables;
 begin
   FormVariableEditor := TFormVariableEditor.Create(nil);
   try
-    Dict := IVelocityVariables(getordvalue);
+    Dict := TVelocityVariables(getordvalue);
     FormVariableEditor.populateGrid(Dict);
     if FormVariableEditor.ShowModal = mrOk then
     begin
       FormVariableEditor.populateDict(Dict);
-      SetOrdValue(Integer(Dict));
     end;
   finally
     FormVariableEditor.Free;

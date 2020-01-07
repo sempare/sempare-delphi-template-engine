@@ -38,6 +38,7 @@ uses
   System.Classes,
   System.SysUtils,
   System.Generics.Collections,
+  Sempare.Boot.Template.Velocity.Common,
   Sempare.Boot.Template.Velocity;
 
 type
@@ -68,8 +69,8 @@ type
     procedure SetTemplateResolver(const Value: TVelocityTemplateResolver);
     procedure SetVariable(const AKey: string; const Value: TVelocityValue);
     procedure SetVariableEncoder(const Value: TVelocityEncodeFunction);
-    function GetVariables: IVelocityVariables;
-    procedure SetVariables(const Value: IVelocityVariables);
+    function GetVariables: TVelocityVariables;
+    procedure SetVariables(const Value: TVelocityVariables);
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -89,7 +90,7 @@ type
     property MaxRunTimeMs: integer read GetMaxRunTimeMs write SetMaxRunTimeMs;
     property StartToken: string read GetScriptStartToken write SetScriptStartToken;
     property EndToken: string read GetScriptEndToken write SetScriptEndToken;
-    property Variables: IVelocityVariables read GetVariables write SetVariables;
+    property Variables: TVelocityVariables read GetVariables write SetVariables;
   end;
 
 implementation
@@ -168,9 +169,9 @@ begin
   result := FContext.VariableEncoder;
 end;
 
-function TSempareBootVelocityContext.GetVariables: IVelocityVariables;
+function TSempareBootVelocityContext.GetVariables: TVelocityVariables;
 begin
-  result := FContext.Variables;
+  result := TVelocityVariables(FContext.Variables);
 end;
 
 procedure TSempareBootVelocityContext.SetEncoding(const Value: TEncoding);
@@ -228,7 +229,7 @@ begin
   FContext.VariableEncoder := Value;
 end;
 
-procedure TSempareBootVelocityContext.SetVariables(const Value: IVelocityVariables);
+procedure TSempareBootVelocityContext.SetVariables(const Value: TVelocityVariables);
 begin
   // do nothing
 end;

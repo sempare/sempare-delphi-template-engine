@@ -13,7 +13,7 @@
             <Dependencies>Sempare.Boot.Template.Velocity.Components.Pkg.dproj</Dependencies>
         </Projects>
         <Projects Include="Sempare.Boot.Template.Velocity.Tester.dproj">
-            <Dependencies>Sempare.Boot.Template.Velocity.Pkg.dproj</Dependencies>
+            <Dependencies>Sempare.Boot.Template.Velocity.Pkg.dproj;Sempare.Boot.Template.Velocity.Components.Pkg.dproj</Dependencies>
         </Projects>
     </ItemGroup>
     <ProjectExtensions>
@@ -50,13 +50,13 @@
     <Target Name="Sempare_Boot_Template_Velocity_Design_Pkg:Make" DependsOnTargets="Sempare.Boot.Template.Velocity.Components.Pkg:Make">
         <MSBuild Projects="Sempare.Boot.Template.Velocity.Design.Pkg.dproj" Targets="Make"/>
     </Target>
-    <Target Name="Sempare_Boot_Template_Velocity_Tester" DependsOnTargets="Sempare.Boot.Template.Velocity.Pkg">
+    <Target Name="Sempare_Boot_Template_Velocity_Tester" DependsOnTargets="Sempare.Boot.Template.Velocity.Pkg;Sempare.Boot.Template.Velocity.Components.Pkg">
         <MSBuild Projects="Sempare.Boot.Template.Velocity.Tester.dproj"/>
     </Target>
-    <Target Name="Sempare_Boot_Template_Velocity_Tester:Clean" DependsOnTargets="Sempare.Boot.Template.Velocity.Pkg:Clean">
+    <Target Name="Sempare_Boot_Template_Velocity_Tester:Clean" DependsOnTargets="Sempare.Boot.Template.Velocity.Pkg:Clean;Sempare.Boot.Template.Velocity.Components.Pkg:Clean">
         <MSBuild Projects="Sempare.Boot.Template.Velocity.Tester.dproj" Targets="Clean"/>
     </Target>
-    <Target Name="Sempare_Boot_Template_Velocity_Tester:Make" DependsOnTargets="Sempare.Boot.Template.Velocity.Pkg:Make">
+    <Target Name="Sempare_Boot_Template_Velocity_Tester:Make" DependsOnTargets="Sempare.Boot.Template.Velocity.Pkg:Make;Sempare.Boot.Template.Velocity.Components.Pkg:Make">
         <MSBuild Projects="Sempare.Boot.Template.Velocity.Tester.dproj" Targets="Make"/>
     </Target>
     <Target Name="Build">

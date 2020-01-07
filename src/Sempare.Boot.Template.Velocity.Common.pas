@@ -82,9 +82,6 @@ type
   TVelocityVariables = class(TInterfacedObject, IVelocityVariables)
   private
     FVariables: TDictionary<string, TVelocityValue>;
-    function GetItem(const AKey: string): TVelocityValue;
-    procedure SetItem(const AKey: string; const Value: TVelocityValue);
-    function GetCount: integer;
   public
     constructor Create();
     destructor Destroy; override;
@@ -92,6 +89,10 @@ type
     function TryGetItem(const AKey: string; out AValue: TVelocityValue): boolean;
     procedure Remove(const AKey: string);
     procedure Clear;
+    function GetItem(const AKey: string): TVelocityValue;
+    procedure SetItem(const AKey: string; const Value: TVelocityValue);
+    function GetCount: integer;
+    property Variables[const AKey : string] : TVelocityValue read GetItem write SetItem; default;
   end;
 
 function AsVisitorHost(const ATemplate: IVelocityTemplate): IVelocityVisitorHost; inline; overload;

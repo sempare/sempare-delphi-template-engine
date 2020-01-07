@@ -44,6 +44,7 @@ uses
   System.Generics.Collections,
   System.Rtti,
   Sempare.Boot.Template.Velocity,
+  Sempare.Boot.Template.Velocity.Common,
   Sempare.Boot.Template.Velocity.Design.Properties,
   Sempare.Boot.Template.Velocity.Components;
 
@@ -51,8 +52,8 @@ procedure Register;
 
 begin
   RegisterPropertyEditor(TypeInfo(string), TSempareBootVelocityTemplate, 'TemplateText', TTemplateProperty);
-  RegisterPropertyEditor(TypeInfo(IVelocityVariables), TSempareBootVelocityContext, 'Variables', TVariablesProperty);
-  RegisterPropertyEditor(TypeInfo(IVelocityVariables), TSempareBootVelocityEngine, 'Variables', TVariablesProperty);
+  RegisterPropertyEditor(TypeInfo(TVelocityVariables), TSempareBootVelocityContext, 'Variables', TVariablesProperty);
+  RegisterPropertyEditor(TypeInfo(TVelocityVariables), TSempareBootVelocityEngine, 'Variables', TVariablesProperty);
   RegisterComponents('Sempare Boot', [TSempareBootVelocityContext, TSempareBootVelocityTemplate, TSempareBootVelocityEngine]);
 end;
 
