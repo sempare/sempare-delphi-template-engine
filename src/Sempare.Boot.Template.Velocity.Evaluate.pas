@@ -71,7 +71,6 @@ type
 
   TEvaluationVelocityVisitor = class(TBaseVelocityVisitor)
   private
-    FPretty: IVelocityVisitor;
     FStopWatch: TStopWatch;
     FStackFrames: TObjectStack<TStackFrame>;
     FEvalStack: TStack<TValue>;
@@ -308,7 +307,7 @@ begin
       val := Deref(Position(AExpr), StackFrame.Root, AExpr.variable, eoRaiseErrorWhenVariableNotFound in FContext.Options);
     end;
     if val.IsEmpty and (eoRaiseErrorWhenVariableNotFound in FContext.Options) then
-      RaiseError(Position(AExpr), 'Variable could not be found.');
+      RaiseError(Position(AExpr), 'Variable ''%s'' could not be found.', [AExpr.variable]);
   end
   else
   begin
@@ -448,7 +447,6 @@ constructor TEvaluationVelocityVisitor.Create(const AContext: IVelocityContext; 
 var
   apply: IVelocityContextForScope;
 begin
-  FPretty := TPrettyPrintVelocityVisitor.Create();
   FAllowRootDeref := true;
   FStopWatch := TStopWatch.Create;
   FStopWatch.Start;
@@ -477,7 +475,6 @@ begin
   FEvalStack.Free;
   FStackFrames.Free;
   FContext := nil;
-  FPretty := nil;
   inherited;
 end;
 
@@ -510,12 +507,26 @@ begin
   result := (coContinue in FLoopOptions) or (coBreak in FLoopOptions);
 end;
 
+function ForToCond(const ALow: integer; const AHigh: integer): boolean;
+begin
+  result := ALow <= AHigh;
+end;
+
+function ForDownToCond(const ALow: integer; const AHigh: integer): boolean;
+begin
+  result := ALow >= AHigh;
+end;
+
 procedure TEvaluationVelocityVisitor.Visit(const AStmt: IForRangeStmt);
+type
+  TCompare = function(const ALow: integer; const AHigh: integer): boolean;
+
 var
   LoopOptions: IPreserveValue<TLoopOptions>;
   i, lowVal, highVal: int64;
   delta: integer;
   v: string;
+  comp: TCompare;
 
 begin
   if HasBreakOrContinue then
@@ -531,15 +542,21 @@ begin
 
   case AStmt.ForOp of
     foTo:
-      delta := 1;
+      begin
+        delta := 1;
+        comp := ForToCond;
+      end;
     foDownto:
-      delta := -1;
+      begin
+        delta := -1;
+        comp := ForDownToCond;
+      end
   else
     raise Exception.Create('ForOp not supported');
   end;
   FStackFrames.push(FStackFrames.peek.Clone);
   i := lowVal;
-  while i <= highVal do
+  while comp(i, highVal) do
   begin
     FStackFrames.peek[v] := i;
     if coBreak in FLoopOptions then
