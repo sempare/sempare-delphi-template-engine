@@ -591,7 +591,6 @@ var
   Options: IPreserveValue<TParserOptions>;
   symbol: IvelocitySymbol;
 begin
-  // TODO: review parse time evaluation. if condition is false, then block can be excluded
   Options := Preseve.Value<TParserOptions>(FOptions, FOptions + [poAllowElse, poAllowEnd, poAllowElIf]);
   symbol := FLookahead;
   match(VsIF);
@@ -1229,10 +1228,15 @@ end;
 function TVelocityParser.rulePrintStmt: IStmt;
 var
   symbol: IvelocitySymbol;
+  expr : IExpr;
 begin
   symbol := FLookahead;
   match(vsPrint);
-  result := TPrintStmt.Create(symbol.Position, ruleExpr);
+  match(VsOpenRoundBracket);
+  expr := ruleExpr;
+  match(VsCloseRoundBracket);
+  match(VsEndScript);
+  result := TPrintStmt.Create(symbol.Position, expr);
 end;
 
 function TVelocityParser.rulePrintStmtVariable(const AExpr: IExpr): IStmt;

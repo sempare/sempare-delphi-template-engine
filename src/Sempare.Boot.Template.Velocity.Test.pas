@@ -70,6 +70,8 @@ type
     procedure TestStmts;
     [Test]
     procedure TestRequire;
+    [Test]
+    procedure testPrint;
   end;
 
 implementation
@@ -133,6 +135,11 @@ begin
   ctx := Velocity.Context;
   ctx.Options := [eoStripRecurringSpaces];
   Assert.AreEqual(' hello world ', Velocity.Eval(ctx, '  hello   world    '));
+end;
+
+procedure TTestVelocity.testPrint;
+begin
+  Assert.AreEqual('hello', Velocity.Eval('<% print(''hello'') %>'));
 end;
 
 procedure TTestVelocity.TestRequire;
