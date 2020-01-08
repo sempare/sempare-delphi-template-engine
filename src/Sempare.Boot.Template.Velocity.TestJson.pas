@@ -49,11 +49,16 @@ type
 
 implementation
 
+{$I 'Sempare.Boot.Template.Velocity.Compiler.inc'}
+
 uses
+{$IFDEF SUPPORT_JSON}
   System.Json,
+{$ENDIF}
   Sempare.Boot.Template.Velocity;
 
 procedure TTestVelocityJson.TestJson;
+{$IFDEF SUPPORT_JSON}
 var
   o, o2: TJSonObject;
 begin
@@ -70,6 +75,11 @@ begin
   Velocity.Eval('<% _.str %> <% _.bool%> <%_.null%> <%_.num%> <% _.object.subval %>', o));
   o.Free;
 end;
+{$ELSE}
+begin
+  // do nothing.
+end;
+{$ENDIF}
 
 initialization
 

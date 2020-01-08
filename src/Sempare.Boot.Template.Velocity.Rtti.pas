@@ -34,12 +34,16 @@ unit Sempare.Boot.Template.Velocity.Rtti;
 
 interface
 
-// Moved from Sempare.Boot.Rtti to make this standalone
+{$I 'Sempare.Boot.Template.Velocity.Compiler.inc'}
 
 uses
   System.Rtti,
   System.TypInfo,
   System.SysUtils,
+{$IFDEF SUPPORT_JSON}
+  System.JSON,
+{$ENDIF}
+  Sempare.Boot.Template.Velocity.StackFrame,
   Sempare.Boot.Template.Velocity.AST;
 
 function AsBoolean(const AValue: TValue): boolean;
@@ -74,9 +78,14 @@ type
   TDerefMatchFunction = function(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
   TDerefMatchInterfaceFunction = function(const AInterface: IInterface): boolean;
   TDerefFunction = function(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
+  TPopulateStackFrame = procedure(const StackFrame: TStackFrame; const ARttiType: TRttiType; const AClass: TValue);
+  TPopulateMatchFunction = function(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
 
 procedure RegisterDeref(const AMatch: TDerefMatchFunction; const AFunction: TDerefFunction); overload;
 procedure RegisterDeref(const AMatch: TDerefMatchInterfaceFunction; const AFunction: TDerefFunction); overload;
+procedure RegisterPopulateStackFrame(const AMatch: TPopulateMatchFunction; const APopulator: TPopulateStackFrame); overload;
+
+function PopulateStackFrame(const StackFrame: TStackFrame; const ARttiType: TRttiType; const AClass: TValue): boolean;
 
 var
   EQUALITY_PRECISION: extended = 1E-8;
@@ -86,11 +95,11 @@ implementation
 
 uses
   System.Math,
-  System.JSON,
   System.Generics.Collections,
   Sempare.Boot.Template.Velocity.Common;
 
 var
+  GPopulateFunctions: TList<TPair<TPopulateMatchFunction, TPopulateStackFrame>>;
   GDerefFunctions: TList<TPair<TDerefMatchFunction, TDerefFunction>>;
   GDerefInterfaceFunctions: TList<TPair<TDerefMatchInterfaceFunction, TDerefFunction>>;
 
@@ -107,6 +116,26 @@ end;
 procedure RegisterDeref(const AMatch: TDerefMatchFunction; const AFunction: TDerefFunction);
 begin
   GDerefFunctions.add(TPair<TDerefMatchFunction, TDerefFunction>.Create(AMatch, AFunction));
+end;
+
+procedure RegisterPopulateStackFrame(const AMatch: TPopulateMatchFunction; const APopulator: TPopulateStackFrame); overload;
+begin
+  GPopulateFunctions.add(TPair<TPopulateMatchFunction, TPopulateStackFrame>.Create(AMatch, APopulator));
+end;
+
+function PopulateStackFrame(const StackFrame: TStackFrame; const ARttiType: TRttiType; const AClass: TValue): boolean;
+var
+  p: TPair<TPopulateMatchFunction, TPopulateStackFrame>;
+begin
+  for p in GPopulateFunctions do
+  begin
+    if p.Key(ARttiType.Handle, ARttiType.ClassType) then
+    begin
+      p.Value(StackFrame, ARttiType, AClass);
+      exit(true);
+    end;
+  end;
+  result := false;
 end;
 
 function isNull(const AValue: TValue): boolean;
@@ -366,12 +395,19 @@ begin
 end;
 
 function AsDateTime(const AValue: TValue): TDateTime;
+
+// Using this is a workaround for backward compatability casting
+  function DoubleToDT(const AValue: double): TDateTime; inline;
+  begin
+    result := TDateTime(AValue);
+  end;
+
 begin
   case AValue.Kind of
     tkInteger, tkInt64:
-      exit(TDateTime(AValue.AsInt64));
+      exit(DoubleToDT(AValue.AsInt64));
     tkfloat:
-      exit(TDateTime(AValue.AsExtended));
+      exit(DoubleToDT(AValue.AsExtended));
     tkString, tkWideString, tkUnicodeString, tkLString:
       exit(StrToDateTime(AValue.AsString));
   else
@@ -392,7 +428,7 @@ begin
     on e: Exception do
     begin
       if ARaiseIfMissing then
-        RaiseError(APosition, 'Cannot dereference variable');
+        RaiseError(APosition, 'Cannot dereference variable %s', [AsString(ADeref)]);
       result := '';
     end;
   end;
@@ -424,38 +460,89 @@ begin
   end;
 end;
 
+{$IFDEF SUPPORT_JSON}
+
+function JsonValueToTValue(const AJsonValue: TJsonValue; out AValue: TValue): boolean;
+begin
+{$IFDEF SUPPORT_JSON_BOOL}
+  if AJsonValue is TJSONBool then
+  begin
+    AValue := TJSONBool(AJsonValue).AsBoolean;
+    exit(true);
+  end;
+{$ELSE}
+  if AJsonValue is TJSONTrue then
+  begin
+    AValue := true;
+    exit(true);
+  end;
+  if AJsonValue is TJSONFalse then
+  begin
+    AValue := false;
+    exit(true);
+  end;
+{$ENDIF}
+  if AJsonValue is TJSONString then
+  begin
+    AValue := TJSONString(AJsonValue).Value;
+    exit(true);
+  end;
+  if AJsonValue is TJSONNumber then
+  begin
+    AValue := TJSONNumber(AJsonValue).AsDouble;
+    exit(true);
+  end;
+  if AJsonValue is TJsonObject then
+  begin
+    AValue := TJsonObject(AJsonValue);
+    exit(true);
+  end;
+  if AJsonValue is TJSONNull then
+  begin
+    AValue := nil;
+    exit(true);
+  end;
+  exit(false);
+end;
+
+procedure PopulateStackFrameFromJsonObject(const StackFrame: TStackFrame; const ARttiType: TRttiType; const AClass: TValue);
+var
+  AObj: TJsonObject;
+  p: tjsonpair;
+  v: TValue;
+begin
+  AObj := TJsonObject(AClass.AsObject);
+  for p in AObj do
+  begin
+    if JsonValueToTValue(p.JsonValue, v) then
+      StackFrame[p.JsonString.Value] := v;
+  end;
+end;
+
 function processJson(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
 var
-  jsonobj: tjsonobject;
-  jsonval: tjsonvalue;
-  key: string;
+  jsonobj: TJsonObject;
+  jsonval: TJsonValue;
+  Key: string;
 begin
-  jsonobj := obj.AsObject as tjsonobject;
-  key := AsString(ADeref);
-  jsonval := jsonobj.GetValue(key);
-  if jsonval is TJSONBool then
-  begin
-    result := jsonval.Astype<boolean>();
-  end
-  else if jsonval is TJSONString then
-  begin
-    result := jsonval.Astype<string>();
-  end
-  else if jsonval is TJSONNumber then
-  begin
-    result := jsonval.Astype<extended>();
-  end
-  else if jsonval is tjsonobject then
-  begin
-    result := jsonval;
-  end
-  else
+  jsonobj := obj.AsObject as TJsonObject;
+  Key := AsString(ADeref);
+  jsonval := jsonobj.GetValue(Key);
+
+  if not JsonValueToTValue(jsonval, result) then
   begin
     if ARaiseIfMissing then
-      RaiseError(APosition, 'Cannot dereference %s in dictionary', [key]);
+      RaiseError(APosition, 'Cannot dereference %s in dictionary', [Key]);
     result := nil;
   end;
 end;
+
+function MatchJsonObject(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
+begin
+  result := AClass = TJsonObject;
+end;
+
+{$ENDIF}
 
 function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
 
@@ -502,7 +589,7 @@ function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARa
     info := obj.TypeInfo;
     for p in GDerefFunctions do
     begin
-      if p.key(info, ClassType) then
+      if p.Key(info, ClassType) then
         exit(p.Value(APosition, obj, ADeref, ARaiseIfMissing));
     end;
     result := GetFieldOrProperty(obj.AsObject, GRttiContext.GetType(obj.TypeInfo), ADeref);
@@ -521,7 +608,7 @@ function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARa
     i := obj.AsInterface;
     for p in GDerefInterfaceFunctions do
     begin
-      if p.key(i) then
+      if p.Key(i) then
         exit(p.Value(APosition, obj, ADeref, ARaiseIfMissing));
     end;
   end;
@@ -597,9 +684,53 @@ begin
   result := name.StartsWith('System.Generics.Collections.TDictionary') or name.StartsWith('System.Generics.Collections.TObjectDictionary');
 end;
 
-function MatchJsonObject(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
+function MatchStringDictionary(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
+var
+  Name: string;
 begin
-  result := AClass = tjsonobject;
+  name := AClass.QualifiedClassName;
+  result := name.StartsWith('System.Generics.Collections.TDictionary<System.string,') or name.StartsWith('System.Generics.Collections.TObjectDictionary<string,');
+end;
+
+procedure PopulateStackFrameFromDictionary(const StackFrame: TStackFrame; const ARttiType: TRttiType; const AClass: TValue);
+var
+  e: TObject;
+  T: TRttiType;
+  m, movenext: TRttiMethod;
+  current: TRttiProperty;
+  Key, Value: TRttiField;
+  val: TValue;
+  k: string;
+  o: TValue;
+  obj: pointer;
+var
+  ADict: TObject;
+
+begin
+  ADict := AClass.AsObject;
+  m := ARttiType.GetMethod('GetEnumerator');
+  val := m.Invoke(ADict, []).AsObject;
+  e := val.AsObject;
+  T := GRttiContext.GetType(e.ClassType);
+  k := e.ClassName;
+  movenext := T.GetMethod('MoveNext');
+  current := T.GetProperty('Current');
+  Key := nil;
+  Value := nil;
+  while movenext.Invoke(e, []).AsBoolean do
+  begin
+    o := current.GetValue(e); // this returns TPair record
+    obj := o.GetReferenceToRawData;
+    if Key = nil then
+    begin
+      T := GRttiContext.GetType(o.TypeInfo);
+      Key := T.GetField('Key');
+      Value := T.GetField('Value');
+    end;
+    k := Key.GetValue(obj).AsString;
+    val := Value.GetValue(obj);
+    StackFrame[k] := val;
+  end;
 end;
 
 function MatchVelocityVariables(const AInterface: IInterface): boolean;
@@ -619,9 +750,16 @@ GRttiContext.KeepContext;
 
 GDerefInterfaceFunctions := TList < TPair < TDerefMatchInterfaceFunction, TDerefFunction >>.Create;
 GDerefFunctions := TList < TPair < TDerefMatchFunction, TDerefFunction >>.Create;
+GPopulateFunctions := TList < TPair < TPopulateMatchFunction, TPopulateStackFrame >>.Create;
+
 RegisterDeref(MatchVelocityVariableObject, processVelocityVariables);
 RegisterDeref(MatchDictionary, processDictionary);
+{$IFDEF SUPPORT_JSON}
 RegisterDeref(MatchJsonObject, processJson);
+RegisterPopulateStackFrame(MatchJsonObject, PopulateStackFrameFromJsonObject);
+{$ENDIF}
+RegisterPopulateStackFrame(MatchStringDictionary, PopulateStackFrameFromDictionary);
+
 RegisterDeref(MatchVelocityVariables, processVelocityVariables);
 
 finalization
@@ -631,5 +769,6 @@ GRttiContext.Free;
 
 GDerefFunctions.Free;
 GDerefInterfaceFunctions.Free;
+GPopulateFunctions.Free;
 
 end.

@@ -62,7 +62,8 @@ package Sempare.Boot.Template.Velocity.Design.Pkg;
 
 requires
   rtl,
-  Sempare.Boot.Template.Velocity.Components.Pkg;
+  Sempare.Boot.Template.Velocity.Components.Pkg,
+  Sempare.Boot.Template.Velocity.Pkg;
 
 contains
   Sempare.Boot.Template.Velocity.Design.Register in 'src\Sempare.Boot.Template.Velocity.Design.Register.pas',

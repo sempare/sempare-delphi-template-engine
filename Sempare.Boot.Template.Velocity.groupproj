@@ -15,6 +15,9 @@
         <Projects Include="Sempare.Boot.Template.Velocity.Tester.dproj">
             <Dependencies>Sempare.Boot.Template.Velocity.Pkg.dproj;Sempare.Boot.Template.Velocity.Components.Pkg.dproj</Dependencies>
         </Projects>
+        <Projects Include="demo\VelocityDemo\Sempare.Boot.Velocity.Demo.dproj">
+            <Dependencies/>
+        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -59,14 +62,23 @@
     <Target Name="Sempare_Boot_Template_Velocity_Tester:Make" DependsOnTargets="Sempare.Boot.Template.Velocity.Pkg:Make;Sempare.Boot.Template.Velocity.Components.Pkg:Make">
         <MSBuild Projects="Sempare.Boot.Template.Velocity.Tester.dproj" Targets="Make"/>
     </Target>
+    <Target Name="Sempare_Boot_Velocity_Demo">
+        <MSBuild Projects="demo\VelocityDemo\Sempare.Boot.Velocity.Demo.dproj"/>
+    </Target>
+    <Target Name="Sempare_Boot_Velocity_Demo:Clean">
+        <MSBuild Projects="demo\VelocityDemo\Sempare.Boot.Velocity.Demo.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="Sempare_Boot_Velocity_Demo:Make">
+        <MSBuild Projects="demo\VelocityDemo\Sempare.Boot.Velocity.Demo.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="Sempare_Boot_Template_Velocity_Pkg;Sempare_Boot_Template_Velocity_Components_Pkg;Sempare_Boot_Template_Velocity_Design_Pkg;Sempare_Boot_Template_Velocity_Tester"/>
+        <CallTarget Targets="Sempare_Boot_Template_Velocity_Pkg;Sempare_Boot_Template_Velocity_Components_Pkg;Sempare_Boot_Template_Velocity_Design_Pkg;Sempare_Boot_Template_Velocity_Tester;Sempare_Boot_Velocity_Demo"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="Sempare_Boot_Template_Velocity_Pkg:Clean;Sempare_Boot_Template_Velocity_Components_Pkg:Clean;Sempare_Boot_Template_Velocity_Design_Pkg:Clean;Sempare_Boot_Template_Velocity_Tester:Clean"/>
+        <CallTarget Targets="Sempare_Boot_Template_Velocity_Pkg:Clean;Sempare_Boot_Template_Velocity_Components_Pkg:Clean;Sempare_Boot_Template_Velocity_Design_Pkg:Clean;Sempare_Boot_Template_Velocity_Tester:Clean;Sempare_Boot_Velocity_Demo:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="Sempare_Boot_Template_Velocity_Pkg:Make;Sempare_Boot_Template_Velocity_Components_Pkg:Make;Sempare_Boot_Template_Velocity_Design_Pkg:Make;Sempare_Boot_Template_Velocity_Tester:Make"/>
+        <CallTarget Targets="Sempare_Boot_Template_Velocity_Pkg:Make;Sempare_Boot_Template_Velocity_Components_Pkg:Make;Sempare_Boot_Template_Velocity_Design_Pkg:Make;Sempare_Boot_Template_Velocity_Tester:Make;Sempare_Boot_Velocity_Demo:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

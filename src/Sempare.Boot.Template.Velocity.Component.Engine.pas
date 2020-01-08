@@ -34,6 +34,8 @@ unit Sempare.Boot.Template.Velocity.Component.Engine;
 
 interface
 
+{$R 'TSempareBootVelocityEngine.dcr' }
+
 uses
   System.Classes,
   System.SysUtils,

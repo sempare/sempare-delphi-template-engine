@@ -166,14 +166,13 @@
         </DelphiCompile>
         <DCCReference Include="rtl.dcp"/>
         <DCCReference Include="Sempare.Boot.Template.Velocity.Components.Pkg.dcp"/>
+        <DCCReference Include="Sempare.Boot.Template.Velocity.Pkg.dcp"/>
         <DCCReference Include="src\Sempare.Boot.Template.Velocity.Design.Register.pas"/>
         <DCCReference Include="src\Sempare.Boot.Template.Velocity.Design.VariableEditorForm.pas">
             <Form>FormVariableEditor</Form>
-            <FormType>dfm</FormType>
         </DCCReference>
         <DCCReference Include="src\Sempare.Boot.Template.Velocity.Design.TemplateEditorForm.pas">
             <Form>FormTemplateEditor</Form>
-            <FormType>dfm</FormType>
         </DCCReference>
         <DCCReference Include="src\Sempare.Boot.Template.Velocity.Design.Properties.pas"/>
         <BuildConfiguration Include="Release">

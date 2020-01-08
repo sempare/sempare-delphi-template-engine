@@ -66,7 +66,7 @@ type
     procedure TestVariableNotFound;
     [Test]
     procedure TestArray;
-    [Test, Ignore]
+    [Test, Ignore] // This is ignored because this is a potential future feature that is not currently supported.
     procedure TestStmts;
     [Test]
     procedure TestRequire;

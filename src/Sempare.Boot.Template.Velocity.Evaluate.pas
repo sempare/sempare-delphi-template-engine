@@ -127,7 +127,6 @@ type
 implementation
 
 uses
-  System.JSON,
   Sempare.Boot.Template.Velocity.Rtti,
   Sempare.Boot.Template.Velocity.Util;
 
@@ -755,9 +754,7 @@ procedure TEvaluationVelocityVisitor.Visit(const AStmt: IWithStmt);
 var
   StackFrame: TStackFrame;
 
-procedure ScanClass(const ARttiType: TRttiType; const ARecord: TValue); forward;
-procedure ScanDictionary(const ARttiType: TRttiType; const ADict: TObject); forward;
-procedure ScanJsonObject(const ARttiType: TRttiType; const AObj: tjsonobject); forward;
+procedure ScanClass(const ARttiType: TRttiType; const AClass: TValue); forward;
 procedure ScanRecord(const ARttiType: TRttiType; const ARecord: TValue); forward;
 
   procedure ScanValue(const ARecord: TValue);
@@ -775,23 +772,16 @@ procedure ScanRecord(const ARttiType: TRttiType; const ARecord: TValue); forward
     end;
   end;
 
-  procedure ScanClass(const ARttiType: TRttiType; const ARecord: TValue);
+  procedure ScanClass(const ARttiType: TRttiType; const AClass: TValue);
   var
     field: TRttiField;
     prop: TRttiProperty;
     obj: TObject;
   begin
-    obj := ARecord.AsObject;
-    if obj.ClassType.QualifiedClassName.StartsWith('System.Generics.Collections.TDictionary<System.string') then
-    begin
-      ScanDictionary(ARttiType, obj);
+    obj := AClass.AsObject;
+
+    if PopulateStackFrame(StackFrame, ARttiType, AClass) then
       exit;
-    end;
-    if obj.ClassType = tjsonobject then
-    begin
-      ScanJsonObject(ARttiType, tjsonobject(obj));
-      exit;
-    end;
     // we can't do anything on generic collections. we can loop using _ if we need to do anything.
     if obj.ClassType.QualifiedClassName.StartsWith('System.Generics.Collections') then
       exit;
@@ -799,77 +789,6 @@ procedure ScanRecord(const ARttiType: TRttiType; const ARecord: TValue); forward
       StackFrame[field.Name] := field.GetValue(obj);
     for prop in ARttiType.GetProperties do
       StackFrame[prop.Name] := prop.GetValue(obj);
-  end;
-
-  procedure ScanDictionary(const ARttiType: TRttiType; const ADict: TObject);
-  var
-    e: TObject;
-    T: TRttiType;
-    m, movenext: TRttiMethod;
-    current: TRttiProperty;
-    key, Value: TRttiField;
-    val: TValue;
-    k: string;
-    o: TValue;
-    obj: pointer;
-
-  begin
-    m := ARttiType.GetMethod('GetEnumerator');
-    val := m.Invoke(ADict, []).AsObject;
-    e := val.AsObject;
-    T := GRttiContext.GetType(e.ClassType);
-    k := e.ClassName;
-    movenext := T.GetMethod('MoveNext');
-    current := T.GetProperty('Current');
-    key := nil;
-    Value := nil;
-    while movenext.Invoke(e, []).AsBoolean do
-    begin
-      o := current.GetValue(e); // this returns TPair record
-      obj := o.GetReferenceToRawData;
-      if key = nil then
-      begin
-        T := GRttiContext.GetType(o.TypeInfo);
-        key := T.GetField('Key');
-        Value := T.GetField('Value');
-      end;
-      k := key.GetValue(obj).AsString;
-      val := Value.GetValue(obj);
-      StackFrame[k] := val;
-    end;
-  end;
-
-  procedure ScanJsonObject(const ARttiType: TRttiType; const AObj: tjsonobject);
-  var
-    p: tjsonpair;
-    k: string;
-    v: tjsonvalue;
-  begin
-    for p in AObj do
-    begin
-      k := p.JsonString.AsType<string>;
-      v := p.JsonValue;
-      if v is TJSONBool then
-      begin
-        StackFrame[k] := v.AsType<boolean>;
-      end
-      else if v is TJSONString then
-      begin
-        StackFrame[k] := v.AsType<string>;
-      end
-      else if v is TJSONNumber then
-      begin
-        StackFrame[k] := v.AsType<extended>;
-      end
-      else if v is tjsonobject then
-      begin
-        StackFrame[k] := v;
-      end
-      else if v is TJSONNull then
-      begin
-        StackFrame[k] := nil;
-      end;
-    end;
   end;
 
   procedure ScanRecord(const ARttiType: TRttiType; const ARecord: TValue);
@@ -953,12 +872,9 @@ begin
 end;
 
 procedure TNewLineStreamWriter.DoWrite();
-var
-  s: string;
 begin
-  s := FBuffer.ToString;
+  inherited write(FBuffer.ToString());
   FBuffer.clear;
-  WriteBytes(Encoding.GetBytes(s));
 end;
 
 procedure TNewLineStreamWriter.TrimEndOfLine;
