@@ -30,7 +30,7 @@
  * limitations under the License.                                             *
  *                                                                            *
  ****************************************************************************%*)
- package Sempare.Boot.Template.Velocity.Pkg;
+package Sempare.Boot.Template.Velocity.Pkg;
 
 {$R *.res}
 {$IFDEF IMPLICITBUILDING This IFDEF should not be used by users}

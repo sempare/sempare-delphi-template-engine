@@ -69,6 +69,7 @@ uses
 
 var
   GKeywords: TDictionary<string, TVelocitySymbol>;
+  GSymbolToKeyword: TDictionary<TVelocitySymbol, string>;
 
 type
   TVelocityLexer = class(TInterfacedObject, IVelocityLexer)
@@ -142,7 +143,8 @@ end;
 
 function VelocitySymbolToString(const ASymbol: TVelocitySymbol): string;
 begin
-  Result := GetEnumName(TypeInfo(TVelocitySymbol), integer(ASymbol));
+  if not GSymbolToKeyword.TryGetValue(ASymbol, Result) then
+    Result := GetEnumName(TypeInfo(TVelocitySymbol), integer(ASymbol));
 end;
 
 { TVelocityLexer }
@@ -200,12 +202,12 @@ begin
   Fcurrent := FLookahead;
   if FLookahead.Eof then
     Exit;
-  FLookahead.Eof := freader.EndOfStream;
+  FLookahead.Eof := FReader.EndOfStream;
   if FLookahead.Eof then
     FLookahead.Input := #0
   else
   begin
-    FLookahead.Input := char(FReader.Read());
+    FLookahead.Input := Char(FReader.Read());
     if FLookahead.Input = #10 then
     begin
       Inc(FLine);
@@ -548,11 +550,22 @@ end;
 procedure AddHashedKeyword(const akeyword: string; const ASymbol: TVelocitySymbol);
 begin
   GKeywords.Add(akeyword, ASymbol);
+
+  // true/false both map onto vsboolean
+  if ASymbol <> vsBoolean then
+    GSymbolToKeyword.Add(ASymbol, akeyword);
+end;
+
+Procedure AddSymKeyword(const ASym: string; const ASymbol: TVelocitySymbol);
+begin
+  GSymbolToKeyword.Add(ASymbol, ASym);
 end;
 
 initialization
 
+GSymbolToKeyword := TDictionary<TVelocitySymbol, string>.Create();
 GKeywords := TDictionary<string, TVelocitySymbol>.Create;
+
 AddHashedKeyword('require', VsRequire);
 AddHashedKeyword('ignorenl', VsIgnoreNL);
 AddHashedKeyword('if', VsIF);
@@ -570,16 +583,50 @@ AddHashedKeyword('end', VsEND);
 AddHashedKeyword('include', VsINCLUDE);
 AddHashedKeyword('to', vsTo);
 AddHashedKeyword('downto', vsDownto);
-AddHashedKeyword('true', VsBoolean);
-AddHashedKeyword('false', VsBoolean);
-
+AddHashedKeyword('true', vsBoolean);
+AddHashedKeyword('false', vsBoolean);
 AddHashedKeyword('and', VsAND);
 AddHashedKeyword('or', VsOR);
 AddHashedKeyword('not', VsNOT);
 AddHashedKeyword('mod', VsMOD);
 
+AddSymKeyword('ScriptStartToken', VsStartScript);
+AddSymKeyword('ScriptEndToken', VsEndScript);
+AddSymKeyword('(', VsOpenRoundBracket);
+AddSymKeyword(')', VsCloseRoundBracket);
+AddSymKeyword('(*   *) ', VsComment);
+AddSymKeyword('Text', VsText);
+AddSymKeyword(':=', VsCOLONEQ);
+AddSymKeyword('id', VsID);
+AddSymKeyword('.', VsDOT);
+AddSymKeyword('[', VsOpenSquareBracket);
+AddSymKeyword(']', VsCloseSquareBracket);
+
+AddSymKeyword('number', VsNumber);
+AddSymKeyword('boolean', vsBoolean);
+AddSymKeyword('string', vsString);
+
+AddSymKeyword('?', vsQUESTION);
+AddSymKeyword(':', vsCOLON);
+
+AddSymKeyword('=', VsEQ);
+AddSymKeyword('<>', VsNotEQ);
+AddSymKeyword('<', vsLT);
+AddSymKeyword('<=', vsLTE);
+AddSymKeyword('>', vsGT);
+AddSymKeyword('>=', vsGTE);
+
+AddSymKeyword('+', VsPLUS);
+AddSymKeyword('-', VsMinus);
+AddSymKeyword('/', VsDIV);
+AddSymKeyword('*', VsMULT);
+
+AddSymKeyword(',', vsComma);
+AddSymKeyword(';', vsSemiColon);
+
 finalization
 
 GKeywords.Free;
+GSymbolToKeyword.Free;
 
 end.
