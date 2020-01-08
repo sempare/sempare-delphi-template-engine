@@ -47,7 +47,8 @@ In the example above, you can see that the '<%' start and '%>' end the scripting
 
 [Try the demo](./demo/VelocityDemo/README.md) if you want to dive in quick and play with the template engine.
 
-Quick tutorials on [You Tube](https://www.youtube.com/watch?v=iotzeJv77cY&list=PLjjz4SuVScHreGKEInvrjPtLPMBU6l130). The playlist has a few videos that are short (most less than a minute). 
+Quick tutorials on [You Tube](https://www.youtube.com/watch?v=iotzeJv77cY&list=PLjjz4SuVScHreGKEInvrjPtLPMBU6l130). 
+The playlist has a few videos that are very short (most less than a minute - blink and they are done). You can drag the slider in the videos if you miss something or refer to the rest of the documentation. 
 
 ## Contents
 1. [Introduction](#Introduction)
@@ -105,9 +106,10 @@ Sempare Boot Velocity aims to provide just enough functionality to allow you to 
 
 This should work with most modern versions of [Delphi](https://www.embarcadero.com/products/delphi). 
 
-Tests currently run on Delphi 10.3.3 using the DUnitX TestFramework.
+Tests currently run using the DUnitX TestFramework.
 
-An attempt has been made not to use the latest features to ease backward compatability, but I only have access to a few Delphi versions.
+An attempt has been made not to use the latest features to ease backward compatability. 
+Testing has been done on Delphi XE 8 and Delphi 10.3.3 Rio.
 
 ### Using Sempare Boot Velocity in your Delphi project
 
