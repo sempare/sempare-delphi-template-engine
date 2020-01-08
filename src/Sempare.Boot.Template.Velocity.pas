@@ -212,10 +212,16 @@ begin
 end;
 
 class function Velocity.ParseFile(const AContext: IVelocityContext; const AFile: string): IVelocityTemplate;
+type
+{$IFDEF SUPPORT_BUFFERED_STREAM}
+  TFStream = TBufferedFileStream;
+{$ELSE}
+  TFStream = TFileStream;
+{$ENDIF}
 var
-  fs: TBufferedFileStream;
+  fs : TFStream;
 begin
-  fs := TBufferedFileStream.Create(AFile, fmOpenRead);
+  fs := TFStream.Create(AFile, fmOpenRead);
   try
     result := Parse(AContext, fs);
   finally

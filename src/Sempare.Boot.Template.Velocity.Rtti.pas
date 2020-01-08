@@ -364,6 +364,13 @@ begin
 end;
 
 function AsString(const AValue: TValue): string;
+
+// Using this is a workaround for backward compatability casting
+  function DoubleToDT(const AValue: double): TDateTime; inline;
+  begin
+    result := TDateTime(AValue);
+  end;
+
 begin
   if AValue.TypeInfo = TypeInfo(boolean) then
     if AValue.AsBoolean then
@@ -377,7 +384,7 @@ begin
       exit(inttostr(AValue.AsInt64));
     tkfloat:
       if AValue.TypeInfo = TypeInfo(TDateTime) then
-        exit(datetimetostr(TDateTime(AValue.AsExtended)))
+        exit(datetimetostr(DoubleToDT(AValue.AsExtended)))
       else
         exit(floattostr(AValue.AsExtended));
     tkString, tkWideString, tkUnicodeString, tkLString:
