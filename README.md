@@ -47,7 +47,7 @@ In the example above, you can see that the '<%' start and '%>' end the scripting
 
 [Try the demo](./demo/VelocityDemo/README.md) if you want to dive in quick and play with the template engine.
 
-Quick tutorials on [You Tube](https://www.youtube.com/watch?v=iotzeJv77cY&list=PLjjz4SuVScHreGKEInvrjPtLPMBU6l130). 
+Quick tutorials on [You Tube](https://www.youtube.com/playlist?list=PLjjz4SuVScHreGKEInvrjPtLPMBU6l130). 
 The playlist has a few videos that are very short (most less than a minute - blink and they are done). You can drag the slider in the videos if you miss something or refer to the rest of the documentation. 
 
 ## Contents
