@@ -76,6 +76,8 @@ type
 
 implementation
 
+{$I 'Sempare.Boot.Template.Velocity.Compiler.inc'}
+
 uses
   System.Generics.Collections,
   Sempare.Boot.Template.Velocity.Context,
@@ -100,6 +102,7 @@ begin
 end;
 
 procedure TTestVelocity.TestHtmlEncoding;
+{$IFDEF SUPPORT_NET_ENCODING}
 type
   TRec = record
     content: string;
@@ -113,7 +116,12 @@ begin
   ctx.UseHtmlVariableEncoder;
 
   Assert.AreEqual('<html><body>a &lt; b</body></html>', Velocity.Eval(ctx, '<html><body><% content %></body></html>', data));
+
 end;
+{$ELSE}
+begin
+end;
+{$ENDIF}
 
 procedure TTestVelocity.TestNonMutation;
 type

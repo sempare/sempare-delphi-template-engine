@@ -34,6 +34,8 @@ unit Sempare.Boot.Template.Velocity.Context;
 
 interface
 
+{$I 'Sempare.Boot.Template.Velocity.Compiler.inc'}
+
 uses
   System.Rtti,
   System.SysUtils,
@@ -107,7 +109,9 @@ type
     function GetEncoding: TEncoding;
     procedure SetEncoding(const AEncoding: TEncoding);
 
+{$IFDEF SUPPORT_NET_ENCODING}
     procedure UseHtmlVariableEncoder;
+{$ENDIF}
     function GetVariableEncoder: TVelocityEncodeFunction;
     procedure SetVariableEncoder(const AEncoder: TVelocityEncodeFunction);
     function GetVariables: IVelocityVariables;
@@ -149,14 +153,15 @@ type
     function GetPreamble: TBytes; override;
   end;
 
-
 var
   UTF8WithoutPreambleEncoding: TUTF8WithoutPreambleEncoding;
 
 implementation
 
 uses
+{$IFDEF SUPPORT_NET_ENCODING}
   System.NetEncoding,
+{$ENDIF}
   System.SyncObjs,
   Sempare.Boot.Template.Velocity,
   Sempare.Boot.Template.Velocity.Functions;
@@ -208,7 +213,9 @@ type
     function GetMaxRunTimeMs: integer;
     procedure SetMaxRunTimeMs(const ATimeMS: integer);
 
+{$IFDEF SUPPORT_NET_ENCODING}
     procedure UseHtmlVariableEncoder;
+{$ENDIF}
     function GetVariableEncoder: TVelocityEncodeFunction;
     procedure SetVariableEncoder(const AEncoder: TVelocityEncodeFunction);
 
@@ -395,7 +402,6 @@ begin
   FVariableEncoder := AEncoder;
 end;
 
-
 procedure TVelocityContext.SetScriptEndToken(const AToken: string);
 begin
   FEndToken := AToken;
@@ -440,14 +446,19 @@ begin
   end;
 end;
 
-procedure TVelocityContext.UseHtmlVariableEncoder;
+{$IFDEF SUPPORT_NET_ENCODING}
+
+function HtmlEncode(const AString: string): string;
 begin
-  FVariableEncoder := function(const AValue: string): string
-    begin
-      result := TNetEncoding.HTML.Encode(AValue);
-    end;
+  result := TNetEncoding.HTML.Encode(AString);
 end;
 
+procedure TVelocityContext.UseHtmlVariableEncoder;
+begin
+  FVariableEncoder := HtmlEncode;
+end;
+
+{$ENDIF}
 { TUTF8WithoutPreambleEncoding }
 
 function TUTF8WithoutPreambleEncoding.GetPreamble: TBytes;

@@ -108,22 +108,39 @@ This should work with most modern versions of [Delphi](https://www.embarcadero.c
 
 Tests currently run using the DUnitX TestFramework.
 
-An attempt has been made not to use the latest features to ease backward compatability. 
-Testing has been done on Delphi XE 8 and Delphi 10.3.3 Rio.
+An attempt has been made not to use the latest features to ease backward compatability.
+Although the development was done on Dlephi 10.3.3, I have done a quick build/test on:
+- Delphi XE 8
+- Delphi 10.0 Seatle
+- Delphi 10.1 Berlin
+- Delphi 10.2 Tokyo
+- Delphi 10.3.3 Rio.
+
+There should be no platform specific restrictions.
 
 ### Using Sempare Boot Velocity in your Delphi project
 
-The project currently includes two project files:
+Open __Sempare.Boot.Template.Velocity.groupproj__ which will include:
 
-__Sempare.Boot.Template.Velocity.Pkg.dpr__
+- __Sempare.Boot.Template.Velocity.Pkg.dprog__
 
-This project builds a package that should be included into your project.
+  The core velocity project. (runtime)
 
-If you have a another version of Delphi, simply add the source files (all files exluding *.Test.pas)
+- __Sempare.Boot.Template.Velocity.Components.Pkg.dprog__
 
-__Sempare.Boot.Template.Velocity.Tester.dpr__
+  Contains runtime components used at design-time.
+  
+- __Sempare.Boot.Template.Velocity.Design.Pkg.dprog__
 
-This project builds an executable that runs all the tests.
+   The design time components.
+   
+- __Sempare.Boot.Template.Velocity.Tester.dprog__
+
+   70+ unit tests
+
+- __demo\VelocityDemo\Sempare.Boot.Velocity.Demo.dprog__
+
+   The velocity real-time demo.   
 
 <!--
 
