@@ -219,7 +219,7 @@ type
   TFStream = TFileStream;
 {$ENDIF}
 var
-  fs : TFStream;
+  fs: TFStream;
 begin
   fs := TFStream.Create(AFile, fmOpenRead);
   try

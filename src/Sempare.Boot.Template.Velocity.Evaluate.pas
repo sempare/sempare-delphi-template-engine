@@ -634,8 +634,8 @@ begin
     tkFloat:
       if AValue.Kind <> tkFloat then
         exit(Asnum(AValue));
-    tkString, tkWideString, tkAnsiString, tkUnicodeString:
-      if not(AValue.Kind in [tkString, tkWideString, tkAnsiString, tkUnicodeString]) then
+    tkString, tkWString, tkAnsiString, tkUString: // WideString, UnicodeString
+      if not(AValue.Kind in [tkString, tkWString, tkAnsiString, tkUString]) then
         exit(AsString(AValue));
     tkEnumeration:
       if AType.Handle = TypeInfo(boolean) then

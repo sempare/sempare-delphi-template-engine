@@ -92,7 +92,7 @@ type
     function GetItem(const AKey: string): TVelocityValue;
     procedure SetItem(const AKey: string; const Value: TVelocityValue);
     function GetCount: integer;
-    property Variables[const AKey : string] : TVelocityValue read GetItem write SetItem; default;
+    property Variables[const AKey: string]: TVelocityValue read GetItem write SetItem; default;
   end;
 
 function AsVisitorHost(const ATemplate: IVelocityTemplate): IVelocityVisitorHost; inline; overload;

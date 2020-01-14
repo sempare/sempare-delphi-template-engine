@@ -56,6 +56,7 @@ type
     FVariables: TVelocityVariables;
     FText: string;
     FEnabled: boolean;
+    FForceTemplateEnable: boolean;
     procedure SetContext(const Value: TSempareBootVelocityContext);
     procedure SetTemplate(const Value: TSempareBootVelocityTemplate);
     procedure SetVariables(const Value: TVelocityVariables);
@@ -72,6 +73,7 @@ type
   published
     property Text: string read GetText;
     property Enabled: boolean read FEnabled write SetEnabled;
+    property ForceTemplateEnable: boolean read FForceTemplateEnable write FForceTemplateEnable;
     property Context: TSempareBootVelocityContext read FContext write SetContext;
     property Template: TSempareBootVelocityTemplate read FTemplate write SetTemplate;
     property Variables: TVelocityVariables read FVariables write SetVariables;
@@ -107,15 +109,13 @@ var
 begin
   if not FEnabled then
     exit;
-  if FTemplate <> nil then
-  begin
-    if FContext <> nil then
-      ctx := FContext.Context
-    else
-      ctx := Velocity.Context();
-
-    FText := Velocity.Eval(ctx, FTemplate.Template, FVariables);
-  end;
+  if FTemplate = nil then
+    exit;
+  if FContext <> nil then
+    ctx := FContext.Context
+  else
+    ctx := Velocity.Context();
+  FText := Velocity.Eval(ctx, FTemplate.Template, FVariables);
 end;
 
 function TSempareBootVelocityEngine.GetText: string;
@@ -137,9 +137,10 @@ end;
 procedure TSempareBootVelocityEngine.SetEnabled(const Value: boolean);
 begin
   FEnabled := Value;
-  if Value then
+  if (FTemplate <> nil) and (not FTemplate.Enabled or (Value and FForceTemplateEnable)) then
     FTemplate.Enabled := true;
-  Evaluate;
+  if Value then
+    Evaluate;
 end;
 
 procedure TSempareBootVelocityEngine.SetTemplate(const Value: TSempareBootVelocityTemplate);

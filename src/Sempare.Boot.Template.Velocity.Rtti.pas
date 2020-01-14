@@ -106,7 +106,7 @@ var
 const
   INT_LIKE: set of TTypeKind = [tkInteger, tkInt64];
   NUMBER_LIKE: set of TTypeKind = [tkInteger, tkInt64, tkfloat];
-  STR_LIKE: set of TTypeKind = [tkString, tkWideString, tkUnicodeString, tkLString];
+  STR_LIKE: set of TTypeKind = [tkString, tkWString, tkUString, tkLString];
 
 procedure RegisterDeref(const AMatch: TDerefMatchInterfaceFunction; const AFunction: TDerefFunction);
 begin
@@ -271,7 +271,7 @@ begin
   case AValue.Kind of
     tkfloat:
       result := AValue.AsExtended;
-    tkString, tkWideString, tkUnicodeString, tkLString:
+    tkString, tkWString, tkUString, tkLString:
       result := strtofloat(AValue.AsString);
     tkInteger, tkInt64:
       result := AValue.AsInt64;
@@ -334,7 +334,7 @@ begin
       exit(AValue.AsInt64 <> 0);
     tkfloat:
       exit(AValue.AsExtended <> 0);
-    tkString, tkWideString, tkUnicodeString, tkLString:
+    tkString, tkWString, tkUString, tkLString:
       exit(AValue.AsString <> '');
   else
     exit(false);
@@ -387,7 +387,7 @@ begin
         exit(datetimetostr(DoubleToDT(AValue.AsExtended)))
       else
         exit(floattostr(AValue.AsExtended));
-    tkString, tkWideString, tkUnicodeString, tkLString:
+    tkString, tkWString, tkUString, tkLString:
       exit(AValue.AsString);
     tkDynArray, tkArray:
       exit(ArrayAsString(AValue));
@@ -415,7 +415,7 @@ begin
       exit(DoubleToDT(AValue.AsInt64));
     tkfloat:
       exit(DoubleToDT(AValue.AsExtended));
-    tkString, tkWideString, tkUnicodeString, tkLString:
+    tkString, tkWString, tkUString, tkLString:
       exit(StrToDateTime(AValue.AsString));
   else
     exit(now);
@@ -753,7 +753,6 @@ end;
 initialization
 
 GRttiContext := TRttiContext.Create;
-GRttiContext.KeepContext;
 
 GDerefInterfaceFunctions := TList < TPair < TDerefMatchInterfaceFunction, TDerefFunction >>.Create;
 GDerefFunctions := TList < TPair < TDerefMatchFunction, TDerefFunction >>.Create;
@@ -771,7 +770,6 @@ RegisterDeref(MatchVelocityVariables, processVelocityVariables);
 
 finalization
 
-GRttiContext.DropContext;
 GRttiContext.Free;
 
 GDerefFunctions.Free;

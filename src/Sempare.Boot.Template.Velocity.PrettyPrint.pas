@@ -149,7 +149,6 @@ begin
   result := FStringBuilder.ToString;
 end;
 
-
 procedure TPrettyPrintVelocityVisitor.Visit(const AStmt: IBreakStmt);
 begin
   tab();

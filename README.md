@@ -166,10 +166,9 @@ Most features have some basic tests in place. If a bug is been discovered, pleas
 
 ## Financial Support
 
-As you know - software takes some time to develop, polish and support. Although this project is provided as open source, if you would like to support the development 
-and enhancement of the framework, please get in touch via info@sempare.ltd. 
+As you know - software takes some time to develop, polish and support. 
 
-We have a subscription service in place which will allow sponsors to make a small contribution and will receive priority updates.
+Although this project is provided as open source, if you would like to support the development and enhancement of the framework, or are just feeling generous, please get in touch via info@sempare.ltd. 
 
 ## Promoting the library
 

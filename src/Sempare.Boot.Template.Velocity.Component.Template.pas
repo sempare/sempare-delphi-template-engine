@@ -39,6 +39,7 @@ interface
 uses
   System.Classes,
   System.SysUtils,
+  System.SyncObjs,
   Sempare.Boot.Template.Velocity.Component.Context,
   Sempare.Boot.Template.Velocity;
 
@@ -51,12 +52,15 @@ type
     FContext: TSempareBootVelocityContext;
     FTemplateText: string;
     FTemplate: IVelocityTemplate;
+    FLock: TCriticalSection;
     function GetTemplate: IVelocityTemplate;
     procedure SetTemplateText(const Value: string);
-    procedure SetTemplate;
+    procedure SetTemplate(const AIfNull: boolean);
     procedure SetEnabled(const Value: boolean);
     procedure SetContext(const Value: TSempareBootVelocityContext);
   public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
     property Template: IVelocityTemplate read GetTemplate;
   published
     property Context: TSempareBootVelocityContext read FContext write SetContext;
@@ -68,10 +72,21 @@ implementation
 
 { TSempareBootVelocityTemplate }
 
+constructor TSempareBootVelocityTemplate.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  FLock := TCriticalSection.Create();
+end;
+
+destructor TSempareBootVelocityTemplate.Destroy;
+begin
+  FLock.Free;
+  inherited;
+end;
+
 function TSempareBootVelocityTemplate.GetTemplate: IVelocityTemplate;
 begin
-  if FTemplate = nil then
-    SetTemplate;
+  SetTemplate(true);
   result := FTemplate;
 end;
 
@@ -83,29 +98,37 @@ end;
 procedure TSempareBootVelocityTemplate.SetEnabled(const Value: boolean);
 begin
   FEnabled := Value;
-  SetTemplate;
+  if Value then
+    SetTemplate(false);
 end;
 
-procedure TSempareBootVelocityTemplate.SetTemplate;
+procedure TSempareBootVelocityTemplate.SetTemplate(const AIfNull: boolean);
 var
   ctx: IVelocityContext;
 begin
-  if not FEnabled then
-  begin
-    FTemplate := nil;
+  if AIfNull and (FTemplate = nil) then
     exit;
+  FLock.Acquire;
+  try
+    if not FEnabled then
+    begin
+      FTemplate := nil;
+      exit;
+    end;
+    if FContext <> nil then
+      ctx := FContext.Context
+    else
+      ctx := Velocity.Context();
+    FTemplate := Velocity.Parse(ctx, FTemplateText)
+  finally
+    FLock.Release;
   end;
-  if FContext <> nil then
-    ctx := FContext.Context
-  else
-    ctx := Velocity.Context();
-  FTemplate := Velocity.Parse(ctx, FTemplateText)
 end;
 
 procedure TSempareBootVelocityTemplate.SetTemplateText(const Value: string);
 begin
   FTemplateText := Value;
-  SetTemplate;
+  SetTemplate(false);
 end;
 
 end.

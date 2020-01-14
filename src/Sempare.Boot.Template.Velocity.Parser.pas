@@ -1228,7 +1228,7 @@ end;
 function TVelocityParser.rulePrintStmt: IStmt;
 var
   symbol: IvelocitySymbol;
-  expr : IExpr;
+  expr: IExpr;
 begin
   symbol := FLookahead;
   match(vsPrint);
