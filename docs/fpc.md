@@ -8,9 +8,9 @@ An initial investigation was done. As RTTI was required, I attempted using FPC t
 
 Potential issues:
 
-- System.Generics.Collections is lacking.
-- TDictionary substitute must be used.
-- Enumeration for in loop might not work (?)
+- Need to remap System.Generics.Collections (or drop explict prefix to 'System.').
+- TDictionary compatability must be tested.
+- Enumeration 'for in' loop might not work on all types (?)
 - System.Rtti not fully compatible with Delphi (aka rtti in fpc)
   - maybe in 3.2 when Attributes also become available)
   - it is not complete (e.g. TRttiDynamicArrayType, TRttiField, TRttiArrayType)

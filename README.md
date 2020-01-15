@@ -109,7 +109,7 @@ This should work with most modern versions of [Delphi](https://www.embarcadero.c
 Tests currently run using the DUnitX TestFramework.
 
 An attempt has been made not to use the latest features to ease backward compatability.
-Although the development was done on Dlephi 10.3.3, I have done a quick build/test on:
+Although the development was done on Delphi 10.3.3, I have done a quick build/test on:
 - Delphi XE 8
 - Delphi 10.0 Seatle
 - Delphi 10.1 Berlin
