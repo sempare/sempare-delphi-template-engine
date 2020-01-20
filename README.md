@@ -1,3 +1,5 @@
+[![](https://tokei.rs/b1/github/sempare/sempare.boot.velocity.oss?category=lines)](https://github.com/sempare/sempare.boot.velocity.oss) [![](https://tokei.rs/b1/github/sempare/sempare.boot.velocity.oss?category=code)](https://github.com/sempare/sempare.boot.velocity.oss) [![](https://tokei.rs/b1/github/sempare/sempare.boot.velocity.oss?category=files)](https://github.com/sempare/sempare.boot.velocity.oss)
+
 # ![](./images/sempare-logo-45px.png) Sempare Boot Velocity Template Engine
 
 Copyright (c) 2019 [Sempare Limited](http://www.sempare.ltd), [Conrad Vermeulen](mailto:conrad.vermeulen@gmail.com)
@@ -41,7 +43,7 @@ end.
 
 In the example above, you can see that the '<%' start and '%>' end the scripting statement respectively. Within a scripting statement, you can reference variables, assign variables, use conditions, for and while loops, and include other templates.
 
-**NOTE** In examples in this documentation I may use the latest Delphi syntax, such as inline variable declarations. These may are note backward compatible as they were introduced in Delphi 10.2 and are used to shorten the code/examples being illustrated. The codebase will attempt to be as backward compatible as possible, but was developed with Delphi 10.3.
+**NOTE** In examples in this documentation I may use the latest Delphi syntax, e.g. inline variable declarations. This is not backward compatible as they were introduced in Delphi 10.2 and are used to shorten the code/examples being illustrated in the documentation. The codebase will attempt to be as backward compatible as possible.
 
 ## Quickstart
 
@@ -86,7 +88,7 @@ The playlist has a few videos that are very short (most less than a minute - bli
   - dereference records, classes, arrays, JSON objects and dynamic arrays
   - ternary operator
 - safety
-  - max runtime protection
+  - max run-time protection
 - customisation 
   - custom script token replacement
   - add custom functions
@@ -94,7 +96,7 @@ The playlist has a few videos that are very short (most less than a minute - bli
 - lazy template resolution
 - parse time evaluation of expressions/statements
 - allow use of custom encoding (UTF-8 with BOM, UTF-8 without BOM, ASCII, etc)
-- extensibile rtti interface to easily dereference classes and interfaces (current customisations for IVelocityVariables, TDictionary, TJsonObject) 
+- extensibile RTTI interface to easily dereference classes and interfaces (current customisations for IVelocityVariables, TDictionary, TJsonObject) 
 
 ## Objectives
 
