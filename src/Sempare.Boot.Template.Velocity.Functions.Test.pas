@@ -73,6 +73,19 @@ type
     procedure TestRev();
     [Test]
     procedure TestUCFirst();
+    [Test]
+    procedure TestTypeOf;
+    [Test]
+    procedure TestReplace;
+    [Test]
+    procedure TestMatch;
+    [Test]
+    procedure TestSort;
+  end;
+
+type
+  TMyType = class
+    Dummy: integer;
   end;
 
 implementation
@@ -138,15 +151,36 @@ begin
   Assert.AreEqual('hello', Velocity.Eval('<% lowercase(''HeLlo'') %>'));
 end;
 
+procedure TFunctionTest.TestMatch;
+begin
+  Assert.AreEqual('ok', Velocity.Eval('<% match(''aaa'',''a+'')?''ok'':''fail'' %>'));
+  Assert.AreEqual('fail', Velocity.Eval('<% match('''',''a+'')?''ok'':''fail'' %>'));
+  Assert.AreEqual('fail', Velocity.Eval('<% match(''b'',''a+'')?''ok'':''fail'' %>'));
+  Assert.AreEqual('ok', Velocity.Eval('<% match(''aaa'',''a+b*'')?''ok'':''fail'' %>'));
+  Assert.AreEqual('ok', Velocity.Eval('<% match(''aaaaabbbbb'',''a+b*'')?''ok'':''fail'' %>'));
+end;
+
 procedure TFunctionTest.TestPos;
 begin
   Assert.AreEqual('4', Velocity.Eval('<% pos(''3'',''0123456789'') %>'));
+end;
+
+procedure TFunctionTest.TestReplace;
+begin
+  Assert.AreEqual('bb', Velocity.Eval('<% replace(''a'', ''b'', ''aa'') %>'));
+  Assert.AreEqual('hello universe', Velocity.Eval('<% replace(''world'', ''universe'', ''hello world'') %>'));
 end;
 
 procedure TFunctionTest.TestRev;
 begin
   Assert.AreEqual('dlrow', Velocity.Eval('<% rev(''world'') %>'));
   Assert.AreEqual('ddccbbaa', Velocity.Eval('<% rev(''aabbccdd'') %>'));
+end;
+
+procedure TFunctionTest.TestSort;
+begin
+  Assert.AreEqual('addfgs', Velocity.Eval('<% values := sort(split(''g,f,d,s,d,a'', '','')) %><% for j in values %><% values[j] %><% end %>'));
+  Assert.AreEqual('12345', Velocity.Eval('<% values := sort([5,4,3,2,1]) %><% for j in values %><% values[j] %><% end %>'));
 end;
 
 procedure TFunctionTest.TestSplit;
@@ -179,6 +213,20 @@ end;
 procedure TFunctionTest.TestTrim;
 begin
   Assert.AreEqual('trimmed', Velocity.Eval('<% trim(''   trimmed   '') %>'));
+end;
+
+procedure TFunctionTest.TestTypeOf;
+var
+  MyData: TMyType;
+begin
+  try
+    MyData := TMyType.Create;
+    Assert.AreEqual('System.String', Velocity.Eval('<% typeof(''HELLO'') %>'));
+    Assert.AreEqual('System.Extended', Velocity.Eval('<% typeof(123) %>'));
+    Assert.AreEqual('Sempare.Boot.Template.Velocity.Functions.Test.TMyType', Velocity.Eval('<% typeof(_) %>', MyData))
+  finally
+    MyData.Free;
+  end;
 end;
 
 procedure TFunctionTest.TestUCFirst;

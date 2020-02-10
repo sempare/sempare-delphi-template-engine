@@ -48,12 +48,19 @@ implementation
 
 uses
   System.SysUtils,
+  System.Math,
   System.RegularExpressions,
   System.Generics.Collections,
+  System.Generics.Defaults,
   Sempare.Boot.Template.Velocity.Common,
   Sempare.Boot.Template.Velocity.Rtti;
 
 type
+  TValueCompare = class(TComparer<TValue>)
+  public
+    function Compare(const Left, Right: TValue): integer; override;
+  end;
+
   TVelocityFunctions = class(TInterfacedObject, IVelocityFunctions)
   private
     FFunctions: TDictionary<string, TArray<TRttiMethod>>;
@@ -69,6 +76,9 @@ type
     function TryGetValue(const AName: string; out AMethods: TArray<TRttiMethod>): boolean;
     function Add(const AMethod: TRttiMethod): boolean;
   end;
+
+var
+  GValueCompare: IComparer<TValue>;
 
 function CreateVelocityFunctions(const ARegisterDefaults: boolean): IVelocityFunctions;
 begin
@@ -152,6 +162,7 @@ type
   Internal = class
     class function SortEnum<T>(const AEnum: TValue): TValue; static;
     class function SortArr<T>(const AArray: TValue): TValue; static;
+    class function SortArrTValue(const AArray: TValue): TValue; static;
   end;
 
 class function Internal.SortEnum<T>(const AEnum: TValue): TValue;
@@ -164,6 +175,15 @@ begin
   for v in e do
     insert(v, a, length(a));
   result := SortArr<T>(TValue.From < TArray < T >> (a));
+end;
+
+class function Internal.SortArrTValue(const AArray: TValue): TValue;
+var
+  v: TArray<TValue>;
+begin
+  v := AArray.AsType<TArray<TValue>>;
+  TArray.Sort<TValue>(v, GValueCompare);
+  result := TValue.From < TArray < TValue >> (v);
 end;
 
 class function Internal.SortArr<T>(const AArray: TValue): TValue;
@@ -189,7 +209,10 @@ begin
     else if AArray.AsObject.InheritsFrom(TEnumerable<extended>) then
       result := Internal.SortEnum<extended>(AArray)
     else
+    begin
       result := AArray;
+      writeln(GRttiContext.GetType(AArray.TypeInfo).QualifiedName);
+    end;
   end
   else if AArray.TypeInfo = TypeInfo(TArray<string>) then
     result := Internal.SortArr<string>(AArray)
@@ -199,8 +222,14 @@ begin
     result := Internal.SortArr<double>(AArray)
   else if AArray.TypeInfo = TypeInfo(TArray<extended>) then
     result := Internal.SortArr<extended>(AArray)
+  else if AArray.TypeInfo = TypeInfo(TArray<TValue>) then
+    result := Internal.SortArrTValue(AArray)
   else
+  begin
     result := AArray;
+    writeln(GRttiContext.GetType(AArray.TypeInfo).QualifiedName);
+  end;
+
 end;
 
 class function TInternalFuntions.Split(const AString: string; const ASep: string): TArray<string>;
@@ -442,12 +471,76 @@ begin
   result := FFunctions.TryGetValue(AName, AMethods);
 end;
 
+{ TValueCompare }
+
+function TValueCompare.Compare(const Left, Right: TValue): integer;
+  procedure compareInt;
+  var
+    l, r: int64;
+  begin
+    l := Left.AsInt64;
+    r := Right.AsInt64;
+    if l < r then
+      result := -1
+    else if l = r then
+      result := 0
+    else
+      result := 1;
+  end;
+  procedure comparefloat;
+  var
+    l, r: extended;
+  begin
+    l := Left.AsExtended;
+    r := Right.AsExtended;
+    if l < r then
+      result := -1
+    else if Abs(l - r) < 1E-8 then
+      result := 0
+    else
+      result := 1;
+  end;
+  procedure compareString;
+  var
+    l, r: string;
+  begin
+    l := Left.asstring;
+    r := Right.asstring;
+    if l < r then
+      result := -1
+    else if l = r then
+      result := 0
+    else
+      result := 1;
+  end;
+
+begin
+  if Left.TypeInfo <> Right.TypeInfo then
+    raise Exception.Create('Types are not of the same type');
+  if Left.TypeInfo = TypeInfo(integer) then
+  begin
+
+  end;
+  case Left.Kind of
+    tkInteger, tkInt64:
+      compareInt;
+    tkFloat:
+      comparefloat;
+    tkString, tkLString, tkWideString, tkUnicodeString:
+      compareString;
+  else
+    raise Exception.Create('Type not supported');
+  end;
+end;
+
 initialization
 
 GFunctions := CreateVelocityFunctions();
+GValueCompare := TValueCompare.Create;
 
 finalization
 
 GFunctions := nil;
+GValueCompare := nil;
 
 end.
