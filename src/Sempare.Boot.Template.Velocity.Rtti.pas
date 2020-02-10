@@ -77,7 +77,7 @@ function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARa
 type
   TDerefMatchFunction = function(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
   TDerefMatchInterfaceFunction = function(const AInterface: IInterface): boolean;
-  TDerefFunction = function(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
+  TDerefFunction = function(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; out AFound: boolean): TValue;
   TPopulateStackFrame = procedure(const StackFrame: TStackFrame; const ARttiType: TRttiType; const AClass: TValue);
   TPopulateMatchFunction = function(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
 
@@ -422,7 +422,7 @@ begin
   end;
 end;
 
-function processVelocityVariables(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
+function processVelocityVariables(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; out AFound: boolean): TValue;
 var
   RttiType: TRttiType;
   RttiMethod: TRttiMethod;
@@ -431,9 +431,11 @@ begin
   RttiMethod := RttiType.GetMethod('GetItem');
   try
     result := RttiMethod.Invoke(obj, [ADeref]);
+    AFound := true;
   except
     on e: Exception do
     begin
+      AFound := false;
       if ARaiseIfMissing then
         RaiseError(APosition, 'Cannot dereference variable %s', [AsString(ADeref)]);
       result := '';
@@ -441,12 +443,54 @@ begin
   end;
 end;
 
-function processDictionary(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
+function GetFieldOrProperty(const APtr: pointer; RttiType: TRttiType; const ADeref: TValue; out AFound: boolean): TValue;
+var
+  RttiField: TRttiField;
+  RttiProp: TRttiProperty;
+  ref: string;
+begin
+  AFound := true;
+  ref := AsString(ADeref);
+  RttiField := RttiType.GetField(ref);
+  if RttiField <> nil then
+    exit(RttiField.GetValue(APtr));
+  RttiProp := RttiType.GetProperty(ref);
+  if RttiProp <> nil then
+    exit(RttiProp.GetValue(APtr));
+  AFound := false;
+end;
+
+function ProcessClass(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AOwnObject: boolean; out AFound: boolean): TValue;
+var
+  ClassType: TClass;
+  info: PTypeInfo;
+  p: TPair<TDerefMatchFunction, TDerefFunction>;
+begin
+  AFound := false;
+  ClassType := obj.AsObject.ClassType;
+  info := obj.TypeInfo;
+  if not AOwnObject then
+  begin
+    for p in GDerefFunctions do
+    begin
+      if p.Key(info, ClassType) then
+      begin
+        result := p.Value(APosition, obj, ADeref, ARaiseIfMissing, AFound);
+        if AFound then
+          exit;
+      end;
+    end;
+  end;
+  result := GetFieldOrProperty(obj.AsObject, GRttiContext.GetType(obj.TypeInfo), ADeref, AFound);
+end;
+
+function processDictionary(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; out AFound: boolean): TValue;
 var
   RttiType: TRttiType;
   RttiMethod: TRttiMethod;
   Deref: TValue;
 begin
+  AFound := false;
   RttiType := GRttiContext.GetType(obj.TypeInfo);
   RttiMethod := RttiType.GetMethod('GetItem');
 
@@ -457,12 +501,17 @@ begin
 
   try
     result := RttiMethod.Invoke(obj, [Deref]);
+    AFound := true;
   except
     on e: Exception do
     begin
-      if ARaiseIfMissing then
-        RaiseError(APosition, 'Cannot dereference ''%s'' in %s', [AsString(Deref), RttiType.QualifiedName]);
-      result := '';
+      result := ProcessClass(APosition, obj, ADeref, ARaiseIfMissing, true, Afound);
+      if not AFound then
+      begin
+        if ARaiseIfMissing then
+          RaiseError(APosition, 'Cannot dereference ''%s'' in %s', [AsString(Deref), RttiType.QualifiedName]);
+        result := '';
+      end;
     end;
   end;
 end;
@@ -526,21 +575,23 @@ begin
   end;
 end;
 
-function processJson(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
+function processJson(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; out AFound : boolean): TValue;
 var
   jsonobj: TJsonObject;
   jsonval: TJsonValue;
   Key: string;
 begin
+  AFound := true;
   jsonobj := obj.AsObject as TJsonObject;
   Key := AsString(ADeref);
   jsonval := jsonobj.GetValue(Key);
 
   if not JsonValueToTValue(jsonval, result) then
   begin
+    AFound := false;
     if ARaiseIfMissing then
       RaiseError(APosition, 'Cannot dereference %s in dictionary', [Key]);
-    result := nil;
+    result := '';
   end;
 end;
 
@@ -553,85 +604,73 @@ end;
 
 function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
 
-  function ProcessArray(obj: TValue; const ADeref: TValue): TValue;
+  function ProcessArray(obj: TValue; const ADeref: TValue; out AFound: boolean): TValue;
   var
     i: integer;
     RttiType: TRttiArrayType;
   begin
     i := AsInt(ADeref);
+    AFound := false;
     RttiType := GRttiContext.GetType(obj.TypeInfo) as TRttiArrayType;
+    if (i < (RttiType.Dimensions[0] as TRttiOrdinalType).MinValue) or (i >= (RttiType.Dimensions[0] as TRttiOrdinalType).MaxValue) then
+    begin
+      exit;
+    end;
+    AFound := true;
     result := obj.GetArrayElement(i - (RttiType.Dimensions[0] as TRttiOrdinalType).MinValue);
   end;
 
-  function ProcessDynArray(obj: TValue; const ADeref: TValue): TValue;
+  function ProcessDynArray(obj: TValue; const ADeref: TValue; out AFound: boolean): TValue;
   var
     i: integer;
   begin
+    AFound := false;
     i := AsInt(ADeref);
+    if (i < 0) or (i >= obj.GetArrayLength) then
+    begin
+      exit;
+    end;
     result := obj.GetArrayElement(i);
   end;
 
-  function GetFieldOrProperty(const APtr: pointer; RttiType: TRttiType; const ADeref: TValue): TValue;
-  var
-    RttiField: TRttiField;
-    RttiProp: TRttiProperty;
-    ref: string;
+  function ProcessRecord(const obj: TValue; const ADeref: TValue; var AFound: boolean): TValue;
   begin
-    ref := AsString(ADeref);
-    RttiField := RttiType.GetField(ref);
-    if RttiField <> nil then
-      exit(RttiField.GetValue(APtr));
-    RttiProp := RttiType.GetProperty(ref);
-    if RttiProp <> nil then
-      exit(RttiProp.GetValue(APtr));
+    result := GetFieldOrProperty(obj.GetReferenceToRawData, GRttiContext.GetType(obj.TypeInfo), ADeref, AFound);
   end;
 
-  function ProcessClass(const obj: TValue; const ADeref: TValue): TValue;
-  var
-    ClassType: TClass;
-    info: PTypeInfo;
-    p: TPair<TDerefMatchFunction, TDerefFunction>;
-  begin
-    ClassType := obj.AsObject.ClassType;
-    info := obj.TypeInfo;
-    for p in GDerefFunctions do
-    begin
-      if p.Key(info, ClassType) then
-        exit(p.Value(APosition, obj, ADeref, ARaiseIfMissing));
-    end;
-    result := GetFieldOrProperty(obj.AsObject, GRttiContext.GetType(obj.TypeInfo), ADeref);
-  end;
-
-  function ProcessRecord(const obj: TValue; const ADeref: TValue): TValue;
-  begin
-    result := GetFieldOrProperty(obj.GetReferenceToRawData, GRttiContext.GetType(obj.TypeInfo), ADeref);
-  end;
-
-  function ProcessInterface(const obj: TValue; const ADeref: TValue): TValue;
+  function ProcessInterface(const obj: TValue; const ADeref: TValue; out AFound: boolean): TValue;
   var
     p: TPair<TDerefMatchInterfaceFunction, TDerefFunction>;
     i: IInterface;
   begin
     i := obj.AsInterface;
+    AFound := false;
     for p in GDerefInterfaceFunctions do
     begin
       if p.Key(i) then
-        exit(p.Value(APosition, obj, ADeref, ARaiseIfMissing));
+      begin
+        result := p.Value(APosition, obj, ADeref, ARaiseIfMissing, AFound);
+        if AFound then
+          exit;
+      end;
     end;
   end;
+
+var
+  found: boolean;
 
 begin
   case AVar.Kind of
     tkInterface:
-      result := ProcessInterface(AVar, ADeref);
+      result := ProcessInterface(AVar, ADeref, found);
     tkClass:
-      result := ProcessClass(AVar, ADeref);
+      result := ProcessClass(APosition, AVar, ADeref, ARaiseIfMissing, false, found);
     tkrecord:
-      result := ProcessRecord(AVar, ADeref);
+      result := ProcessRecord(AVar, ADeref, found);
     tkArray:
-      result := ProcessArray(AVar, ADeref);
+      result := ProcessArray(AVar, ADeref, found);
     tkDynArray:
-      result := ProcessDynArray(AVar, ADeref);
+      result := ProcessDynArray(AVar, ADeref, found);
   else
     begin
       if ARaiseIfMissing then
@@ -639,6 +678,8 @@ begin
       exit('');
     end;
   end;
+  if not found and ARaiseIfMissing then
+    RaiseError(APosition, 'Cannot dereference variable');
 end;
 
 procedure AssertBoolean(const APositional: IPosition; const ALeft: TValue); overload;
