@@ -150,7 +150,7 @@ Matches text in a regular expression.
 For more information, see http://docwiki.embarcadero.com/Libraries/Rio/en/System.RegularExpressions.TRegEx.Matches
 
 ## sort(array)
-Sorts basic arrays of integer, double, extended and string.
+Sorts basic arrays of integer, double, extended and string or something enumerable of these types.
 ```
 <% values := sort(split('g,f,d,s,d,a', ',')) %>
 ```
