@@ -163,8 +163,13 @@ begin
 end;
 
 procedure TEvaluationVelocityVisitor.Visit(const AExpr: IValueExpr);
+var
+  val: TValue;
 begin
-  FEvalStack.push(AExpr.Value);
+  val := AExpr.Value;
+  if val.IsType<TValue> then
+    val := val.AsType<TValue>();
+  FEvalStack.push(val);
 end;
 
 procedure TEvaluationVelocityVisitor.Visit(const AExprList: IExprList);
@@ -188,6 +193,7 @@ procedure TEvaluationVelocityVisitor.Visit(const AExpr: IVariableDerefExpr);
 var
   Derefvar: TValue;
   variable: TValue;
+  val: TValue;
   AllowRootDeref: IPreserveValue<boolean>;
 begin
   AllowRootDeref := Preseve.Value(FAllowRootDeref, true);
@@ -199,7 +205,10 @@ begin
   acceptvisitor(AExpr.DerefExpr, self);
   Derefvar := FEvalStack.pop;
 
-  FEvalStack.push(Deref(Position(AExpr), variable, Derefvar, eoRaiseErrorWhenVariableNotFound in FContext.Options));
+  val := Deref(Position(AExpr), variable, Derefvar, eoRaiseErrorWhenVariableNotFound in FContext.Options);
+  if val.IsType<TValue> then
+    val := val.AsType<TValue>();
+  FEvalStack.push(val);
 end;
 
 procedure TEvaluationVelocityVisitor.Visit(const AExpr: IBinopExpr);
@@ -303,7 +312,15 @@ begin
     val := StackFrame[AExpr.variable];
     if val.IsEmpty then
     begin
-      val := Deref(Position(AExpr), StackFrame.Root, AExpr.variable, eoRaiseErrorWhenVariableNotFound in FContext.Options);
+      try
+        val := Deref(Position(AExpr), StackFrame.Root, AExpr.variable, eoRaiseErrorWhenVariableNotFound in FContext.Options);
+      except
+        on e: exception do
+        begin
+          if val.IsEmpty and (eoRaiseErrorWhenVariableNotFound in FContext.Options) then
+            RaiseError(Position(AExpr), 'Variable ''%s'' could not be found.', [AExpr.variable]);
+        end;
+      end;
     end;
     if val.IsEmpty and (eoRaiseErrorWhenVariableNotFound in FContext.Options) then
       RaiseError(Position(AExpr), 'Variable ''%s'' could not be found.', [AExpr.variable]);
@@ -312,6 +329,8 @@ begin
   begin
     val := AExpr.variable;
   end;
+  if val.IsType<TValue> then
+    val := val.AsType<TValue>();
   FEvalStack.push(val);
 end;
 
@@ -421,7 +440,9 @@ begin
 
   acceptvisitor(AStmt.Expr, self);
   Eval := FEvalStack.pop;
-  T := GRttiContext.GetType(Eval.TypeInfo);
+  if Eval.IsType<TValue> then
+    Eval := Eval.AsType<TValue>();
+  T := GRttiContext.GetType(Eval.typeinfo);
 
   case T.TypeKind of
     tkClass, tkClassRef:
@@ -571,10 +592,14 @@ end;
 procedure TEvaluationVelocityVisitor.Visit(const AStmt: IAssignStmt);
 var
   v: string;
+  val: TValue;
 begin
   v := AStmt.variable;
   acceptvisitor(AStmt.Expr, self);
-  FStackFrames.peek[v] := FEvalStack.pop;
+  val := FEvalStack.pop;
+  if val.IsType<TValue> then
+    val := val.AsType<TValue>;
+  FStackFrames.peek[v] := val;
 end;
 
 procedure TEvaluationVelocityVisitor.Visit(const AStmt: IIfStmt);
@@ -651,6 +676,7 @@ function GetArgs(const AMethod: TRttiMethod; const AArgs: TArray<TValue>): TArra
 var
   arg: TRttiParameter;
   i: integer;
+  v: TValue;
 begin
   if (length(AMethod.GetParameters) = 1) and (AMethod.GetParameters[0].ParamType.TypeKind = tkDynArray) then
   begin
@@ -662,7 +688,10 @@ begin
   i := 0;
   for arg in AMethod.GetParameters do
   begin
-    result[i] := CastArg(AArgs[i], arg.ParamType);
+    v := CastArg(AArgs[i], arg.ParamType);
+    if v.IsType<TValue> then
+      v := v.AsType<TValue>();
+    result[i] := v;
     inc(i);
   end;
 end;
@@ -683,6 +712,8 @@ begin
     result := m.Invoke(nil, [])
   else
     result := m.Invoke(nil, GetArgs(m, AArgs));
+  if result.IsType<TValue> then
+    result := result.AsType<TValue>();
 end;
 
 procedure TEvaluationVelocityVisitor.Visit(const AExpr: IFunctionCallExpr);
