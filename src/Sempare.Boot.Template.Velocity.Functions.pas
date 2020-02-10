@@ -48,6 +48,7 @@ implementation
 
 uses
   System.SysUtils,
+  System.RegularExpressions,
   System.Generics.Collections,
   Sempare.Boot.Template.Velocity.Common,
   Sempare.Boot.Template.Velocity.Rtti;
@@ -117,7 +118,7 @@ type
     class function Substring(const AString: string; AStartOffset: integer): string; overload; static;
     class function Pos(const search, Str: string; offset: integer): integer; overload; static;
     class function Pos(const search, Str: string): integer; overload; static;
-    class function Len(const AString: string): integer; static;
+    class function Len(const AString: TValue): integer; static;
     class function Fmt(const AArgs: TArray<TValue>): string; static;
     class function FmtDt(const AFormat: string; const ADateTime: TDateTime): string; static;
     class function DtNow: TDateTime; static;
@@ -137,12 +138,69 @@ type
     class function EndsWith(const AString, ASearch: string): boolean; overload; static;
     class function EndsWith(const AString, ASearch: string; const AIgnoreCase: boolean): boolean; overload; static;
     class function TypeOf(const AValue: TValue): string; static;
-
+    class function Replace(const AValue, AWith, AIn: string): string; static;
+    class function Match(const AValue, ARegex: string): boolean; static;
+    class function Sort(const AArray: TValue): TValue; static;
   end;
 
 class function TInternalFuntions.Pos(const search, Str: string): integer;
 begin
   result := System.Pos(search, Str);
+end;
+
+type
+  Internal = class
+    class function SortEnum<T>(const AEnum: TValue): TValue; static;
+    class function SortArr<T>(const AArray: TValue): TValue; static;
+  end;
+
+class function Internal.SortEnum<T>(const AEnum: TValue): TValue;
+var
+  e: TEnumerable<T>;
+  a: TArray<T>;
+  v: T;
+begin
+  e := TEnumerable<T>(AEnum.AsObject);
+  for v in e do
+    insert(v, a, length(a));
+  result := SortArr<T>(TValue.From < TArray < T >> (a));
+end;
+
+class function Internal.SortArr<T>(const AArray: TValue): TValue;
+var
+  v: TArray<T>;
+begin
+  v := AArray.AsType < TArray < T >> ();
+  TArray.Sort<T>(v);
+  result := TValue.From < TArray < T >> (v);
+end;
+
+class function TInternalFuntions.Sort(const AArray: TValue): TValue;
+
+begin
+  if AArray.IsObject then
+  begin
+    if AArray.AsObject.InheritsFrom(TEnumerable<string>) then
+      result := Internal.SortEnum<string>(AArray)
+    else if AArray.AsObject.InheritsFrom(TEnumerable<integer>) then
+      result := Internal.SortEnum<integer>(AArray)
+    else if AArray.AsObject.InheritsFrom(TEnumerable<double>) then
+      result := Internal.SortEnum<double>(AArray)
+    else if AArray.AsObject.InheritsFrom(TEnumerable<extended>) then
+      result := Internal.SortEnum<extended>(AArray)
+    else
+      result := AArray;
+  end
+  else if AArray.TypeInfo = TypeInfo(TArray<string>) then
+    result := Internal.SortArr<string>(AArray)
+  else if AArray.TypeInfo = TypeInfo(TArray<integer>) then
+    result := Internal.SortArr<integer>(AArray)
+  else if AArray.TypeInfo = TypeInfo(TArray<double>) then
+    result := Internal.SortArr<double>(AArray)
+  else if AArray.TypeInfo = TypeInfo(TArray<extended>) then
+    result := Internal.SortArr<extended>(AArray)
+  else
+    result := AArray;
 end;
 
 class function TInternalFuntions.Split(const AString: string; const ASep: string): TArray<string>;
@@ -153,6 +211,11 @@ end;
 class function TInternalFuntions.Lowercase(const AString: string): string;
 begin
   result := AString.ToLower;
+end;
+
+class function TInternalFuntions.Match(const AValue, ARegex: string): boolean;
+begin
+  result := TRegex.IsMatch(AValue, ARegex);
 end;
 
 class function TInternalFuntions.Uppercase(const AString: string): string;
@@ -205,9 +268,14 @@ begin
   result := System.Pos(search, Str, offset);
 end;
 
-class function TInternalFuntions.Len(const AString: string): integer;
+class function TInternalFuntions.Len(const AString: TValue): integer;
 begin
-  result := length(AString);
+  if AString.IsType<string> then
+    result := length(AString.AsType<string>())
+  else if AString.Kind in [tkDynArray, tkArray] then
+    result := AString.GetArrayLength
+  else
+    result := -1;
 end;
 
 function UnWrap(const AArg: TValue): TValue;
@@ -311,6 +379,11 @@ class function TInternalFuntions.UCFirst(const AString: string): string;
 begin
   result := Lowercase(AString);
   result[1] := Uppercase(result[1])[1];
+end;
+
+class function TInternalFuntions.Replace(const AValue, AWith, AIn: string): string;
+begin
+  result := AIn.Replace(AValue, AWith, [rfReplaceAll]);
 end;
 
 class function TInternalFuntions.Rev(const AString: string): string;
