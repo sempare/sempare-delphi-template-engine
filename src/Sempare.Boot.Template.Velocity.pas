@@ -144,8 +144,13 @@ begin
 end;
 
 class procedure Velocity.Eval<T>(const AContext: IVelocityContext; const ATemplate: IVelocityTemplate; const AValue: T; const AStream: TStream);
+var
+  v: TVelocityValue;
 begin
-  AcceptVisitor(ATemplate, TEvaluationVelocityVisitor.Create(AContext, TVelocityValue.From<T>(AValue), AStream) as IVelocityVisitor);
+  v := TVelocityValue.From<T>(AValue);
+  if typeinfo(T) = typeinfo(TVelocityValue) then
+    v := v.AsType<TVelocityValue>();
+  AcceptVisitor(ATemplate, TEvaluationVelocityVisitor.Create(AContext, v, AStream) as IVelocityVisitor);
 end;
 
 class procedure Velocity.Eval(const ATemplate: IVelocityTemplate; const AStream: TStream; const AOptions: TVelocityEvaluationOptions);
