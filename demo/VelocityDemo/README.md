@@ -15,10 +15,12 @@ A precompiled binary is in the repository to make it easier to demo and test: [S
 
 ```
 $ md5sum Sempare.Boot.Velocity.Demo.exe
-6d041e0ca1b6598b1d9a87c5f362594b *Sempare.Boot.Velocity.Demo.exe
+b0177549d96b54bdc924203b8e835aa3 *Sempare.Boot.Velocity.Demo.exe
 
 $ ls -al Sempare.Boot.Velocity.Demo.exe
--rwxr-xr-x 1 conrad 197121 3405312 Jan  7 12:46 Sempare.Boot.Velocity.Demo.exe*
+-rwxr-xr-x 1 conrad 197121 3715072 Feb 11 21:47 Sempare.Boot.Velocity.Demo.exe*
+
+
 
 ```
 

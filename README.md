@@ -166,12 +166,6 @@ You can raise issues on [GitHub](https://github.com/sempare/sempare.boot.velocit
 
 Most features have some basic tests in place. If a bug is been discovered, please include a basic test/scenario replicating the issue if possible as this will ease the investigation process.
 
-## Financial Support
-
-As you know - software takes some time to develop, polish and support. 
-
-Although this project is provided as open source, if you would like to support the development and enhancement of the framework, or are just feeling generous, please get in touch via info@sempare.ltd. 
-
 ## Promoting the library
 
 The license does not force you to mention the library used in your project, but it is nice if you can provide a reference to help promoting it.
