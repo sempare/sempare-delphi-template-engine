@@ -397,19 +397,17 @@ var
   var
     at: TRttiArrayType;
     Dt: TRttiOrdinalType;
-    i, ai: integer;
+    i: int64;
   begin
     at := T as TRttiArrayType;
     if at.DimensionCount > 1 then
       RaiseError(Position(AStmt), 'Only one dimensional arrays are supported.');
     Dt := at.Dimensions[0] as TRttiOrdinalType;
-
     for i := 0 to Eval.GetArrayLength - 1 do
     begin
       if coBreak in FLoopOptions then
         break;
-      ai := i + Dt.MinValue;
-      FStackFrames.peek[v] := ai;
+      FStackFrames.peek[v] := i + Dt.MinValue;
       exclude(FLoopOptions, coContinue);
       CheckRunTime(Position(AStmt));
       acceptvisitor(AStmt.Container, self);
@@ -418,7 +416,7 @@ var
 
   procedure visitdynarray;
   var
-    i: integer;
+    i: int64;
   begin
     for i := 0 to Eval.GetArrayLength - 1 do
     begin

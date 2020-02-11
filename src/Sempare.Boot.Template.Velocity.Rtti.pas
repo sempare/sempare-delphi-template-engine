@@ -606,18 +606,19 @@ function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARa
 
   function ProcessArray(obj: TValue; const ADeref: TValue; out AFound: boolean): TValue;
   var
-    i: integer;
+    i: int64;
     RttiType: TRttiArrayType;
+    min, max : int64;
   begin
     i := AsInt(ADeref);
     AFound := false;
     RttiType := GRttiContext.GetType(obj.TypeInfo) as TRttiArrayType;
-    if (i < (RttiType.Dimensions[0] as TRttiOrdinalType).MinValue) or (i >= (RttiType.Dimensions[0] as TRttiOrdinalType).MaxValue) then
-    begin
+    min := (RttiType.Dimensions[0] as TRttiOrdinalType).MinValue;
+    max := (RttiType.Dimensions[0] as TRttiOrdinalType).MaxValue;
+    if (i < min) or (i > max) then
       exit;
-    end;
     AFound := true;
-    result := obj.GetArrayElement(i - (RttiType.Dimensions[0] as TRttiOrdinalType).MinValue);
+    result := obj.GetArrayElement(i - min);
   end;
 
   function ProcessDynArray(obj: TValue; const ADeref: TValue; out AFound: boolean): TValue;
