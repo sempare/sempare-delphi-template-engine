@@ -86,6 +86,7 @@ type
     constructor Create();
     destructor Destroy; override;
     function GetEnumerator: TDictionary<string, TValue>.TPairEnumerator;
+    function ContainsKey(const AKey: string): boolean;
     function TryGetItem(const AKey: string; out AValue: TVelocityValue): boolean;
     procedure Remove(const AKey: string);
     procedure Clear;
@@ -233,6 +234,11 @@ end;
 procedure TVelocityVariables.Clear;
 begin
   FVariables.Clear;
+end;
+
+function TVelocityVariables.ContainsKey(const AKey: string): boolean;
+begin
+  result := FVariables.ContainsKey(AKey);
 end;
 
 constructor TVelocityVariables.Create;

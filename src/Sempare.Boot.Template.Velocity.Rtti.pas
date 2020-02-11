@@ -427,17 +427,20 @@ var
   RttiType: TRttiType;
   RttiMethod: TRttiMethod;
 begin
+  // Ideally wuld like to use TryGetItem, but couldn't get it working
+  // with TValue result...
   RttiType := GRttiContext.GetType(obj.TypeInfo);
+  RttiMethod := RttiType.GetMethod('ContainsKey');
+  AFound := RttiMethod.Invoke(obj, [ADeref]).AsBoolean;
+  if not AFound then
+    exit('');
   RttiMethod := RttiType.GetMethod('GetItem');
   try
     result := RttiMethod.Invoke(obj, [ADeref]);
-    AFound := true;
   except
     on e: Exception do
     begin
       AFound := false;
-      if ARaiseIfMissing then
-        RaiseError(APosition, 'Cannot dereference variable %s', [AsString(ADeref)]);
       result := '';
     end;
   end;
@@ -608,7 +611,7 @@ function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARa
   var
     i: int64;
     RttiType: TRttiArrayType;
-    min, max : int64;
+    min, max: int64;
   begin
     i := AsInt(ADeref);
     AFound := false;
