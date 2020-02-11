@@ -317,7 +317,7 @@ begin
       except
         on e: exception do
         begin
-          if val.IsEmpty and (eoRaiseErrorWhenVariableNotFound in FContext.Options) then
+          if (eoRaiseErrorWhenVariableNotFound in FContext.Options) then
             RaiseError(Position(AExpr), 'Variable ''%s'' could not be found.', [AExpr.variable]);
         end;
       end;

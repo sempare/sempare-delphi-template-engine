@@ -153,11 +153,11 @@ end;
 
 procedure TFunctionTest.TestMatch;
 begin
-  Assert.AreEqual('ok', Velocity.Eval('<% match(''aaa'',''a+'')?''ok'':''fail'' %>'));
-  Assert.AreEqual('fail', Velocity.Eval('<% match('''',''a+'')?''ok'':''fail'' %>'));
-  Assert.AreEqual('fail', Velocity.Eval('<% match(''b'',''a+'')?''ok'':''fail'' %>'));
-  Assert.AreEqual('ok', Velocity.Eval('<% match(''aaa'',''a+b*'')?''ok'':''fail'' %>'));
-  Assert.AreEqual('ok', Velocity.Eval('<% match(''aaaaabbbbb'',''a+b*'')?''ok'':''fail'' %>'));
+  Assert.AreEqual('ok', Velocity.Eval('<% (match(''aaa'',''a+'')?''ok'':''fail'') %>'));
+  Assert.AreEqual('fail', Velocity.Eval('<% (match('''',''a+'')?''ok'':''fail'') %>'));
+  Assert.AreEqual('fail', Velocity.Eval('<% (match(''b'',''a+'')?''ok'':''fail'') %>'));
+  Assert.AreEqual('ok', Velocity.Eval('<% (match(''aaa'',''a+b*'')?''ok'':''fail'') %>'));
+  Assert.AreEqual('ok', Velocity.Eval('<% (match(''aaaaabbbbb'',''a+b*'')?''ok'':''fail'') %>'));
 end;
 
 procedure TFunctionTest.TestPos;

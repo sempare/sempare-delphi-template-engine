@@ -505,7 +505,7 @@ begin
   except
     on e: Exception do
     begin
-      result := ProcessClass(APosition, obj, ADeref, ARaiseIfMissing, true, Afound);
+      result := ProcessClass(APosition, obj, ADeref, ARaiseIfMissing, true, AFound);
       if not AFound then
       begin
         if ARaiseIfMissing then
@@ -575,7 +575,7 @@ begin
   end;
 end;
 
-function processJson(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; out AFound : boolean): TValue;
+function processJson(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; out AFound: boolean): TValue;
 var
   jsonobj: TJsonObject;
   jsonval: TJsonValue;

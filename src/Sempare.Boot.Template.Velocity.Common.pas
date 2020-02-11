@@ -258,7 +258,7 @@ end;
 
 function TVelocityVariables.GetItem(const AKey: string): TVelocityValue;
 begin
-  FVariables.TryGetValue(AKey, result);
+  result := FVariables[AKey];
 end;
 
 procedure TVelocityVariables.Remove(const AKey: string);

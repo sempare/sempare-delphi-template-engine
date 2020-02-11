@@ -50,11 +50,14 @@ type
     procedure TestSimpleDrefef;
     [Test]
     procedure TestWith;
+    [Test]
+    procedure TestDerefError;
   end;
 
 implementation
 
 uses
+  System.SysUtils,
   Sempare.Boot.Template.Velocity;
 
 { TTestVelocity }
@@ -76,6 +79,20 @@ type
       end;
     end;
   end;
+
+procedure TTestVelocityDeref.TestDerefError;
+var
+  ctx: IVelocityContext;
+  r: record anothervar: boolean;
+end;
+begin
+  ctx := Velocity.Context([eoRaiseErrorWhenVariableNotFound]);
+  Assert.WillRaise(
+    procedure
+    begin
+      Velocity.Eval(ctx, '<% notfound %>', r);
+    end);
+end;
 
 procedure TTestVelocityDeref.TestExprDrefef;
 var
