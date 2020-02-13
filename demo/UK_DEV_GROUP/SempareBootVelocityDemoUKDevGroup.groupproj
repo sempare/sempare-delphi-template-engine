@@ -1,0 +1,72 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{52BBDB64-990A-4E27-BEC5-70DFE74CE068}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="Hello World\HelloWorld.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Dictionary\UsingDictionary.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Array\UsingArray.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="MaxRunTime\MaxRunTime.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="HelloWorld">
+        <MSBuild Projects="Hello World\HelloWorld.dproj"/>
+    </Target>
+    <Target Name="HelloWorld:Clean">
+        <MSBuild Projects="Hello World\HelloWorld.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="HelloWorld:Make">
+        <MSBuild Projects="Hello World\HelloWorld.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="UsingDictionary">
+        <MSBuild Projects="Dictionary\UsingDictionary.dproj"/>
+    </Target>
+    <Target Name="UsingDictionary:Clean">
+        <MSBuild Projects="Dictionary\UsingDictionary.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="UsingDictionary:Make">
+        <MSBuild Projects="Dictionary\UsingDictionary.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="UsingArray">
+        <MSBuild Projects="Array\UsingArray.dproj"/>
+    </Target>
+    <Target Name="UsingArray:Clean">
+        <MSBuild Projects="Array\UsingArray.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="UsingArray:Make">
+        <MSBuild Projects="Array\UsingArray.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="MaxRunTime">
+        <MSBuild Projects="MaxRunTime\MaxRunTime.dproj"/>
+    </Target>
+    <Target Name="MaxRunTime:Clean">
+        <MSBuild Projects="MaxRunTime\MaxRunTime.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="MaxRunTime:Make">
+        <MSBuild Projects="MaxRunTime\MaxRunTime.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="HelloWorld;UsingDictionary;UsingArray;MaxRunTime"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="HelloWorld:Clean;UsingDictionary:Clean;UsingArray:Clean;MaxRunTime:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="HelloWorld:Make;UsingDictionary:Make;UsingArray:Make;MaxRunTime:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>
