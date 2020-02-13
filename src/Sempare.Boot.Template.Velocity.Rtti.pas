@@ -611,15 +611,22 @@ function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARa
   var
     i: int64;
     RttiType: TRttiArrayType;
+    dimType: TRttiType;
     min, max: int64;
   begin
     i := AsInt(ADeref);
     AFound := false;
     RttiType := GRttiContext.GetType(obj.TypeInfo) as TRttiArrayType;
-    min := (RttiType.Dimensions[0] as TRttiOrdinalType).MinValue;
-    max := (RttiType.Dimensions[0] as TRttiOrdinalType).MaxValue;
-    if (i < min) or (i > max) then
-      exit;
+    dimType := RttiType.Dimensions[0];
+    min := 0;
+    if dimType = nil then
+    begin
+      // strange why this may happen
+      min := (dimType as TRttiOrdinalType).MinValue;
+      max := (dimType as TRttiOrdinalType).MaxValue;
+      if (i < min) or (i > max) then
+        raise Exception.Create('Index is out of bounds');
+    end;
     AFound := true;
     result := obj.GetArrayElement(i - min);
   end;

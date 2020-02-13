@@ -86,7 +86,7 @@ type
     procedure CheckRunTime(const APosition: IPosition);
     function ExprListArgs(const AExprList: IExprList): TArray<TValue>;
     function Invoke(const AFuncCall: IFunctionCallExpr; const AArgs: TArray<TValue>): TValue; overload;
-    function Invoke(const AExpr: IMethodCallExpr; const AObject: TObject; const AArgs: TArray<TValue>): TValue; overload;
+    function Invoke(const AExpr: IMethodCallExpr; const AObject: TValue; const AArgs: TArray<TValue>): TValue; overload;
 
   public
     constructor Create(const AContext: IVelocityContext; const AValue: TValue; const AStream: TStream); overload;
@@ -397,17 +397,23 @@ var
   var
     at: TRttiArrayType;
     Dt: TRttiOrdinalType;
-    i: int64;
+    i, min: int64;
+    c: TRttiContext;
   begin
+    c := TRttiContext.Create;
     at := T as TRttiArrayType;
-    if at.DimensionCount > 1 then
+    if at.DimensionCount <> 1 then
       RaiseError(Position(AStmt), 'Only one dimensional arrays are supported.');
     Dt := at.Dimensions[0] as TRttiOrdinalType;
+    if Dt = nil then
+      min := 0
+    else
+      min := Dt.MinValue;
     for i := 0 to Eval.GetArrayLength - 1 do
     begin
       if coBreak in FLoopOptions then
         break;
-      FStackFrames.peek[v] := i + Dt.MinValue;
+      FStackFrames.peek[v] := i + min;
       exclude(FLoopOptions, coContinue);
       CheckRunTime(Position(AStmt));
       acceptvisitor(AStmt.Container, self);
@@ -724,13 +730,13 @@ begin
   end;
 end;
 
-function TEvaluationVelocityVisitor.Invoke(const AExpr: IMethodCallExpr; const AObject: TObject; const AArgs: TArray<TValue>): TValue;
+function TEvaluationVelocityVisitor.Invoke(const AExpr: IMethodCallExpr; const AObject: TValue; const AArgs: TArray<TValue>): TValue;
 var
   RttiType: TRttiType;
 begin
   if AExpr.RttiMethod = nil then
   begin
-    RttiType := GRttiContext.GetType(AObject.ClassType);
+    RttiType := GRttiContext.GetType(AObject.TypeInfo);
     AExpr.RttiMethod := RttiType.GetMethod(AExpr.Method);
   end;
   result := AExpr.RttiMethod.Invoke(AObject, AArgs);
@@ -745,7 +751,7 @@ begin
   obj := FEvalStack.pop;
   args := ExprListArgs(AExpr.exprlist);
   try
-    FEvalStack.push(Invoke(AExpr, obj.AsObject, args));
+    FEvalStack.push(Invoke(AExpr, obj, args));
   except
     on e: Exception do
       RaiseError(Position(AExpr), e.Message);
