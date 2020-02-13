@@ -4,6 +4,8 @@ Copyright (c) 2019 [Sempare Limited](http://www.sempare.ltd), [Conrad Vermeulen]
 
 ## Known restrictions / limitations / bugs
 
+- basic arrays must be one dimensional
+
 - numbers are limited to the regex format _[0-9]\([.][0-9]+)_.
 
 - include/require could be functions, but are special and thus part of the grammar. 
