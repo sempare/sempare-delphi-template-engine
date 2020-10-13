@@ -58,7 +58,7 @@ type
   end;
 
 function VelocitySymbolToString(const ASymbol: TVelocitySymbol): string;
-function CreateVelocityLexer(const AContext: IVelocityContext; const AStream: TStream; const AFilename: string = ''; const AManageStream: Boolean = True): IVelocityLexer;
+function CreateVelocityLexer(AContext: IVelocityContext; const AStream: TStream; const AFilename: string = ''; const AManageStream: Boolean = True): IVelocityLexer;
 
 implementation
 
@@ -110,7 +110,7 @@ type
     function GetScriptToken: IVelocitySymbol;
 
   public
-    constructor Create(const AContext: IVelocityContext; const AStream: TStream; const AFilename: string; const AManageStream: Boolean = True);
+    constructor Create(AContext: IVelocityContext; const AStream: TStream; const AFilename: string; const AManageStream: Boolean = True);
     destructor Destroy; override;
     function GetToken: IVelocitySymbol;
   end;
@@ -122,7 +122,7 @@ type
     FPosition: IPosition;
     function GetPosition: IPosition;
   public
-    constructor Create(const APosition: IPosition; const AToken: TVelocitySymbol);
+    constructor Create(APosition: IPosition; const AToken: TVelocitySymbol);
     procedure SetToken(const AToken: TVelocitySymbol);
     function GetToken: TVelocitySymbol;
   end;
@@ -131,12 +131,12 @@ type
   private
     FValue: string;
   public
-    constructor Create(const APosition: IPosition; const AToken: TVelocitySymbol; const AString: string);
+    constructor Create(APosition: IPosition; const AToken: TVelocitySymbol; const AString: string);
     procedure SetValue(const Avalue: string);
     function GetValue: string;
   end;
 
-function CreateVelocityLexer(const AContext: IVelocityContext; const AStream: TStream; const AFilename: string; const AManageStream: Boolean): IVelocityLexer;
+function CreateVelocityLexer(AContext: IVelocityContext; const AStream: TStream; const AFilename: string; const AManageStream: Boolean): IVelocityLexer;
 begin
   Result := TVelocityLexer.Create(AContext, AStream, AFilename, AManageStream);
 end;
@@ -149,7 +149,7 @@ end;
 
 { TVelocityLexer }
 
-constructor TVelocityLexer.Create(const AContext: IVelocityContext; const AStream: TStream; const AFilename: string; const AManageStream: Boolean);
+constructor TVelocityLexer.Create(AContext: IVelocityContext; const AStream: TStream; const AFilename: string; const AManageStream: Boolean);
 begin
   FReader := TStreamReader.Create(AStream, AContext.Encoding, false, 4096);
   FPrevLineOffset := -1;
@@ -491,7 +491,7 @@ end;
 
 { TSimpleMustacheToken }
 
-constructor TSimpleVelocitySymbol.Create(const APosition: IPosition; const AToken: TVelocitySymbol);
+constructor TSimpleVelocitySymbol.Create(APosition: IPosition; const AToken: TVelocitySymbol);
 begin
   FToken := AToken;
   FPosition := APosition;
@@ -514,7 +514,7 @@ end;
 
 { TStringMustacheToken }
 
-constructor TVelocityValueSymbol.Create(const APosition: IPosition; const AToken: TVelocitySymbol; const AString: string);
+constructor TVelocityValueSymbol.Create(APosition: IPosition; const AToken: TVelocitySymbol; const AString: string);
 begin
   inherited Create(APosition, AToken);
   SetValue(AString);

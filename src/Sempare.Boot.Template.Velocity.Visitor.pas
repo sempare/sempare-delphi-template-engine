@@ -41,38 +41,38 @@ uses
 type
   TBaseVelocityVisitor = class(TInterfacedObject, IVelocityVisitor)
   public
-    procedure Visit(const AContainer: IVelocityTemplate); overload; virtual;
-    procedure Visit(const AContainer: IVelocityVisitorHost); overload; virtual;
+    procedure Visit(AContainer: IVelocityTemplate); overload; virtual;
+    procedure Visit(AContainer: IVelocityVisitorHost); overload; virtual;
 
-    procedure Visit(const AExpr: IExpr); overload; virtual;
-    procedure Visit(const AExpr: IBinopExpr); overload; virtual;
-    procedure Visit(const AExpr: IUnaryExpr); overload; virtual;
-    procedure Visit(const AExpr: IVariableExpr); overload; virtual;
-    procedure Visit(const AExpr: IVariableDerefExpr); overload; virtual;
-    procedure Visit(const AExpr: IValueExpr); overload; virtual;
-    procedure Visit(const AExprList: IExprList); overload; virtual;
-    procedure Visit(const AExpr: ITernaryExpr); overload; virtual;
-    procedure Visit(const AExpr: IArrayExpr); overload; virtual;
+    procedure Visit(AExpr: IExpr); overload; virtual;
+    procedure Visit(AExpr: IBinopExpr); overload; virtual;
+    procedure Visit(AExpr: IUnaryExpr); overload; virtual;
+    procedure Visit(AExpr: IVariableExpr); overload; virtual;
+    procedure Visit(AExpr: IVariableDerefExpr); overload; virtual;
+    procedure Visit(AExpr: IValueExpr); overload; virtual;
+    procedure Visit(AExprList: IExprList); overload; virtual;
+    procedure Visit(AExpr: ITernaryExpr); overload; virtual;
+    procedure Visit(AExpr: IArrayExpr); overload; virtual;
 
-    procedure Visit(const AStmt: IStmt); overload; virtual;
-    procedure Visit(const AStmt: IAssignStmt); overload; virtual;
-    procedure Visit(const AStmt: IContinueStmt); overload; virtual;
-    procedure Visit(const AStmt: IElseStmt); overload; virtual;
-    procedure Visit(const AStmt: IBreakStmt); overload; virtual;
-    procedure Visit(const AStmt: IEndStmt); overload; virtual;
-    procedure Visit(const AStmt: IIncludeStmt); overload; virtual;
-    procedure Visit(const AStmt: IRequireStmt); overload; virtual;
-    procedure Visit(const AStmt: IEncodeExpr); overload; virtual;
-    procedure Visit(const AStmt: IPrintStmt); overload; virtual;
-    procedure Visit(const AStmt: IIfStmt); overload; virtual;
-    procedure Visit(const AStmt: IWhileStmt); overload; virtual;
-    procedure Visit(const AStmt: IForInStmt); overload; virtual;
-    procedure Visit(const AStmt: IForRangeStmt); overload; virtual;
-    procedure Visit(const AStmt: IFunctionCallExpr); overload; virtual;
-    procedure Visit(const AStmt: IMethodCallExpr); overload; virtual;
-    procedure Visit(const AStmt: IProcessTemplateStmt); overload; virtual;
-    procedure Visit(const AStmt: IDefineTemplateStmt); overload; virtual;
-    procedure Visit(const AStmt: IWithStmt); overload; virtual;
+    procedure Visit(AStmt: IStmt); overload; virtual;
+    procedure Visit(AStmt: IAssignStmt); overload; virtual;
+    procedure Visit(AStmt: IContinueStmt); overload; virtual;
+    procedure Visit(AStmt: IElseStmt); overload; virtual;
+    procedure Visit(AStmt: IBreakStmt); overload; virtual;
+    procedure Visit(AStmt: IEndStmt); overload; virtual;
+    procedure Visit(AStmt: IIncludeStmt); overload; virtual;
+    procedure Visit(AStmt: IRequireStmt); overload; virtual;
+    procedure Visit(AStmt: IEncodeExpr); overload; virtual;
+    procedure Visit(AStmt: IPrintStmt); overload; virtual;
+    procedure Visit(AStmt: IIfStmt); overload; virtual;
+    procedure Visit(AStmt: IWhileStmt); overload; virtual;
+    procedure Visit(AStmt: IForInStmt); overload; virtual;
+    procedure Visit(AStmt: IForRangeStmt); overload; virtual;
+    procedure Visit(AStmt: IFunctionCallExpr); overload; virtual;
+    procedure Visit(AStmt: IMethodCallExpr); overload; virtual;
+    procedure Visit(AStmt: IProcessTemplateStmt); overload; virtual;
+    procedure Visit(AStmt: IDefineTemplateStmt); overload; virtual;
+    procedure Visit(AStmt: IWithStmt); overload; virtual;
 
   end;
 
@@ -83,17 +83,17 @@ uses
 
 { TBaseVelocityVisitor }
 
-procedure TBaseVelocityVisitor.Visit(const AExpr: IVariableExpr);
+procedure TBaseVelocityVisitor.Visit(AExpr: IVariableExpr);
 begin
 
 end;
 
-procedure TBaseVelocityVisitor.Visit(const AExpr: IValueExpr);
+procedure TBaseVelocityVisitor.Visit(AExpr: IValueExpr);
 begin
 
 end;
 
-procedure TBaseVelocityVisitor.Visit(const AExprList: IExprList);
+procedure TBaseVelocityVisitor.Visit(AExprList: IExprList);
 var
   i: integer;
 begin
@@ -101,52 +101,52 @@ begin
     AcceptVisitor(AExprList[i], self);
 end;
 
-procedure TBaseVelocityVisitor.Visit(const AStmt: IStmt);
+procedure TBaseVelocityVisitor.Visit(AStmt: IStmt);
 begin
   raise Exception.Create('Statment not supported in visitor');
 end;
 
-procedure TBaseVelocityVisitor.Visit(const AContainer: IVelocityVisitorHost);
+procedure TBaseVelocityVisitor.Visit(AContainer: IVelocityVisitorHost);
 begin
 
 end;
 
-procedure TBaseVelocityVisitor.Visit(const AExpr: IExpr);
+procedure TBaseVelocityVisitor.Visit(AExpr: IExpr);
 begin
   raise Exception.Create('Expression not supported in visitor');
 end;
 
-procedure TBaseVelocityVisitor.Visit(const AExpr: IBinopExpr);
+procedure TBaseVelocityVisitor.Visit(AExpr: IBinopExpr);
 begin
 
 end;
 
-procedure TBaseVelocityVisitor.Visit(const AExpr: IUnaryExpr);
+procedure TBaseVelocityVisitor.Visit(AExpr: IUnaryExpr);
 begin
 
 end;
 
-procedure TBaseVelocityVisitor.Visit(const AStmt: IIfStmt);
+procedure TBaseVelocityVisitor.Visit(AStmt: IIfStmt);
 begin
 
 end;
 
-procedure TBaseVelocityVisitor.Visit(const AStmt: IWhileStmt);
+procedure TBaseVelocityVisitor.Visit(AStmt: IWhileStmt);
 begin
 
 end;
 
-procedure TBaseVelocityVisitor.Visit(const AStmt: IForInStmt);
+procedure TBaseVelocityVisitor.Visit(AStmt: IForInStmt);
 begin
 
 end;
 
-procedure TBaseVelocityVisitor.Visit(const AStmt: IForRangeStmt);
+procedure TBaseVelocityVisitor.Visit(AStmt: IForRangeStmt);
 begin
 
 end;
 
-procedure TBaseVelocityVisitor.Visit(const AContainer: IVelocityTemplate);
+procedure TBaseVelocityVisitor.Visit(AContainer: IVelocityTemplate);
 var
   i: integer;
 begin
@@ -154,87 +154,87 @@ begin
     AContainer.Items[i].Accept(self);
 end;
 
-procedure TBaseVelocityVisitor.Visit(const AStmt: IAssignStmt);
+procedure TBaseVelocityVisitor.Visit(AStmt: IAssignStmt);
 begin
 
 end;
 
-procedure TBaseVelocityVisitor.Visit(const AStmt: IIncludeStmt);
+procedure TBaseVelocityVisitor.Visit(AStmt: IIncludeStmt);
 begin
 
 end;
 
-procedure TBaseVelocityVisitor.Visit(const AExpr: IVariableDerefExpr);
+procedure TBaseVelocityVisitor.Visit(AExpr: IVariableDerefExpr);
 begin
 
 end;
 
-procedure TBaseVelocityVisitor.Visit(const AStmt: IContinueStmt);
+procedure TBaseVelocityVisitor.Visit(AStmt: IContinueStmt);
 begin
 
 end;
 
-procedure TBaseVelocityVisitor.Visit(const AStmt: IBreakStmt);
+procedure TBaseVelocityVisitor.Visit(AStmt: IBreakStmt);
 begin
 
 end;
 
-procedure TBaseVelocityVisitor.Visit(const AStmt: IEndStmt);
+procedure TBaseVelocityVisitor.Visit(AStmt: IEndStmt);
 begin
 
 end;
 
-procedure TBaseVelocityVisitor.Visit(const AStmt: IPrintStmt);
+procedure TBaseVelocityVisitor.Visit(AStmt: IPrintStmt);
 begin
 
 end;
 
-procedure TBaseVelocityVisitor.Visit(const AStmt: IFunctionCallExpr);
+procedure TBaseVelocityVisitor.Visit(AStmt: IFunctionCallExpr);
 begin
 
 end;
 
-procedure TBaseVelocityVisitor.Visit(const AStmt: IElseStmt);
+procedure TBaseVelocityVisitor.Visit(AStmt: IElseStmt);
 begin
 
 end;
 
-procedure TBaseVelocityVisitor.Visit(const AStmt: IMethodCallExpr);
+procedure TBaseVelocityVisitor.Visit(AStmt: IMethodCallExpr);
 begin
 
 end;
 
-procedure TBaseVelocityVisitor.Visit(const AStmt: IEncodeExpr);
+procedure TBaseVelocityVisitor.Visit(AStmt: IEncodeExpr);
 begin
 
 end;
 
-procedure TBaseVelocityVisitor.Visit(const AStmt: IProcessTemplateStmt);
+procedure TBaseVelocityVisitor.Visit(AStmt: IProcessTemplateStmt);
 begin
 
 end;
 
-procedure TBaseVelocityVisitor.Visit(const AStmt: IDefineTemplateStmt);
+procedure TBaseVelocityVisitor.Visit(AStmt: IDefineTemplateStmt);
 begin
 
 end;
 
-procedure TBaseVelocityVisitor.Visit(const AStmt: IWithStmt);
+procedure TBaseVelocityVisitor.Visit(AStmt: IWithStmt);
 begin
 
 end;
 
-procedure TBaseVelocityVisitor.Visit(const AStmt: IRequireStmt);
+procedure TBaseVelocityVisitor.Visit(AStmt: IRequireStmt);
 begin
 
 end;
 
-procedure TBaseVelocityVisitor.Visit(const AExpr: IArrayExpr);
+procedure TBaseVelocityVisitor.Visit(AExpr: IArrayExpr);
 begin
 
 end;
 
-procedure TBaseVelocityVisitor.Visit(const AExpr: ITernaryExpr);
+procedure TBaseVelocityVisitor.Visit(AExpr: ITernaryExpr);
 begin
 
 end;

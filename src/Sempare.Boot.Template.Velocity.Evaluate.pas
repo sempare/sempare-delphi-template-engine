@@ -83,44 +83,44 @@ type
 
     function HasBreakOrContinue: boolean; inline;
     function EncodeVariable(const AValue: TValue): TValue;
-    procedure CheckRunTime(const APosition: IPosition);
-    function ExprListArgs(const AExprList: IExprList): TArray<TValue>;
-    function Invoke(const AFuncCall: IFunctionCallExpr; const AArgs: TArray<TValue>): TValue; overload;
-    function Invoke(const AExpr: IMethodCallExpr; const AObject: TValue; const AArgs: TArray<TValue>): TValue; overload;
+    procedure CheckRunTime(APosition: IPosition);
+    function ExprListArgs(AExprList: IExprList): TArray<TValue>;
+    function Invoke(AFuncCall: IFunctionCallExpr; const AArgs: TArray<TValue>): TValue; overload;
+    function Invoke(AExpr: IMethodCallExpr; const AObject: TValue; const AArgs: TArray<TValue>): TValue; overload;
 
   public
-    constructor Create(const AContext: IVelocityContext; const AValue: TValue; const AStream: TStream); overload;
-    constructor Create(const AContext: IVelocityContext; const AStackFrame: TStackFrame; const AStream: TStream); overload;
+    constructor Create(AContext: IVelocityContext; const AValue: TValue; const AStream: TStream); overload;
+    constructor Create(AContext: IVelocityContext; const AStackFrame: TStackFrame; const AStream: TStream); overload;
     destructor Destroy; override;
 
-    procedure Visit(const AExpr: IBinopExpr); overload; override;
-    procedure Visit(const AExpr: IUnaryExpr); overload; override;
-    procedure Visit(const AExpr: IVariableExpr); overload; override;
-    procedure Visit(const AExpr: IVariableDerefExpr); overload; override;
-    procedure Visit(const AExpr: IValueExpr); overload; override;
-    procedure Visit(const AExprList: IExprList); overload; override;
-    procedure Visit(const AExpr: ITernaryExpr); overload; override;
-    procedure Visit(const AExpr: IEncodeExpr); overload; override;
-    procedure Visit(const AExpr: IFunctionCallExpr); overload; override;
-    procedure Visit(const AExpr: IMethodCallExpr); overload; override;
-    procedure Visit(const AExpr: IArrayExpr); overload; override;
+    procedure Visit(AExpr: IBinopExpr); overload; override;
+    procedure Visit(AExpr: IUnaryExpr); overload; override;
+    procedure Visit(AExpr: IVariableExpr); overload; override;
+    procedure Visit(AExpr: IVariableDerefExpr); overload; override;
+    procedure Visit(AExpr: IValueExpr); overload; override;
+    procedure Visit(AExprList: IExprList); overload; override;
+    procedure Visit(AExpr: ITernaryExpr); overload; override;
+    procedure Visit(AExpr: IEncodeExpr); overload; override;
+    procedure Visit(AExpr: IFunctionCallExpr); overload; override;
+    procedure Visit(AExpr: IMethodCallExpr); overload; override;
+    procedure Visit(AExpr: IArrayExpr); overload; override;
 
-    procedure Visit(const AStmt: IAssignStmt); overload; override;
-    procedure Visit(const AStmt: IContinueStmt); overload; override;
-    procedure Visit(const AStmt: IBreakStmt); overload; override;
-    procedure Visit(const AStmt: IEndStmt); overload; override;
-    procedure Visit(const AStmt: IIncludeStmt); overload; override;
-    procedure Visit(const AStmt: IRequireStmt); overload; override;
+    procedure Visit(AStmt: IAssignStmt); overload; override;
+    procedure Visit(AStmt: IContinueStmt); overload; override;
+    procedure Visit(AStmt: IBreakStmt); overload; override;
+    procedure Visit(AStmt: IEndStmt); overload; override;
+    procedure Visit(AStmt: IIncludeStmt); overload; override;
+    procedure Visit(AStmt: IRequireStmt); overload; override;
 
-    procedure Visit(const AStmt: IPrintStmt); overload; override;
-    procedure Visit(const AStmt: IIfStmt); overload; override;
-    procedure Visit(const AStmt: IWhileStmt); overload; override;
-    procedure Visit(const AStmt: IForInStmt); overload; override;
-    procedure Visit(const AStmt: IForRangeStmt); overload; override;
+    procedure Visit(AStmt: IPrintStmt); overload; override;
+    procedure Visit(AStmt: IIfStmt); overload; override;
+    procedure Visit(AStmt: IWhileStmt); overload; override;
+    procedure Visit(AStmt: IForInStmt); overload; override;
+    procedure Visit(AStmt: IForRangeStmt); overload; override;
 
-    procedure Visit(const AStmt: IProcessTemplateStmt); overload; override;
-    procedure Visit(const AStmt: IDefineTemplateStmt); overload; override;
-    procedure Visit(const AStmt: IWithStmt); overload; override;
+    procedure Visit(AStmt: IProcessTemplateStmt); overload; override;
+    procedure Visit(AStmt: IDefineTemplateStmt); overload; override;
+    procedure Visit(AStmt: IWithStmt); overload; override;
 
   end;
 
@@ -154,7 +154,7 @@ end;
 
 { TEvaluationVelocityVisitor }
 
-constructor TEvaluationVelocityVisitor.Create(const AContext: IVelocityContext; const AValue: TValue; const AStream: TStream);
+constructor TEvaluationVelocityVisitor.Create(AContext: IVelocityContext; const AValue: TValue; const AStream: TStream);
 var
   StackFrame: TStackFrame;
 begin
@@ -162,7 +162,7 @@ begin
   Create(AContext, StackFrame, AStream);
 end;
 
-procedure TEvaluationVelocityVisitor.Visit(const AExpr: IValueExpr);
+procedure TEvaluationVelocityVisitor.Visit(AExpr: IValueExpr);
 var
   val: TValue;
 begin
@@ -172,7 +172,7 @@ begin
   FEvalStack.push(val);
 end;
 
-procedure TEvaluationVelocityVisitor.Visit(const AExprList: IExprList);
+procedure TEvaluationVelocityVisitor.Visit(AExprList: IExprList);
 var
   i: integer;
 begin
@@ -184,12 +184,12 @@ begin
   FEvalStack.push(AExprList.Count);
 end;
 
-procedure TEvaluationVelocityVisitor.Visit(const AStmt: IContinueStmt);
+procedure TEvaluationVelocityVisitor.Visit(AStmt: IContinueStmt);
 begin
   include(FLoopOptions, TLoopOption.coContinue);
 end;
 
-procedure TEvaluationVelocityVisitor.Visit(const AExpr: IVariableDerefExpr);
+procedure TEvaluationVelocityVisitor.Visit(AExpr: IVariableDerefExpr);
 var
   Derefvar: TValue;
   variable: TValue;
@@ -211,7 +211,7 @@ begin
   FEvalStack.push(val);
 end;
 
-procedure TEvaluationVelocityVisitor.Visit(const AExpr: IBinopExpr);
+procedure TEvaluationVelocityVisitor.Visit(AExpr: IBinopExpr);
 var
   left: TValue;
   right: TValue;
@@ -281,7 +281,7 @@ begin
   FEvalStack.push(res);
 end;
 
-procedure TEvaluationVelocityVisitor.Visit(const AExpr: IUnaryExpr);
+procedure TEvaluationVelocityVisitor.Visit(AExpr: IUnaryExpr);
 var
   v: TValue;
 begin
@@ -301,7 +301,7 @@ begin
   end;
 end;
 
-procedure TEvaluationVelocityVisitor.Visit(const AExpr: IVariableExpr);
+procedure TEvaluationVelocityVisitor.Visit(AExpr: IVariableExpr);
 var
   StackFrame: TStackFrame;
   val: TValue;
@@ -334,12 +334,12 @@ begin
   FEvalStack.push(val);
 end;
 
-procedure TEvaluationVelocityVisitor.Visit(const AStmt: IBreakStmt);
+procedure TEvaluationVelocityVisitor.Visit(AStmt: IBreakStmt);
 begin
   include(FLoopOptions, TLoopOption.coBreak);
 end;
 
-procedure TEvaluationVelocityVisitor.Visit(const AStmt: IWhileStmt);
+procedure TEvaluationVelocityVisitor.Visit(AStmt: IWhileStmt);
 var
   LoopOptions: IPreserveValue<TLoopOptions>;
 begin
@@ -359,7 +359,7 @@ begin
   FStackFrames.pop;
 end;
 
-procedure TEvaluationVelocityVisitor.Visit(const AStmt: IForInStmt);
+procedure TEvaluationVelocityVisitor.Visit(AStmt: IForInStmt);
 var
   LoopOptions: IPreserveValue<TLoopOptions>;
   e: TObject;
@@ -376,7 +376,7 @@ var
       RaiseError(Position(AStmt), 'GetEnumerator not found on object.');
     val := m.Invoke(Eval.AsObject, []).AsObject;
     if val.IsEmpty then
-      raise Exception.Create('Value is not enumerable');
+      raise exception.Create('Value is not enumerable');
     e := val.AsObject;
     T := GRttiContext.GetType(e.ClassType);
     movenext := T.GetMethod('MoveNext');
@@ -461,13 +461,13 @@ begin
   FStackFrames.pop;
 end;
 
-procedure TEvaluationVelocityVisitor.CheckRunTime(const APosition: IPosition);
+procedure TEvaluationVelocityVisitor.CheckRunTime(APosition: IPosition);
 begin
   if FStopWatch.ElapsedMilliseconds > FContext.MaxRunTimeMs then
     RaiseError(APosition, 'Max runtime of %dms has been exceeded.', [FContext.MaxRunTimeMs]);
 end;
 
-constructor TEvaluationVelocityVisitor.Create(const AContext: IVelocityContext; const AStackFrame: TStackFrame; const AStream: TStream);
+constructor TEvaluationVelocityVisitor.Create(AContext: IVelocityContext; const AStackFrame: TStackFrame; const AStream: TStream);
 var
   apply: IVelocityContextForScope;
 begin
@@ -509,7 +509,7 @@ begin
   result := FContext.VariableEncoder(AsString(AValue));
 end;
 
-function TEvaluationVelocityVisitor.ExprListArgs(const AExprList: IExprList): TArray<TValue>;
+function TEvaluationVelocityVisitor.ExprListArgs(AExprList: IExprList): TArray<TValue>;
 var
   i: integer;
   Count: integer;
@@ -541,7 +541,7 @@ begin
   result := ALow >= AHigh;
 end;
 
-procedure TEvaluationVelocityVisitor.Visit(const AStmt: IForRangeStmt);
+procedure TEvaluationVelocityVisitor.Visit(AStmt: IForRangeStmt);
 type
   TCompare = function(const ALow: integer; const AHigh: integer): boolean;
 
@@ -576,7 +576,7 @@ begin
         comp := ForDownToCond;
       end
   else
-    raise Exception.Create('ForOp not supported');
+    raise exception.Create('ForOp not supported');
   end;
   FStackFrames.push(FStackFrames.peek.Clone);
   i := lowVal;
@@ -593,7 +593,7 @@ begin
   FStackFrames.pop;
 end;
 
-procedure TEvaluationVelocityVisitor.Visit(const AStmt: IAssignStmt);
+procedure TEvaluationVelocityVisitor.Visit(AStmt: IAssignStmt);
 var
   v: string;
   val: TValue;
@@ -606,7 +606,7 @@ begin
   FStackFrames.peek[v] := val;
 end;
 
-procedure TEvaluationVelocityVisitor.Visit(const AStmt: IIfStmt);
+procedure TEvaluationVelocityVisitor.Visit(AStmt: IIfStmt);
 begin
   if HasBreakOrContinue then
     exit;
@@ -617,12 +617,12 @@ begin
     acceptvisitor(AStmt.FalseContainer, self);
 end;
 
-procedure TEvaluationVelocityVisitor.Visit(const AStmt: IEndStmt);
+procedure TEvaluationVelocityVisitor.Visit(AStmt: IEndStmt);
 begin
   // nothing to do
 end;
 
-procedure TEvaluationVelocityVisitor.Visit(const AStmt: IIncludeStmt);
+procedure TEvaluationVelocityVisitor.Visit(AStmt: IIncludeStmt);
 var
   Name: string;
   T: IVelocityTemplate;
@@ -643,10 +643,10 @@ begin
     end;
   end
   else
-    raise Exception.Createfmt('Template not found: %s', [name]);
+    raise exception.Createfmt('Template not found: %s', [name]);
 end;
 
-procedure TEvaluationVelocityVisitor.Visit(const AStmt: IPrintStmt);
+procedure TEvaluationVelocityVisitor.Visit(AStmt: IPrintStmt);
 begin
   if HasBreakOrContinue then
     exit;
@@ -667,10 +667,10 @@ begin
       if not(AValue.Kind in [tkString, tkWString, tkAnsiString, tkUString]) then
         exit(AsString(AValue));
     tkEnumeration:
-      if AType.Handle = TypeInfo(boolean) then
+      if AType.Handle = typeinfo(boolean) then
         exit(AsBoolean(AValue));
     tkrecord:
-      if AType.Handle = TypeInfo(tvarrec) then
+      if AType.Handle = typeinfo(tvarrec) then
         exit(AValue.AsVarRec);
   end;
   exit(AValue);
@@ -700,7 +700,7 @@ begin
   end;
 end;
 
-function TEvaluationVelocityVisitor.Invoke(const AFuncCall: IFunctionCallExpr; const AArgs: TArray<TValue>): TValue;
+function TEvaluationVelocityVisitor.Invoke(AFuncCall: IFunctionCallExpr; const AArgs: TArray<TValue>): TValue;
 var
   m: TRttiMethod;
 begin
@@ -720,29 +720,29 @@ begin
     result := result.AsType<TValue>();
 end;
 
-procedure TEvaluationVelocityVisitor.Visit(const AExpr: IFunctionCallExpr);
+procedure TEvaluationVelocityVisitor.Visit(AExpr: IFunctionCallExpr);
 begin
   try
     FEvalStack.push(Invoke(AExpr, ExprListArgs(AExpr.exprlist)));
   except
-    on e: Exception do
+    on e: exception do
       RaiseError(Position(AExpr), e.Message);
   end;
 end;
 
-function TEvaluationVelocityVisitor.Invoke(const AExpr: IMethodCallExpr; const AObject: TValue; const AArgs: TArray<TValue>): TValue;
+function TEvaluationVelocityVisitor.Invoke(AExpr: IMethodCallExpr; const AObject: TValue; const AArgs: TArray<TValue>): TValue;
 var
   RttiType: TRttiType;
 begin
   if AExpr.RttiMethod = nil then
   begin
-    RttiType := GRttiContext.GetType(AObject.TypeInfo);
+    RttiType := GRttiContext.GetType(AObject.typeinfo);
     AExpr.RttiMethod := RttiType.GetMethod(AExpr.Method);
   end;
   result := AExpr.RttiMethod.Invoke(AObject, AArgs);
 end;
 
-procedure TEvaluationVelocityVisitor.Visit(const AExpr: IMethodCallExpr);
+procedure TEvaluationVelocityVisitor.Visit(AExpr: IMethodCallExpr);
 var
   obj: TValue;
   args: TArray<TValue>;
@@ -753,18 +753,18 @@ begin
   try
     FEvalStack.push(Invoke(AExpr, obj, args));
   except
-    on e: Exception do
+    on e: exception do
       RaiseError(Position(AExpr), e.Message);
   end;
 end;
 
-procedure TEvaluationVelocityVisitor.Visit(const AExpr: IEncodeExpr);
+procedure TEvaluationVelocityVisitor.Visit(AExpr: IEncodeExpr);
 begin
   acceptvisitor(AExpr.Expr, self);
   FEvalStack.push(EncodeVariable(FEvalStack.pop));
 end;
 
-procedure TEvaluationVelocityVisitor.Visit(const AStmt: IProcessTemplateStmt);
+procedure TEvaluationVelocityVisitor.Visit(AStmt: IProcessTemplateStmt);
 var
   prevState: boolean;
 begin
@@ -774,7 +774,7 @@ begin
   FStreamWriter.IgnoreNewLine := prevState;
 end;
 
-procedure TEvaluationVelocityVisitor.Visit(const AStmt: IDefineTemplateStmt);
+procedure TEvaluationVelocityVisitor.Visit(AStmt: IDefineTemplateStmt);
 var
   Name: TValue;
 begin
@@ -784,7 +784,7 @@ begin
   FLocalTemplates.AddOrSetValue(AsString(name), AStmt.Container);
 end;
 
-procedure TEvaluationVelocityVisitor.Visit(const AStmt: IWithStmt);
+procedure TEvaluationVelocityVisitor.Visit(AStmt: IWithStmt);
 
 var
   StackFrame: TStackFrame;
@@ -796,14 +796,14 @@ procedure ScanRecord(const ARttiType: TRttiType; const ARecord: TValue); forward
   var
     RttiType: TRttiType;
   begin
-    RttiType := GRttiContext.GetType(ARecord.TypeInfo);
+    RttiType := GRttiContext.GetType(ARecord.typeinfo);
     case RttiType.TypeKind of
       tkClass, tkClassRef:
         ScanClass(RttiType, ARecord);
       tkrecord:
         ScanRecord(RttiType, ARecord);
     else
-      raise Exception.Create('StackFrame must be defined on a class or record.');
+      raise exception.Create('StackFrame must be defined on a class or record.');
     end;
   end;
 
@@ -850,13 +850,13 @@ begin
   FStackFrames.pop;
 end;
 
-procedure TEvaluationVelocityVisitor.Visit(const AStmt: IRequireStmt);
+procedure TEvaluationVelocityVisitor.Visit(AStmt: IRequireStmt);
 var
   exprs: TArray<TValue>;
   InputType: string;
   i: integer;
 begin
-  InputType := GRttiContext.GetType(FStackFrames.peek['_'].TypeInfo).Name.ToLower;
+  InputType := GRttiContext.GetType(FStackFrames.peek['_'].typeinfo).Name.ToLower;
   exprs := ExprListArgs(AStmt.exprlist);
   if length(exprs) = 0 then
     exit;
@@ -868,7 +868,7 @@ begin
   RaiseError(Position(AStmt), 'Input of required tpe not found');
 end;
 
-procedure TEvaluationVelocityVisitor.Visit(const AExpr: IArrayExpr);
+procedure TEvaluationVelocityVisitor.Visit(AExpr: IArrayExpr);
 var
   exprs: TArray<TValue>;
   v: TValue;
@@ -878,7 +878,7 @@ begin
   FEvalStack.push(v);
 end;
 
-procedure TEvaluationVelocityVisitor.Visit(const AExpr: ITernaryExpr);
+procedure TEvaluationVelocityVisitor.Visit(AExpr: ITernaryExpr);
 begin
   acceptvisitor(AExpr.Condition, self);
   if AsBoolean(FEvalStack.pop) then

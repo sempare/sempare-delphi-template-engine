@@ -166,7 +166,7 @@ type
   IVelocityVisitorHost = interface
     ['{BB5F2BF7-390D-4E20-8FD2-DB7609519143}']
 
-    procedure Accept(const AVisitor: IVelocityVisitor);
+    procedure Accept(AVisitor: IVelocityVisitor);
   end;
 
   IExpr = interface
@@ -192,7 +192,7 @@ type
   ITemplateAdd = interface(IVelocityTemplate)
     ['{64465D68-0E9D-479F-9EF3-A30E75967809}']
 
-    procedure Add(const AItem: IVelocityVisitorHost);
+    procedure Add(AItem: IVelocityVisitorHost);
   end;
 
   IContinueStmt = interface(IStmt)
@@ -337,7 +337,7 @@ type
     ['{DAA177EA-B3CB-434C-A8C1-9E7571F6441B}']
 
     function GetExpr(const AOffset: integer): IExpr;
-    procedure AddExpr(const AExpr: IExpr);
+    procedure AddExpr(AExpr: IExpr);
     function GetExprCount: integer;
 
     property Expr[const AOffset: integer]: IExpr read GetExpr; default;
@@ -458,36 +458,36 @@ type
   IVelocityVisitor = interface
     ['{3AF4EFB5-2E01-4FCF-B609-DC2D322CE150}']
 
-    procedure Visit(const AContainer: IVelocityTemplate); overload;
-    procedure Visit(const AExpr: IExpr); overload;
-    procedure Visit(const AExpr: IBinopExpr); overload;
-    procedure Visit(const AExpr: IUnaryExpr); overload;
-    procedure Visit(const AExpr: IVariableExpr); overload;
-    procedure Visit(const AExpr: IValueExpr); overload;
-    procedure Visit(const AExpr: ITernaryExpr); overload;
-    procedure Visit(const AExpr: IArrayExpr); overload;
-    procedure Visit(const AExpr: IFunctionCallExpr); overload;
-    procedure Visit(const AExpr: IMethodCallExpr); overload;
+    procedure Visit(AContainer: IVelocityTemplate); overload;
+    procedure Visit(AExpr: IExpr); overload;
+    procedure Visit(AExpr: IBinopExpr); overload;
+    procedure Visit(AExpr: IUnaryExpr); overload;
+    procedure Visit(AExpr: IVariableExpr); overload;
+    procedure Visit(AExpr: IValueExpr); overload;
+    procedure Visit(AExpr: ITernaryExpr); overload;
+    procedure Visit(AExpr: IArrayExpr); overload;
+    procedure Visit(AExpr: IFunctionCallExpr); overload;
+    procedure Visit(AExpr: IMethodCallExpr); overload;
 
-    procedure Visit(const AExpr: IVariableDerefExpr); overload;
-    procedure Visit(const AExprList: IExprList); overload;
-    procedure Visit(const AStmt: IStmt); overload;
-    procedure Visit(const AStmt: IElseStmt); overload;
-    procedure Visit(const AStmt: IAssignStmt); overload;
-    procedure Visit(const AStmt: IContinueStmt); overload;
-    procedure Visit(const AStmt: IBreakStmt); overload;
-    procedure Visit(const AStmt: IEndStmt); overload;
-    procedure Visit(const AStmt: IIncludeStmt); overload;
-    procedure Visit(const AStmt: IRequireStmt); overload;
-    procedure Visit(const AStmt: IEncodeExpr); overload;
-    procedure Visit(const AStmt: IPrintStmt); overload;
-    procedure Visit(const AStmt: IIfStmt); overload;
-    procedure Visit(const AStmt: IWhileStmt); overload;
-    procedure Visit(const AStmt: IForInStmt); overload;
-    procedure Visit(const AStmt: IForRangeStmt); overload;
-    procedure Visit(const AStmt: IProcessTemplateStmt); overload;
-    procedure Visit(const AStmt: IDefineTemplateStmt); overload;
-    procedure Visit(const AStmt: IWithStmt); overload;
+    procedure Visit(AExpr: IVariableDerefExpr); overload;
+    procedure Visit(AExprList: IExprList); overload;
+    procedure Visit(AStmt: IStmt); overload;
+    procedure Visit(AStmt: IElseStmt); overload;
+    procedure Visit(AStmt: IAssignStmt); overload;
+    procedure Visit(AStmt: IContinueStmt); overload;
+    procedure Visit(AStmt: IBreakStmt); overload;
+    procedure Visit(AStmt: IEndStmt); overload;
+    procedure Visit(AStmt: IIncludeStmt); overload;
+    procedure Visit(AStmt: IRequireStmt); overload;
+    procedure Visit(AStmt: IEncodeExpr); overload;
+    procedure Visit(AStmt: IPrintStmt); overload;
+    procedure Visit(AStmt: IIfStmt); overload;
+    procedure Visit(AStmt: IWhileStmt); overload;
+    procedure Visit(AStmt: IForInStmt); overload;
+    procedure Visit(AStmt: IForRangeStmt); overload;
+    procedure Visit(AStmt: IProcessTemplateStmt); overload;
+    procedure Visit(AStmt: IDefineTemplateStmt); overload;
+    procedure Visit(AStmt: IWithStmt); overload;
 
   end;
 

@@ -57,32 +57,32 @@ type
     constructor Create();
     destructor Destroy; override;
     function ToString: string; override;
-    procedure Visit(const AExpr: IBinopExpr); overload; override;
-    procedure Visit(const AExpr: IUnaryExpr); overload; override;
-    procedure Visit(const AExpr: IVariableExpr); overload; override;
-    procedure Visit(const AExpr: IVariableDerefExpr); overload; override;
-    procedure Visit(const AExpr: IValueExpr); overload; override;
-    procedure Visit(const AExprList: IExprList); overload; override;
-    procedure Visit(const AExpr: IEncodeExpr); overload; override;
-    procedure Visit(const AExpr: ITernaryExpr); overload; override;
-    procedure Visit(const AExpr: IArrayExpr); overload; override;
+    procedure Visit(AExpr: IBinopExpr); overload; override;
+    procedure Visit(AExpr: IUnaryExpr); overload; override;
+    procedure Visit(AExpr: IVariableExpr); overload; override;
+    procedure Visit(AExpr: IVariableDerefExpr); overload; override;
+    procedure Visit(AExpr: IValueExpr); overload; override;
+    procedure Visit(AExprList: IExprList); overload; override;
+    procedure Visit(AExpr: IEncodeExpr); overload; override;
+    procedure Visit(AExpr: ITernaryExpr); overload; override;
+    procedure Visit(AExpr: IArrayExpr); overload; override;
 
-    procedure Visit(const AStmt: IAssignStmt); overload; override;
-    procedure Visit(const AStmt: IContinueStmt); overload; override;
-    procedure Visit(const AStmt: IBreakStmt); overload; override;
-    procedure Visit(const AStmt: IIncludeStmt); overload; override;
-    procedure Visit(const AStmt: IRequireStmt); overload; override;
-    procedure Visit(const AStmt: IPrintStmt); overload; override;
-    procedure Visit(const AStmt: IIfStmt); overload; override;
-    procedure Visit(const AStmt: IWhileStmt); overload; override;
-    procedure Visit(const AStmt: IForInStmt); overload; override;
-    procedure Visit(const AStmt: IForRangeStmt); overload; override;
-    procedure Visit(const AStmt: IFunctionCallExpr); overload; override;
-    procedure Visit(const AStmt: IMethodCallExpr); overload; override;
+    procedure Visit(AStmt: IAssignStmt); overload; override;
+    procedure Visit(AStmt: IContinueStmt); overload; override;
+    procedure Visit(AStmt: IBreakStmt); overload; override;
+    procedure Visit(AStmt: IIncludeStmt); overload; override;
+    procedure Visit(AStmt: IRequireStmt); overload; override;
+    procedure Visit(AStmt: IPrintStmt); overload; override;
+    procedure Visit(AStmt: IIfStmt); overload; override;
+    procedure Visit(AStmt: IWhileStmt); overload; override;
+    procedure Visit(AStmt: IForInStmt); overload; override;
+    procedure Visit(AStmt: IForRangeStmt); overload; override;
+    procedure Visit(AStmt: IFunctionCallExpr); overload; override;
+    procedure Visit(AStmt: IMethodCallExpr); overload; override;
 
-    procedure Visit(const AStmt: IProcessTemplateStmt); overload; override;
-    procedure Visit(const AStmt: IDefineTemplateStmt); overload; override;
-    procedure Visit(const AStmt: IWithStmt); overload; override;
+    procedure Visit(AStmt: IProcessTemplateStmt); overload; override;
+    procedure Visit(AStmt: IDefineTemplateStmt); overload; override;
+    procedure Visit(AStmt: IWithStmt); overload; override;
 
   end;
 
@@ -149,13 +149,13 @@ begin
   result := FStringBuilder.ToString;
 end;
 
-procedure TPrettyPrintVelocityVisitor.Visit(const AStmt: IBreakStmt);
+procedure TPrettyPrintVelocityVisitor.Visit(AStmt: IBreakStmt);
 begin
   tab();
   writeln('<%% break %%>');
 end;
 
-procedure TPrettyPrintVelocityVisitor.Visit(const AStmt: IIfStmt);
+procedure TPrettyPrintVelocityVisitor.Visit(AStmt: IIfStmt);
 begin
   tab();
   write('<%% if ');
@@ -176,13 +176,13 @@ begin
   writeln('<%% end %%>');
 end;
 
-procedure TPrettyPrintVelocityVisitor.Visit(const AStmt: IContinueStmt);
+procedure TPrettyPrintVelocityVisitor.Visit(AStmt: IContinueStmt);
 begin
   tab();
   writeln('<%% continue %%>');
 end;
 
-procedure TPrettyPrintVelocityVisitor.Visit(const AStmt: IPrintStmt);
+procedure TPrettyPrintVelocityVisitor.Visit(AStmt: IPrintStmt);
 begin
   tab();
   write('<%% print(');
@@ -214,7 +214,7 @@ begin
   write(#13#10, []);
 end;
 
-procedure TPrettyPrintVelocityVisitor.Visit(const AStmt: IWhileStmt);
+procedure TPrettyPrintVelocityVisitor.Visit(AStmt: IWhileStmt);
 begin
   tab();
   write('<%% while (');
@@ -227,7 +227,7 @@ begin
   writeln('<%% end %%>');
 end;
 
-procedure TPrettyPrintVelocityVisitor.Visit(const AStmt: IForInStmt);
+procedure TPrettyPrintVelocityVisitor.Visit(AStmt: IForInStmt);
 begin
   tab();
   write('<%% for ' + AStmt.Variable + ' in (');
@@ -240,7 +240,7 @@ begin
   writeln('<%% end %%>');
 end;
 
-procedure TPrettyPrintVelocityVisitor.Visit(const AStmt: IForRangeStmt);
+procedure TPrettyPrintVelocityVisitor.Visit(AStmt: IForRangeStmt);
 begin
   tab();
   write('<%% for %s := (', [AStmt.Variable]);
@@ -255,7 +255,7 @@ begin
   writeln('<%% end %%>');
 end;
 
-procedure TPrettyPrintVelocityVisitor.Visit(const AStmt: IAssignStmt);
+procedure TPrettyPrintVelocityVisitor.Visit(AStmt: IAssignStmt);
 begin
   tab();
   write('<%% %s := ', [AStmt.Variable]);
@@ -263,7 +263,7 @@ begin
   writeln(' %%>');
 end;
 
-procedure TPrettyPrintVelocityVisitor.Visit(const AStmt: IIncludeStmt);
+procedure TPrettyPrintVelocityVisitor.Visit(AStmt: IIncludeStmt);
 begin
   tab();
   write('<%% include(');
@@ -271,7 +271,7 @@ begin
   writeln(') %%>');
 end;
 
-procedure TPrettyPrintVelocityVisitor.Visit(const AExpr: IVariableDerefExpr);
+procedure TPrettyPrintVelocityVisitor.Visit(AExpr: IVariableDerefExpr);
 begin
   AcceptVisitor(AExpr.Variable, self);
   write('[');
@@ -279,7 +279,7 @@ begin
   write(']');
 end;
 
-procedure TPrettyPrintVelocityVisitor.Visit(const AExpr: IBinopExpr);
+procedure TPrettyPrintVelocityVisitor.Visit(AExpr: IBinopExpr);
 begin
   write('(');
   AcceptVisitor(AExpr.LeftExpr, self);
@@ -288,24 +288,24 @@ begin
   write(')');
 end;
 
-procedure TPrettyPrintVelocityVisitor.Visit(const AExpr: IUnaryExpr);
+procedure TPrettyPrintVelocityVisitor.Visit(AExpr: IUnaryExpr);
 begin
   write('%s (', [UnaryToStr(AExpr.UnaryOp)]);
   AcceptVisitor(AExpr.Condition, self);
   write(')');
 end;
 
-procedure TPrettyPrintVelocityVisitor.Visit(const AExpr: IVariableExpr);
+procedure TPrettyPrintVelocityVisitor.Visit(AExpr: IVariableExpr);
 begin
   write('%s', [AExpr.Variable]);
 end;
 
-procedure TPrettyPrintVelocityVisitor.Visit(const AExpr: IValueExpr);
+procedure TPrettyPrintVelocityVisitor.Visit(AExpr: IValueExpr);
 begin
   write('''%s''', [AExpr.Value.ToString.Replace(#9, '''#9''', [rfReplaceAll]).Replace(#13, '', [rfReplaceAll]).Replace(#10, '''#13#10''', [rfReplaceAll])]);
 end;
 
-procedure TPrettyPrintVelocityVisitor.Visit(const AExprList: IExprList);
+procedure TPrettyPrintVelocityVisitor.Visit(AExprList: IExprList);
 var
   i: integer;
 begin
@@ -319,34 +319,34 @@ begin
   write(')');
 end;
 
-procedure TPrettyPrintVelocityVisitor.Visit(const AStmt: IFunctionCallExpr);
+procedure TPrettyPrintVelocityVisitor.Visit(AStmt: IFunctionCallExpr);
 begin
   write('%s', [AStmt.FunctionInfo[0].Name]);
   Visit(AStmt.ExprList);
 end;
 
-procedure TPrettyPrintVelocityVisitor.Visit(const AStmt: IMethodCallExpr);
+procedure TPrettyPrintVelocityVisitor.Visit(AStmt: IMethodCallExpr);
 begin
   Visit(AStmt.ObjectExpr);
   Write('.%s', [AStmt.Method]);
   Visit(AStmt.ExprList);
 end;
 
-procedure TPrettyPrintVelocityVisitor.Visit(const AExpr: IEncodeExpr);
+procedure TPrettyPrintVelocityVisitor.Visit(AExpr: IEncodeExpr);
 begin
   write('Encode(');
   AcceptVisitor(AExpr.Expr, self);
   write(')');
 end;
 
-procedure TPrettyPrintVelocityVisitor.Visit(const AStmt: IProcessTemplateStmt);
+procedure TPrettyPrintVelocityVisitor.Visit(AStmt: IProcessTemplateStmt);
 begin
   delta(4);
   AcceptVisitor(AStmt.Container, self);
   delta(-4);
 end;
 
-procedure TPrettyPrintVelocityVisitor.Visit(const AStmt: IDefineTemplateStmt);
+procedure TPrettyPrintVelocityVisitor.Visit(AStmt: IDefineTemplateStmt);
 begin
   tab();
   write('<% define ');
@@ -359,7 +359,7 @@ begin
   writeln('<% end %>');
 end;
 
-procedure TPrettyPrintVelocityVisitor.Visit(const AStmt: IWithStmt);
+procedure TPrettyPrintVelocityVisitor.Visit(AStmt: IWithStmt);
 begin
   tab();
   write('<% with ');
@@ -372,7 +372,7 @@ begin
   writeln('<% end %>');
 end;
 
-procedure TPrettyPrintVelocityVisitor.Visit(const AStmt: IRequireStmt);
+procedure TPrettyPrintVelocityVisitor.Visit(AStmt: IRequireStmt);
 var
   i: integer;
 begin
@@ -387,7 +387,7 @@ begin
   writeln('%>');
 end;
 
-procedure TPrettyPrintVelocityVisitor.Visit(const AExpr: IArrayExpr);
+procedure TPrettyPrintVelocityVisitor.Visit(AExpr: IArrayExpr);
 var
   i: integer;
 begin
@@ -401,7 +401,7 @@ begin
   write(']');
 end;
 
-procedure TPrettyPrintVelocityVisitor.Visit(const AExpr: ITernaryExpr);
+procedure TPrettyPrintVelocityVisitor.Visit(AExpr: ITernaryExpr);
 begin
   AcceptVisitor(AExpr.Condition, self);
   write('?');

@@ -62,7 +62,7 @@ type
   private
     FPosition: IPosition;
   public
-    constructor Create(const APosition: IPosition; const AMessage: string);
+    constructor Create(APosition: IPosition; const AMessage: string);
     property Position: IPosition read FPosition write FPosition implements IPosition;
   end;
 
@@ -96,54 +96,54 @@ type
     property Variables[const AKey: string]: TVelocityValue read GetItem write SetItem; default;
   end;
 
-function AsVisitorHost(const ATemplate: IVelocityTemplate): IVelocityVisitorHost; inline; overload;
-function AsVisitorHost(const AExpr: IExpr): IVelocityVisitorHost; inline; overload;
-function AsVisitorHost(const AStmt: IStmt): IVelocityVisitorHost; inline; overload;
+function AsVisitorHost(ATemplate: IVelocityTemplate): IVelocityVisitorHost; inline; overload;
+function AsVisitorHost(AExpr: IExpr): IVelocityVisitorHost; inline; overload;
+function AsVisitorHost(AStmt: IStmt): IVelocityVisitorHost; inline; overload;
 
-procedure AcceptVisitor(const ATemplate: IVelocityTemplate; const AVisitor: IVelocityVisitor); overload;
-procedure AcceptVisitor(const AExpr: IExpr; const AVisitor: IVelocityVisitor); overload;
-procedure AcceptVisitor(const AStmt: IStmt; const AVisitor: IVelocityVisitor); overload;
+procedure AcceptVisitor(ATemplate: IVelocityTemplate; AVisitor: IVelocityVisitor); overload;
+procedure AcceptVisitor(AExpr: IExpr; AVisitor: IVelocityVisitor); overload;
+procedure AcceptVisitor(AStmt: IStmt; AVisitor: IVelocityVisitor); overload;
 
-function Position(const AStmt: IStmt): IPosition; inline; overload;
-function Position(const AExpr: IExpr): IPosition; inline; overload;
-function Position(const APositional: IPosition): string; inline; overload;
+function Position(AStmt: IStmt): IPosition; inline; overload;
+function Position(AExpr: IExpr): IPosition; inline; overload;
+function Position(APositional: IPosition): string; inline; overload;
 
-procedure RaiseError(const APositional: IPosition; const AFormat: string; const AArgs: array of const); overload;
-procedure RaiseError(const APositional: IPosition; const AFormat: string); overload;
+procedure RaiseError(APositional: IPosition; const AFormat: string; const AArgs: array of const); overload;
+procedure RaiseError(APositional: IPosition; const AFormat: string); overload;
 
 implementation
 
-function AsVisitorHost(const ATemplate: IVelocityTemplate): IVelocityVisitorHost; overload;
+function AsVisitorHost(ATemplate: IVelocityTemplate): IVelocityVisitorHost; overload;
 begin
   ATemplate.QueryInterface(IVelocityVisitorHost, result);
 end;
 
-function AsVisitorHost(const AExpr: IExpr): IVelocityVisitorHost;
+function AsVisitorHost(AExpr: IExpr): IVelocityVisitorHost;
 begin
   AExpr.QueryInterface(IVelocityVisitorHost, result);
 end;
 
-function AsVisitorHost(const AStmt: IStmt): IVelocityVisitorHost;
+function AsVisitorHost(AStmt: IStmt): IVelocityVisitorHost;
 begin
   AStmt.QueryInterface(IVelocityVisitorHost, result);
 end;
 
-procedure AcceptVisitor(const ATemplate: IVelocityTemplate; const AVisitor: IVelocityVisitor); overload;
+procedure AcceptVisitor(ATemplate: IVelocityTemplate; AVisitor: IVelocityVisitor); overload;
 begin
   AsVisitorHost(ATemplate).Accept(AVisitor);
 end;
 
-procedure AcceptVisitor(const AExpr: IExpr; const AVisitor: IVelocityVisitor);
+procedure AcceptVisitor(AExpr: IExpr; AVisitor: IVelocityVisitor);
 begin
   AsVisitorHost(AExpr).Accept(AVisitor);
 end;
 
-procedure AcceptVisitor(const AStmt: IStmt; const AVisitor: IVelocityVisitor);
+procedure AcceptVisitor(AStmt: IStmt; AVisitor: IVelocityVisitor);
 begin
   AsVisitorHost(AStmt).Accept(AVisitor);
 end;
 
-function Position(const AStmt: IStmt): IPosition; overload;
+function Position(AStmt: IStmt): IPosition; overload;
 var
   symbol: IPositional;
 begin
@@ -151,7 +151,7 @@ begin
   result := symbol.Position;
 end;
 
-function Position(const AExpr: IExpr): IPosition; overload;
+function Position(AExpr: IExpr): IPosition; overload;
 var
   symbol: IPositional;
 begin
@@ -159,7 +159,7 @@ begin
   result := symbol.Position;
 end;
 
-function Position(const APositional: IPosition): string; overload;
+function Position(APositional: IPosition): string; overload;
 var
   Name: string;
 begin
@@ -172,19 +172,19 @@ begin
   result := format('%s%d[%d]', [name, APositional.Line, APositional.Pos]);
 end;
 
-procedure RaiseError(const APositional: IPosition; const AFormat: string; const AArgs: array of const); overload;
+procedure RaiseError(APositional: IPosition; const AFormat: string; const AArgs: array of const); overload;
 begin
   raise EVelocityEvaluationError.Create(APositional, Position(APositional) + format(AFormat, AArgs));
 end;
 
-procedure RaiseError(const APositional: IPosition; const AFormat: string); overload;
+procedure RaiseError(APositional: IPosition; const AFormat: string); overload;
 begin
   RaiseError(APositional, AFormat, []);
 end;
 
 { EVelocityEvaluationError }
 
-constructor EVelocityEvaluationError.Create(const APosition: IPosition; const AMessage: string);
+constructor EVelocityEvaluationError.Create(APosition: IPosition; const AMessage: string);
 begin
   inherited Create(AMessage);
   FPosition := APosition;

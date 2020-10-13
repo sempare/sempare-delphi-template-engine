@@ -71,46 +71,46 @@ type
   Velocity = class
   public
     class function Context(AOptions: TVelocityEvaluationOptions = []): IVelocityContext; inline; static;
-    class function Parser(const AContext: IVelocityContext): IVelocityParser; overload; inline; static;
+    class function Parser(AContext: IVelocityContext): IVelocityParser; overload; inline; static;
     class function Parser(): IVelocityParser; overload; inline; static;
-    class function PrettyPrint(const ATemplate: IVelocityTemplate): string; inline; static;
+    class function PrettyPrint(ATemplate: IVelocityTemplate): string; inline; static;
 
     // EVAL output to stream
 
     class procedure Eval(const ATemplate: string; const AStream: TStream; const AOptions: TVelocityEvaluationOptions = []); overload; static;
     class procedure Eval<T>(const ATemplate: string; const AValue: T; const AStream: TStream; const AOptions: TVelocityEvaluationOptions = []); overload; static;
-    class procedure Eval<T>(const ATemplate: IVelocityTemplate; const AValue: T; const AStream: TStream; const AOptions: TVelocityEvaluationOptions = []); overload; static;
-    class procedure Eval(const ATemplate: IVelocityTemplate; const AStream: TStream; const AOptions: TVelocityEvaluationOptions = []); overload; static;
-    class procedure Eval<T>(const AContext: IVelocityContext; const ATemplate: IVelocityTemplate; const AValue: T; const AStream: TStream); overload; static;
-    class procedure Eval<T>(const AContext: IVelocityContext; const ATemplate: string; const AValue: T; const AStream: TStream); overload; static;
-    class procedure Eval(const AContext: IVelocityContext; const ATemplate: string; const AStream: TStream); overload; static;
-    class procedure Eval(const AContext: IVelocityContext; const ATemplate: IVelocityTemplate; const AStream: TStream); overload; static;
+    class procedure Eval<T>(ATemplate: IVelocityTemplate; const AValue: T; const AStream: TStream; const AOptions: TVelocityEvaluationOptions = []); overload; static;
+    class procedure Eval(ATemplate: IVelocityTemplate; const AStream: TStream; const AOptions: TVelocityEvaluationOptions = []); overload; static;
+    class procedure Eval<T>(AContext: IVelocityContext; ATemplate: IVelocityTemplate; const AValue: T; const AStream: TStream); overload; static;
+    class procedure Eval<T>(AContext: IVelocityContext; const ATemplate: string; const AValue: T; const AStream: TStream); overload; static;
+    class procedure Eval(AContext: IVelocityContext; const ATemplate: string; const AStream: TStream); overload; static;
+    class procedure Eval(AContext: IVelocityContext; ATemplate: IVelocityTemplate; const AStream: TStream); overload; static;
 
     // EVAL returning string
 
     class function Eval(const ATemplate: string; const AOptions: TVelocityEvaluationOptions = []): string; overload; static;
     class function Eval<T>(const ATemplate: string; const AValue: T; const AOptions: TVelocityEvaluationOptions = []): string; overload; static;
-    class function Eval<T>(const ATemplate: IVelocityTemplate; const AValue: T; const AOptions: TVelocityEvaluationOptions = []): string; overload; static;
-    class function Eval(const ATemplate: IVelocityTemplate; const AOptions: TVelocityEvaluationOptions = []): string; overload; static;
+    class function Eval<T>(ATemplate: IVelocityTemplate; const AValue: T; const AOptions: TVelocityEvaluationOptions = []): string; overload; static;
+    class function Eval(ATemplate: IVelocityTemplate; const AOptions: TVelocityEvaluationOptions = []): string; overload; static;
 
-    class function Eval<T>(const AContext: IVelocityContext; const ATemplate: IVelocityTemplate; const AValue: T): string; overload; static;
-    class function Eval<T>(const AContext: IVelocityContext; const ATemplate: string; const AValue: T): string; overload; static;
-    class function Eval(const AContext: IVelocityContext; const ATemplate: string): string; overload; static;
-    class function Eval(const AContext: IVelocityContext; const ATemplate: IVelocityTemplate): string; overload; static;
+    class function Eval<T>(AContext: IVelocityContext; ATemplate: IVelocityTemplate; const AValue: T): string; overload; static;
+    class function Eval<T>(AContext: IVelocityContext; const ATemplate: string; const AValue: T): string; overload; static;
+    class function Eval(AContext: IVelocityContext; const ATemplate: string): string; overload; static;
+    class function Eval(AContext: IVelocityContext; ATemplate: IVelocityTemplate): string; overload; static;
 
     // PARSING
 
     // string operations
     class function Parse(const AString: string): IVelocityTemplate; overload; static;
-    class function Parse(const AContext: IVelocityContext; const AString: string): IVelocityTemplate; overload; static;
+    class function Parse(AContext: IVelocityContext; const AString: string): IVelocityTemplate; overload; static;
 
     // stream operations
     class function Parse(const AStream: TStream): IVelocityTemplate; overload; static;
-    class function Parse(const AContext: IVelocityContext; const AStream: TStream): IVelocityTemplate; overload; static;
+    class function Parse(AContext: IVelocityContext; const AStream: TStream): IVelocityTemplate; overload; static;
 
     // file operations
     class function ParseFile(const AFile: string): IVelocityTemplate; overload; static;
-    class function ParseFile(const AContext: IVelocityContext; const AFile: string): IVelocityTemplate; overload; static;
+    class function ParseFile(AContext: IVelocityContext; const AFile: string): IVelocityTemplate; overload; static;
 
   end;
 
@@ -138,12 +138,12 @@ begin
   result := Sempare.Boot.Template.Velocity.Context.CreateVelocityContext(AOptions);
 end;
 
-class procedure Velocity.Eval<T>(const ATemplate: IVelocityTemplate; const AValue: T; const AStream: TStream; const AOptions: TVelocityEvaluationOptions);
+class procedure Velocity.Eval<T>(ATemplate: IVelocityTemplate; const AValue: T; const AStream: TStream; const AOptions: TVelocityEvaluationOptions);
 begin
   Eval(Context(AOptions), ATemplate, AValue, AStream);
 end;
 
-class procedure Velocity.Eval<T>(const AContext: IVelocityContext; const ATemplate: IVelocityTemplate; const AValue: T; const AStream: TStream);
+class procedure Velocity.Eval<T>(AContext: IVelocityContext; ATemplate: IVelocityTemplate; const AValue: T; const AStream: TStream);
 var
   v: TVelocityValue;
 begin
@@ -153,7 +153,7 @@ begin
   AcceptVisitor(ATemplate, TEvaluationVelocityVisitor.Create(AContext, v, AStream) as IVelocityVisitor);
 end;
 
-class procedure Velocity.Eval(const ATemplate: IVelocityTemplate; const AStream: TStream; const AOptions: TVelocityEvaluationOptions);
+class procedure Velocity.Eval(ATemplate: IVelocityTemplate; const AStream: TStream; const AOptions: TVelocityEvaluationOptions);
 begin
   Eval(ATemplate, GEmpty, AStream, AOptions);
 end;
@@ -173,7 +173,7 @@ begin
   result := Parser.Parse(AStream);
 end;
 
-class function Velocity.Parser(const AContext: IVelocityContext): IVelocityParser;
+class function Velocity.Parser(AContext: IVelocityContext): IVelocityParser;
 begin
   result := CreateVelocityParser(AContext);
 end;
@@ -188,7 +188,7 @@ begin
   result := CreateVelocityParser(Context);
 end;
 
-class function Velocity.PrettyPrint(const ATemplate: IVelocityTemplate): string;
+class function Velocity.PrettyPrint(ATemplate: IVelocityTemplate): string;
 var
   v: TPrettyPrintVelocityVisitor;
 begin
@@ -201,22 +201,22 @@ begin
   end;
 end;
 
-class procedure Velocity.Eval(const AContext: IVelocityContext; const ATemplate: string; const AStream: TStream);
+class procedure Velocity.Eval(AContext: IVelocityContext; const ATemplate: string; const AStream: TStream);
 begin
   Eval(AContext, Velocity.Parse(AContext, ATemplate), GEmpty, AStream);
 end;
 
-class procedure Velocity.Eval<T>(const AContext: IVelocityContext; const ATemplate: string; const AValue: T; const AStream: TStream);
+class procedure Velocity.Eval<T>(AContext: IVelocityContext; const ATemplate: string; const AValue: T; const AStream: TStream);
 begin
   Eval(AContext, Parse(ATemplate), AValue, AStream);
 end;
 
-class function Velocity.Parse(const AContext: IVelocityContext; const AStream: TStream): IVelocityTemplate;
+class function Velocity.Parse(AContext: IVelocityContext; const AStream: TStream): IVelocityTemplate;
 begin
   result := Parser(AContext).Parse(AStream);
 end;
 
-class function Velocity.ParseFile(const AContext: IVelocityContext; const AFile: string): IVelocityTemplate;
+class function Velocity.ParseFile(AContext: IVelocityContext; const AFile: string): IVelocityTemplate;
 type
 {$IFDEF SUPPORT_BUFFERED_STREAM}
   TFStream = TBufferedFileStream;
@@ -239,7 +239,7 @@ begin
   result := ParseFile(Context, AFile);
 end;
 
-class function Velocity.Parse(const AContext: IVelocityContext; const AString: string): IVelocityTemplate;
+class function Velocity.Parse(AContext: IVelocityContext; const AString: string): IVelocityTemplate;
 begin
   result := Parser(AContext).Parse(TStringStream.Create(AString, AContext.Encoding, false), true);
 end;
@@ -249,17 +249,17 @@ begin
   result := Eval(Context(AOptions), ATemplate);
 end;
 
-class function Velocity.Eval(const ATemplate: IVelocityTemplate; const AOptions: TVelocityEvaluationOptions): string;
+class function Velocity.Eval(ATemplate: IVelocityTemplate; const AOptions: TVelocityEvaluationOptions): string;
 begin
   result := Eval(Context(AOptions), ATemplate);
 end;
 
-class function Velocity.Eval(const AContext: IVelocityContext; const ATemplate: string): string;
+class function Velocity.Eval(AContext: IVelocityContext; const ATemplate: string): string;
 begin
   result := Eval(AContext, Velocity.Parse(AContext, ATemplate));
 end;
 
-class function Velocity.Eval<T>(const ATemplate: IVelocityTemplate; const AValue: T; const AOptions: TVelocityEvaluationOptions): string;
+class function Velocity.Eval<T>(ATemplate: IVelocityTemplate; const AValue: T; const AOptions: TVelocityEvaluationOptions): string;
 begin
   result := Eval(Context(AOptions), ATemplate, AValue);
 end;
@@ -269,7 +269,7 @@ begin
   result := Eval(Context(AOptions), ATemplate, AValue);
 end;
 
-class function Velocity.Eval<T>(const AContext: IVelocityContext; const ATemplate: IVelocityTemplate; const AValue: T): string;
+class function Velocity.Eval<T>(AContext: IVelocityContext; ATemplate: IVelocityTemplate; const AValue: T): string;
 var
   s: TStringStream;
 begin
@@ -282,17 +282,17 @@ begin
   end;
 end;
 
-class function Velocity.Eval<T>(const AContext: IVelocityContext; const ATemplate: string; const AValue: T): string;
+class function Velocity.Eval<T>(AContext: IVelocityContext; const ATemplate: string; const AValue: T): string;
 begin
   result := Eval(AContext, Velocity.Parse(AContext, ATemplate), AValue);
 end;
 
-class function Velocity.Eval(const AContext: IVelocityContext; const ATemplate: IVelocityTemplate): string;
+class function Velocity.Eval(AContext: IVelocityContext; ATemplate: IVelocityTemplate): string;
 begin
   result := Eval(AContext, ATemplate, GEmpty);
 end;
 
-class procedure Velocity.Eval(const AContext: IVelocityContext; const ATemplate: IVelocityTemplate; const AStream: TStream);
+class procedure Velocity.Eval(AContext: IVelocityContext; ATemplate: IVelocityTemplate; const AStream: TStream);
 begin
   Eval(AContext, ATemplate, GEmpty, AStream);
 end;

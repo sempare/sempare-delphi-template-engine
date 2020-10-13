@@ -58,26 +58,26 @@ function isIntLike(const AValue: TValue): boolean;
 function isNumLike(const AValue: TValue): boolean;
 function isNull(const AValue: TValue): boolean;
 function isEnumerable(const AValue: TValue): boolean;
-function Contains(const APosition: IPosition; const ALeft, ARight: TValue): boolean;
+function Contains(APosition: IPosition; const ALeft, ARight: TValue): boolean;
 
 function isEqual(const left: TValue; const right: TValue): boolean;
 function isLessThan(const left: TValue; const right: TValue): boolean;
 function isGreaterThan(const left: TValue; const right: TValue): boolean;
 
-procedure AssertBoolean(const APositional: IPosition; const ALeft: TValue); overload;
-procedure AssertBoolean(const APositional: IPosition; const ALeft: TValue; const ARight: TValue); overload;
+procedure AssertBoolean(APositional: IPosition; const ALeft: TValue); overload;
+procedure AssertBoolean(APositional: IPosition; const ALeft: TValue; const ARight: TValue); overload;
 
-procedure AssertNumeric(const APositional: IPosition; const ALeft: TValue); overload;
-procedure AssertNumeric(const APositional: IPosition; const ALeft: TValue; const ARight: TValue); overload;
-procedure AssertString(const APositional: IPosition; const AValue: TValue);
-procedure AssertArray(const APositional: IPosition; const AValue: TValue);
+procedure AssertNumeric(APositional: IPosition; const ALeft: TValue); overload;
+procedure AssertNumeric(APositional: IPosition; const ALeft: TValue; const ARight: TValue); overload;
+procedure AssertString(APositional: IPosition; const AValue: TValue);
+procedure AssertArray(APositional: IPosition; const AValue: TValue);
 
-function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
+function Deref(APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
 
 type
   TDerefMatchFunction = function(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
-  TDerefMatchInterfaceFunction = function(const AInterface: IInterface): boolean;
-  TDerefFunction = function(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; out AFound: boolean): TValue;
+  TDerefMatchInterfaceFunction = function(AInterface: IInterface): boolean;
+  TDerefFunction = function(APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; out AFound: boolean): TValue;
   TPopulateStackFrame = procedure(const StackFrame: TStackFrame; const ARttiType: TRttiType; const AClass: TValue);
   TPopulateMatchFunction = function(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
 
@@ -143,7 +143,7 @@ begin
   result := AValue.IsEmpty;
 end;
 
-function Contains(const APosition: IPosition; const ALeft, ARight: TValue): boolean;
+function Contains(APosition: IPosition; const ALeft, ARight: TValue): boolean;
 var
   T: TRttiType;
   procedure visitobject;
@@ -422,7 +422,7 @@ begin
   end;
 end;
 
-function processVelocityVariables(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; out AFound: boolean): TValue;
+function processVelocityVariables(APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; out AFound: boolean): TValue;
 var
   RttiType: TRttiType;
   RttiMethod: TRttiMethod;
@@ -463,7 +463,7 @@ begin
   AFound := false;
 end;
 
-function ProcessClass(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AOwnObject: boolean; out AFound: boolean): TValue;
+function ProcessClass(APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AOwnObject: boolean; out AFound: boolean): TValue;
 var
   ClassType: TClass;
   info: PTypeInfo;
@@ -487,7 +487,7 @@ begin
   result := GetFieldOrProperty(obj.AsObject, GRttiContext.GetType(obj.TypeInfo), ADeref, AFound);
 end;
 
-function processDictionary(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; out AFound: boolean): TValue;
+function processDictionary(APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; out AFound: boolean): TValue;
 var
   RttiType: TRttiType;
   RttiMethod: TRttiMethod;
@@ -578,7 +578,7 @@ begin
   end;
 end;
 
-function processJson(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; out AFound: boolean): TValue;
+function processJson(APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; out AFound: boolean): TValue;
 var
   jsonobj: TJsonObject;
   jsonval: TJsonValue;
@@ -605,7 +605,7 @@ end;
 
 {$ENDIF}
 
-function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
+function Deref(APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
 
   function ProcessArray(obj: TValue; const ADeref: TValue; out AFound: boolean): TValue;
   var
@@ -619,7 +619,7 @@ function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARa
     RttiType := GRttiContext.GetType(obj.TypeInfo) as TRttiArrayType;
     dimType := RttiType.Dimensions[0];
     min := 0;
-    if dimType = nil then
+    if dimType <> nil then
     begin
       // strange why this may happen
       min := (dimType as TRttiOrdinalType).MinValue;
@@ -693,42 +693,42 @@ begin
     RaiseError(APosition, 'Cannot dereference variable');
 end;
 
-procedure AssertBoolean(const APositional: IPosition; const ALeft: TValue); overload;
+procedure AssertBoolean(APositional: IPosition; const ALeft: TValue); overload;
 begin
   if isBool(ALeft) then
     exit;
   RaiseError(APositional, 'Boolean type expected');
 end;
 
-procedure AssertBoolean(const APositional: IPosition; const ALeft: TValue; const ARight: TValue); overload;
+procedure AssertBoolean(APositional: IPosition; const ALeft: TValue; const ARight: TValue); overload;
 begin
   if isBool(ALeft) and isBool(ARight) then
     exit;
   RaiseError(APositional, 'Boolean types expected');
 end;
 
-procedure AssertNumeric(const APositional: IPosition; const ALeft: TValue); overload;
+procedure AssertNumeric(APositional: IPosition; const ALeft: TValue); overload;
 begin
   if isNumLike(ALeft) then
     exit;
   RaiseError(APositional, 'Numeric type expected');
 end;
 
-procedure AssertNumeric(const APositional: IPosition; const ALeft: TValue; const ARight: TValue); overload;
+procedure AssertNumeric(APositional: IPosition; const ALeft: TValue; const ARight: TValue); overload;
 begin
   if isNumLike(ALeft) and isNumLike(ARight) then
     exit;
   RaiseError(APositional, 'Numeric types expected');
 end;
 
-procedure AssertString(const APositional: IPosition; const AValue: TValue);
+procedure AssertString(APositional: IPosition; const AValue: TValue);
 begin
   if isStrLike(AValue) then
     exit;
   RaiseError(APositional, 'String type expected');
 end;
 
-procedure AssertArray(const APositional: IPosition; const AValue: TValue);
+procedure AssertArray(APositional: IPosition; const AValue: TValue);
 begin
   if isEnumerable(AValue) then
     exit;
@@ -792,7 +792,7 @@ begin
   end;
 end;
 
-function MatchVelocityVariables(const AInterface: IInterface): boolean;
+function MatchVelocityVariables(AInterface: IInterface): boolean;
 begin
   result := supports(AInterface, IVelocityVariables);
 end;

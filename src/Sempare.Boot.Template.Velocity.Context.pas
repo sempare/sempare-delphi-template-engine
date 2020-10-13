@@ -75,14 +75,14 @@ type
 
   IVelocityContext = interface;
 
-  TVelocityTemplateResolver = reference to function(const AContext: IVelocityContext; const AName: string): IVelocityTemplate;
+  TVelocityTemplateResolver = reference to function(AContext: IVelocityContext; const AName: string): IVelocityTemplate;
 
   IVelocityContext = interface
     ['{979D955C-B4BD-46BB-9430-1E74CBB999D4}']
 
     function TryGetTemplate(const AName: string; out ATemplate: IVelocityTemplate): boolean;
     function GetTemplate(const AName: string): IVelocityTemplate;
-    procedure SetTemplate(const AName: string; const ATemplate: IVelocityTemplate);
+    procedure SetTemplate(const AName: string; ATemplate: IVelocityTemplate);
 
     function GetTemplateResolver: TVelocityTemplateResolver;
     procedure SetTemplateResolver(const AResolver: TVelocityTemplateResolver);
@@ -100,7 +100,7 @@ type
     procedure SetScriptEndToken(const AToken: string);
 
     function TryGetFunction(const AName: string; out AFunction: TArray<TRttiMethod>): boolean;
-    procedure SetFunctions(const AFunctions: IVelocityFunctions);
+    procedure SetFunctions(AFunctions: IVelocityFunctions);
     function GetFunctions(): IVelocityFunctions; overload;
 
     function GetMaxRunTimeMs: integer;
@@ -192,7 +192,7 @@ type
 
     function TryGetTemplate(const AName: string; out ATemplate: IVelocityTemplate): boolean;
     function GetTemplate(const AName: string): IVelocityTemplate;
-    procedure SetTemplate(const AName: string; const ATemplate: IVelocityTemplate);
+    procedure SetTemplate(const AName: string; ATemplate: IVelocityTemplate);
 
     function GetTemplateResolver: TVelocityTemplateResolver;
     procedure SetTemplateResolver(const AResolver: TVelocityTemplateResolver);
@@ -220,7 +220,7 @@ type
     procedure SetVariableEncoder(const AEncoder: TVelocityEncodeFunction);
 
     function TryGetFunction(const AName: string; out AFunction: TArray<TRttiMethod>): boolean;
-    procedure SetFunctions(const AFunctions: IVelocityFunctions);
+    procedure SetFunctions(AFunctions: IVelocityFunctions);
     function GetFunctions(): IVelocityFunctions; overload;
 
     function GetNewLine: string;
@@ -236,7 +236,7 @@ end;
 
 { TVelocityContext }
 
-procedure TVelocityContext.SetTemplate(const AName: string; const ATemplate: IVelocityTemplate);
+procedure TVelocityContext.SetTemplate(const AName: string; ATemplate: IVelocityTemplate);
 begin
   FLock.Enter;
   try
@@ -366,7 +366,7 @@ begin
   FEncoding := AEncoding;
 end;
 
-procedure TVelocityContext.SetFunctions(const AFunctions: IVelocityFunctions);
+procedure TVelocityContext.SetFunctions(AFunctions: IVelocityFunctions);
 begin
   FFunctions := AFunctions;
   FFunctionsSet := true;
