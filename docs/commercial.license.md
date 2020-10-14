@@ -8,7 +8,7 @@ The commercial license for Sempare Template gives you the right to:
 - use the component and source code on all development systems used by the developer
 - sell any number of applications in any quantity without any additional run-time fees required
 
-A commercial licence is sold per developer developing applications that use Sempare Streams. The initial cost is £35 per developer and includes first year of support. 
+A commercial licence is sold per developer developing applications that use Sempare Template. The initial cost is £35 per developer and includes first year of support. 
 For support thereafter, a nominal fee of £15 per developer per year if required (the cost of a few cups of coffee). 
 
 Please send an e-mail to info@sempare.ltd to request an invoice which will contain the bank details.

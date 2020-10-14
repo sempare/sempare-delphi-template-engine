@@ -1,4 +1,4 @@
-[![](https://tokei.rs/b1/github/sempare/sempare.boot.velocity.oss?category=lines)](https://github.com/sempare/sempare.boot.velocity.oss) [![](https://tokei.rs/b1/github/sempare/sempare.boot.velocity.oss?category=code)](https://github.com/sempare/sempare.boot.velocity.oss) [![](https://tokei.rs/b1/github/sempare/sempare.boot.velocity.oss?category=files)](https://github.com/sempare/sempare.boot.velocity.oss)
+[![](https://tokei.rs/b1/github/sempare/sempare.template?category=lines)](https://github.com/sempare/sempare.template) [![](https://tokei.rs/b1/github/sempare/sempare.template?category=code)](https://github.com/sempare/sempare.template) [![](https://tokei.rs/b1/github/sempare/sempare.template?category=files)](https://github.com/sempare/sempare.template)
 
 # ![](./images/sempare-logo-45px.png) Sempare Template Engine
 
@@ -152,7 +152,7 @@ no cost to you, or you may purchase for user under the [Sempare Limited Commerci
 A commercial licence grants you the right to use Sempare Template in your own applications, royalty free, and without any requirement to disclose your source code nor any modifications to
 Sempare Templte to any other party. A commercial licence lasts into perpetuity, and entitles you to all future updates, free of charge.
 
-A commercial licence is sold per developer developing applications that use Sempare Streams. The initial cost is £35 per developer and includes first year of support.
+A commercial licence is sold per developer developing applications that use Sempare Template. The initial cost is £35 per developer and includes first year of support.
 For support thereafter, a nominal fee of £15 per developer per year if required (the cost of a few cups of coffee).
 
 Please send an e-mail to info@sempare.ltd to request an invoice which will contain the bank details.
