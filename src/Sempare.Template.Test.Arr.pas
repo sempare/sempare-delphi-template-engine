@@ -31,42 +31,80 @@
  * limitations under the License.                                                  *
  *                                                                                 *
  ********************************************************************************%*)
-unit Sempare.Boot.Template.Velocity;
+unit Sempare.Template.Test.Arr;
 
 interface
 
 uses
-  Sempare.Template;
-
-const
-  eoStripRecurringSpaces = Sempare.Template.TTemplateEvaluationOption.eoStripRecurringSpaces;
-  eoConvertTabsToSpaces = Sempare.Template.TTemplateEvaluationOption.eoConvertTabsToSpaces;
-  eoNoDefaultFunctions = Sempare.Template.TTemplateEvaluationOption.eoNoDefaultFunctions;
-  eoNoPosition = Sempare.Template.TTemplateEvaluationOption.eoNoPosition;
-  eoEvalEarly = Sempare.Template.TTemplateEvaluationOption.eoEvalEarly;
-  eoEvalVarsEarly = Sempare.Template.TTemplateEvaluationOption.eoEvalVarsEarly;
-  eoStripRecurringNewlines = Sempare.Template.TTemplateEvaluationOption.eoStripRecurringNewlines;
-  eoTrimLines = Sempare.Template.TTemplateEvaluationOption.eoTrimLines;
-  // eoDebug = TVelocityEvaluationOption.eoDebug;
-  eoPrettyPrint = Sempare.Template.TTemplateEvaluationOption.eoPrettyPrint;
-  eoRaiseErrorWhenVariableNotFound = Sempare.Template.TTemplateEvaluationOption.eoRaiseErrorWhenVariableNotFound;
-  eoReplaceNewline = Sempare.Template.TTemplateEvaluationOption.eoReplaceNewline;
+  DUnitX.TestFramework;
 
 type
-  TVelocityEvaluationOptions = Sempare.Template.TTemplateEvaluationOptions;
-  TVelocityEvaluationOption = Sempare.Template.TTemplateEvaluationOption;
-  TVelocityValue = Sempare.Template.TTemplateValue;
-  IVelocityContext = Sempare.Template.ITemplateContext;
-  IVelocityTemplate = Sempare.Template.ITemplate;
-  IVelocityFunctions = Sempare.Template.ITemplateFunctions;
-  TVelocityTemplateResolver = Sempare.Template.TTemplateResolver;
-  TVelocityEncodeFunction = Sempare.Template.TTemplateEncodeFunction;
-  IVelocityVariables = Sempare.Template.ITemplateVariables;
-  TUTF8WithoutPreambleEncoding = Sempare.Template.TUTF8WithoutPreambleEncoding;
 
-  Velocity = Sempare.Template.Template;
+  [TestFixture]
+  TTestTemplateArr = class
+
+  public
+    [Test]
+    procedure TestArray;
+
+    [Test]
+    procedure TestDerefArray;
+
+    [Test]
+    procedure TestDerefDynArray;
+
+    [Test]
+    procedure TestDynArray;
+  end;
 
 implementation
 
+uses
+  Sempare.Template;
+
+procedure TTestTemplateArr.TestArray;
+var
+  a: array [5 .. 10] of integer;
+  i: integer;
+begin
+  for i := Low(a) to High(a) do
+    a[i] := i * 2;
+  Assert.AreEqual('5 6 7 8 9 10 ', Template.Eval('<%for i in _%><%i%> <%end%>', a));
+end;
+
+procedure TTestTemplateArr.TestDerefArray;
+
+var
+  a: array [1 .. 10] of integer;
+begin
+  a[5] := 123;
+  Assert.AreEqual('123', Template.Eval('<% _[5] %>', a));
+end;
+
+procedure TTestTemplateArr.TestDerefDynArray;
+var
+  a: tarray<integer>;
+begin
+  setlength(a, 10);
+  a[5] := 123;
+  a[6] := 321;
+  Assert.AreEqual('123', Template.Eval('<% _[5] %>', a));
+  Assert.AreEqual('321', Template.Eval('<% _[6] %>', a));
+end;
+
+procedure TTestTemplateArr.TestDynArray;
+var
+  a: tarray<integer>;
+  i: integer;
+begin
+  setlength(a, 5);
+  for i := Low(a) to High(a) do
+    a[i] := i * 2;
+  Assert.AreEqual('0 2 4 6 8 ', Template.Eval('<%for i in _%><% _[i]%> <%end%>', a));
+end;
+
+initialization
+
+TDUnitX.RegisterTestFixture(TTestTemplateArr);
 
 end.

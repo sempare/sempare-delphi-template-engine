@@ -1,6 +1,6 @@
-# ![](../images/sempare-logo-45px.png) Sempare Boot Velocity Template Engine
+# ![](../images/sempare-logo-45px.png) Sempare Template Engine
 
-Copyright (c) 2019 [Sempare Limited](http://www.sempare.ltd), [Conrad Vermeulen](mailto:conrad.vermeulen@gmail.com)
+Copyright (c) 2020 [Sempare Limited](http://www.sempare.ltd), [Conrad Vermeulen](mailto:conrad.vermeulen@gmail.com)
 
 ## Parse Time Evaluation
 
@@ -27,13 +27,13 @@ In the example above, the variable _year_ was declared in the template itself.
 
 The following would be equivalent:
 ```
-var ctx := Velocity.Context();
+var ctx := Template.Context();
 ctx.Options := [eoEvalEarly, eoEvalVarsEarly];
 ctx.Variable['year'] := 2019;
 
-var template := Velocity.Parse('<% if year = 2019 %>twenty nineteen<% else %><%year%><%end%>');
+var template := Template.Parse('<% if year = 2019 %>twenty nineteen<% else %><%year%><%end%>');
 
-writeln(Velocity.Eval(ctx, template));
+writeln(Template.Eval(ctx, template));
 
 
 ```

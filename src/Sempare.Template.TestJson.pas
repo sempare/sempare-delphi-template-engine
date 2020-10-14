@@ -31,42 +31,59 @@
  * limitations under the License.                                                  *
  *                                                                                 *
  ********************************************************************************%*)
-unit Sempare.Boot.Template.Velocity;
+unit Sempare.Template.TestJson;
 
 interface
 
 uses
-  Sempare.Template;
-
-const
-  eoStripRecurringSpaces = Sempare.Template.TTemplateEvaluationOption.eoStripRecurringSpaces;
-  eoConvertTabsToSpaces = Sempare.Template.TTemplateEvaluationOption.eoConvertTabsToSpaces;
-  eoNoDefaultFunctions = Sempare.Template.TTemplateEvaluationOption.eoNoDefaultFunctions;
-  eoNoPosition = Sempare.Template.TTemplateEvaluationOption.eoNoPosition;
-  eoEvalEarly = Sempare.Template.TTemplateEvaluationOption.eoEvalEarly;
-  eoEvalVarsEarly = Sempare.Template.TTemplateEvaluationOption.eoEvalVarsEarly;
-  eoStripRecurringNewlines = Sempare.Template.TTemplateEvaluationOption.eoStripRecurringNewlines;
-  eoTrimLines = Sempare.Template.TTemplateEvaluationOption.eoTrimLines;
-  // eoDebug = TVelocityEvaluationOption.eoDebug;
-  eoPrettyPrint = Sempare.Template.TTemplateEvaluationOption.eoPrettyPrint;
-  eoRaiseErrorWhenVariableNotFound = Sempare.Template.TTemplateEvaluationOption.eoRaiseErrorWhenVariableNotFound;
-  eoReplaceNewline = Sempare.Template.TTemplateEvaluationOption.eoReplaceNewline;
+  DUnitX.TestFramework;
 
 type
-  TVelocityEvaluationOptions = Sempare.Template.TTemplateEvaluationOptions;
-  TVelocityEvaluationOption = Sempare.Template.TTemplateEvaluationOption;
-  TVelocityValue = Sempare.Template.TTemplateValue;
-  IVelocityContext = Sempare.Template.ITemplateContext;
-  IVelocityTemplate = Sempare.Template.ITemplate;
-  IVelocityFunctions = Sempare.Template.ITemplateFunctions;
-  TVelocityTemplateResolver = Sempare.Template.TTemplateResolver;
-  TVelocityEncodeFunction = Sempare.Template.TTemplateEncodeFunction;
-  IVelocityVariables = Sempare.Template.ITemplateVariables;
-  TUTF8WithoutPreambleEncoding = Sempare.Template.TUTF8WithoutPreambleEncoding;
 
-  Velocity = Sempare.Template.Template;
+  [TestFixture]
+  TTestTemplateJson = class
+  public
+    [test]
+    procedure TestJson;
+
+  end;
 
 implementation
 
+{$I 'Sempare.Template.Compiler.inc'}
+
+uses
+{$IFDEF SUPPORT_JSON}
+  System.Json,
+{$ENDIF}
+  Sempare.Template;
+
+procedure TTestTemplateJson.TestJson;
+{$IFDEF SUPPORT_JSON}
+var
+  o, o2: TJSonObject;
+begin
+  o := TJSonObject.create;
+  o.AddPair('str', 'string');
+  o.AddPair('bool', TJSONTrue.create);
+  o.AddPair('null', TJSONNull.create);
+  o.AddPair('num', TJSONNumber.create(123));
+
+  o2 := TJSonObject.create;
+  o2.AddPair('subval', 'value');
+  o.AddPair('object', o2);
+  Assert.AreEqual('string true  123 value',
+  Template.Eval('<% _.str %> <% _.bool%> <%_.null%> <%_.num%> <% _.object.subval %>', o));
+  o.Free;
+end;
+{$ELSE}
+begin
+  // do nothing.
+end;
+{$ENDIF}
+
+initialization
+
+TDUnitX.RegisterTestFixture(TTestTemplateJson);
 
 end.

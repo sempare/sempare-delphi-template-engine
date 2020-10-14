@@ -1,14 +1,14 @@
 [![](https://tokei.rs/b1/github/sempare/sempare.boot.velocity.oss?category=lines)](https://github.com/sempare/sempare.boot.velocity.oss) [![](https://tokei.rs/b1/github/sempare/sempare.boot.velocity.oss?category=code)](https://github.com/sempare/sempare.boot.velocity.oss) [![](https://tokei.rs/b1/github/sempare/sempare.boot.velocity.oss?category=files)](https://github.com/sempare/sempare.boot.velocity.oss)
 
-# ![](./images/sempare-logo-45px.png) Sempare Boot Velocity Template Engine
+# ![](./images/sempare-logo-45px.png) Sempare Template Engine
 
 Copyright (c) 2019 [Sempare Limited](http://www.sempare.ltd), [Conrad Vermeulen](mailto:conrad.vermeulen@gmail.com)
 
 Contact: <info@sempare.ltd>
 
-License: [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt)
+License: [GPL v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html) or [Sempare Limited Commercial License](./docs/commercial.license.md)
 
-Open Source: https://github.com/sempare/sempare.boot.velocity.oss
+Open Source: https://github.com/sempare/sempare.template
 
 Tutorial: [You Tube](https://www.youtube.com/watch?v=iotzeJv77cY&list=PLjjz4SuVScHreGKEInvrjPtLPMBU6l130)
 
@@ -20,20 +20,20 @@ Template engines are used often in in the technology where text needs to be cust
 - mail merge 
 - notification messages 
 
-The Sempare Boot Velocity Template Engine is small templating engine for [Delphi](https://www.embarcadero.com/products/delphi) (Object Pascal) that allows for templates to be created easily and efficiently by providing a simple and easy to use interface.
+The Sempare Template Engine is small templating engine for [Delphi](https://www.embarcadero.com/products/delphi) (Object Pascal) that allows for templates to be created easily and efficiently by providing a simple and easy to use interface.
 
 Example usage:
 ```
 program Example;
 uses
-	Sempare.Boot.Template.Velocity;
+    Sempare.Template;
 type
     TInformation = record
         name: string;
         favourite_sport : string;
     end;
 begin
-    var template := Velocity.parse('My name is <% name %>. My favourite sport is <% favourite_sport %>.');
+    var template := Template.parse('My name is <% name %>. My favourite sport is <% favourite_sport %>.');
     var information : TInformation;
     information.name := 'conrad';
     information.favourite_sport := 'ultimate';
@@ -100,9 +100,9 @@ The playlist has a few videos that are very short (most less than a minute - bli
 
 ## Objectives
 
-Sempare Boot Velocity is not intended to be a fully featured general purpose programming language such as PHP where the script itself could be a self contained programming language.
+The Sempare Templating Engine is not intended to be a fully featured general purpose programming language such as PHP where the script itself could be a self contained programming language.
 
-Sempare Boot Velocity aims to provide just enough functionality to allow you to easily work with the 'view' aspects of a template. Any enhanced functionality required from the scripting environment should be provided by the custom functions written in Pascal.
+Sempare Templating Engine aims to provide just enough functionality to allow you to easily work with the 'view' aspects of a template. Any enhanced functionality required from the scripting environment should be provided by the custom functions written in Pascal.
 
 ## Requirements
 
@@ -111,61 +111,50 @@ This should work with most modern versions of [Delphi](https://www.embarcadero.c
 Tests currently run using the DUnitX TestFramework.
 
 An attempt has been made not to use the latest features to ease backward compatability.
-Although the development was done on Delphi 10.3.3, I have done a quick build/test on:
+Although the development was done on Delphi 10.3.3, build and tests have been run on the following versions:
 - Delphi XE 8
 - Delphi 10.0 Seatle
 - Delphi 10.1 Berlin
 - Delphi 10.2 Tokyo
-- Delphi 10.3.3 Rio.
+- Delphi 10.3.3 Rio
+- Delphi 10.4 Sydney
+- Delphi 10.4.1 Sydney
 
 There should be no platform specific restrictions.
 
-### Using Sempare Boot Velocity in your Delphi project
+### Using the Sempare Templating Engine in your Delphi project
 
-Open __Sempare.Boot.Template.Velocity.groupproj__ which will include:
+Open __Sempare.Template.Engine.Group.groupproj__ which will include:
 
-- __Sempare.Boot.Template.Velocity.Pkg.dprog__
+- __Sempare.Template.Pkg.dproj__
 
   The core velocity project. (runtime)
+     
+- __Sempare.Template.Tester.dproj__
 
-- __Sempare.Boot.Template.Velocity.Components.Pkg.dprog__
+   80+ unit tests
 
-  Contains runtime components used at design-time.
-  
-- __Sempare.Boot.Template.Velocity.Design.Pkg.dprog__
-
-   The design time components.
-   
-- __Sempare.Boot.Template.Velocity.Tester.dprog__
-
-   70+ unit tests
-
-- __demo\VelocityDemo\Sempare.Boot.Velocity.Demo.dprog__
+- __demo\VelocityDemo\Sempare.Template.Demo.dproj__
 
    The velocity real-time demo.   
 
-<!--
-
-Sempare Boot Velocity depends on the other Sempare Boot projects:
-- [Sempare Boot Test](https://github.com/sempare/sempare.boot.test.oss)
-
- # Related work
-The Sempare Boot Velocity template engine relates to the following projects:
-- [Sempare Boot Common](https://github.com/sempare/sempare.boot.common.oss)
-- [Sempare Boot Rtti](https://github.com/sempare/sempare.boot.rtti.oss)
-- [Sempare Boot Http](https://github.com/sempare/sempare.boot.http.oss)
-- [Sempare Boot Build](https://github.com/sempare/sempare.boot.build.oss)
-- [Sempare Boot CLI](https://github.com/sempare/sempare.boot.oss)
-
-
-To see a full list of Sempare Boot projects visit https://www.sempare.ltd/sempare.boot (coming soon 2020)-->
-
 ## Feedback
 
-You can raise issues on [GitHub](https://github.com/sempare/sempare.boot.velocity.oss) and they will be addressed based on priority.
+You can raise issues on [GitHub](https://github.com/sempare/sempare.template) and they will be addressed based on priority.
 
 Most features have some basic tests in place. If a bug is been discovered, please include a basic test/scenario replicating the issue if possible as this will ease the investigation process.
 
-## Promoting the library
+# License
 
-The license does not force you to mention the library used in your project, but it is nice if you can provide a reference to help promoting it.
+The Sempare Template library is dual-licensed. You may choose to use it under the restrictions of the [GPL v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html) at
+no cost to you, or you may purchase for user under the [Sempare Limited Commercial License](./docs/commercial.license.md)
+
+A commercial licence grants you the right to use Sempare Template in your own applications, royalty free, and without any requirement to disclose your source code nor any modifications to
+Sempare Templte to any other party. A commercial licence lasts into perpetuity, and entitles you to all future updates, free of charge.
+
+A commercial licence is sold per developer developing applications that use Sempare Streams. The initial cost is £35 per developer and includes first year of support.
+For support thereafter, a nominal fee of £15 per developer per year if required (the cost of a few cups of coffee).
+
+Please send an e-mail to info@sempare.ltd to request an invoice which will contain the bank details.
+
+Support and enhancement requests submitted by users that pay for support will be prioritised. New developments may incur additional costs depending on time required for implementation.

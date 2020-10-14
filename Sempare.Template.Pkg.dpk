@@ -31,42 +31,52 @@
  * limitations under the License.                                                  *
  *                                                                                 *
  ********************************************************************************%*)
-unit Sempare.Boot.Template.Velocity;
+package Sempare.Template.Pkg;
 
-interface
+{$R *.res}
+{$IFDEF IMPLICITBUILDING This IFDEF should not be used by users}
+{$ALIGN 8}
+{$ASSERTIONS ON}
+{$BOOLEVAL OFF}
+{$DEBUGINFO OFF}
+{$EXTENDEDSYNTAX ON}
+{$IMPORTEDDATA ON}
+{$IOCHECKS ON}
+{$LOCALSYMBOLS ON}
+{$LONGSTRINGS ON}
+{$OPENSTRINGS ON}
+{$OPTIMIZATION OFF}
+{$OVERFLOWCHECKS OFF}
+{$RANGECHECKS OFF}
+{$REFERENCEINFO ON}
+{$SAFEDIVIDE OFF}
+{$STACKFRAMES ON}
+{$TYPEDADDRESS OFF}
+{$VARSTRINGCHECKS ON}
+{$WRITEABLECONST OFF}
+{$MINENUMSIZE 1}
+{$IMAGEBASE $400000}
+{$DEFINE DEBUG}
+{$ENDIF IMPLICITBUILDING}
+{$IMPLICITBUILD ON}
 
-uses
-  Sempare.Template;
+requires
+  rtl;
 
-const
-  eoStripRecurringSpaces = Sempare.Template.TTemplateEvaluationOption.eoStripRecurringSpaces;
-  eoConvertTabsToSpaces = Sempare.Template.TTemplateEvaluationOption.eoConvertTabsToSpaces;
-  eoNoDefaultFunctions = Sempare.Template.TTemplateEvaluationOption.eoNoDefaultFunctions;
-  eoNoPosition = Sempare.Template.TTemplateEvaluationOption.eoNoPosition;
-  eoEvalEarly = Sempare.Template.TTemplateEvaluationOption.eoEvalEarly;
-  eoEvalVarsEarly = Sempare.Template.TTemplateEvaluationOption.eoEvalVarsEarly;
-  eoStripRecurringNewlines = Sempare.Template.TTemplateEvaluationOption.eoStripRecurringNewlines;
-  eoTrimLines = Sempare.Template.TTemplateEvaluationOption.eoTrimLines;
-  // eoDebug = TVelocityEvaluationOption.eoDebug;
-  eoPrettyPrint = Sempare.Template.TTemplateEvaluationOption.eoPrettyPrint;
-  eoRaiseErrorWhenVariableNotFound = Sempare.Template.TTemplateEvaluationOption.eoRaiseErrorWhenVariableNotFound;
-  eoReplaceNewline = Sempare.Template.TTemplateEvaluationOption.eoReplaceNewline;
-
-type
-  TVelocityEvaluationOptions = Sempare.Template.TTemplateEvaluationOptions;
-  TVelocityEvaluationOption = Sempare.Template.TTemplateEvaluationOption;
-  TVelocityValue = Sempare.Template.TTemplateValue;
-  IVelocityContext = Sempare.Template.ITemplateContext;
-  IVelocityTemplate = Sempare.Template.ITemplate;
-  IVelocityFunctions = Sempare.Template.ITemplateFunctions;
-  TVelocityTemplateResolver = Sempare.Template.TTemplateResolver;
-  TVelocityEncodeFunction = Sempare.Template.TTemplateEncodeFunction;
-  IVelocityVariables = Sempare.Template.ITemplateVariables;
-  TUTF8WithoutPreambleEncoding = Sempare.Template.TUTF8WithoutPreambleEncoding;
-
-  Velocity = Sempare.Template.Template;
-
-implementation
-
+contains
+  Sempare.Template.Visitor in 'src\Sempare.Template.Visitor.pas',
+  Sempare.Template.Util in 'src\Sempare.Template.Util.pas',
+  Sempare.Template.StackFrame in 'src\Sempare.Template.StackFrame.pas',
+  Sempare.Template.Rtti in 'src\Sempare.Template.Rtti.pas',
+  Sempare.Template.PrettyPrint in 'src\Sempare.Template.PrettyPrint.pas',
+  Sempare.Boot.Template.Velocity in 'src\Sempare.Boot.Template.Velocity.pas',
+  Sempare.Template.Parser in 'src\Sempare.Template.Parser.pas',
+  Sempare.Template.Lexer in 'src\Sempare.Template.Lexer.pas',
+  Sempare.Template.Functions in 'src\Sempare.Template.Functions.pas',
+  Sempare.Template.Evaluate in 'src\Sempare.Template.Evaluate.pas',
+  Sempare.Template.Context in 'src\Sempare.Template.Context.pas',
+  Sempare.Template.Common in 'src\Sempare.Template.Common.pas',
+  Sempare.Template.AST in 'src\Sempare.Template.AST.pas',
+  Sempare.Template in 'src\Sempare.Template.pas';
 
 end.

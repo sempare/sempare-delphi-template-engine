@@ -31,42 +31,64 @@
  * limitations under the License.                                                  *
  *                                                                                 *
  ********************************************************************************%*)
-unit Sempare.Boot.Template.Velocity;
+unit Sempare.Template.TestDictionary;
 
 interface
 
 uses
-  Sempare.Template;
-
-const
-  eoStripRecurringSpaces = Sempare.Template.TTemplateEvaluationOption.eoStripRecurringSpaces;
-  eoConvertTabsToSpaces = Sempare.Template.TTemplateEvaluationOption.eoConvertTabsToSpaces;
-  eoNoDefaultFunctions = Sempare.Template.TTemplateEvaluationOption.eoNoDefaultFunctions;
-  eoNoPosition = Sempare.Template.TTemplateEvaluationOption.eoNoPosition;
-  eoEvalEarly = Sempare.Template.TTemplateEvaluationOption.eoEvalEarly;
-  eoEvalVarsEarly = Sempare.Template.TTemplateEvaluationOption.eoEvalVarsEarly;
-  eoStripRecurringNewlines = Sempare.Template.TTemplateEvaluationOption.eoStripRecurringNewlines;
-  eoTrimLines = Sempare.Template.TTemplateEvaluationOption.eoTrimLines;
-  // eoDebug = TVelocityEvaluationOption.eoDebug;
-  eoPrettyPrint = Sempare.Template.TTemplateEvaluationOption.eoPrettyPrint;
-  eoRaiseErrorWhenVariableNotFound = Sempare.Template.TTemplateEvaluationOption.eoRaiseErrorWhenVariableNotFound;
-  eoReplaceNewline = Sempare.Template.TTemplateEvaluationOption.eoReplaceNewline;
+  DUnitX.TestFramework,
+  System.Generics.Collections;
 
 type
-  TVelocityEvaluationOptions = Sempare.Template.TTemplateEvaluationOptions;
-  TVelocityEvaluationOption = Sempare.Template.TTemplateEvaluationOption;
-  TVelocityValue = Sempare.Template.TTemplateValue;
-  IVelocityContext = Sempare.Template.ITemplateContext;
-  IVelocityTemplate = Sempare.Template.ITemplate;
-  IVelocityFunctions = Sempare.Template.ITemplateFunctions;
-  TVelocityTemplateResolver = Sempare.Template.TTemplateResolver;
-  TVelocityEncodeFunction = Sempare.Template.TTemplateEncodeFunction;
-  IVelocityVariables = Sempare.Template.ITemplateVariables;
-  TUTF8WithoutPreambleEncoding = Sempare.Template.TUTF8WithoutPreambleEncoding;
 
-  Velocity = Sempare.Template.Template;
+  [TestFixture]
+  TTestTemplateDict = class
+  public
+    [Test]
+    procedure TestDictionary;
+    [Test]
+    procedure TestNestedDictionary;
+  end;
+
+type
+  TStringDictionary = TDictionary<string, string>;
+  TNestedDictionary = TObjectDictionary<integer, TDictionary<string, string>>;
 
 implementation
 
+uses
+
+  Sempare.Template;
+
+procedure TTestTemplateDict.TestDictionary;
+var
+  D: TDictionary<string, string>;
+begin
+  D := TDictionary<string, string>.create;
+  D.Add('a', 'value');
+  Assert.AreEqual('value', Template.Eval('<% a %>', D));
+  D.Free;
+end;
+
+procedure TTestTemplateDict.TestNestedDictionary;
+var
+  dict: TNestedDictionary;
+begin
+  dict := TNestedDictionary.create([doOwnsValues]);
+  dict.Add(1, TStringDictionary.create());
+  dict.Add(2, TStringDictionary.create());
+
+  dict[1].Add('v', 'value');
+  dict[2].Add('v', 'another');
+
+  Assert.AreEqual('value', Template.Eval('<% _[1][''v'']%>', dict));
+  Assert.AreEqual('another', Template.Eval('<% _[2][''v'']%>', dict));
+
+  dict.Free;
+end;
+
+initialization
+
+TDUnitX.RegisterTestFixture(TTestTemplateDict);
 
 end.

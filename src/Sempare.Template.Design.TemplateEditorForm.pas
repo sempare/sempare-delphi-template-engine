@@ -22,7 +22,7 @@
  * You may obtain a copy of the Licenses at                                        *
  *                                                                                 *
  * https://www.gnu.org/licenses/gpl-3.0.en.html                                    *
- * https://github.com/sempare/sempare.template/docs/commercial.license.md          *
+ * https://github.com/sempare/sempare.boot.velocity.oss/docs/commercial.license.md *
  *                                                                                 *
  * Unless required by applicable law or agreed to in writing, software             *
  * distributed under the Licenses is distributed on an "AS IS" BASIS,              *
@@ -31,42 +31,27 @@
  * limitations under the License.                                                  *
  *                                                                                 *
  ********************************************************************************%*)
-unit Sempare.Boot.Template.Velocity;
+unit Sempare.Template.Design.TemplateEditorForm;
 
 interface
 
 uses
-  Sempare.Template;
-
-const
-  eoStripRecurringSpaces = Sempare.Template.TTemplateEvaluationOption.eoStripRecurringSpaces;
-  eoConvertTabsToSpaces = Sempare.Template.TTemplateEvaluationOption.eoConvertTabsToSpaces;
-  eoNoDefaultFunctions = Sempare.Template.TTemplateEvaluationOption.eoNoDefaultFunctions;
-  eoNoPosition = Sempare.Template.TTemplateEvaluationOption.eoNoPosition;
-  eoEvalEarly = Sempare.Template.TTemplateEvaluationOption.eoEvalEarly;
-  eoEvalVarsEarly = Sempare.Template.TTemplateEvaluationOption.eoEvalVarsEarly;
-  eoStripRecurringNewlines = Sempare.Template.TTemplateEvaluationOption.eoStripRecurringNewlines;
-  eoTrimLines = Sempare.Template.TTemplateEvaluationOption.eoTrimLines;
-  // eoDebug = TVelocityEvaluationOption.eoDebug;
-  eoPrettyPrint = Sempare.Template.TTemplateEvaluationOption.eoPrettyPrint;
-  eoRaiseErrorWhenVariableNotFound = Sempare.Template.TTemplateEvaluationOption.eoRaiseErrorWhenVariableNotFound;
-  eoReplaceNewline = Sempare.Template.TTemplateEvaluationOption.eoReplaceNewline;
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls;
 
 type
-  TVelocityEvaluationOptions = Sempare.Template.TTemplateEvaluationOptions;
-  TVelocityEvaluationOption = Sempare.Template.TTemplateEvaluationOption;
-  TVelocityValue = Sempare.Template.TTemplateValue;
-  IVelocityContext = Sempare.Template.ITemplateContext;
-  IVelocityTemplate = Sempare.Template.ITemplate;
-  IVelocityFunctions = Sempare.Template.ITemplateFunctions;
-  TVelocityTemplateResolver = Sempare.Template.TTemplateResolver;
-  TVelocityEncodeFunction = Sempare.Template.TTemplateEncodeFunction;
-  IVelocityVariables = Sempare.Template.ITemplateVariables;
-  TUTF8WithoutPreambleEncoding = Sempare.Template.TUTF8WithoutPreambleEncoding;
-
-  Velocity = Sempare.Template.Template;
+  TFormTemplateEditor = class(TForm)
+    memo: TMemo;
+    butCancel: TButton;
+    butOk: TButton;
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
 
 implementation
 
+{$R *.dfm}
 
 end.

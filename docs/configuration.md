@@ -1,6 +1,6 @@
-# ![](../images/sempare-logo-45px.png) Sempare Boot Velocity Template Engine
+# ![](../images/sempare-logo-45px.png) Sempare Template Engine
 
-Copyright (c) 2019 [Sempare Limited](http://www.sempare.ltd), [Conrad Vermeulen](mailto:conrad.vermeulen@gmail.com)
+Copyright (c) 2020 [Sempare Limited](http://www.sempare.ltd), [Conrad Vermeulen](mailto:conrad.vermeulen@gmail.com)
 
 ## Configuration
 
@@ -19,13 +19,13 @@ Copyright (c) 2019 [Sempare Limited](http://www.sempare.ltd), [Conrad Vermeulen]
 
 Configuration is done through the context. If you want to rely on the defaults, many of the eval methods don't require a context to be explictly provided and they will create create a default context for use.
 ```
-    var ctx := Velocity.Context();
+    var ctx := Template.Context();
 ```
 ### Text encoding
 
 The default default encoding is ASCII. You can change this to UTF8 as follows:
 ```
-var ctx := Velocity.Context;
+var ctx := Template.Context;
 ctx.Encoding := TEncoding.UTF8;
 ```
 ### HTML Variable Encoding
@@ -58,7 +58,7 @@ type
 ```
 ### Setting a maximum runtime
 ```
-  var ctx := Velocity.Context;
+  var ctx := Template.Context();
   ctx.MaxRunTimeMs = 5;
   // ...
 ```
@@ -66,10 +66,10 @@ type
 You may want to change from using '<%' and '%>' to something else by updating the _StartToken_ and _EndToken_ on the context.
 ```
 begin
-  var ctx := Velocity.Context;
+  var ctx := Template.Context;
   ctx.StartToken := '{{';
   ctx.EndToken := '}}';
-  Assert.IsEqual('hello', Velocity.Eval(ctx, '{{ if true }}hello{{else}}bye{{end}}'));
+  Assert.IsEqual('hello', Template.Eval(ctx, '{{ if true }}hello{{else}}bye{{end}}'));
 end;
 ```
 ### Custom Variables
@@ -82,8 +82,8 @@ ctx.Variable['company'] := 'Sempare Limited';
 Using the _include()_ statement, you can reference precompiled templates that are registered on the context:
 
 ```
-ctx.RegisterTemplate('header', Velocity.Parse('<% title %>')) 
-ctx.RegisterTemplate('footer', Velocity.Parse('Copyright (c) <% year %> <% company %>')) 
+ctx.RegisterTemplate('header', Template.Parse('<% title %>')) 
+ctx.RegisterTemplate('footer', Template.Parse('Copyright (c) <% year %> <% company %>')) 
 ```
 ### Dynamic Template Resolution
 
@@ -91,7 +91,7 @@ Templates don't need to be precompiled. They can also be located when being pars
 ```
 ctx.TemplateResolver = function(const AContext : IVelocityTemplate; const AName : string) : IVelocityTemplate
 begin
-   result := Velocity.parse('some template loaded from file...');
+   result := Template.parse('some template loaded from file...');
 end;
 ```
 

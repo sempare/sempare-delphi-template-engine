@@ -31,42 +31,105 @@
  * limitations under the License.                                                  *
  *                                                                                 *
  ********************************************************************************%*)
-unit Sempare.Boot.Template.Velocity;
+unit Sempare.Template.Util;
 
 interface
 
-uses
-  Sempare.Template;
-
-const
-  eoStripRecurringSpaces = Sempare.Template.TTemplateEvaluationOption.eoStripRecurringSpaces;
-  eoConvertTabsToSpaces = Sempare.Template.TTemplateEvaluationOption.eoConvertTabsToSpaces;
-  eoNoDefaultFunctions = Sempare.Template.TTemplateEvaluationOption.eoNoDefaultFunctions;
-  eoNoPosition = Sempare.Template.TTemplateEvaluationOption.eoNoPosition;
-  eoEvalEarly = Sempare.Template.TTemplateEvaluationOption.eoEvalEarly;
-  eoEvalVarsEarly = Sempare.Template.TTemplateEvaluationOption.eoEvalVarsEarly;
-  eoStripRecurringNewlines = Sempare.Template.TTemplateEvaluationOption.eoStripRecurringNewlines;
-  eoTrimLines = Sempare.Template.TTemplateEvaluationOption.eoTrimLines;
-  // eoDebug = TVelocityEvaluationOption.eoDebug;
-  eoPrettyPrint = Sempare.Template.TTemplateEvaluationOption.eoPrettyPrint;
-  eoRaiseErrorWhenVariableNotFound = Sempare.Template.TTemplateEvaluationOption.eoRaiseErrorWhenVariableNotFound;
-  eoReplaceNewline = Sempare.Template.TTemplateEvaluationOption.eoReplaceNewline;
+// This is copied from Sempare.Boot.Common.PreserveValue to make standalone.
 
 type
-  TVelocityEvaluationOptions = Sempare.Template.TTemplateEvaluationOptions;
-  TVelocityEvaluationOption = Sempare.Template.TTemplateEvaluationOption;
-  TVelocityValue = Sempare.Template.TTemplateValue;
-  IVelocityContext = Sempare.Template.ITemplateContext;
-  IVelocityTemplate = Sempare.Template.ITemplate;
-  IVelocityFunctions = Sempare.Template.ITemplateFunctions;
-  TVelocityTemplateResolver = Sempare.Template.TTemplateResolver;
-  TVelocityEncodeFunction = Sempare.Template.TTemplateEncodeFunction;
-  IVelocityVariables = Sempare.Template.ITemplateVariables;
-  TUTF8WithoutPreambleEncoding = Sempare.Template.TUTF8WithoutPreambleEncoding;
+  IPreserveValue<T> = interface
+    ['{32528639-7ADF-4F69-AE33-E56CA47024F8}']
 
-  Velocity = Sempare.Template.Template;
+    // A helper to allow a reference to be maintained
+    // so that the object does not get optimised out
+    procedure KeepAlive;
+    procedure SetValue(const AValue: T);
+    procedure NoReset; overload;
+    procedure NoReset(const AValue: T); overload;
+  end;
+
+type
+  Preseve = class
+    class function Value<T>(var AValue: T): IPreserveValue<T>; overload; static;
+    class function Value<T>(var AValue: T; const NewValue: T): IPreserveValue<T>; overload; static;
+  end;
+
+type
+
+  TPreserveValue<T> = class(TInterfacedObject, IPreserveValue<T>)
+  type
+    PT = ^T;
+  private
+    FOldValue: T;
+    FValuePtr: PT;
+    FReset: boolean;
+  public
+    constructor Create(var AValue: T); overload;
+    constructor Create(var AValue: T; const NewValue: T); overload;
+    destructor Destroy; override;
+
+    procedure KeepAlive;
+    procedure SetValue(const AValue: T); inline;
+    procedure NoReset; overload;
+    procedure NoReset(const AValue: T); overload;
+  end;
 
 implementation
 
+{ TPreserveValue<T> }
+
+constructor TPreserveValue<T>.Create(var AValue: T);
+begin
+  FOldValue := AValue;
+  FValuePtr := @AValue;
+  FReset := true;
+end;
+
+constructor TPreserveValue<T>.Create(var AValue: T; const NewValue: T);
+begin
+  Create(AValue);
+  AValue := NewValue;
+end;
+
+destructor TPreserveValue<T>.Destroy;
+begin
+  if FReset then
+    SetValue(FOldValue);
+  inherited;
+end;
+
+procedure TPreserveValue<T>.KeepAlive;
+begin
+  // do nothing
+end;
+
+procedure TPreserveValue<T>.NoReset(const AValue: T);
+begin
+  NoReset();
+  SetValue(AValue);
+end;
+
+procedure TPreserveValue<T>.SetValue(const AValue: T);
+begin
+  FValuePtr^ := AValue;
+end;
+
+procedure TPreserveValue<T>.NoReset;
+begin
+  FReset := false;
+end;
+
+{ Preseve }
+
+class function Preseve.Value<T>(var AValue: T): IPreserveValue<T>;
+begin
+  result := TPreserveValue<T>.Create(AValue);
+end;
+
+class function Preseve.Value<T>(var AValue: T; const NewValue: T): IPreserveValue<T>;
+begin
+  result := TPreserveValue<T>.Create(AValue, NewValue);
+end;
 
 end.

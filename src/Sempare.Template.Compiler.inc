@@ -22,7 +22,7 @@
  * You may obtain a copy of the Licenses at                                        *
  *                                                                                 *
  * https://www.gnu.org/licenses/gpl-3.0.en.html                                    *
- * https://github.com/sempare/sempare.template/docs/commercial.license.md          *
+ * https://github.com/sempare/sempare.boot.velocity.oss/docs/commercial.license.md *
  *                                                                                 *
  * Unless required by applicable law or agreed to in writing, software             *
  * distributed under the Licenses is distributed on an "AS IS" BASIS,              *
@@ -31,42 +31,20 @@
  * limitations under the License.                                                  *
  *                                                                                 *
  ********************************************************************************%*)
-unit Sempare.Boot.Template.Velocity;
-
-interface
-
-uses
-  Sempare.Template;
-
-const
-  eoStripRecurringSpaces = Sempare.Template.TTemplateEvaluationOption.eoStripRecurringSpaces;
-  eoConvertTabsToSpaces = Sempare.Template.TTemplateEvaluationOption.eoConvertTabsToSpaces;
-  eoNoDefaultFunctions = Sempare.Template.TTemplateEvaluationOption.eoNoDefaultFunctions;
-  eoNoPosition = Sempare.Template.TTemplateEvaluationOption.eoNoPosition;
-  eoEvalEarly = Sempare.Template.TTemplateEvaluationOption.eoEvalEarly;
-  eoEvalVarsEarly = Sempare.Template.TTemplateEvaluationOption.eoEvalVarsEarly;
-  eoStripRecurringNewlines = Sempare.Template.TTemplateEvaluationOption.eoStripRecurringNewlines;
-  eoTrimLines = Sempare.Template.TTemplateEvaluationOption.eoTrimLines;
-  // eoDebug = TVelocityEvaluationOption.eoDebug;
-  eoPrettyPrint = Sempare.Template.TTemplateEvaluationOption.eoPrettyPrint;
-  eoRaiseErrorWhenVariableNotFound = Sempare.Template.TTemplateEvaluationOption.eoRaiseErrorWhenVariableNotFound;
-  eoReplaceNewline = Sempare.Template.TTemplateEvaluationOption.eoReplaceNewline;
-
-type
-  TVelocityEvaluationOptions = Sempare.Template.TTemplateEvaluationOptions;
-  TVelocityEvaluationOption = Sempare.Template.TTemplateEvaluationOption;
-  TVelocityValue = Sempare.Template.TTemplateValue;
-  IVelocityContext = Sempare.Template.ITemplateContext;
-  IVelocityTemplate = Sempare.Template.ITemplate;
-  IVelocityFunctions = Sempare.Template.ITemplateFunctions;
-  TVelocityTemplateResolver = Sempare.Template.TTemplateResolver;
-  TVelocityEncodeFunction = Sempare.Template.TTemplateEncodeFunction;
-  IVelocityVariables = Sempare.Template.ITemplateVariables;
-  TUTF8WithoutPreambleEncoding = Sempare.Template.TUTF8WithoutPreambleEncoding;
-
-  Velocity = Sempare.Template.Template;
-
-implementation
-
-
-end.
+ // -----------------------------------------------
+{$IF CompilerVersion >= 26} // from XE5 onwards
+{$DEFINE SUPPORT_JSON true}
+{$ENDIF}
+// -----------------------------------------------
+{$IF CompilerVersion >= 28}  // from XE7 onwards
+{$DEFINE SUPPORT_NET_ENCODING true}
+{$ENDIF}
+// -----------------------------------------------
+{$IF CompilerVersion >= 30} // from Delphi 10.0 Seatle onwards
+{$DEFINE SUPPORT_JSON_BOOL true}
+{$ENDIF}
+// -----------------------------------------------
+{$IF CompilerVersion >= 31}  // from Delphi 10.1 Berlin onwards
+{$DEFINE SUPPORT_BUFFERED_STREAM true}
+{$ENDIF}
+// -----------------------------------------------

@@ -31,42 +31,103 @@
  * limitations under the License.                                                  *
  *                                                                                 *
  ********************************************************************************%*)
-unit Sempare.Boot.Template.Velocity;
+unit Sempare.Template.StackFrame;
 
 interface
 
 uses
-  Sempare.Template;
-
-const
-  eoStripRecurringSpaces = Sempare.Template.TTemplateEvaluationOption.eoStripRecurringSpaces;
-  eoConvertTabsToSpaces = Sempare.Template.TTemplateEvaluationOption.eoConvertTabsToSpaces;
-  eoNoDefaultFunctions = Sempare.Template.TTemplateEvaluationOption.eoNoDefaultFunctions;
-  eoNoPosition = Sempare.Template.TTemplateEvaluationOption.eoNoPosition;
-  eoEvalEarly = Sempare.Template.TTemplateEvaluationOption.eoEvalEarly;
-  eoEvalVarsEarly = Sempare.Template.TTemplateEvaluationOption.eoEvalVarsEarly;
-  eoStripRecurringNewlines = Sempare.Template.TTemplateEvaluationOption.eoStripRecurringNewlines;
-  eoTrimLines = Sempare.Template.TTemplateEvaluationOption.eoTrimLines;
-  // eoDebug = TVelocityEvaluationOption.eoDebug;
-  eoPrettyPrint = Sempare.Template.TTemplateEvaluationOption.eoPrettyPrint;
-  eoRaiseErrorWhenVariableNotFound = Sempare.Template.TTemplateEvaluationOption.eoRaiseErrorWhenVariableNotFound;
-  eoReplaceNewline = Sempare.Template.TTemplateEvaluationOption.eoReplaceNewline;
+  System.Generics.Collections,
+  System.Rtti;
 
 type
-  TVelocityEvaluationOptions = Sempare.Template.TTemplateEvaluationOptions;
-  TVelocityEvaluationOption = Sempare.Template.TTemplateEvaluationOption;
-  TVelocityValue = Sempare.Template.TTemplateValue;
-  IVelocityContext = Sempare.Template.ITemplateContext;
-  IVelocityTemplate = Sempare.Template.ITemplate;
-  IVelocityFunctions = Sempare.Template.ITemplateFunctions;
-  TVelocityTemplateResolver = Sempare.Template.TTemplateResolver;
-  TVelocityEncodeFunction = Sempare.Template.TTemplateEncodeFunction;
-  IVelocityVariables = Sempare.Template.ITemplateVariables;
-  TUTF8WithoutPreambleEncoding = Sempare.Template.TUTF8WithoutPreambleEncoding;
+  TStackFrame = class
+  private
+    FParent: TStackFrame;
+    FVariables: TDictionary<string, TValue>;
 
-  Velocity = Sempare.Template.Template;
+    function FindStackFrame(const AKey: string): TStackFrame;
+    function GetItem(const AKey: string): TValue;
+
+    procedure SetItem(const AKey: string; const Value: TValue);
+  public
+    constructor Create(const AParent: TStackFrame = nil); overload;
+    constructor Create(const ARecord: TValue; const AParent: TStackFrame = nil); overload;
+    destructor Destroy; override;
+    function Clone(): TStackFrame;
+    function Root: TValue;
+    property Item[const AKey: string]: TValue read GetItem write SetItem; default;
+  end;
 
 implementation
 
+uses
+  System.SysUtils;
+
+{ TStackFrame }
+
+function TStackFrame.Clone: TStackFrame;
+begin
+  result := TStackFrame.Create(self);
+end;
+
+constructor TStackFrame.Create(const AParent: TStackFrame);
+begin
+  FParent := AParent;
+  FVariables := TDictionary<string, TValue>.Create;
+end;
+
+constructor TStackFrame.Create(const ARecord: TValue; const AParent: TStackFrame);
+begin
+  Create(AParent);
+  FVariables.Add('_', ARecord);
+end;
+
+destructor TStackFrame.Destroy;
+begin
+  FreeAndNil(FVariables);
+  FParent := nil;
+  inherited;
+end;
+
+function TStackFrame.FindStackFrame(const AKey: string): TStackFrame;
+begin
+  result := self;
+  while not result.FVariables.ContainsKey(AKey) do
+  begin
+    result := result.FParent;
+    if result = nil then
+      exit;
+  end;
+end;
+
+function TStackFrame.GetItem(const AKey: string): TValue;
+var
+  l: string;
+  StackFrame: TStackFrame;
+begin
+  l := AKey.ToLower;
+  StackFrame := FindStackFrame(l);
+  if (StackFrame <> nil) then
+    StackFrame.FVariables.TryGetValue(l, result);
+end;
+
+function TStackFrame.Root: TValue;
+begin
+  result := GetItem('_');
+end;
+
+procedure TStackFrame.SetItem(const AKey: string; const Value: TValue);
+
+var
+  l: string;
+  StackFrame: TStackFrame;
+begin
+  l := AKey.ToLower;
+  StackFrame := FindStackFrame(l);
+  if StackFrame <> nil then
+    StackFrame.FVariables.AddOrSetValue(l, Value)
+  else
+    FVariables.AddOrSetValue(l, Value);
+end;
 
 end.

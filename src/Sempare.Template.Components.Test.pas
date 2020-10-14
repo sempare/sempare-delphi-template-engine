@@ -22,7 +22,7 @@
  * You may obtain a copy of the Licenses at                                        *
  *                                                                                 *
  * https://www.gnu.org/licenses/gpl-3.0.en.html                                    *
- * https://github.com/sempare/sempare.template/docs/commercial.license.md          *
+ * https://github.com/sempare/sempare.boot.velocity.oss/docs/commercial.license.md *
  *                                                                                 *
  * Unless required by applicable law or agreed to in writing, software             *
  * distributed under the Licenses is distributed on an "AS IS" BASIS,              *
@@ -31,42 +31,78 @@
  * limitations under the License.                                                  *
  *                                                                                 *
  ********************************************************************************%*)
-unit Sempare.Boot.Template.Velocity;
+unit Sempare.Template.Components.Test;
 
 interface
 
 uses
-  Sempare.Template;
-
-const
-  eoStripRecurringSpaces = Sempare.Template.TTemplateEvaluationOption.eoStripRecurringSpaces;
-  eoConvertTabsToSpaces = Sempare.Template.TTemplateEvaluationOption.eoConvertTabsToSpaces;
-  eoNoDefaultFunctions = Sempare.Template.TTemplateEvaluationOption.eoNoDefaultFunctions;
-  eoNoPosition = Sempare.Template.TTemplateEvaluationOption.eoNoPosition;
-  eoEvalEarly = Sempare.Template.TTemplateEvaluationOption.eoEvalEarly;
-  eoEvalVarsEarly = Sempare.Template.TTemplateEvaluationOption.eoEvalVarsEarly;
-  eoStripRecurringNewlines = Sempare.Template.TTemplateEvaluationOption.eoStripRecurringNewlines;
-  eoTrimLines = Sempare.Template.TTemplateEvaluationOption.eoTrimLines;
-  // eoDebug = TVelocityEvaluationOption.eoDebug;
-  eoPrettyPrint = Sempare.Template.TTemplateEvaluationOption.eoPrettyPrint;
-  eoRaiseErrorWhenVariableNotFound = Sempare.Template.TTemplateEvaluationOption.eoRaiseErrorWhenVariableNotFound;
-  eoReplaceNewline = Sempare.Template.TTemplateEvaluationOption.eoReplaceNewline;
+  DUnitX.TestFramework;
 
 type
-  TVelocityEvaluationOptions = Sempare.Template.TTemplateEvaluationOptions;
-  TVelocityEvaluationOption = Sempare.Template.TTemplateEvaluationOption;
-  TVelocityValue = Sempare.Template.TTemplateValue;
-  IVelocityContext = Sempare.Template.ITemplateContext;
-  IVelocityTemplate = Sempare.Template.ITemplate;
-  IVelocityFunctions = Sempare.Template.ITemplateFunctions;
-  TVelocityTemplateResolver = Sempare.Template.TTemplateResolver;
-  TVelocityEncodeFunction = Sempare.Template.TTemplateEncodeFunction;
-  IVelocityVariables = Sempare.Template.ITemplateVariables;
-  TUTF8WithoutPreambleEncoding = Sempare.Template.TUTF8WithoutPreambleEncoding;
 
-  Velocity = Sempare.Template.Template;
+  [TestFixture]
+  TTestComponent = class
+  public
+    [Test]
+    procedure TestContextVariables;
+    [Test]
+    procedure TestEvalVariables;
+  end;
 
 implementation
 
+uses
+  Sempare.Template.Components;
+
+{ TTestComponent }
+
+procedure TTestComponent.TestContextVariables;
+var
+  ctx: TSempareBootVelocityContext;
+  tpl: TSempareBootVelocityTemplate;
+  evalEngine: TSempareBootVelocityEngine;
+begin
+  ctx := TSempareBootVelocityContext.Create(nil);
+  tpl := TSempareBootVelocityTemplate.Create(nil);
+  evalEngine := TSempareBootVelocityEngine.Create(nil);
+  try
+    ctx.Variable['v'] := 'value';
+    tpl.TemplateText := '<% v %>';
+    evalEngine.Context := ctx;
+    evalEngine.Template := tpl;
+    evalEngine.Enabled := true;
+
+    Assert.AreEqual('value', evalEngine.Text);
+  finally
+    ctx.Free;
+    tpl.Free;
+    evalEngine.Free;
+  end;
+end;
+
+procedure TTestComponent.TestEvalVariables;
+var
+  ctx: TSempareBootVelocityContext;
+  tpl: TSempareBootVelocityTemplate;
+  evalEngine: TSempareBootVelocityEngine;
+begin
+  ctx := TSempareBootVelocityContext.Create(nil);
+  tpl := TSempareBootVelocityTemplate.Create(nil);
+  evalEngine := TSempareBootVelocityEngine.Create(nil);
+  try
+    ctx.Variable['v'] := 'value';
+    tpl.TemplateText := '<% v %> <%_.v%>';
+    evalEngine.Variable['v'] := 'another';
+    evalEngine.Context := ctx;
+    evalEngine.Template := tpl;
+    evalEngine.Enabled := true;
+
+    Assert.AreEqual('value another', evalEngine.Text);
+  finally
+    ctx.Free;
+    tpl.Free;
+    evalEngine.Free;
+  end;
+end;
 
 end.

@@ -1,6 +1,6 @@
-# ![](../images/sempare-logo-45px.png) Sempare Boot Velocity Template Engine
+# ![](../images/sempare-logo-45px.png) Sempare Template Engine
 
-Copyright (c) 2019 [Sempare Limited](http://www.sempare.ltd), [Conrad Vermeulen](mailto:conrad.vermeulen@gmail.com)
+Copyright (c) 2020 [Sempare Limited](http://www.sempare.ltd), [Conrad Vermeulen](mailto:conrad.vermeulen@gmail.com)
 
 ## Statements
 
@@ -101,7 +101,7 @@ var
 begin
   info := TList<TInfo>.create;
   info.AddRange([TInfo.create('conrad', 10), TInfo.create('christa', 20)]);
-  writeln(Velocity.Eval(template, info));
+  writeln(Template.Eval(template, info));
   info.Free;
 end;
 ```
@@ -173,7 +173,7 @@ type
         email : string;
     end;
 begin
-   var ctx := Velocity.context();
+   var ctx := Template.context();
    ctx['year'] := 2019;
    ctx['company'] := 'Sempare Limited';
    ctx['email'] := 'info@sempare.ltd';
@@ -207,7 +207,7 @@ begin
 	var info : TInfo;
 	info.level1.level2.value := 'test';
 	info.level1.level2.level3.level4.value := 'hello';	
-	Velocity.Eval('<% level1.level2.level3.level4.value %> <% level1.level2.level3.level4.value %> <% level1.level2.level3.level4.value %>', info)
+	Template.Eval('<% level1.level2.level3.level4.value %> <% level1.level2.level3.level4.value %> <% level1.level2.level3.level4.value %>', info)
 
 	// can be replaced with
 	Velocity.Eval('<% with level1.level2.level3.level4 %><% value %> <% value %> <% value %><% end %>', info)
@@ -245,7 +245,7 @@ type
 begin
 	var info : TInfo;
 	info.name := 'Jane';
-	writeln(Velocity.Eval('<% require(''TInfo'') %>', info));
+	writeln(Template.Eval('<% require(''TInfo'') %>', info));
 end;
 ```
 

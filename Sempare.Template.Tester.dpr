@@ -31,42 +31,78 @@
  * limitations under the License.                                                  *
  *                                                                                 *
  ********************************************************************************%*)
-unit Sempare.Boot.Template.Velocity;
+ program Sempare.Template.Tester;
 
-interface
-
+{$IFNDEF TESTINSIGHT}
+{$APPTYPE CONSOLE}
+{$ENDIF}{$STRONGLINKTYPES ON}
 uses
-  Sempare.Template;
+  System.SysUtils,
+  {$IFDEF TESTINSIGHT}
+  TestInsight.DUnitX,
+  {$ENDIF }
+  DUnitX.Loggers.Console,
+  DUnitX.Loggers.Xml.NUnit,
+  DUnitX.TestFramework,
+  Sempare.Template.TestIf in 'src\Sempare.Template.TestIf.pas',
+  Sempare.Template.Context.Test in 'src\Sempare.Template.Context.Test.pas',
+  Sempare.Template.NewLineOption.Test in 'src\Sempare.Template.NewLineOption.Test.pas',
+  Sempare.Template.TestCall in 'src\Sempare.Template.TestCall.pas',
+  Sempare.Template.Test.Arr in 'src\Sempare.Template.Test.Arr.pas',
+  Sempare.Template.TestDictionary in 'src\Sempare.Template.TestDictionary.pas',
+  Sempare.Template.TestJson in 'src\Sempare.Template.TestJson.pas',
+  Sempare.Template.TestAssign in 'src\Sempare.Template.TestAssign.pas',
+  Sempare.Template.TestExpr in 'src\Sempare.Template.TestExpr.pas',
+  Sempare.Template.TestInclude in 'src\Sempare.Template.TestInclude.pas',
+  Sempare.Template.TestDeref in 'src\Sempare.Template.TestDeref.pas',
+  Sempare.Template.TestFor in 'src\Sempare.Template.TestFor.pas',
+  Sempare.Template.Test in 'src\Sempare.Template.Test.pas',
+  Sempare.Template.StackFrame.Test in 'src\Sempare.Template.StackFrame.Test.pas',
+  Sempare.Template.Lexer.Test in 'src\Sempare.Template.Lexer.Test.pas',
+  Sempare.Template.Functions.Test in 'src\Sempare.Template.Functions.Test.pas';
 
-const
-  eoStripRecurringSpaces = Sempare.Template.TTemplateEvaluationOption.eoStripRecurringSpaces;
-  eoConvertTabsToSpaces = Sempare.Template.TTemplateEvaluationOption.eoConvertTabsToSpaces;
-  eoNoDefaultFunctions = Sempare.Template.TTemplateEvaluationOption.eoNoDefaultFunctions;
-  eoNoPosition = Sempare.Template.TTemplateEvaluationOption.eoNoPosition;
-  eoEvalEarly = Sempare.Template.TTemplateEvaluationOption.eoEvalEarly;
-  eoEvalVarsEarly = Sempare.Template.TTemplateEvaluationOption.eoEvalVarsEarly;
-  eoStripRecurringNewlines = Sempare.Template.TTemplateEvaluationOption.eoStripRecurringNewlines;
-  eoTrimLines = Sempare.Template.TTemplateEvaluationOption.eoTrimLines;
-  // eoDebug = TVelocityEvaluationOption.eoDebug;
-  eoPrettyPrint = Sempare.Template.TTemplateEvaluationOption.eoPrettyPrint;
-  eoRaiseErrorWhenVariableNotFound = Sempare.Template.TTemplateEvaluationOption.eoRaiseErrorWhenVariableNotFound;
-  eoReplaceNewline = Sempare.Template.TTemplateEvaluationOption.eoReplaceNewline;
+var
+  runner : ITestRunner;
+  results : IRunResults;
+  logger : ITestLogger;
+  nunitLogger : ITestLogger;
+begin
+  ReportMemoryLeaksOnShutdown:=true;
+{$IFDEF TESTINSIGHT}
+  TestInsight.DUnitX.RunRegisteredTests;
+  exit;
+{$ENDIF}
+  try
+    //Check command line options, will exit if invalid
+    TDUnitX.CheckCommandLine;
+    //Create the test runner
+    runner := TDUnitX.CreateRunner;
+    //Tell the runner to use RTTI to find Fixtures
+    runner.UseRTTI := True;
+    //tell the runner how we will log things
+    //Log to the console window
+    logger := TDUnitXConsoleLogger.Create(true);
+    runner.AddLogger(logger);
+    //Generate an NUnit compatible XML File
+    nunitLogger := TDUnitXXMLNUnitFileLogger.Create(TDUnitX.Options.XMLOutputFile);
+    runner.AddLogger(nunitLogger);
+    runner.FailsOnNoAsserts := False; //When true, Assertions must be made during tests;
 
-type
-  TVelocityEvaluationOptions = Sempare.Template.TTemplateEvaluationOptions;
-  TVelocityEvaluationOption = Sempare.Template.TTemplateEvaluationOption;
-  TVelocityValue = Sempare.Template.TTemplateValue;
-  IVelocityContext = Sempare.Template.ITemplateContext;
-  IVelocityTemplate = Sempare.Template.ITemplate;
-  IVelocityFunctions = Sempare.Template.ITemplateFunctions;
-  TVelocityTemplateResolver = Sempare.Template.TTemplateResolver;
-  TVelocityEncodeFunction = Sempare.Template.TTemplateEncodeFunction;
-  IVelocityVariables = Sempare.Template.ITemplateVariables;
-  TUTF8WithoutPreambleEncoding = Sempare.Template.TUTF8WithoutPreambleEncoding;
+    //Run tests
+    results := runner.Execute;
+    if not results.AllPassed then
+      System.ExitCode := EXIT_ERRORS;
 
-  Velocity = Sempare.Template.Template;
-
-implementation
-
-
+    {$IFNDEF CI}
+    //We don't want this happening when running under CI.
+    if TDUnitX.Options.ExitBehavior = TDUnitXExitBehavior.Pause then
+    begin
+      System.Write('Done.. press <Enter> key to quit.');
+      System.Readln;
+    end;
+    {$ENDIF}
+  except
+    on E: Exception do
+      System.Writeln(E.ClassName, ': ', E.Message);
+  end;
 end.

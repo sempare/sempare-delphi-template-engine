@@ -22,7 +22,7 @@
  * You may obtain a copy of the Licenses at                                        *
  *                                                                                 *
  * https://www.gnu.org/licenses/gpl-3.0.en.html                                    *
- * https://github.com/sempare/sempare.template/docs/commercial.license.md          *
+ * https://github.com/sempare/sempare.boot.velocity.oss/docs/commercial.license.md *
  *                                                                                 *
  * Unless required by applicable law or agreed to in writing, software             *
  * distributed under the Licenses is distributed on an "AS IS" BASIS,              *
@@ -31,42 +31,106 @@
  * limitations under the License.                                                  *
  *                                                                                 *
  ********************************************************************************%*)
-unit Sempare.Boot.Template.Velocity;
+unit Sempare.Template.Component.Template;
 
 interface
 
+{$R 'TSempareTemplate.dcr' }
+
 uses
+  System.Classes,
+  System.SysUtils,
+  System.SyncObjs,
+  Sempare.Template.Context,
+  Sempare.Template.Component.Context,
   Sempare.Template;
 
-const
-  eoStripRecurringSpaces = Sempare.Template.TTemplateEvaluationOption.eoStripRecurringSpaces;
-  eoConvertTabsToSpaces = Sempare.Template.TTemplateEvaluationOption.eoConvertTabsToSpaces;
-  eoNoDefaultFunctions = Sempare.Template.TTemplateEvaluationOption.eoNoDefaultFunctions;
-  eoNoPosition = Sempare.Template.TTemplateEvaluationOption.eoNoPosition;
-  eoEvalEarly = Sempare.Template.TTemplateEvaluationOption.eoEvalEarly;
-  eoEvalVarsEarly = Sempare.Template.TTemplateEvaluationOption.eoEvalVarsEarly;
-  eoStripRecurringNewlines = Sempare.Template.TTemplateEvaluationOption.eoStripRecurringNewlines;
-  eoTrimLines = Sempare.Template.TTemplateEvaluationOption.eoTrimLines;
-  // eoDebug = TVelocityEvaluationOption.eoDebug;
-  eoPrettyPrint = Sempare.Template.TTemplateEvaluationOption.eoPrettyPrint;
-  eoRaiseErrorWhenVariableNotFound = Sempare.Template.TTemplateEvaluationOption.eoRaiseErrorWhenVariableNotFound;
-  eoReplaceNewline = Sempare.Template.TTemplateEvaluationOption.eoReplaceNewline;
-
 type
-  TVelocityEvaluationOptions = Sempare.Template.TTemplateEvaluationOptions;
-  TVelocityEvaluationOption = Sempare.Template.TTemplateEvaluationOption;
-  TVelocityValue = Sempare.Template.TTemplateValue;
-  IVelocityContext = Sempare.Template.ITemplateContext;
-  IVelocityTemplate = Sempare.Template.ITemplate;
-  IVelocityFunctions = Sempare.Template.ITemplateFunctions;
-  TVelocityTemplateResolver = Sempare.Template.TTemplateResolver;
-  TVelocityEncodeFunction = Sempare.Template.TTemplateEncodeFunction;
-  IVelocityVariables = Sempare.Template.ITemplateVariables;
-  TUTF8WithoutPreambleEncoding = Sempare.Template.TUTF8WithoutPreambleEncoding;
 
-  Velocity = Sempare.Template.Template;
+  [ObservableMember('TemplateText')]
+  TSempareBootVelocityTemplate = class(TComponent)
+  private
+    FEnabled: boolean;
+    FContext: TSempareBootVelocityContext;
+    FTemplateText: string;
+    FTemplate: IVelocityTemplate;
+    FLock: TCriticalSection;
+    function GetTemplate: IVelocityTemplate;
+    procedure SetTemplateText(const Value: string);
+    procedure SetTemplate(const AIfNull: boolean);
+    procedure SetEnabled(const Value: boolean);
+    procedure SetContext(const Value: TSempareBootVelocityContext);
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+    property Template: IVelocityTemplate read GetTemplate;
+  published
+    property Context: TSempareBootVelocityContext read FContext write SetContext;
+    property TemplateText: string read FTemplateText write SetTemplateText;
+    property Enabled: boolean read FEnabled write SetEnabled;
+  end;
 
 implementation
 
+{ TSempareBootVelocityTemplate }
+
+constructor TSempareBootVelocityTemplate.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  FLock := TCriticalSection.Create();
+end;
+
+destructor TSempareBootVelocityTemplate.Destroy;
+begin
+  FLock.Free;
+  inherited;
+end;
+
+function TSempareBootVelocityTemplate.GetTemplate: IVelocityTemplate;
+begin
+  SetTemplate(true);
+  result := FTemplate;
+end;
+
+procedure TSempareBootVelocityTemplate.SetContext(const Value: TSempareBootVelocityContext);
+begin
+  FContext := Value;
+end;
+
+procedure TSempareBootVelocityTemplate.SetEnabled(const Value: boolean);
+begin
+  FEnabled := Value;
+  if Value then
+    SetTemplate(false);
+end;
+
+procedure TSempareBootVelocityTemplate.SetTemplate(const AIfNull: boolean);
+var
+  ctx: IVelocityContext;
+begin
+  if AIfNull and (FTemplate = nil) then
+    exit;
+  FLock.Acquire;
+  try
+    if not FEnabled then
+    begin
+      FTemplate := nil;
+      exit;
+    end;
+    if FContext <> nil then
+      ctx := FContext.Context
+    else
+      ctx := Sempare.Template.Template.Context();
+    FTemplate := Sempare.Template.Template.Parse(ctx, FTemplateText)
+  finally
+    FLock.Release;
+  end;
+end;
+
+procedure TSempareBootVelocityTemplate.SetTemplateText(const Value: string);
+begin
+  FTemplateText := Value;
+  SetTemplate(false);
+end;
 
 end.

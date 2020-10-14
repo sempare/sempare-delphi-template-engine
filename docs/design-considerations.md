@@ -1,6 +1,6 @@
-# ![](../images/sempare-logo-45px.png) Sempare Boot Velocity Template Engine
+# ![](../images/sempare-logo-45px.png) Sempare Template Engine
 
-Copyright (c) 2019 [Sempare Limited](http://www.sempare.ltd), [Conrad Vermeulen](mailto:conrad.vermeulen@gmail.com)
+Copyright (c) 2020 [Sempare Limited](http://www.sempare.ltd), [Conrad Vermeulen](mailto:conrad.vermeulen@gmail.com)
 
 ## Design considerations
 
@@ -9,4 +9,4 @@ Copyright (c) 2019 [Sempare Limited](http://www.sempare.ltd), [Conrad Vermeulen]
 
 ### no bytecode
 
-The evaluation engine is a very simple. Parsing is fairly quick, so byte code is considered overkill.
+The evaluation engine is a very simple. This may be considered in future.

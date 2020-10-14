@@ -31,42 +31,98 @@
  * limitations under the License.                                                  *
  *                                                                                 *
  ********************************************************************************%*)
-unit Sempare.Boot.Template.Velocity;
+unit Sempare.Template.TestDeref;
 
 interface
 
 uses
-  Sempare.Template;
-
-const
-  eoStripRecurringSpaces = Sempare.Template.TTemplateEvaluationOption.eoStripRecurringSpaces;
-  eoConvertTabsToSpaces = Sempare.Template.TTemplateEvaluationOption.eoConvertTabsToSpaces;
-  eoNoDefaultFunctions = Sempare.Template.TTemplateEvaluationOption.eoNoDefaultFunctions;
-  eoNoPosition = Sempare.Template.TTemplateEvaluationOption.eoNoPosition;
-  eoEvalEarly = Sempare.Template.TTemplateEvaluationOption.eoEvalEarly;
-  eoEvalVarsEarly = Sempare.Template.TTemplateEvaluationOption.eoEvalVarsEarly;
-  eoStripRecurringNewlines = Sempare.Template.TTemplateEvaluationOption.eoStripRecurringNewlines;
-  eoTrimLines = Sempare.Template.TTemplateEvaluationOption.eoTrimLines;
-  // eoDebug = TVelocityEvaluationOption.eoDebug;
-  eoPrettyPrint = Sempare.Template.TTemplateEvaluationOption.eoPrettyPrint;
-  eoRaiseErrorWhenVariableNotFound = Sempare.Template.TTemplateEvaluationOption.eoRaiseErrorWhenVariableNotFound;
-  eoReplaceNewline = Sempare.Template.TTemplateEvaluationOption.eoReplaceNewline;
+  DUnitX.TestFramework;
 
 type
-  TVelocityEvaluationOptions = Sempare.Template.TTemplateEvaluationOptions;
-  TVelocityEvaluationOption = Sempare.Template.TTemplateEvaluationOption;
-  TVelocityValue = Sempare.Template.TTemplateValue;
-  IVelocityContext = Sempare.Template.ITemplateContext;
-  IVelocityTemplate = Sempare.Template.ITemplate;
-  IVelocityFunctions = Sempare.Template.ITemplateFunctions;
-  TVelocityTemplateResolver = Sempare.Template.TTemplateResolver;
-  TVelocityEncodeFunction = Sempare.Template.TTemplateEncodeFunction;
-  IVelocityVariables = Sempare.Template.ITemplateVariables;
-  TUTF8WithoutPreambleEncoding = Sempare.Template.TUTF8WithoutPreambleEncoding;
 
-  Velocity = Sempare.Template.Template;
+  [TestFixture]
+  TTestTemplateDeref = class
+  private
+    procedure Test<T>(const AValue: T; const AExpect: string; const ATemplate: string);
+  public
+    [Test]
+    procedure TestExprDrefef;
+    [Test]
+    procedure TestSimpleDrefef;
+    [Test]
+    procedure TestWith;
+    [Test]
+    procedure TestDerefError;
+  end;
 
 implementation
 
+uses
+  System.SysUtils,
+  Sempare.Template.Context,
+  Sempare.Template;
+
+{ TTestTemplateDeref }
+
+procedure TTestTemplateDeref.Test<T>(const AValue: T; const AExpect: string; const ATemplate: string);
+var
+  c: ITemplate;
+begin
+  c := Template.parse(ATemplate);
+  Assert.AreEqual(AExpect, Template.Eval(c, AValue));
+end;
+
+type
+  TExprDeref = record
+    a: record
+      b: record
+        abcdef: string;
+        abcghi: string;
+      end;
+    end;
+  end;
+
+procedure TTestTemplateDeref.TestDerefError;
+var
+  ctx: ITemplateContext;
+  r: record anothervar: boolean;
+end;
+begin
+  ctx := Template.Context([eoRaiseErrorWhenVariableNotFound]);
+  Assert.WillRaise(
+    procedure
+    begin
+      Template.Eval(ctx, '<% notfound %>', r);
+    end);
+end;
+
+procedure TTestTemplateDeref.TestExprDrefef;
+var
+  rec: TExprDeref;
+begin
+  rec.a.b.abcdef := '123';
+  rec.a.b.abcghi := '456';
+
+  Test(rec, '''before  123 after ''', '''before <% suffix := ''def'' %> <% a.b[''abc'' + suffix] %> after ''');
+end;
+
+procedure TTestTemplateDeref.TestSimpleDrefef;
+begin
+  Template.parse('before <% a.b %> after ');
+end;
+
+procedure TTestTemplateDeref.TestWith;
+var
+  rec: TExprDeref;
+begin
+  rec.a.b.abcdef := '123';
+  rec.a.b.abcghi := '456';
+  Test(rec, '123456', '<% with a.b %><% abcdef %><% abcghi %><%end%>');
+
+end;
+
+initialization
+
+TDUnitX.RegisterTestFixture(TTestTemplateDeref);
 
 end.

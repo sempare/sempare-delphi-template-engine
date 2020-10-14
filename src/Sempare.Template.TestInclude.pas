@@ -31,42 +31,71 @@
  * limitations under the License.                                                  *
  *                                                                                 *
  ********************************************************************************%*)
-unit Sempare.Boot.Template.Velocity;
+unit Sempare.Template.TestInclude;
 
 interface
 
 uses
-  Sempare.Template;
-
-const
-  eoStripRecurringSpaces = Sempare.Template.TTemplateEvaluationOption.eoStripRecurringSpaces;
-  eoConvertTabsToSpaces = Sempare.Template.TTemplateEvaluationOption.eoConvertTabsToSpaces;
-  eoNoDefaultFunctions = Sempare.Template.TTemplateEvaluationOption.eoNoDefaultFunctions;
-  eoNoPosition = Sempare.Template.TTemplateEvaluationOption.eoNoPosition;
-  eoEvalEarly = Sempare.Template.TTemplateEvaluationOption.eoEvalEarly;
-  eoEvalVarsEarly = Sempare.Template.TTemplateEvaluationOption.eoEvalVarsEarly;
-  eoStripRecurringNewlines = Sempare.Template.TTemplateEvaluationOption.eoStripRecurringNewlines;
-  eoTrimLines = Sempare.Template.TTemplateEvaluationOption.eoTrimLines;
-  // eoDebug = TVelocityEvaluationOption.eoDebug;
-  eoPrettyPrint = Sempare.Template.TTemplateEvaluationOption.eoPrettyPrint;
-  eoRaiseErrorWhenVariableNotFound = Sempare.Template.TTemplateEvaluationOption.eoRaiseErrorWhenVariableNotFound;
-  eoReplaceNewline = Sempare.Template.TTemplateEvaluationOption.eoReplaceNewline;
+  DUnitX.TestFramework;
 
 type
-  TVelocityEvaluationOptions = Sempare.Template.TTemplateEvaluationOptions;
-  TVelocityEvaluationOption = Sempare.Template.TTemplateEvaluationOption;
-  TVelocityValue = Sempare.Template.TTemplateValue;
-  IVelocityContext = Sempare.Template.ITemplateContext;
-  IVelocityTemplate = Sempare.Template.ITemplate;
-  IVelocityFunctions = Sempare.Template.ITemplateFunctions;
-  TVelocityTemplateResolver = Sempare.Template.TTemplateResolver;
-  TVelocityEncodeFunction = Sempare.Template.TTemplateEncodeFunction;
-  IVelocityVariables = Sempare.Template.ITemplateVariables;
-  TUTF8WithoutPreambleEncoding = Sempare.Template.TUTF8WithoutPreambleEncoding;
 
-  Velocity = Sempare.Template.Template;
+  [TestFixture]
+  TTestTemplateInclude = class
+  public
+    [Test]
+    procedure TestInclude;
+
+  end;
 
 implementation
 
+uses
+  System.Generics.Collections,
+  Sempare.Template.Context,
+  Sempare.Template;
+
+type
+  THeaderContentFooter = record
+    header: record
+      Name: string;
+    end;
+
+    content: TList<string>;
+
+    footer: record
+      Year: integer;
+    end;
+  end;
+
+procedure TTestTemplateInclude.TestInclude;
+var
+  c: ITemplate;
+  x: THeaderContentFooter;
+  ctx: ITemplateContext;
+
+begin
+  ctx := Template.Context;
+
+  ctx.Template['header'] := Template.parse('header <% header.name %> <% footer.year %>');
+  ctx.Template['footer'] := Template.parse('footer Copyright <% footer.year %>');
+
+  c := Template.parse('<% suffix := ''er''%><% include (''head'' + suffix) %>' + '<%for v in content %>' + '<% v %>' + '<% end %>' + '<% include (''foot'' + suffix) %>');
+
+  x.content := TList<string>.create;
+  x.content.Add('conrad');
+  x.content.Add('christa');
+  x.header.Name := 'Sempare Ltd';
+  x.footer.Year := 2020;
+  try
+    Assert.AreEqual('header Sempare Ltd 2020conradchristafooter Copyright 2020', Template.Eval(ctx, c, x));
+  finally
+    x.content.Free;
+  end;
+end;
+
+initialization
+
+TDUnitX.RegisterTestFixture(TTestTemplateInclude);
 
 end.

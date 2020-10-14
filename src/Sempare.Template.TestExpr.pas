@@ -31,42 +31,97 @@
  * limitations under the License.                                                  *
  *                                                                                 *
  ********************************************************************************%*)
-unit Sempare.Boot.Template.Velocity;
+unit Sempare.Template.TestExpr;
 
 interface
 
 uses
-  Sempare.Template;
-
-const
-  eoStripRecurringSpaces = Sempare.Template.TTemplateEvaluationOption.eoStripRecurringSpaces;
-  eoConvertTabsToSpaces = Sempare.Template.TTemplateEvaluationOption.eoConvertTabsToSpaces;
-  eoNoDefaultFunctions = Sempare.Template.TTemplateEvaluationOption.eoNoDefaultFunctions;
-  eoNoPosition = Sempare.Template.TTemplateEvaluationOption.eoNoPosition;
-  eoEvalEarly = Sempare.Template.TTemplateEvaluationOption.eoEvalEarly;
-  eoEvalVarsEarly = Sempare.Template.TTemplateEvaluationOption.eoEvalVarsEarly;
-  eoStripRecurringNewlines = Sempare.Template.TTemplateEvaluationOption.eoStripRecurringNewlines;
-  eoTrimLines = Sempare.Template.TTemplateEvaluationOption.eoTrimLines;
-  // eoDebug = TVelocityEvaluationOption.eoDebug;
-  eoPrettyPrint = Sempare.Template.TTemplateEvaluationOption.eoPrettyPrint;
-  eoRaiseErrorWhenVariableNotFound = Sempare.Template.TTemplateEvaluationOption.eoRaiseErrorWhenVariableNotFound;
-  eoReplaceNewline = Sempare.Template.TTemplateEvaluationOption.eoReplaceNewline;
+  DUnitX.TestFramework;
 
 type
-  TVelocityEvaluationOptions = Sempare.Template.TTemplateEvaluationOptions;
-  TVelocityEvaluationOption = Sempare.Template.TTemplateEvaluationOption;
-  TVelocityValue = Sempare.Template.TTemplateValue;
-  IVelocityContext = Sempare.Template.ITemplateContext;
-  IVelocityTemplate = Sempare.Template.ITemplate;
-  IVelocityFunctions = Sempare.Template.ITemplateFunctions;
-  TVelocityTemplateResolver = Sempare.Template.TTemplateResolver;
-  TVelocityEncodeFunction = Sempare.Template.TTemplateEncodeFunction;
-  IVelocityVariables = Sempare.Template.ITemplateVariables;
-  TUTF8WithoutPreambleEncoding = Sempare.Template.TUTF8WithoutPreambleEncoding;
 
-  Velocity = Sempare.Template.Template;
+  [TestFixture]
+  TTestTemplateExpr = class
+  public
+    [Test]
+    procedure TestExprBool;
+    [Test]
+    procedure TestExprNum;
+    [Test]
+    procedure TestExprNumDiv;
+    [Test]
+    procedure TestExprNumFloat;
+    [Test]
+    procedure TestExprStr;
+    [Test]
+    procedure TestSimpleVariable;
+    [Test]
+    procedure TestTernary;
+    [Test]
+    procedure TestInExpr;
+
+  end;
 
 implementation
 
+uses
+  Sempare.Template;
+
+procedure TTestTemplateExpr.TestSimpleVariable;
+begin
+  Template.parse('before <% abc %> after');
+end;
+
+procedure TTestTemplateExpr.TestTernary;
+begin
+  Assert.AreEqual('a', Template.Eval('<% true?''a'':''b'' %>'));
+  Assert.AreEqual('b', Template.Eval('<% false?''a'':''b'' %>'));
+end;
+
+procedure TTestTemplateExpr.TestExprNum;
+begin
+  Template.parse('before <% a := 123 %> after ');
+end;
+
+procedure TTestTemplateExpr.TestExprNumDiv;
+begin
+  Assert.AreEqual('2', Template.Eval('<% 4.7 div 2 %>'));
+  Assert.AreEqual('2', Template.Eval('<% 4 div 2 %>'));
+  Assert.AreEqual('2.5', Template.Eval('<% 5 / 2 %>'));
+end;
+
+procedure TTestTemplateExpr.TestExprNumFloat;
+begin
+  Template.parse('before <% a := 123.45 %> after ');
+end;
+
+procedure TTestTemplateExpr.TestExprStr;
+begin
+  Template.parse('before <% a := ''hello world'' %> after ');
+end;
+
+procedure TTestTemplateExpr.TestInExpr;
+begin
+  Assert.AreEqual('false', Template.Eval('<% 0 in [1,2,3] %>'));
+  Assert.AreEqual('true', Template.Eval('<% 1 in [1,2,3] %>'));
+  Assert.AreEqual('true', Template.Eval('<% 2 in [1,2,3] %>'));
+  Assert.AreEqual('true', Template.Eval('<% 3 in [1,2,3] %>'));
+  Assert.AreEqual('false', Template.Eval('<% 4 in [1,2,3] %>'));
+  Assert.AreEqual('true', Template.Eval('<% ''hello world'' in [1,''hello world'',3] %>'));
+  Assert.AreEqual('false', Template.Eval('<% ''hello'' in [1,''hello world'',3] %>'));
+end;
+
+procedure TTestTemplateExpr.TestExprBool;
+begin
+  Template.parse('before <% a := true %> after ');
+  Template.parse('before <% a:= false %> after ');
+  Template.parse('before <% a:= true and false %> after ');
+  Template.parse('before <% a:= true or false %> after ');
+  Template.parse('before <% a:= true and false or true %> after ');
+end;
+
+initialization
+
+TDUnitX.RegisterTestFixture(TTestTemplateExpr);
 
 end.

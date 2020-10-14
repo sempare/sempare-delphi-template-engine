@@ -1,0 +1,60 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{26959EB3-5592-41E6-A036-1F8991742775}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="Sempare.Template.Pkg.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Sempare.Template.Tester.dproj">
+            <Dependencies>Sempare.Template.Pkg.dproj</Dependencies>
+        </Projects>
+        <Projects Include="demo\VelocityDemo\Sempare.Template.Demo.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="Sempare_Template_Pkg">
+        <MSBuild Projects="Sempare.Template.Pkg.dproj"/>
+    </Target>
+    <Target Name="Sempare_Template_Pkg:Clean">
+        <MSBuild Projects="Sempare.Template.Pkg.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="Sempare_Template_Pkg:Make">
+        <MSBuild Projects="Sempare.Template.Pkg.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Sempare_Template_Tester" DependsOnTargets="Sempare.Template.Pkg">
+        <MSBuild Projects="Sempare.Template.Tester.dproj"/>
+    </Target>
+    <Target Name="Sempare_Template_Tester:Clean" DependsOnTargets="Sempare.Template.Pkg:Clean">
+        <MSBuild Projects="Sempare.Template.Tester.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="Sempare_Template_Tester:Make" DependsOnTargets="Sempare.Template.Pkg:Make">
+        <MSBuild Projects="Sempare.Template.Tester.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Sempare_Template_Demo">
+        <MSBuild Projects="demo\VelocityDemo\Sempare.Template.Demo.dproj"/>
+    </Target>
+    <Target Name="Sempare_Template_Demo:Clean">
+        <MSBuild Projects="demo\VelocityDemo\Sempare.Template.Demo.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="Sempare_Template_Demo:Make">
+        <MSBuild Projects="demo\VelocityDemo\Sempare.Template.Demo.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="Sempare_Template_Pkg;Sempare_Template_Tester;Sempare_Template_Demo"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="Sempare_Template_Pkg:Clean;Sempare_Template_Tester:Clean;Sempare_Template_Demo:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="Sempare_Template_Pkg:Make;Sempare_Template_Tester:Make;Sempare_Template_Demo:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>

@@ -1,28 +1,28 @@
-# ![](../images/sempare-logo-45px.png) Sempare Boot Velocity Template Engine
+# ![](../images/sempare-logo-45px.png) Sempare Template Engine
 
-Copyright (c) 2019 [Sempare Limited](http://www.sempare.ltd), [Conrad Vermeulen](mailto:conrad.vermeulen@gmail.com)
+Copyright (c) 2020 [Sempare Limited](http://www.sempare.ltd), [Conrad Vermeulen](mailto:conrad.vermeulen@gmail.com)
 
 
 ## Components
 
-Sempare Boot Velocity uses interfaces extensively. This makes memory management much easier as interfaced objects are reference counted and alls for code to be more readable as minimal try/catch/finally block are required.
+The Sempare Template Engine uses interfaces extensively. This makes memory management much easier as interfaced objects are reference counted and alls for code to be more readable as minimal try/catch/finally block are required.
 
-To ease the use of Sempare Boot Velocity, you need to just include a reference to the _Sempare.Boot.Template.Velocity_ unit:
+To ease the use of Sempare Template Engine you need to just include a reference to the _Sempare.Template._ unit:
 ```
 uses
-    Sempare.Boot.Template.Velocity;
+    Sempare.Template;
 ```
 
 Key components of interest that are exposed to you are:
-1. [Velocity](#Velocity)
-2. [IVelocityContext](#IVelocityContext)
-3. [IVelocityTemplate](#IVelocityTemplate)
+1. [Template](#Template)
+2. [ITemplateContext](#ITemplateContext)
+3. [ITemplate](#ITemplate)
 
-### Velocity
+### Template
 
-The Velocity class exposes static class methods acting as an entry point to the Velocity engine with output being to a TStream or string.
+The Template class exposes static class methods acting as an entry point to the Template engine with output being to a TStream or string.
 
-Most common use cases would be to use Velocity.Eval(), Velocity.Parse() and Velocity.Context() methods. More information will be provided later.
+Most common use cases would be to use Template.Eval(), Template.Parse() and Template.Context() methods. More information will be provided later.
 
 ```
 type
@@ -30,26 +30,26 @@ type
                 name : string;
             end;
 begin
-   var template := Velocity.parse('hello <% name %>');
+   var template := Template.parse('hello <% name %>');
    var info : TInfo;
    info.name := 'sue';
 
    // Eval returning a string
-   writeln(Velocity.Eval(template, info));
+   writeln(Template.Eval(template, info));
 
    // Eval writing to a stream
    var s:= TStringStream.Create();
    try
-   	    Velocity.Eval(template, info, s);
+   	    Template.Eval(template, info, s);
         writeln(s.DataString);
    finally
 	s.Free;
    end;
 end;
 ```
-The Velocity class provides many other useful methods:
+The Template class provides many other useful methods:
 ```
-   Velocity = class
+   Template = class
   public
     class function Context(AOptions: TVelocityEvaluationOptions = []): IVelocityContext; inline; static;
     class function Parser(const AContext: IVelocityContext): IVelocityParser; overload; inline; static;
@@ -96,11 +96,11 @@ The Velocity class provides many other useful methods:
   end;
 
 ```
-### IVelocityContext
+### ITemplateContext
 
 The Velocity context object is a container for configuration used when parsing or evaluating templats.
 ```
-    var ctx := Velocity.Context();
+    var ctx := Template.Context();
     ctx.MaxRuntimeMs := 5;
     
     // encoder can be an HTML encoder (discussed later)
@@ -120,18 +120,18 @@ The Velocity context object is a container for configuration used when parsing o
 
 Defining variables in a context allows them to be used in made available to multiple templates easily.
 
-### IVelocityTemplate
+### ITemplate
 
 The output of the Velocity parser is an object implementing the IVelocityTemplate interface.
 ```
-    var ctx := Velocity.Context();
-    var tpl := Velocity.Parse(ctx, 'this is a template'); 
-    writeln(Velocity.Eval(ctx, tpl));
+    var ctx := Template.Context();
+    var tpl := Template.Parse(ctx, 'this is a template'); 
+    writeln(Template.Eval(ctx, tpl));
 ```
 ##### Thread Safety
-The Sempare Boot Velocity template engine should be totally thread safe. There is no shared state besides potential references a shared Velocity context.
+The Sempare Template Engine should be totally thread safe. There is no shared state besides potential references a shared template context.
 
-Components that should be safe to share are instances of _IVelocityContext_ and _IVelocityTemplate_. 
+Components that should be safe to share are instances of _ITemplateContext_ and _ITemplate_. 
 
 ##### Example use case
 

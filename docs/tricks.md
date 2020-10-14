@@ -1,6 +1,6 @@
-# ![](../images/sempare-logo-45px.png) Sempare Boot Velocity Template Engine
+# ![](../images/sempare-logo-45px.png) Sempare Template Engine
 
-Copyright (c) 2019 [Sempare Limited](http://www.sempare.ltd), [Conrad Vermeulen](mailto:conrad.vermeulen@gmail.com)
+Copyright (c) 2020 [Sempare Limited](http://www.sempare.ltd), [Conrad Vermeulen](mailto:conrad.vermeulen@gmail.com)
 
 ## Tricks
 
@@ -22,7 +22,7 @@ begin
         v3 := 'c';
         v4 := 'd';
     end;
-    writeln(Velocity.Eval('<%for i := 1 to 4 %><% v['v' + i] %><% end %>'));
+    writeln(Template.Eval('<%for i := 1 to 4 %><% v['v' + i] %><% end %>'));
 end;
 ```
 The above example will produce:

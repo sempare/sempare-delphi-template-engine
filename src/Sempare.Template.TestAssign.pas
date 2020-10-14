@@ -31,42 +31,61 @@
  * limitations under the License.                                                  *
  *                                                                                 *
  ********************************************************************************%*)
-unit Sempare.Boot.Template.Velocity;
+unit Sempare.Template.TestAssign;
 
 interface
 
 uses
-  Sempare.Template;
-
-const
-  eoStripRecurringSpaces = Sempare.Template.TTemplateEvaluationOption.eoStripRecurringSpaces;
-  eoConvertTabsToSpaces = Sempare.Template.TTemplateEvaluationOption.eoConvertTabsToSpaces;
-  eoNoDefaultFunctions = Sempare.Template.TTemplateEvaluationOption.eoNoDefaultFunctions;
-  eoNoPosition = Sempare.Template.TTemplateEvaluationOption.eoNoPosition;
-  eoEvalEarly = Sempare.Template.TTemplateEvaluationOption.eoEvalEarly;
-  eoEvalVarsEarly = Sempare.Template.TTemplateEvaluationOption.eoEvalVarsEarly;
-  eoStripRecurringNewlines = Sempare.Template.TTemplateEvaluationOption.eoStripRecurringNewlines;
-  eoTrimLines = Sempare.Template.TTemplateEvaluationOption.eoTrimLines;
-  // eoDebug = TVelocityEvaluationOption.eoDebug;
-  eoPrettyPrint = Sempare.Template.TTemplateEvaluationOption.eoPrettyPrint;
-  eoRaiseErrorWhenVariableNotFound = Sempare.Template.TTemplateEvaluationOption.eoRaiseErrorWhenVariableNotFound;
-  eoReplaceNewline = Sempare.Template.TTemplateEvaluationOption.eoReplaceNewline;
+  DUnitX.TestFramework;
 
 type
-  TVelocityEvaluationOptions = Sempare.Template.TTemplateEvaluationOptions;
-  TVelocityEvaluationOption = Sempare.Template.TTemplateEvaluationOption;
-  TVelocityValue = Sempare.Template.TTemplateValue;
-  IVelocityContext = Sempare.Template.ITemplateContext;
-  IVelocityTemplate = Sempare.Template.ITemplate;
-  IVelocityFunctions = Sempare.Template.ITemplateFunctions;
-  TVelocityTemplateResolver = Sempare.Template.TTemplateResolver;
-  TVelocityEncodeFunction = Sempare.Template.TTemplateEncodeFunction;
-  IVelocityVariables = Sempare.Template.ITemplateVariables;
-  TUTF8WithoutPreambleEncoding = Sempare.Template.TUTF8WithoutPreambleEncoding;
 
-  Velocity = Sempare.Template.Template;
+  [TestFixture]
+  TTestTemplateAssign = class
+  public
+    [Test]
+    procedure TestAssignFunctionCall;
+    [Test]
+    procedure TestSimpleAssignment;
+  end;
 
 implementation
 
+uses
+  Sempare.Template.Context,
+  Sempare.Template;
+
+procedure TTestTemplateAssign.TestSimpleAssignment;
+begin
+  Template.parse('before <% abc := true %> after  <% abc %> final');
+end;
+
+type
+  TDoSomething = class
+  public
+    class function sum(const AValues: array of extended): extended; static;
+  end;
+
+class function TDoSomething.sum(const AValues: array of extended): extended;
+var
+  v: double;
+begin
+  result := 0;
+  for v in AValues do
+    result := result + v;
+end;
+
+procedure TTestTemplateAssign.TestAssignFunctionCall;
+var
+  ctx: ITemplateContext;
+begin
+  ctx := Template.Context;
+  ctx.Functions.addfunctions(TDoSomething);
+  Template.parse(ctx, 'before <% abc := sum(3,4,5) %> after  <% abc %> final');
+end;
+
+initialization
+
+TDUnitX.RegisterTestFixture(TTestTemplateAssign);
 
 end.
