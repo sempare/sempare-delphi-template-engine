@@ -9,11 +9,10 @@
  *                        Sempare Templating Engine                                *
  *                                                                                 *
  *                                                                                 *
- *               https://github.com/sempare/sempare.template                       *
+ *         https://github.com/sempare/sempare-delphi-template-engine               *
  ***********************************************************************************
  *                                                                                 *
- * Copyright (c) 2020 Sempare Limited,                                             *
- *                    Conrad Vermeulen <conrad.vermeulen@gmail.com>                *
+ * Copyright (c) 2020 Sempare Limited                                              *
  *                                                                                 *
  * Contact: info@sempare.ltd                                                       *
  *                                                                                 *
