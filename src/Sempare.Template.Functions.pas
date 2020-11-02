@@ -526,7 +526,7 @@ begin
       compareInt;
     tkFloat:
       comparefloat;
-    tkString, tkLString, tkWideString, tkUnicodeString:
+    tkString, tkLString, tkWString, tkUString:
       compareString;
   else
     raise Exception.Create('Type not supported');
