@@ -13,7 +13,7 @@
 	],
 	"source_folders": [
 		{
-			"folder": ".",
+			"folder": "src",
 			"recursive": true,
 			"filter": "*.*;*"
 		}
@@ -21,7 +21,7 @@
 	"projects": [
 		{
 			"project": "Sempare.Template.Engine.Group.groupproj",
-			"compiler_min": 29
+			"compiler": 34
 		}
 	]
 }
