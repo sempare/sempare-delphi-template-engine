@@ -95,11 +95,11 @@ The playlist has a few videos that are very short (most less than a minute - bli
 - lazy template resolution
 - parse time evaluation of expressions/statements
 - allow use of custom encoding (UTF-8 with BOM, UTF-8 without BOM, ASCII, etc)
-- extensibile RTTI interface to easily dereference classes and interfaces (current customisations for IVelocityVariables, TDictionary, TJsonObject) 
+- extensibile RTTI interface to easily dereference classes and interfaces (current customisations for IVelocityVariables, TDictionary, TJsonObject)
 
 ## Objectives
 
-The Sempare Templating Engine is not intended to be a fully featured general purpose programming language such as PHP where the script itself could be a self contained programming language.
+The Sempare Templating Engine is not intended to be a fully featured general purpose programming language such as PHP where the script itself could be a self contained programming language (but it does have most of the features).
 
 Sempare Templating Engine aims to provide just enough functionality to allow you to easily work with the 'view' aspects of a template. Any enhanced functionality required from the scripting environment should be provided by the custom functions written in Pascal.
 
@@ -122,6 +122,8 @@ Although the development was done on Delphi 10.3.3, build and tests have been ru
 There should be no platform specific restrictions.
 
 ### Using the Sempare Templating Engine in your Delphi project
+
+Start by adding the *src* folder to the Delphi search path. Otherwise, there are some projects you can use:
 
 Open __Sempare.Template.Engine.Group.groupproj__ which will include:
 
