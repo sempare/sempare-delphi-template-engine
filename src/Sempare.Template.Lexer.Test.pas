@@ -1,4 +1,4 @@
- (*%*************************************************************************************************
+(*%*************************************************************************************************
  *                 ___                                                                              *
  *                / __|  ___   _ __    _ __   __ _   _ _   ___                                      *
  *                \__ \ / -_) | '  \  | '_ \ / _` | | '_| / -_)                                     *
@@ -50,7 +50,8 @@ type
 implementation
 
 uses
-  System.classes,
+  System.SysUtils,
+  System.Classes,
   Sempare.Template.AST,
   Sempare.Template.Context,
   Sempare.Template.Common,
@@ -74,7 +75,7 @@ begin
     if symbol.Token = VsEOF then
       break;
     val := '';
-    if symbol.QueryInterface(ITemplateValueSymbol, vs) = 0 then
+    if supports(symbol, ITemplateValueSymbol, vs) then
     begin
       vs := symbol as ITemplateValueSymbol;
       val := vs.Value;

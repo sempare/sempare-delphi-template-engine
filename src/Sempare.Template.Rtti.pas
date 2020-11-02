@@ -1,4 +1,4 @@
- (*%*************************************************************************************************
+(*%*************************************************************************************************
  *                 ___                                                                              *
  *                / __|  ___   _ __    _ __   __ _   _ _   ___                                      *
  *                \__ \ / -_) | '  \  | '_ \ / _` | | '_| / -_)                                     *
@@ -95,6 +95,7 @@ implementation
 
 uses
   System.Math,
+  Data.DB,
   System.Generics.Collections,
   Sempare.Template.Common;
 
@@ -341,7 +342,7 @@ begin
     tkString, tkWString, tkUString, tkLString:
       exit(AValue.AsString <> '');
     tkDynArray:
-      exit(avalue.GetArrayLength > 0);
+      exit(AValue.GetArrayLength > 0);
   else
     exit(false);
   end;
@@ -611,6 +612,27 @@ end;
 
 {$ENDIF}
 
+function processDataSet(APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; out AFound: boolean): TValue;
+var
+  LDataSet: TDataSet;
+  LKey: string;
+begin
+  AFound := true;
+  LDataSet := obj.AsObject as TDataSet;
+  LKey := AsString(ADeref);
+  try
+    result := TValue.FromVariant(LDataSet.FieldByName(LKey).AsVariant);
+  except
+    on e: Exception do
+    begin
+      AFound := false;
+      if ARaiseIfMissing then
+        RaiseError(APosition, 'Cannot dereference %s in dataset', [LKey]);
+      result := '';
+    end;
+  end;
+end;
+
 function Deref(APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
 
   function ProcessArray(obj: TValue; const ADeref: TValue; out AFound: boolean): TValue;
@@ -757,6 +779,14 @@ begin
   result := name.StartsWith('System.Generics.Collections.TDictionary<System.string,') or name.StartsWith('System.Generics.Collections.TObjectDictionary<string,');
 end;
 
+function MatchDataSet(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
+var
+  n: string;
+begin
+  n := AClass.QualifiedClassName;
+  result := AClass.InheritsFrom(TDataSet);
+end;
+
 procedure PopulateStackFrameFromDictionary(const StackFrame: TStackFrame; const ARttiType: TRttiType; const AClass: TValue);
 var
   e: TObject;
@@ -768,7 +798,6 @@ var
   k: string;
   o: TValue;
   obj: pointer;
-var
   ADict: TObject;
 
 begin
@@ -776,25 +805,29 @@ begin
   m := ARttiType.GetMethod('GetEnumerator');
   val := m.Invoke(ADict, []).AsObject;
   e := val.AsObject;
-  T := GRttiContext.GetType(e.ClassType);
-  k := e.ClassName;
-  movenext := T.GetMethod('MoveNext');
-  current := T.GetProperty('Current');
-  Key := nil;
-  Value := nil;
-  while movenext.Invoke(e, []).AsBoolean do
-  begin
-    o := current.GetValue(e); // this returns TPair record
-    obj := o.GetReferenceToRawData;
-    if Key = nil then
+  try
+    T := GRttiContext.GetType(e.ClassType);
+    k := e.ClassName;
+    movenext := T.GetMethod('MoveNext');
+    current := T.GetProperty('Current');
+    Key := nil;
+    Value := nil;
+    while movenext.Invoke(e, []).AsBoolean do
     begin
-      T := GRttiContext.GetType(o.TypeInfo);
-      Key := T.GetField('Key');
-      Value := T.GetField('Value');
+      o := current.GetValue(e); // this returns TPair record
+      obj := o.GetReferenceToRawData;
+      if Key = nil then
+      begin
+        T := GRttiContext.GetType(o.TypeInfo);
+        Key := T.GetField('Key');
+        Value := T.GetField('Value');
+      end;
+      k := Key.GetValue(obj).AsString;
+      val := Value.GetValue(obj);
+      StackFrame[k] := val;
     end;
-    k := Key.GetValue(obj).AsString;
-    val := Value.GetValue(obj);
-    StackFrame[k] := val;
+  finally
+    e.Free;
   end;
 end;
 
@@ -823,8 +856,8 @@ RegisterDeref(MatchJsonObject, processJson);
 RegisterPopulateStackFrame(MatchJsonObject, PopulateStackFrameFromJsonObject);
 {$ENDIF}
 RegisterPopulateStackFrame(MatchStringDictionary, PopulateStackFrameFromDictionary);
-
 RegisterDeref(MatchTemplateVariables, processTemplateVariables);
+RegisterDeref(MatchDataSet, processDataSet);
 
 finalization
 

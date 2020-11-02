@@ -1,4 +1,4 @@
- (*%*************************************************************************************************
+(*%*************************************************************************************************
  *                 ___                                                                              *
  *                / __|  ___   _ __    _ __   __ _   _ _   ___                                      *
  *                \__ \ / -_) | '  \  | '_ \ / _` | | '_| / -_)                                     *
@@ -135,8 +135,8 @@ end;
 
 destructor TPrettyPrintTemplateVisitor.Destroy;
 begin
-if FStringBuilder <> nil then
-  FreeAndNil(FStringBuilder);
+  if FStringBuilder <> nil then
+    FreeAndNil(FStringBuilder);
   inherited;
 end;
 

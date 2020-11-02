@@ -60,7 +60,8 @@ package Sempare.Template.Pkg;
 {$IMPLICITBUILD ON}
 
 requires
-  rtl;
+  rtl,
+  dbrtl;
 
 contains
   Sempare.Template.Visitor in 'src\Sempare.Template.Visitor.pas',

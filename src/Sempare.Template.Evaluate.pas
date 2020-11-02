@@ -1,4 +1,4 @@
- (*%*************************************************************************************************
+(*%*************************************************************************************************
  *                 ___                                                                              *
  *                / __|  ___   _ __    _ __   __ _   _ _   ___                                      *
  *                \__ \ / -_) | '  \  | '_ \ / _` | | '_| / -_)                                     *
@@ -127,6 +127,7 @@ type
 implementation
 
 uses
+  Data.DB,
   Sempare.Template.Rtti,
   Sempare.Template.Util;
 
@@ -374,8 +375,36 @@ var
   m, movenext: TRttiMethod;
   current: TRttiProperty;
 
+  procedure VisitDataSet;
+  var
+    i: integer;
+  begin
+    i := 1;
+    m := T.GetMethod('First');
+    e := Eval.AsObject;
+    m.Invoke(e, []);
+    current := T.getProperty('EOF');
+    movenext := T.GetMethod('Next');
+    while not current.GetValue(e).AsBoolean do
+    begin
+      if coBreak in FLoopOptions then
+        break;
+      FStackFrames.peek[v] := i;
+      exclude(FLoopOptions, coContinue);
+      CheckRunTime(Position(AStmt));
+      acceptvisitor(AStmt.Container, self);
+      movenext.Invoke(e, []);
+      inc(i);
+    end;
+  end;
+
   procedure visitobject;
   begin
+    if T.AsInstance.MetaclassType.InheritsFrom(TDataSet) then
+    begin
+      VisitDataSet;
+      exit;
+    end;
     m := T.GetMethod('GetEnumerator');
     if m = nil then
       RaiseError(Position(AStmt), 'GetEnumerator not found on object.');
@@ -386,7 +415,7 @@ var
       e := val.AsObject;
       T := GRttiContext.GetType(e.ClassType);
       movenext := T.GetMethod('MoveNext');
-      current := T.GetProperty('Current');
+      current := T.getProperty('Current');
 
       while movenext.Invoke(e, []).AsBoolean do
       begin
@@ -499,7 +528,7 @@ begin
   FStackFrames := TObjectStack<TStackFrame>.Create;
   FStackFrames.push(AStackFrame);
 
-  if AContext.QueryInterface(ITemplateContextForScope, apply) = s_ok then
+  if supports(AContext, ITemplateContextForScope, apply) then
     apply.ApplyTo(FStackFrames.peek);
 end;
 
@@ -622,7 +651,7 @@ procedure TEvaluationTemplateVisitor.Visit(AStmt: IIfStmt);
 begin
   if HasBreakOrContinue then
     exit;
-   acceptvisitor(AStmt.Condition, self);
+  acceptvisitor(AStmt.Condition, self);
   if AsBoolean(FEvalStack.pop) then
     acceptvisitor(AStmt.TrueContainer, self)
   else if AStmt.FalseContainer <> nil then
