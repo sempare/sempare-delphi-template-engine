@@ -13,7 +13,7 @@
 	],
 	"source_folders": [
 		{
-			"folder": "src",
+			"folder": ".",
 			"recursive": true,
 			"filter": "*"
 		}
