@@ -20,7 +20,8 @@
 	],
 	"projects": [
 		{
-			"project": "Sempare.Template.Engine.Group.groupproj"
+			"project": "Sempare.Template.Engine.Group.groupproj",
+			"compiler_min": 29
 		}
 	]
 }
