@@ -1,0 +1,26 @@
+{
+	"search_pathes": [
+		{
+			"pathes": "src",
+			"platforms": "Win32;Win64;Android;IOSDevice32;IOSDevice64;OSX32;OSX64;Linux64"
+		}
+	],
+	"browsing_pathes": [
+		{
+			"pathes": "src",
+			"platforms": "Win32;Win64;Android;IOSDevice32;IOSDevice64;OSX32;OSX64;Linux64"
+		}
+	],
+	"source_folders": [
+		{
+			"folder": "src",
+			"recursive": true,
+			"filter": "*.pas;*.inc"
+		}
+	],
+	"projects": [
+		{
+			"project": "Sempare.Template.Engine.Group.groupproj"
+		}
+	]
+}
