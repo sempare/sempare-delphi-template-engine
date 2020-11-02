@@ -2,7 +2,7 @@
 
 # ![](./images/sempare-logo-45px.png) Sempare Template Engine
 
-Copyright (c) 2019 [Sempare Limited](http://www.sempare.ltd), [Conrad Vermeulen](mailto:conrad.vermeulen@gmail.com)
+Copyright (c) 2020 [Sempare Limited](http://www.sempare.ltd), [Conrad Vermeulen](mailto:conrad.vermeulen@gmail.com)
 
 Contact: <info@sempare.ltd>
 
@@ -72,7 +72,6 @@ The playlist has a few videos that are very short (most less than a minute - bli
 18. [Internals](./docs/internals.md)
 17. [Restrictions](./docs/restrictions.md)
 18. [Todo](./docs/todo.md)
-19. [FreePascal](./docs/fpc.md)
 
 ## Features
 - statements

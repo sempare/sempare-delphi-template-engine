@@ -1,12 +1,12 @@
 # ![](../images/sempare-logo-45px.png) Sempare Template Engine
 
-Copyright (c) 2020 [Sempare Limited](http://www.sempare.ltd), [Conrad Vermeulen](mailto:conrad.vermeulen@gmail.com)
+Copyright (c) 2020 [Sempare Limited](http://www.sempare.ltd)
 
 ## Todo
 
 - validation
   - identify required variables ahead of time where possible.
-- create bindings to data sources like TDataSource, TFDMemTable, TFDQuery, etc...
+- create bindings to data sources like TDataSet, etc...
 - review performance. 
      
    I have not done much on this. Probably a few things that can be done better.
@@ -17,5 +17,5 @@ Copyright (c) 2020 [Sempare Limited](http://www.sempare.ltd), [Conrad Vermeulen]
 
    
 - interactive script debugger (but VelocityDemo can be used to observe output)
-- review free pascal and support for older versions of Delphi
+- review freepascal and support for older versions of Delphi
 - review strip recurring spacing post processing

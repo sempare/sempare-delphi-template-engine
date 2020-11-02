@@ -1,7 +1,6 @@
 # ![](../images/sempare-logo-45px.png) SempareTemplate Engine
 
-Copyright (c) 2020 [Sempare Limited](http://www.sempare.ltd), [Conrad Vermeulen](mailto:conrad.vermeulen@gmail.com)
-
+Copyright (c) 2020 [Sempare Limited](http://www.sempare.ltd)
 
 ## Simplified Grammar definition
 

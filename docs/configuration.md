@@ -1,6 +1,6 @@
 # ![](../images/sempare-logo-45px.png) Sempare Template Engine
 
-Copyright (c) 2020 [Sempare Limited](http://www.sempare.ltd), [Conrad Vermeulen](mailto:conrad.vermeulen@gmail.com)
+Copyright (c) 2020 [Sempare Limited](http://www.sempare.ltd)
 
 ## Configuration
 
@@ -42,7 +42,7 @@ type
 begin
   var data: TRec;
   data.content := 'a < b';
-  var ctx := Velocity.Context;
+  var ctx := Template.Context;
   ctx.UseHtmlVariableEncoder;
 
   Assert.IsEqual('<html><body>a &lt; b</body></html>', Velocity.Eval(ctx, '<html><body><% content %></body></html>', data));
