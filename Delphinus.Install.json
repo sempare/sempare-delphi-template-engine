@@ -15,15 +15,12 @@
 		{
 			"folder": "src",
 			"recursive": true,
-			"filter": "*.pas;*.inc"
+			"filter": "*"
 		}
 	],
 	"projects": [
 		{
-			"project": "Sempare.Template.Pkg.dproj"
-		},
-		{
-			"project": "Sempare.Template.Tester.dproj"
+			"project": "Sempare.Template.Engine.Group.groupproj"
 		}
 	]
 }
