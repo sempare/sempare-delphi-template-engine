@@ -121,6 +121,10 @@ Although the development was done on Delphi 10.3.3, build and tests have been ru
 
 There should be no platform specific restrictions.
 
+## Installation: Delphinus-Support
+
+The Sempare Template Engine for Delphi can be installed via the [Delphinus](https://github.com/Memnarch/Delphinus) package manager.
+
 ### Using the Sempare Templating Engine in your Delphi project
 
 Open __Sempare.Template.Engine.Group.groupproj__ which will include:
