@@ -1,4 +1,4 @@
- (*%*************************************************************************************************
+(*%*************************************************************************************************
  *                 ___                                                                              *
  *                / __|  ___   _ __    _ __   __ _   _ _   ___                                      *
  *                \__ \ / -_) | '  \  | '_ \ / _` | | '_| / -_)                                     *
@@ -71,11 +71,11 @@ begin
   o2 := TJSonObject.create;
   o2.AddPair('subval', 'value');
   o.AddPair('object', o2);
-  Assert.AreEqual('string true  123 value',
-  Template.Eval('<% _.str %> <% _.bool%> <%_.null%> <%_.num%> <% _.object.subval %>', o));
+  Assert.AreEqual('string true  123 value', Template.Eval('<% _.str %> <% _.bool%> <%_.null%> <%_.num%> <% _.object.subval %>', o));
   o.Free;
 end;
 {$ELSE}
+
 begin
   // do nothing.
 end;

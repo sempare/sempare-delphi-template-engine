@@ -1,4 +1,4 @@
- (*%*************************************************************************************************
+(*%*************************************************************************************************
  *                 ___                                                                              *
  *                / __|  ___   _ __    _ __   __ _   _ _   ___                                      *
  *                \__ \ / -_) | '  \  | '_ \ / _` | | '_| / -_)                                     *
@@ -66,13 +66,63 @@ type
     procedure TestWithInlineArray;
     [Test]
     procedure TestWithEmptyInlineArray;
+    [Test]
+    procedure TestDataSet;
   end;
 
 implementation
 
 uses
+  Data.DB,
+  FireDAC.Comp.Client,
   System.Generics.Collections,
   Sempare.Template;
+
+function CreateMockUsersTable(): TFDMemTable;
+var
+  ds: TFDMemTable;
+begin
+  ds := TFDMemTable.Create(nil);
+  with ds do
+  begin
+    FieldDefs.Add('name', ftWideString, 20);
+    FieldDefs.Add('age', ftInteger);
+    FieldDefs.Add('weight', ftFloat);
+    CreateDataSet;
+  end;
+  with ds do
+  begin
+    Append;
+    FieldByName('name').value := 'joe';
+    FieldByName('age').value := 5;
+    FieldByName('weight').value := 15;
+    Post;
+    Append;
+    FieldByName('name').value := 'pete';
+    FieldByName('age').value := 6;
+    FieldByName('weight').value := 20;
+    Post;
+    Append;
+    FieldByName('name').value := 'jane';
+    FieldByName('age').value := 7;
+    FieldByName('weight').value := 25;
+    Post;
+  end;
+  result := ds;
+end;
+
+procedure TTestTemplateFor.TestDataSet;
+var
+  ds: TDataSet;
+begin
+  ds := CreateMockUsersTable();
+  try
+    Assert.AreEqual('joe pete jane ', //
+      Template.Eval('<% for i in _ %><% _[''name''] %> <%end%>', ds));
+  finally
+    ds.Free;
+  end;
+end;
 
 procedure TTestTemplateFor.TestForIn;
 type
@@ -83,7 +133,7 @@ var
   c: ITemplate;
   x: TForIn;
 begin
-  x.range := TList<integer>.create;
+  x.range := TList<integer>.Create;
   try
     x.range.AddRange([1, 10, 100]);
     c := Template.parse('<% for i in range %> <% i %> <% end %>');
@@ -144,6 +194,7 @@ begin
   c := Template.parse('<%range := []%><% for i in range %> <% range[i] %> <% end %>');
   Assert.AreEqual('', Template.Eval(c));
 end;
+
 procedure TTestTemplateFor.TestWithInlineArray;
 var
   c: ITemplate;
@@ -171,10 +222,10 @@ type
   TInfo = record
     Name: string;
     age: integer;
-    constructor create(const n: string; const a: integer);
+    constructor Create(const n: string; const a: integer);
   end;
 
-constructor TInfo.create(const n: string; const a: integer);
+constructor TInfo.Create(const n: string; const a: integer);
 begin
   name := n;
   age := a;
@@ -185,9 +236,9 @@ procedure TTestTemplateFor.TestStructure;
 var
   info: TList<TInfo>;
 begin
-  info := TList<TInfo>.create;
+  info := TList<TInfo>.Create;
   try
-    info.AddRange([TInfo.create('conrad', 10), TInfo.create('christa', 20)]);
+    info.AddRange([TInfo.Create('conrad', 10), TInfo.Create('christa', 20)]);
     Assert.AreEqual(' conrad 10 christa 20', Template.Eval('<%for i in _ %> <% i.name %> <% i.age %><%end%>', info));
   finally
     info.Free;

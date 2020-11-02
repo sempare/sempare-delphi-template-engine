@@ -1,4 +1,4 @@
- (*%*************************************************************************************************
+(*%*************************************************************************************************
  *                 ___                                                                              *
  *                / __|  ___   _ __    _ __   __ _   _ _   ___                                      *
  *                \__ \ / -_) | '  \  | '_ \ / _` | | '_| / -_)                                     *
@@ -63,16 +63,16 @@ begin
   S['name'] := 'conrad';
   Assert.AreEqual('root123', S.Item['root'].AsString);
   Assert.AreEqual('conrad', S.Item['name'].AsString);
-  s2 := s.Clone;
-  S2['name'] := 'christa';
-  Assert.AreEqual('root123', S2.Item['root'].AsString);
-  Assert.AreEqual('christa', S2.Item['name'].AsString);
+  s2 := S.Clone;
+  s2['name'] := 'christa';
+  Assert.AreEqual('root123', s2.Item['root'].AsString);
+  Assert.AreEqual('christa', s2.Item['name'].AsString);
   S.Free;
-  S2.Free;
+  s2.Free;
 end;
 
 initialization
 
- TDUnitX.RegisterTestFixture(TTestTemplateScope);
+TDUnitX.RegisterTestFixture(TTestTemplateScope);
 
 end.
