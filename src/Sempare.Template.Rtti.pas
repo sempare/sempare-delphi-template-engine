@@ -92,11 +92,6 @@ var
 implementation
 
 uses
-{$IFDEF SUPPORT_JSON_DBX}
-  Data.DBXJSON,
-{$ELSE}
-  System.JSON,
-{$ENDIF}
   System.Math,
   Data.DB,
   System.Generics.Collections,
@@ -533,7 +528,6 @@ begin
   end;
 end;
 
-
 function JsonValueToTValue(const AJsonValue: TJsonValue; out AValue: TValue): boolean;
 begin
 {$IFDEF SUPPORT_JSON_BOOL}
@@ -614,7 +608,6 @@ function MatchJsonObject(const ATypeInfo: PTypeInfo; const AClass: TClass): bool
 begin
   exit(AClass = TJsonObject);
 end;
-
 
 function processDataSet(APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; out AFound: boolean): TValue;
 var
