@@ -51,11 +51,6 @@ implementation
 
 uses
   Sempare.Template.JSON,
-{$IFDEF SUPPORT_JSON_DBX}
-  Data.DBXJSON,
-{$ELSE}
-  System.JSON,
-{$ENDIF}
   Sempare.Template;
 
 procedure TTestTemplateJson.TestJson;

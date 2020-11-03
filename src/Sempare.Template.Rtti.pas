@@ -848,7 +848,7 @@ GPopulateFunctions := TList < TPair < TPopulateMatchFunction, TPopulateStackFram
 
 RegisterDeref(MatchTemplateVariableObject, processTemplateVariables);
 RegisterDeref(MatchDictionary, processDictionary);
-{$IFDEF SUPPORT_JSON}
+{$IF defined(SUPPORT_JSON) or defined(SUPPORT_JSON_DBX)}
 RegisterDeref(MatchJsonObject, processJson);
 RegisterPopulateStackFrame(MatchJsonObject, PopulateStackFrameFromJsonObject);
 {$ENDIF}

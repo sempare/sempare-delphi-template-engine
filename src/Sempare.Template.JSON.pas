@@ -35,7 +35,6 @@ unit Sempare.Template.JSON;
 interface
 
 {$I 'Sempare.Template.Compiler.inc'}
-{$IFDEF SUPPORT_JSON}
 
 uses
 {$IFDEF SUPPORT_JSON_DBX}
@@ -66,7 +65,6 @@ type
   TJSONPair = System.JSON.TJSONPair;
   TJSONTrue = System.JSON.TJSONTrue;
   TJSONFalse = System.JSON.TJSONFalse;
-{$ENDIF}
 {$ENDIF}
 
 implementation
