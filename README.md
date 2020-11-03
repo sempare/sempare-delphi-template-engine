@@ -120,6 +120,11 @@ Although the development was done on Delphi 10.3.3, build and tests have been ru
 
 There should be no platform specific restrictions.
 
+Have a look at Sempare.Template.Compiler.inc. The following defines can be defined if appropriate:
+
+- SEMPARE_TEMPLATE_FIREDAC - to support tests for TDataSet
+- SEMPARE_TEMPLATE_NO_INDY - if Indy is not present. This is used to access an html encoder if TNetEncoding is not available.
+
 ## Installation: Delphinus-Support
 
 The Sempare Template Engine for Delphi can be installed via the [Delphinus](https://github.com/Memnarch/Delphinus) package manager.

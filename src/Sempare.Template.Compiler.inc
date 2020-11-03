@@ -57,20 +57,12 @@
 {$ENDIF}
 // -----------------------------------------------
 
-// Uncomment the following to disable build hints
-// {$DEFINE SEMPARE_TEMPLATE_BUILD_NO_HINT}
-
-
 // Uncomment the following to test TDataSet using FIREDAC TFDMemTable
-//{$DEFINE SEMPARE_TEMPLATE_FIREDAC}
-{$IFNDEF SEMPARE_TEMPLATE_BUILD_NO_HINT}
-{$MESSAGE 'define SEMPARE_TEMPLATE_FIREDAC for running the tests'}
-{$ENDIF}
+// {$DEFINE SEMPARE_TEMPLATE_FIREDAC}
+
 // Uncomment the following if Indy is not present
 // {$DEFINE SEMPARE_TEMPLATE_NO_INDY}
-{$IFNDEF SEMPARE_TEMPLATE_BUILD_NO_HINT}
-{$MESSAGE 'define SEMPARE_TEMPLATE_NO_INDY if it is not installed.'}
-{$ENDIF}
+
 {$IFNDEF SEMPARE_TEMPLATE_NO_INDY}
 {$DEFINE SEMPARE_TEMPLATE_INDY}
 {$ENDIF}
@@ -84,11 +76,6 @@
 {$ENDIF}
 {$DEFINE SEMPARE_TEMPLATE_HAS_HTML_ENCODER}
 {$ENDIF}
-
 {$IFNDEF SEMPARE_TEMPLATE_HAS_HTML_ENCODER}
 {$MESSAGE 'No default html encoder present.'}
-{$ENDIF}
-
-{$IFNDEF SEMPARE_TEMPLATE_BUILD_NO_HINT}
-{$MESSAGE 'define SEMPARE_TEMPLATE_BUILD_NO_HINT to hide all Sempare Template compiler hints'}
 {$ENDIF}
