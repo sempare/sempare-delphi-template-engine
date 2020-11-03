@@ -39,12 +39,6 @@
 {$UNDEF SUPPORT_JSON_DBX}
 {$DEFINE SUPPORT_JSON true}
 {$ENDIF}
-{$IFDEF   SUPPORT_JSON_DBX}
-{$MESSAGE 'SUPPORT_JSON_DBX'}
-{$ENDIF}
-{$IFDEF   SUPPORT_JSON}
-{$MESSAGE 'SUPPORT_JSON'}
-{$ENDIF}
 // -----------------------------------------------
 {$IF CompilerVersion >= 28}  // from XE7 onwards
 {$DEFINE SUPPORT_NET_ENCODING true}
