@@ -33,11 +33,11 @@ type
         favourite_sport : string;
     end;
 begin
-    var template := Template.parse('My name is <% name %>. My favourite sport is <% favourite_sport %>.');
+    var tpl := Template.parse('My name is <% name %>. My favourite sport is <% favourite_sport %>.');
     var information : TInformation;
     information.name := 'conrad';
     information.favourite_sport := 'ultimate';
-    writeln(Velocity.eval(template, information));	
+    writeln(Template.eval(tpl, information));	
 end.
 ```
 
@@ -58,18 +58,17 @@ The playlist has a few videos that are very short (most less than a minute - bli
 3. [Objectives](#Objectives)
 4. [Requirements](#Requirements)
 5. [Feedback](#Feedback)
-6. [Components](./docs/components.md)
-7. [Statements](./docs/statements.md)
-8. [Expressions](./docs/expressions.md)
-9. [Builtin functions](./docs/builtin-functions.md)
-10. [Custom functions](./docs/custom-functions.md)
-11. [Stack Frames](./docs/stack-frames.md)
-12. [Tricks](./docs/tricks.md)
-13. [Configuration](./docs/configuration.md)
-14. [Debugging the script behaviour](./docs/debugging.md)
-15. [Simplified Grammar definition](./docs/simplified-grammar.md)
-16. [Design considerations](./docs/design-considerations.md)
-18. [Internals](./docs/internals.md)
+6. [Statements](./docs/statements.md)
+7. [Expressions](./docs/expressions.md)
+8. [Builtin functions](./docs/builtin-functions.md)
+9. [Custom functions](./docs/custom-functions.md)
+10. [Stack Frames](./docs/stack-frames.md)
+11. [Tricks](./docs/tricks.md)
+12. [Configuration](./docs/configuration.md)
+13. [Debugging the script behaviour](./docs/debugging.md)
+14. [Simplified Grammar definition](./docs/simplified-grammar.md)
+15. [Design considerations](./docs/design-considerations.md)
+16. [Internals](./docs/internals.md)
 17. [Restrictions](./docs/restrictions.md)
 18. [Todo](./docs/todo.md)
 
@@ -84,7 +83,7 @@ The playlist has a few videos that are very short (most less than a minute - bli
   - simple expression evaluation (logical, numerical and string)
   - variable definition
   - functions and methods calls
-  - dereference records, classes, arrays, JSON objects and dynamic arrays
+  - dereference records, classes, arrays, JSON objects, TDataSet descendants and dynamic arrays
   - ternary operator
 - safety
   - max run-time protection
@@ -129,7 +128,7 @@ Open __Sempare.Template.Engine.Group.groupproj__ which will include:
 
 - __Sempare.Template.Pkg.dproj__
 
-  The core velocity project. (runtime)
+  The core template project. (runtime)
      
 - __Sempare.Template.Tester.dproj__
 

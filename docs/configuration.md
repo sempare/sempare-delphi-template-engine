@@ -45,7 +45,7 @@ begin
   var ctx := Template.Context;
   ctx.UseHtmlVariableEncoder;
 
-  Assert.IsEqual('<html><body>a &lt; b</body></html>', Velocity.Eval(ctx, '<html><body><% content %></body></html>', data));
+  Assert.IsEqual('<html><body>a &lt; b</body></html>', Template.Eval(ctx, '<html><body><% content %></body></html>', data));
 end;
 ```
 
@@ -54,7 +54,7 @@ Above was an example of HTML encoding. You can create custom encoding mechanism 
 
 ```
 type
-  TVelocityEncodeFunction = reference to function(const AArg : string): string;
+  TTemplateEncodeFunction = reference to function(const AArg : string): string;
 ```
 ### Setting a maximum runtime
 ```
@@ -89,7 +89,7 @@ ctx.RegisterTemplate('footer', Template.Parse('Copyright (c) <% year %> <% compa
 
 Templates don't need to be precompiled. They can also be located when being parsed by setting the template resolver property on the context:
 ```
-ctx.TemplateResolver = function(const AContext : IVelocityTemplate; const AName : string) : IVelocityTemplate
+ctx.TemplateResolver = function(const AContext : ITemplate; const AName : string) : ITemplate
 begin
    result := Template.parse('some template loaded from file...');
 end;

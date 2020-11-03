@@ -12,7 +12,7 @@ __Sempare.Template.AST.pas__
 
 All interfaces used by the parser and evaluation engine are defined in this file.
 
-_IVelocityVisitor_ is also defined (visitor pattern) which is used by the pretty printer and the evaluation engine.
+_ITemplateVisitor_ is also defined (visitor pattern) which is used by the pretty printer and the evaluation engine.
 
 __Sempare.Template.Parser.pas__
 
@@ -20,9 +20,9 @@ This is a recursive descent parser.
 
 __Sempare.Template.Lexer.pas__
 
-The lexical analyser _GetToken()_ will return an _IVelocitySymbol_
+The lexical analyser _GetToken()_ will return an _ITemplateSymbol_
 
-_IVelocitySymbol_ has a _TVelocitySymbol_ (an enum matching the various symbol types). It also includes an IPosition.
+_ITemplateSymbol_ has a _TTemplateSymbol_ (an enum matching the various symbol types). It also includes an IPosition.
 
 _IPosition_ includes:
 - filename
@@ -37,7 +37,7 @@ Note the lexer has two modes:
 
 __Sempare.Template.Context.pas__
 
-This is where the _TVelocityContext_ is actually defined that implement _IVelocityContext_.
+This is where the _TTemplateContext_ is actually defined that implement _ITemplateContext_.
 
 __Sempare.Template.Evaluate.pas__
 
