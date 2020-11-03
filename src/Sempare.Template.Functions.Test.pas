@@ -118,7 +118,7 @@ type
 
 class function TDTNow.dtnow: tdatetime;
 begin
-  result := 43821;
+  exit(43821);
 end;
 
 procedure TFunctionTest.TestFmtDate;

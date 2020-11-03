@@ -56,6 +56,8 @@ uses
   Sempare.Template.Common,
   Sempare.Template.Rtti;
 
+{$I 'Sempare.Template.Compiler.inc'}
+
 type
   TValueCompare = class(TComparer<TValue>)
   public
@@ -92,13 +94,24 @@ function TTemplateFunctions.Add(const AMethod: TRttiMethod): boolean;
 var
   LMethods: TArray<TRttiMethod>;
   LMethodName: string;
+  LLength: integer;
 begin
   result := AMethod.IsStatic and AMethod.IsClassMethod and (AMethod.ReturnType.TypeKind <> tkProcedure);
   if not result then
     exit;
-  LMethodName := AMethod.name.ToLower;
+  LMethodName := AMethod.Name.ToLower;
   FFunctions.TryGetValue(LMethodName, LMethods);
-  insert(AMethod, LMethods, 0);
+  LLength := length(LMethods);
+  if LLength = 0 then
+  begin
+    setlength(LMethods, 1);
+  end
+  else
+  begin
+    setlength(LMethods, LLength + 1);
+    move(LMethods[0], LMethods[1], sizeof(AMethod) * LLength);
+  end;
+  LMethods[0] := AMethod;
   FFunctions.AddOrSetValue(LMethodName, LMethods);
 end;
 
@@ -139,7 +152,7 @@ type
     class function IsNull(const AValue: TValue): boolean; static;
     class function IsStr(const AValue: TValue): boolean; static;
     class function IsInt(const AValue: TValue): boolean; static;
-    class function isBool(const AValue): boolean; static;
+    class function IsBool(const AValue): boolean; static;
     class function IsNum(const AValue: TValue): boolean; static;
     class function StartsWith(const AString, ASearch: string): boolean; overload; static;
     class function StartsWith(const AString, ASearch: string; const AIgnoreCase: boolean): boolean; overload; static;
@@ -168,12 +181,17 @@ var
   LEnum: TEnumerable<T>;
   LArray: TArray<T>;
   LElement: T;
+  LOffset: integer;
 begin
   LEnum := TEnumerable<T>(AEnum.AsObject);
   setlength(LArray, 0);
   for LElement in LEnum do
-    insert(LElement, LArray, length(LArray));
-  result := SortArr<T>(TValue.From < TArray < T >> (LArray));
+  begin
+    LOffset := length(LArray);
+    setlength(LArray, LOffset + 1);
+    LArray[LOffset] := LElement;
+  end;
+  exit(SortArr<T>(TValue.From < TArray < T >> (LArray)));
 end;
 
 class function Internal.SortArrTValue(const AArray: TValue): TValue;
@@ -226,12 +244,12 @@ end;
 
 class function TInternalFuntions.Split(const AString: string; const ASep: string): TArray<string>;
 begin
-  exit(AString.Split([ASep]));
+  exit(AString.Split([ASep], MaxInt, TStringSplitOptions.None));
 end;
 
 class function TInternalFuntions.Lowercase(const AString: string): string;
 begin
-  result := AString.ToLower;
+  exit(AString.ToLower());
 end;
 
 class function TInternalFuntions.Match(const AValue, ARegex: string): boolean;
@@ -307,13 +325,56 @@ begin
     exit(AArg);
 end;
 
+type
+  TValueHelper = record helper for TValue
+    function AsLimitedVarRec: TVarrec;
+  end;
+
+function TValueHelper.AsLimitedVarRec: TVarrec;
+begin
+  case Kind of
+    tkInteger:
+      begin
+        result.VType := vtInteger;
+        result.VInteger := AsInteger;
+        exit;
+      end;
+    tkFloat:
+      begin
+        result.VType := vtExtended;
+        result.VExtended := GetReferenceToRawData;
+        exit;
+      end;
+    tkString, tkWString, tkLString, tkUString:
+      begin
+        result.VType := vtUnicodeString;
+        result.VUnicodeString := Pointer(AsString);
+        exit;
+      end;
+    tkInt64:
+      begin
+        result.VType := vtInt64;
+        result.VInt64 := GetReferenceToRawData;
+        exit;
+      end;
+    tkEnumeration:
+      if true then
+      begin
+        result.VType := vtBoolean;
+        result.VBoolean := AsBoolean;
+        exit;
+      end;
+  end;
+  raise Exception.Create('Unsupported type');
+end;
+
 function ToArrayTVarRec(const AArgs: TArray<TValue>): TArray<TVarrec>;
 var
   LIdx: integer;
 begin
   setlength(result, length(AArgs));
   for LIdx := low(AArgs) to high(AArgs) do
-    result[LIdx] := UnWrap(AArgs[LIdx]).AsVarRec;
+    result[LIdx] := UnWrap(AArgs[LIdx]).AsLimitedVarRec;
 end;
 
 class function TInternalFuntions.EndsWith(const AString, ASearch: string): boolean;
@@ -328,7 +389,7 @@ end;
 
 class function TInternalFuntions.Fmt(const AArgs: TArray<TValue>): string;
 begin
-  exit(format(asstring(AArgs[0]), ToArrayTVarRec(copy(AArgs, 1, length(AArgs) - 1))));
+  exit(format(AsString(AArgs[0]), ToArrayTVarRec(copy(AArgs, 1, length(AArgs) - 1))));
 end;
 
 class function TInternalFuntions.FmtDt(const AFormat: string; const ADateTime: TDateTime): string;
@@ -344,7 +405,7 @@ end;
 class function TInternalFuntions.BoolStr(const AValue: TValue): boolean;
 begin
   if isStrLike(AValue) then
-    exit(asstring(AValue) = 'true')
+    exit(AsString(AValue) = 'true')
   else
     exit(AsBoolean(AValue));
 end;
@@ -376,7 +437,7 @@ end;
 
 class function TInternalFuntions.Str(const AValue: TValue): string;
 begin
-  exit(asstring(AValue));
+  exit(AsString(AValue));
 end;
 
 function reverse(const AStr: string): string;
@@ -398,43 +459,43 @@ end;
 
 class function TInternalFuntions.UCFirst(const AString: string): string;
 begin
-  result := Lowercase(AString);
+  result := AString.ToLower();
   result[1] := Uppercase(result[1])[1];
 end;
 
 class function TInternalFuntions.Replace(const AValue, AWith, AIn: string): string;
 begin
-  result := AIn.Replace(AValue, AWith, [rfReplaceAll]);
+  exit(AIn.Replace(AValue, AWith, [rfReplaceAll]));
 end;
 
 class function TInternalFuntions.Rev(const AString: string): string;
 begin
-  result := reverse(AString);
+  exit(reverse(AString));
 end;
 
 class function TInternalFuntions.IsNull(const AValue: TValue): boolean;
 begin
-  result := IsNull(AValue);
+  exit(IsNull(AValue));
 end;
 
 class function TInternalFuntions.IsStr(const AValue: TValue): boolean;
 begin
-  result := isStrLike(AValue);
+  exit(isStrLike(AValue));
 end;
 
 class function TInternalFuntions.IsInt(const AValue: TValue): boolean;
 begin
-  result := isIntLike(AValue);
+  exit(isIntLike(AValue));
 end;
 
-class function TInternalFuntions.isBool(const AValue): boolean;
+class function TInternalFuntions.IsBool(const AValue): boolean;
 begin
-  result := isBool(AValue);
+  exit(IsBool(AValue));
 end;
 
 class function TInternalFuntions.IsNum(const AValue: TValue): boolean;
 begin
-  result := isnumlike(AValue);
+  exit(isnumlike(AValue));
 end;
 
 constructor TTemplateFunctions.Create;
@@ -450,7 +511,7 @@ end;
 
 function TTemplateFunctions.GetIsEmpty: boolean;
 begin
-  result := FFunctions.Count > 0;
+  exit(FFunctions.Count > 0);
 end;
 
 procedure TTemplateFunctions.RegisterDefaults;
@@ -460,7 +521,7 @@ end;
 
 function TTemplateFunctions.TryGetValue(const AName: string; out AMethods: TArray<TRttiMethod>): boolean;
 begin
-  result := FFunctions.TryGetValue(AName, AMethods);
+  exit(FFunctions.TryGetValue(AName, AMethods));
 end;
 
 { TValueCompare }
@@ -475,7 +536,7 @@ begin
     tkFloat:
       exit(TComparer<extended>.Default.Compare(ALeft.AsExtended, ARight.AsExtended));
     tkString, tkLString, tkWString, tkUString:
-      exit(TComparer<string>.Default.Compare(ALeft.asstring, ARight.asstring));
+      exit(TComparer<string>.Default.Compare(ALeft.AsString, ARight.AsString));
   else
     raise Exception.Create('Type not supported');
   end;

@@ -144,7 +144,7 @@ end;
 
 function TPrettyPrintTemplateVisitor.ToString: string;
 begin
-  result := FStringBuilder.ToString;
+  exit(FStringBuilder.ToString);
 end;
 
 procedure TPrettyPrintTemplateVisitor.Visit(AStmt: IBreakStmt);

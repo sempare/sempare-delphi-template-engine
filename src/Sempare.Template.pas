@@ -135,7 +135,7 @@ var
 
 class function Template.Context(AOptions: TTemplateEvaluationOptions): ITemplateContext;
 begin
-  result := Sempare.Template.Context.CreateTemplateContext(AOptions);
+  exit(Sempare.Template.Context.CreateTemplateContext(AOptions));
 end;
 
 class procedure Template.Eval<T>(ATemplate: ITemplate; const AValue: T; const AStream: TStream; const AOptions: TTemplateEvaluationOptions);
@@ -170,22 +170,22 @@ end;
 
 class function Template.Parse(const AStream: TStream): ITemplate;
 begin
-  result := Parser.Parse(AStream);
+  exit(Parser.Parse(AStream));
 end;
 
 class function Template.Parser(AContext: ITemplateContext): ITemplateParser;
 begin
-  result := CreateTemplateParser(AContext);
+  exit(CreateTemplateParser(AContext));
 end;
 
 class function Template.Parse(const AString: string): ITemplate;
 begin
-  result := Parse(Context(), AString);
+  exit(Parse(Context(), AString));
 end;
 
 class function Template.Parser: ITemplateParser;
 begin
-  result := CreateTemplateParser(Context);
+  exit(CreateTemplateParser(Context));
 end;
 
 class function Template.PrettyPrint(ATemplate: ITemplate): string;
@@ -209,7 +209,7 @@ end;
 
 class function Template.Parse(AContext: ITemplateContext; const AStream: TStream): ITemplate;
 begin
-  result := Parser(AContext).Parse(AStream);
+  exit(Parser(AContext).Parse(AStream));
 end;
 
 class function Template.ParseFile(AContext: ITemplateContext; const AFile: string): ITemplate;
@@ -232,37 +232,37 @@ end;
 
 class function Template.ParseFile(const AFile: string): ITemplate;
 begin
-  result := ParseFile(Context, AFile);
+  exit(ParseFile(Context, AFile));
 end;
 
 class function Template.Parse(AContext: ITemplateContext; const AString: string): ITemplate;
 begin
-  result := Parser(AContext).Parse(TStringStream.Create(AString, AContext.Encoding, false), true);
+  exit(Parser(AContext).Parse(TStringStream.Create(AString, AContext.Encoding, false), true));
 end;
 
 class function Template.Eval(const ATemplate: string; const AOptions: TTemplateEvaluationOptions): string;
 begin
-  result := Eval(Context(AOptions), ATemplate);
+  exit(Eval(Context(AOptions), ATemplate));
 end;
 
 class function Template.Eval(ATemplate: ITemplate; const AOptions: TTemplateEvaluationOptions): string;
 begin
-  result := Eval(Context(AOptions), ATemplate);
+  exit(Eval(Context(AOptions), ATemplate));
 end;
 
 class function Template.Eval(AContext: ITemplateContext; const ATemplate: string): string;
 begin
-  result := Eval(AContext, Template.Parse(AContext, ATemplate));
+  exit(Eval(AContext, Template.Parse(AContext, ATemplate)));
 end;
 
 class function Template.Eval<T>(ATemplate: ITemplate; const AValue: T; const AOptions: TTemplateEvaluationOptions): string;
 begin
-  result := Eval(Context(AOptions), ATemplate, AValue);
+  exit(Eval(Context(AOptions), ATemplate, AValue));
 end;
 
 class function Template.Eval<T>(const ATemplate: string; const AValue: T; const AOptions: TTemplateEvaluationOptions): string;
 begin
-  result := Eval(Context(AOptions), ATemplate, AValue);
+  exit(Eval(Context(AOptions), ATemplate, AValue));
 end;
 
 class function Template.Eval<T>(AContext: ITemplateContext; ATemplate: ITemplate; const AValue: T): string;

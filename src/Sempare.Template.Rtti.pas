@@ -287,12 +287,12 @@ end;
 
 function AsInt(const AValue: TValue): int64;
 begin
-  result := floor(AsNum(AValue));
+  exit(floor(AsNum(AValue)));
 end;
 
 function isBool(const AValue: TValue): boolean;
 begin
-  result := AValue.TypeInfo = TypeInfo(boolean);
+  exit(AValue.TypeInfo = TypeInfo(boolean));
 end;
 
 function isEqual(const ALeft: TValue; const ARight: TValue): boolean;
@@ -364,7 +364,7 @@ begin
       LStringBuilder.append(AsString(AValue.GetArrayElement(LIndex)));
     end;
     LStringBuilder.append(']');
-    result := LStringBuilder.ToString;
+    exit(LStringBuilder.ToString);
   finally
     LStringBuilder.Free;
   end;
@@ -375,7 +375,7 @@ function AsString(const AValue: TValue): string;
 // Using this is a workaround for backward compatability casting
   function DoubleToDT(const AValue: double): TDateTime; inline;
   begin
-    result := TDateTime(AValue);
+    exit(TDateTime(AValue));
   end;
 
 begin
@@ -413,7 +413,7 @@ function AsDateTime(const AValue: TValue): TDateTime;
 // Using this is a workaround for backward compatability casting
   function DoubleToDT(const AValue: double): TDateTime; inline;
   begin
-    result := TDateTime(AValue);
+    exit(TDateTime(AValue));
   end;
 
 begin
@@ -524,7 +524,7 @@ begin
       begin
         if ARaiseIfMissing then
           RaiseError(APosition, 'Cannot dereference ''%s'' in %s', [AsString(LDerefValue), LDictionaryType.QualifiedName]);
-        result := '';
+        exit('');
       end;
     end;
   end;
@@ -604,13 +604,13 @@ begin
     if ARaiseIfMissing then
       RaiseError(APosition, 'Cannot dereference %s in dictionary', [LJsonKey]);
     AFound := false;
-    result := '';
+    exit('');
   end;
 end;
 
 function MatchJsonObject(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
 begin
-  result := AClass = TJsonObject;
+  exit(AClass = TJsonObject);
 end;
 
 {$ENDIF}
@@ -660,7 +660,7 @@ function Deref(APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfM
         raise Exception.Create('Index is out of bounds');
     end;
     AFound := true;
-    result := AObj.GetArrayElement(LIndex - LMin);
+    exit(AObj.GetArrayElement(LIndex - LMin));
   end;
 
   function ProcessDynArray(AObj: TValue; const ADeref: TValue; out AFound: boolean): TValue;
@@ -770,7 +770,7 @@ var
   LClassName: string;
 begin
   LClassName := AClass.QualifiedClassName;
-  result := LClassName.StartsWith('System.Generics.Collections.TDictionary') or LClassName.StartsWith('System.Generics.Collections.TObjectDictionary');
+  exit(LClassName.StartsWith('System.Generics.Collections.TDictionary') or LClassName.StartsWith('System.Generics.Collections.TObjectDictionary'));
 end;
 
 function MatchStringDictionary(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
@@ -778,7 +778,7 @@ var
   LClassName: string;
 begin
   LClassName := AClass.QualifiedClassName;
-  result := LClassName.StartsWith('System.Generics.Collections.TDictionary<System.string,') or LClassName.StartsWith('System.Generics.Collections.TObjectDictionary<string,');
+  exit(LClassName.StartsWith('System.Generics.Collections.TDictionary<System.string,') or LClassName.StartsWith('System.Generics.Collections.TObjectDictionary<string,'));
 end;
 
 function MatchDataSet(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
@@ -827,12 +827,12 @@ end;
 
 function MatchTemplateVariables(AInterface: IInterface): boolean;
 begin
-  result := supports(AInterface, ITemplateVariables);
+  exit(supports(AInterface, ITemplateVariables));
 end;
 
 function MatchTemplateVariableObject(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
 begin
-  result := AClass = TTemplateVariables;
+  exit(AClass = TTemplateVariables);
 end;
 
 initialization

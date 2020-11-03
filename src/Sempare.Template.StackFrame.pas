@@ -66,7 +66,7 @@ uses
 
 function TStackFrame.Clone: TStackFrame;
 begin
-  result := TStackFrame.Create(self);
+  exit(TStackFrame.Create(self));
 end;
 
 constructor TStackFrame.Create(const AParent: TStackFrame);

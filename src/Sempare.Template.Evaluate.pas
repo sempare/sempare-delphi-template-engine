@@ -143,14 +143,14 @@ const
 function IsWhitespace(const AChar: char): boolean; inline;
 begin
 {$WARN WIDECHAR_REDUCED OFF}
-  result := AChar in WHITESPACE;
+  exit(AChar in WHITESPACE);
 {$WARN WIDECHAR_REDUCED ON}
 end;
 
 function IsNewline(const AChar: char): boolean; inline;
 begin
 {$WARN WIDECHAR_REDUCED OFF}
-  result := AChar in NEWLINE;
+  exit(AChar in NEWLINE);
 {$WARN WIDECHAR_REDUCED ON}
 end;
 
@@ -235,7 +235,7 @@ begin
       end;
     boPlus:
       if isNumLike(LLeft) and isNumLike(LRight) then
-        LResult := Asnum(LLeft) + Asnum(LRight)
+        LResult := AsNum(LLeft) + AsNum(LRight)
       else if isStrLike(LLeft) and isStrLike(LRight) then
         LResult := LLeft.AsString + LRight.AsString
       else if isStrLike(LLeft) and isNumLike(LRight) then
@@ -245,27 +245,27 @@ begin
     boMinus:
       begin
         AssertNumeric(Position(AExpr.LeftExpr), LLeft, LRight);
-        LResult := Asnum(LLeft) - Asnum(LRight);
+        LResult := AsNum(LLeft) - AsNum(LRight);
       end;
     boSlash:
       begin
         AssertNumeric(Position(AExpr.LeftExpr), LLeft, LRight);
-        LResult := Asnum(LLeft) / Asnum(LRight);
+        LResult := AsNum(LLeft) / AsNum(LRight);
       end;
     boDiv:
       begin
         AssertNumeric(Position(AExpr.LeftExpr), LLeft, LRight);
-        LResult := trunc(Asnum(LLeft)) div trunc(Asnum(LRight));
+        LResult := trunc(AsNum(LLeft)) div trunc(AsNum(LRight));
       end;
     boMult:
       begin
         AssertNumeric(Position(AExpr.LeftExpr), LLeft, LRight);
-        LResult := Asnum(LLeft) * Asnum(LRight);
+        LResult := AsNum(LLeft) * AsNum(LRight);
       end;
     boMod:
       begin
         AssertNumeric(Position(AExpr.LeftExpr), LLeft, LRight);
-        LResult := asint(LLeft) mod asint(LRight);
+        LResult := AsInt(LLeft) mod AsInt(LRight);
       end;
     boEQ:
       LResult := isEqual(LLeft, LRight);
@@ -294,7 +294,7 @@ begin
   case AExpr.UnaryOp of
     uoMinus:
       begin
-        FEvalStack.push(-Asnum(LValue));
+        FEvalStack.push(-AsNum(LValue));
       end;
     uoNot:
       begin
@@ -440,8 +440,8 @@ var
   var
     LArrayType: TRttiArrayType;
     LDimOrdType: TRttiOrdinalType;
-    LIdx: int64;
-    LMin: int64;
+    LIdx: integer;
+    LMin: integer;
   begin
     LArrayType := LLoopExprType as TRttiArrayType;
     if LArrayType.DimensionCount <> 1 then
@@ -464,7 +464,7 @@ var
 
   procedure visitdynarray;
   var
-    LIdx: int64;
+    LIdx: integer;
   begin
     for LIdx := 0 to LLoopExpr.GetArrayLength - 1 do
     begin
@@ -552,7 +552,7 @@ function TEvaluationTemplateVisitor.EncodeVariable(const AValue: TValue): TValue
 begin
   if FContext.VariableEncoder = nil then
     exit(AValue);
-  result := FContext.VariableEncoder(AsString(AValue));
+  exit(FContext.VariableEncoder(AsString(AValue)));
 end;
 
 function TEvaluationTemplateVisitor.ExprListArgs(AExprList: IExprList): TArray<TValue>;
@@ -562,7 +562,7 @@ var
 begin
   AExprList.Accept(self);
 
-  LCount := asint(FEvalStack.pop());
+  LCount := AsInt(FEvalStack.pop());
   if LCount <> AExprList.Count then // this should not happen
     RaiseError(nil, 'Number of arguments mismatch');
   setlength(result, LCount);
@@ -607,10 +607,10 @@ begin
   LLoopOptions := Preserve.Value<TLoopOptions>(FLoopOptions, []);
 
   acceptvisitor(AStmt.LowExpr, self);
-  LStartVal := asint(FEvalStack.pop);
+  LStartVal := AsInt(FEvalStack.pop);
 
   acceptvisitor(AStmt.HighExpr, self);
-  LEndVal := asint(FEvalStack.pop);
+  LEndVal := AsInt(FEvalStack.pop);
 
   case AStmt.ForOp of
     foTo:
@@ -707,19 +707,16 @@ begin
   case AType.TypeKind of
     tkInteger, tkInt64:
       if not(AValue.Kind in [tkInteger, tkInt64]) then
-        exit(asint(AValue));
+        exit(AsInt(AValue));
     tkFloat:
       if AValue.Kind <> tkFloat then
-        exit(Asnum(AValue));
-    tkString, tkWString, tkAnsiString, tkUString: // WideString, UnicodeString
-      if not(AValue.Kind in [tkString, tkWString, tkAnsiString, tkUString]) then
+        exit(AsNum(AValue));
+    tkString, tkWString, tkLString, tkUString:
+      if not(AValue.Kind in [tkString, tkWString, tkLString, tkUString]) then
         exit(AsString(AValue));
     tkEnumeration:
       if AType.Handle = typeinfo(boolean) then
         exit(AsBoolean(AValue));
-    tkrecord:
-      if AType.Handle = typeinfo(tvarrec) then
-        exit(AValue.AsVarRec);
   end;
   exit(AValue);
 end;
@@ -787,7 +784,7 @@ begin
     LObjType := GRttiContext.GetType(AObject.typeinfo);
     AExpr.RttiMethod := LObjType.GetMethod(AExpr.Method);
   end;
-  result := AExpr.RttiMethod.Invoke(AObject, AArgs);
+  exit(AExpr.RttiMethod.Invoke(AObject, AArgs));
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(AExpr: IMethodCallExpr);

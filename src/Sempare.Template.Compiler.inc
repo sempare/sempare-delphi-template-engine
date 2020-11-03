@@ -39,6 +39,10 @@
 {$DEFINE SUPPORT_NET_ENCODING true}
 {$ENDIF}
 // -----------------------------------------------
+{$IF CompilerVersion >= 29}  // from XE8 onwards
+{$DEFINE SUPPORT_AS_VARREC true}
+{$ENDIF}
+// -----------------------------------------------
 {$IF CompilerVersion >= 30} // from Delphi 10.0 Seatle onwards
 {$DEFINE SUPPORT_JSON_BOOL true}
 {$ENDIF}
@@ -47,3 +51,6 @@
 {$DEFINE SUPPORT_BUFFERED_STREAM true}
 {$ENDIF}
 // -----------------------------------------------
+
+// Uncomment the following to test TDataSet using FIREDAC TFDMemTable
+//{$DEFINE SEMPARE_TEMPLATE_FIREDAC}

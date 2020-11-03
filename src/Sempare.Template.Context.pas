@@ -228,7 +228,7 @@ type
 
 function CreateTemplateContext(const AOptions: TTemplateEvaluationOptions): ITemplateContext;
 begin
-  result := TTemplateContext.Create(AOptions);
+  exit(TTemplateContext.Create(AOptions));
 end;
 
 { TTemplateContext }
@@ -284,7 +284,7 @@ begin
         FFunctions.RegisterDefaults;
       FFunctionsSet := true;
     end;
-    result := FFunctions.TryGetValue(AName.ToLower, AFunction);
+    exit(FFunctions.TryGetValue(AName.ToLower, AFunction));
   finally
     FLock.Leave;
   end;
@@ -292,34 +292,34 @@ end;
 
 function TTemplateContext.GetEncoding: TEncoding;
 begin
-  result := FEncoding;
+  exit(FEncoding);
 end;
 
 function TTemplateContext.GetFunctions: ITemplateFunctions;
 begin
-  result := FFunctions;
+  exit(FFunctions);
 end;
 
 function TTemplateContext.GetMaxRunTimeMs: integer;
 begin
-  result := FMaxRuntimeMs;
+  exit(FMaxRuntimeMs);
 end;
 
 function TTemplateContext.GetNewLine: string;
 begin
-  result := FNewLine;
+  exit(FNewLine);
 end;
 
 function TTemplateContext.GetOptions: TTemplateEvaluationOptions;
 begin
-  result := FOptions;
+  exit(FOptions);
 end;
 
 function TTemplateContext.GetVariable(const AName: string): TValue;
 begin
   FLock.Enter;
   try
-    result := FVariables[AName];
+    exit(FVariables[AName]);
   finally
     FLock.Leave;
   end;
@@ -332,23 +332,23 @@ end;
 
 function TTemplateContext.GetVariables: ITemplateVariables;
 begin
-  result := FVariables;
+  exit(FVariables);
 end;
 
 function TTemplateContext.GetScriptEndToken: string;
 begin
-  result := FEndToken;
+  exit(FEndToken);
 end;
 
 function TTemplateContext.GetScriptStartToken: string;
 begin
-  result := FStartToken;
+  exit(FStartToken);
 end;
 
 function TTemplateContext.GetTemplate(const AName: string): ITemplate;
 begin
   if not TryGetTemplate(AName, result) then
-    result := nil;
+    exit(nil);
 end;
 
 function TTemplateContext.GetTemplateResolver: TTemplateResolver;
@@ -435,7 +435,7 @@ function TTemplateContext.TryGetVariable(const AName: string; out AValue: TValue
 begin
   FLock.Enter;
   try
-    result := FVariables.TryGetItem(AName, AValue);
+    exit(FVariables.TryGetItem(AName, AValue));
   finally
     FLock.Leave;
   end;
@@ -445,7 +445,7 @@ end;
 
 function HtmlEncode(const AString: string): string;
 begin
-  result := TNetEncoding.HTML.Encode(AString);
+  exit(TNetEncoding.HTML.Encode(AString));
 end;
 
 procedure TTemplateContext.UseHtmlVariableEncoder;

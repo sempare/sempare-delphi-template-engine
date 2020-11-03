@@ -230,7 +230,7 @@ begin
   ctx := Template.Context;
   ctx.TemplateResolver := function(AContext: ITemplateContext; const ATemplate: string): ITemplate
     begin
-      result := Template.parse(AContext, '_' + ATemplate + '_');
+      exit(Template.parse(AContext, '_' + ATemplate + '_'));
     end;
   Assert.AreEqual('_abc__def__abc_', Template.Eval(ctx, '<% include(''abc'') %><% include(''def'') %><% include(''abc'') %>'));
 end;

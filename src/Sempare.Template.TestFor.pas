@@ -66,17 +66,23 @@ type
     procedure TestWithInlineArray;
     [Test]
     procedure TestWithEmptyInlineArray;
+{$IFDEF SEMPARE_TEMPLATE_FIREDAC}
     [Test]
     procedure TestDataSet;
+{$ENDIF}
   end;
 
 implementation
 
 uses
+{$IFDEF SEMPARE_TEMPLATE_FIREDAC}
   Data.DB,
   FireDAC.Comp.Client,
+{$ENDIF}
   System.Generics.Collections,
   Sempare.Template;
+
+{$IFDEF SEMPARE_TEMPLATE_FIREDAC}
 
 function CreateMockUsersTable(): TFDMemTable;
 var
@@ -108,7 +114,7 @@ begin
     FieldByName('weight').value := 25;
     Post;
   end;
-  result := ds;
+  exit(ds);
 end;
 
 procedure TTestTemplateFor.TestDataSet;
@@ -123,6 +129,7 @@ begin
     ds.Free;
   end;
 end;
+{$ENDIF}
 
 procedure TTestTemplateFor.TestForIn;
 type

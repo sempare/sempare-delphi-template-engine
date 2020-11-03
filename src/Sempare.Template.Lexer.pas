@@ -138,13 +138,13 @@ type
 
 function CreateTemplateLexer(AContext: ITemplateContext; const AStream: TStream; const AFilename: string; const AManageStream: Boolean): ITemplateLexer;
 begin
-  Result := TTemplateLexer.Create(AContext, AStream, AFilename, AManageStream);
+  exit(TTemplateLexer.Create(AContext, AStream, AFilename, AManageStream));
 end;
 
 function TemplateSymbolToString(const ASymbol: TTemplateSymbol): string;
 begin
   if not GSymbolToKeyword.TryGetValue(ASymbol, Result) then
-    Result := GetEnumName(TypeInfo(TTemplateSymbol), integer(ASymbol));
+    exit(GetEnumName(TypeInfo(TTemplateSymbol), integer(ASymbol)));
 end;
 
 { TTemplateLexer }
@@ -186,14 +186,14 @@ end;
 
 function TTemplateLexer.Expecting(const Achar: Char): Boolean;
 begin
-  Result := FLookahead.Input = Achar;
+  exit(FLookahead.Input = Achar);
 end;
 
 function TTemplateLexer.Expecting(const Achars: TCharSet): Boolean;
 
 begin
 {$WARN WIDECHAR_REDUCED OFF}
-  Result := not FLookahead.Eof and (FLookahead.Input in Achars);
+  exit(not FLookahead.Eof and (FLookahead.Input in Achars));
 {$WARN WIDECHAR_REDUCED ON}
 end;
 
@@ -226,9 +226,9 @@ var
   function MakePosition: IPosition;
   begin
     if eoNoPosition in FOptions then
-      Result := nil
+      exit(nil)
     else
-      Result := TPosition.Create(Ffilename, LLine, LPosition);
+      exit(TPosition.Create(Ffilename, LLine, LPosition));
   end;
 
   function SimpleToken(const ASymbol: TTemplateSymbol): ITemplateSymbol;
@@ -391,9 +391,7 @@ begin
     FNextToken := SimpleToken(VsEOF);
   end
   else
-  begin
-    Result := SimpleToken(VsEOF);
-  end;
+    exit(SimpleToken(VsEOF));
 end;
 
 function TTemplateLexer.GetTextToken: ITemplateSymbol;
@@ -405,9 +403,9 @@ var
   function MakePosition: IPosition;
   begin
     if eoNoPosition in FOptions then
-      Result := nil
+      exit(nil)
     else
-      Result := TPosition.Create(Ffilename, LLine, LPosition);
+      exit(TPosition.Create(Ffilename, LLine, LPosition));
   end;
 
   function SimpleToken(const ASymbol: TTemplateSymbol): ITemplateSymbol;
@@ -461,9 +459,7 @@ begin
     FNextToken := SimpleToken(VsEOF);
   end
   else
-  begin
-    Result := SimpleToken(VsEOF);
-  end;
+    exit(SimpleToken(VsEOF));
 end;
 
 function TTemplateLexer.GetToken: ITemplateSymbol;
@@ -476,9 +472,9 @@ begin
   end;
   case FState of
     SText:
-      Result := GetTextToken;
+      exit(GetTextToken);
     SScript:
-      Result := GetScriptToken;
+      exit(GetScriptToken);
   else
     raise ETemplateLexerException.Create('Unexpected lexer state');
   end;
@@ -499,12 +495,12 @@ end;
 
 function TSimpleTemplateSymbol.GetPosition: IPosition;
 begin
-  Result := FPosition;
+  exit(FPosition);
 end;
 
 function TSimpleTemplateSymbol.GetToken: TTemplateSymbol;
 begin
-  Result := FToken;
+  exit(FToken);
 end;
 
 procedure TSimpleTemplateSymbol.SetToken(const AToken: TTemplateSymbol);
@@ -522,7 +518,7 @@ end;
 
 function TTemplateValueSymbol.GetValue: string;
 begin
-  Result := FValue;
+  exit(FValue);
 end;
 
 procedure TTemplateValueSymbol.SetValue(const Avalue: string);

@@ -63,7 +63,7 @@ type
 
 class function TAdder.add(const a, b: extended): extended;
 begin
-  result := a + b;
+  exit(a + b);
 end;
 
 procedure TTestTemplateCall.TestFunctionCall;
@@ -100,7 +100,7 @@ end;
 
 function TMethodClass.Echo(const AArg: string): string;
 begin
-  result := AArg;
+  exit(AArg);
 end;
 
 initialization

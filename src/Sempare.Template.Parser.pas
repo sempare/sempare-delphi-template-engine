@@ -1395,8 +1395,12 @@ begin
 end;
 
 procedure TExprList.AddExpr(AExpr: IExpr);
+var
+  LOffset: integer;
 begin
-  insert(AExpr, FExprs, length(FExprs));
+  LOffset := length(FExprs);
+  setlength(FExprs, LOffset + 1);
+  FExprs[LOffset] := AExpr;
 end;
 
 function TExprList.GetExpr(const AOffset: integer): IExpr;
@@ -1627,8 +1631,12 @@ begin
 end;
 
 procedure TTemplate.Add(AItem: ITemplateVisitorHost);
+var
+  LOffset: integer;
 begin
-  insert(AItem, FArray, length(FArray));
+  LOffset := length(FArray);
+  setlength(FArray, LOffset + 1);
+  FArray[LOffset] := AItem;
 end;
 
 function TTemplate.GetCount: integer;
@@ -1892,7 +1900,6 @@ end;
 procedure initOps;
 var
   LSymbol: TTemplateSymbol;
-  LBinOp: TBinOp;
 begin
   for LSymbol := Low(TTemplateSymbol) to High(TTemplateSymbol) do
     GTemplateBinOps[LSymbol] := boInvalid;

@@ -122,12 +122,12 @@ end;
 
 class function Preserve.Value<T>(var AValue: T): IPreserveValue<T>;
 begin
-  result := TPreserveValue<T>.Create(AValue);
+  exit(TPreserveValue<T>.Create(AValue));
 end;
 
 class function Preserve.Value<T>(var AValue: T; const NewValue: T): IPreserveValue<T>;
 begin
-  result := TPreserveValue<T>.Create(AValue, NewValue);
+  exit(TPreserveValue<T>.Create(AValue, NewValue));
 end;
 
 end.
