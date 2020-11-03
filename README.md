@@ -1,4 +1,4 @@
-[![](https://tokei.rs/b1/github/sempare/sempare.template?category=lines)](https://github.com/sempare/sempare.template) [![](https://tokei.rs/b1/github/sempare/sempare.template?category=code)](https://github.com/sempare/sempare.template) [![](https://tokei.rs/b1/github/sempare/sempare.template?category=files)](https://github.com/sempare/sempare.template)
+[![](https://tokei.rs/b1/github/sempare/sempare-delphi-template-engine?category=lines)](https://github.com/sempare/sempare-delphi-template-engine) [![](https://tokei.rs/b1/github/sempare/sempare-delphi-template-engine?category=code)](https://github.com/sempare/sempare-delphi-template-engine) [![](https://tokei.rs/b1/github/sempare/sempare-delphi-template-engine?category=files)](https://github.com/sempare/sempare-delphi-template-engine)
 
 # ![](./images/sempare-logo-45px.png) Sempare Template Engine
 
@@ -8,9 +8,7 @@ Contact: <info@sempare.ltd>
 
 License: [GPL v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html) or [Sempare Limited Commercial License](./docs/commercial.license.md)
 
-Open Source: https://github.com/sempare/sempare.template
-
-Tutorial: [You Tube](https://www.youtube.com/watch?v=iotzeJv77cY&list=PLjjz4SuVScHreGKEInvrjPtLPMBU6l130)
+Open Source: https://github.com/sempare/sempare-delphi-template-engine
 
 ## Introduction
 
