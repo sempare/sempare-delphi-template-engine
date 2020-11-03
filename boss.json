@@ -1,0 +1,9 @@
+{
+	"name": "Sempare Template Engine",
+	"description": "Sempare Template Engine for Delphi allows for flexible text manipulation. It can be used for generating email, html, source code, xml, configuration, etc.",
+	"version": "1.2.4",
+	"homepage": "https://github.com/sempare/sempare-delphi-template-engine",
+	"mainsrc": "./src/",
+	"projects": [],
+	"dependencies": {}
+}
