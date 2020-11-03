@@ -167,6 +167,7 @@
         <DCCReference Include="src\Sempare.Template.Common.pas"/>
         <DCCReference Include="src\Sempare.Template.AST.pas"/>
         <DCCReference Include="src\Sempare.Template.pas"/>
+        <DCCReference Include="src\Sempare.Template.JSON.pas"/>
         <RcCompile Include="src\TSempareTemplate.rc">
             <Form>TSempareTemplate.res</Form>
         </RcCompile>
@@ -198,8 +199,7 @@
                 <Source>
                     <Source Name="MainSource">Sempare.Template.Pkg.dpk</Source>
                 </Source>
-                <Excluded_Packages>
-                </Excluded_Packages>
+                <Excluded_Packages/>
             </Delphi.Personality>
             <Deployment Version="3">
                 <DeployFile LocalName="$(BDS)\Redist\osx32\libcgunwind.1.0.dylib" Class="DependencyModule">

@@ -30,48 +30,45 @@
  * limitations under the License.                                                                   *
  *                                                                                                  *
  *************************************************************************************************%*)
-unit Sempare.Template.TestJson;
+unit Sempare.Template.JSON;
 
 interface
 
+{$I 'Sempare.Template.Compiler.inc'}
+{$IFDEF SUPPORT_JSON}
+
 uses
-  DUnitX.TestFramework;
+{$IFDEF SUPPORT_JSON_DBX}
+  Data.DBXJSON
+{$ELSE}
+    System.JSON
+{$ENDIF}
+    ;
 
 type
-
-  [TestFixture]
-  TTestTemplateJson = class
-  public
-    [test]
-    procedure TestJson;
-
-  end;
+{$IFDEF SUPPORT_JSON_DBX}
+  TJsonValue = Data.DBXJSON.TJsonValue;
+  TJSONBool = Data.DBXJSON.TJSONBool;
+  TJSONString = Data.DBXJSON.TJSONString;
+  TJSONNumber = Data.DBXJSON.TJSONNumber;
+  TJsonObject = Data.DBXJSON.TJsonObject;
+  TJSONNull = Data.DBXJSON.TJSONNull;
+  TJSONPair = Data.DBXJSON.TJSONPair;
+  TJSONTrue = Data.DBXJSON.TJSONTrue;
+  TJSONFalse = Data.DBXJSON.TJSONFalse;
+{$ELSE}
+  TJsonValue = System.JSON.TJsonValue;
+  TJSONBool = System.JSON.TJSONBool;
+  TJSONString = System.JSON.TJSONString;
+  TJSONNumber = System.JSON.TJSONNumber;
+  TJsonObject = System.JSON.TJsonObject;
+  TJSONNull = System.JSON.TJSONNull;
+  TJSONPair = System.JSON.TJSONPair;
+  TJSONTrue = System.JSON.TJSONTrue;
+  TJSONFalse = System.JSON.TJSONFalse;
+{$ENDIF}
+{$ENDIF}
 
 implementation
-
-uses
-  Sempare.Template.JSON,
-  Sempare.Template;
-
-procedure TTestTemplateJson.TestJson;
-var
-  o, o2: TJSonObject;
-begin
-  o := TJSonObject.create;
-  o.AddPair('str', 'string');
-  o.AddPair('bool', TJSONTrue.create);
-  o.AddPair('null', TJSONNull.create);
-  o.AddPair('num', TJSONNumber.create(123));
-
-  o2 := TJSonObject.create;
-  o2.AddPair('subval', 'value');
-  o.AddPair('object', o2);
-  Assert.AreEqual('string true  123 value', Template.Eval('<% _.str %> <% _.bool%> <%_.null%> <%_.num%> <% _.object.subval %>', o));
-  o.Free;
-end;
-
-initialization
-
-TDUnitX.RegisterTestFixture(TTestTemplateJson);
 
 end.

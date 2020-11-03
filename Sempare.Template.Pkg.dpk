@@ -77,6 +77,7 @@ contains
   Sempare.Template.Context in 'src\Sempare.Template.Context.pas',
   Sempare.Template.Common in 'src\Sempare.Template.Common.pas',
   Sempare.Template.AST in 'src\Sempare.Template.AST.pas',
-  Sempare.Template in 'src\Sempare.Template.pas';
+  Sempare.Template in 'src\Sempare.Template.pas',
+  Sempare.Template.JSON in 'src\Sempare.Template.JSON.pas';
 
 end.

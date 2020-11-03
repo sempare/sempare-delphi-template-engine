@@ -40,9 +40,7 @@ uses
   System.Rtti,
   System.TypInfo,
   System.SysUtils,
-{$IFDEF SUPPORT_JSON}
-  System.JSON,
-{$ENDIF}
+  Sempare.Template.JSON,
   Sempare.Template.StackFrame,
   Sempare.Template.AST;
 
@@ -94,6 +92,11 @@ var
 implementation
 
 uses
+{$IFDEF SUPPORT_JSON_DBX}
+  Data.DBXJSON,
+{$ELSE}
+  System.JSON,
+{$ENDIF}
   System.Math,
   Data.DB,
   System.Generics.Collections,
@@ -578,7 +581,7 @@ end;
 procedure PopulateStackFrameFromJsonObject(const StackFrame: TStackFrame; const ARttiType: TRttiType; const AClass: TValue);
 var
   LJsonObject: TJsonObject;
-  LJsonPair: tjsonpair;
+  LJsonPair: TJsonPair;
   LJsonValueAsTValue: TValue;
 begin
   LJsonObject := TJsonObject(AClass.AsObject);

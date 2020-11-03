@@ -30,27 +30,32 @@
  * limitations under the License.                                                                   *
  *                                                                                                  *
  *************************************************************************************************%*)
- // -----------------------------------------------
+// -----------------------------------------------
+{$IF CompilerVersion >= 25} // from XE4 onwards
+{$DEFINE SUPPORT_JSON_DBX}
+{$ENDIF}
+// -----------------------------------------------
 {$IF CompilerVersion >= 26} // from XE5 onwards
-{$DEFINE SUPPORT_JSON true}
+{$UNDEF SUPPORT_JSON_DBX}
+{$DEFINE SUPPORT_JSON}
 {$ENDIF}
 // -----------------------------------------------
 {$IF CompilerVersion >= 28}  // from XE7 onwards
-{$DEFINE SUPPORT_NET_ENCODING true}
+{$DEFINE SUPPORT_NET_ENCODING}
 {$ENDIF}
 // -----------------------------------------------
 {$IF CompilerVersion >= 29}  // from XE8 onwards
-{$DEFINE SUPPORT_AS_VARREC true}
+{$DEFINE SUPPORT_AS_VARREC}
 {$ENDIF}
 // -----------------------------------------------
 {$IF CompilerVersion >= 30} // from Delphi 10.0 Seatle onwards
-{$DEFINE SUPPORT_JSON_BOOL true}
+{$DEFINE SUPPORT_JSON_BOOL}
 {$ENDIF}
 // -----------------------------------------------
 {$IF CompilerVersion >= 31}  // from Delphi 10.1 Berlin onwards
-{$DEFINE SUPPORT_BUFFERED_STREAM true}
+{$DEFINE SUPPORT_BUFFERED_STREAM}
 {$ENDIF}
 // -----------------------------------------------
 
 // Uncomment the following to test TDataSet using FIREDAC TFDMemTable
-//{$DEFINE SEMPARE_TEMPLATE_FIREDAC}
+// {$DEFINE SEMPARE_TEMPLATE_FIREDAC}
