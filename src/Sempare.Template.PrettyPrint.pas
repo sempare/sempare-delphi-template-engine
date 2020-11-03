@@ -99,38 +99,35 @@ var
 
 function UnaryToStr(const ASymbol: TUnaryOp): string;
 begin
-  result := GUnaryStrings[ASymbol];
+  exit(GUnaryStrings[ASymbol]);
 end;
 
 function BinOpToStr(const ASymbol: TBinOp): string;
 begin
-  result := GBinopStrings[ASymbol];
+  exit(GBinopStrings[ASymbol]);
 end;
 
 function ForopToStr(const ASymbol: TForOp): string;
 
 begin
-  result := GForOpStrings[ASymbol];
+  exit(GForOpStrings[ASymbol]);
 end;
 
 { TPrettyPrintTemplateVisitor }
 
 constructor TPrettyPrintTemplateVisitor.Create();
 begin
+  inherited Create();
   FIndent := 0;
   FStringBuilder := TStringBuilder.Create;
 end;
 
 procedure TPrettyPrintTemplateVisitor.delta(const ADelta: integer);
-var
-  i: integer;
 begin
   inc(FIndent, ADelta);
   if FIndent < 0 then
     FIndent := 0;
-  FTab := '';
-  for i := 1 to FIndent do
-    FTab := FTab + ' ';
+  FTab := ''.PadRight(FIndent);
 end;
 
 destructor TPrettyPrintTemplateVisitor.Destroy;
@@ -147,7 +144,7 @@ end;
 
 function TPrettyPrintTemplateVisitor.ToString: string;
 begin
-  result := FStringBuilder.ToString;
+  exit(FStringBuilder.ToString);
 end;
 
 procedure TPrettyPrintTemplateVisitor.Visit(AStmt: IBreakStmt);
@@ -192,11 +189,8 @@ begin
 end;
 
 procedure TPrettyPrintTemplateVisitor.Write(const AFMT: string; const args: array of const);
-var
-  s: string;
 begin
-  s := format(AFMT, args);
-  FStringBuilder.append(s);
+  FStringBuilder.append(format(AFMT, args));
 end;
 
 procedure TPrettyPrintTemplateVisitor.Write(const AFMT: string);
@@ -375,29 +369,29 @@ end;
 
 procedure TPrettyPrintTemplateVisitor.Visit(AStmt: IRequireStmt);
 var
-  i: integer;
+  LIdx: integer;
 begin
   tab();
   write('<% require(');
-  for i := 0 to AStmt.ExprList.Count - 1 do
+  for LIdx := 0 to AStmt.ExprList.Count - 1 do
   begin
-    if i > 0 then
+    if LIdx > 0 then
       write(',');
-    AcceptVisitor(AStmt.ExprList.Expr[i], self);
+    AcceptVisitor(AStmt.ExprList.Expr[LIdx], self);
   end;
   writeln('%>');
 end;
 
 procedure TPrettyPrintTemplateVisitor.Visit(AExpr: IArrayExpr);
 var
-  i: integer;
+  LIdx: integer;
 begin
   write('[');
-  for i := 0 to AExpr.ExprList.Count - 1 do
+  for LIdx := 0 to AExpr.ExprList.Count - 1 do
   begin
-    if i > 0 then
+    if LIdx > 0 then
       write(',');
-    AcceptVisitor(AExpr.ExprList.Expr[i], self);
+    AcceptVisitor(AExpr.ExprList.Expr[LIdx], self);
   end;
   write(']');
 end;

@@ -14,7 +14,9 @@ Copyright (c) 2020 [Sempare Limited](http://www.sempare.ltd)
 
 - users may need to cast types explitly when calling functions/methods or introduce custom methods to assist with casting.
 
-- review __Sempare.Boot.Template.Velocity.Compiler.inc__ to see conditional compilation
+- max run time is currently based on checking the time within loops. this does not however stop a function from blocking indefinitely.
+
+- review __Sempare.Template.Compiler.inc__ to see conditional compilation
 
 	- SUPPORT_JSON - Allows support of System.Json
 	- SUPPORT_JSON_BOOL - Workaround on TJsonBool not being available in early versions.

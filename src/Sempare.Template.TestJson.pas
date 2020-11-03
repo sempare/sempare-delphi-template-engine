@@ -49,16 +49,11 @@ type
 
 implementation
 
-{$I 'Sempare.Template.Compiler.inc'}
-
 uses
-{$IFDEF SUPPORT_JSON}
-  System.Json,
-{$ENDIF}
+  Sempare.Template.JSON,
   Sempare.Template;
 
 procedure TTestTemplateJson.TestJson;
-{$IFDEF SUPPORT_JSON}
 var
   o, o2: TJSonObject;
 begin
@@ -74,12 +69,6 @@ begin
   Assert.AreEqual('string true  123 value', Template.Eval('<% _.str %> <% _.bool%> <%_.null%> <%_.num%> <% _.object.subval %>', o));
   o.Free;
 end;
-{$ELSE}
-
-begin
-  // do nothing.
-end;
-{$ENDIF}
 
 initialization
 

@@ -145,31 +145,31 @@ end;
 
 function Position(AStmt: IStmt): IPosition; overload;
 var
-  symbol: IPositional;
+  LSymbol: IPositional;
 begin
-  AStmt.QueryInterface(IPositional, symbol);
-  result := symbol.Position;
+  AStmt.QueryInterface(IPositional, LSymbol);
+  exit(LSymbol.Position);
 end;
 
 function Position(AExpr: IExpr): IPosition; overload;
 var
-  symbol: IPositional;
+  LSymbol: IPositional;
 begin
-  AExpr.QueryInterface(IPositional, symbol);
-  result := symbol.Position;
+  AExpr.QueryInterface(IPositional, LSymbol);
+  exit(LSymbol.Position);
 end;
 
 function Position(APositional: IPosition): string; overload;
 var
-  Name: string;
+  LName: string;
 begin
   if APositional = nil then
     exit('');
   if APositional.FileName = '' then
-    name := ''
+    LName := ''
   else
-    name := APositional.FileName + ':';
-  result := format('%s%d[%d]', [name, APositional.Line, APositional.Pos]);
+    LName := APositional.FileName + ':';
+  exit(format('%s%d[%d]', [LName, APositional.Line, APositional.Pos]));
 end;
 
 procedure RaiseError(APositional: IPosition; const AFormat: string; const AArgs: array of const); overload;
@@ -201,17 +201,17 @@ end;
 
 function TPosition.GetFilename: string;
 begin
-  result := FFilename;
+  exit(FFilename);
 end;
 
 function TPosition.GetLine: integer;
 begin
-  result := FLine;
+  exit(FLine);
 end;
 
 function TPosition.GetPos: integer;
 begin
-  result := FPos;
+  exit(FPos);
 end;
 
 procedure TPosition.SetFilename(const AFilename: string);
@@ -238,7 +238,7 @@ end;
 
 function TTemplateVariables.ContainsKey(const AKey: string): boolean;
 begin
-  result := FVariables.ContainsKey(AKey);
+  exit(FVariables.ContainsKey(AKey));
 end;
 
 constructor TTemplateVariables.Create;
@@ -254,17 +254,17 @@ end;
 
 function TTemplateVariables.GetCount: integer;
 begin
-  result := FVariables.Count;
+  exit(FVariables.Count);
 end;
 
 function TTemplateVariables.GetEnumerator: TDictionary<string, TValue>.TPairEnumerator;
 begin
-  result := FVariables.GetEnumerator;
+  exit(FVariables.GetEnumerator);
 end;
 
 function TTemplateVariables.GetItem(const AKey: string): TTemplateValue;
 begin
-  result := FVariables[AKey];
+  exit(FVariables[AKey]);
 end;
 
 procedure TTemplateVariables.Remove(const AKey: string);
@@ -279,7 +279,7 @@ end;
 
 function TTemplateVariables.TryGetItem(const AKey: string; out AValue: TTemplateValue): boolean;
 begin
-  result := FVariables.TryGetValue(AKey, AValue);
+  exit(FVariables.TryGetValue(AKey, AValue));
 end;
 
 end.

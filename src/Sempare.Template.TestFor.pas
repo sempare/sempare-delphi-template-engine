@@ -33,6 +33,7 @@
 unit Sempare.Template.TestFor;
 
 interface
+{$I 'Sempare.Template.Compiler.inc'}
 
 uses
   DUnitX.TestFramework;
@@ -66,17 +67,21 @@ type
     procedure TestWithInlineArray;
     [Test]
     procedure TestWithEmptyInlineArray;
-    [Test]
+    [Test{$IFNDEF SEMPARE_TEMPLATE_FIREDAC}, IGNORE{$ENDIF}]
     procedure TestDataSet;
   end;
 
 implementation
 
 uses
+{$IFDEF SEMPARE_TEMPLATE_FIREDAC}
   Data.DB,
   FireDAC.Comp.Client,
+{$ENDIF}
   System.Generics.Collections,
   Sempare.Template;
+
+{$IFDEF SEMPARE_TEMPLATE_FIREDAC}
 
 function CreateMockUsersTable(): TFDMemTable;
 var
@@ -108,7 +113,7 @@ begin
     FieldByName('weight').value := 25;
     Post;
   end;
-  result := ds;
+  exit(ds);
 end;
 
 procedure TTestTemplateFor.TestDataSet;
@@ -123,6 +128,12 @@ begin
     ds.Free;
   end;
 end;
+{$ELSE}
+
+procedure TTestTemplateFor.TestDataSet;
+begin
+end;
+{$ENDIF}
 
 procedure TTestTemplateFor.TestForIn;
 type

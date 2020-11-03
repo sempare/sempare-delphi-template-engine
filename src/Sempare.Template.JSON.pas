@@ -30,81 +30,43 @@
  * limitations under the License.                                                                   *
  *                                                                                                  *
  *************************************************************************************************%*)
-unit Sempare.Template.TestCall;
+unit Sempare.Template.JSON;
 
 interface
 
+{$I 'Sempare.Template.Compiler.inc'}
+
 uses
-  DUnitX.TestFramework;
+{$IFDEF SUPPORT_JSON_DBX}
+  Data.DBXJSON
+{$ELSE}
+    System.JSON
+{$ENDIF}
+    ;
 
 type
-
-  [TestFixture]
-  TTestTemplateCall = class
-  public
-    [Test]
-    procedure TestFunctionCall;
-
-    [Test]
-    procedure TestMethodCall;
-  end;
+{$IFDEF SUPPORT_JSON_DBX}
+  TJsonValue = Data.DBXJSON.TJsonValue;
+  TJSONBool = Data.DBXJSON.TJSONBool;
+  TJSONString = Data.DBXJSON.TJSONString;
+  TJSONNumber = Data.DBXJSON.TJSONNumber;
+  TJsonObject = Data.DBXJSON.TJsonObject;
+  TJSONNull = Data.DBXJSON.TJSONNull;
+  TJSONPair = Data.DBXJSON.TJSONPair;
+  TJSONTrue = Data.DBXJSON.TJSONTrue;
+  TJSONFalse = Data.DBXJSON.TJSONFalse;
+{$ELSE}
+  TJsonValue = System.JSON.TJsonValue;
+  TJSONBool = System.JSON.TJSONBool;
+  TJSONString = System.JSON.TJSONString;
+  TJSONNumber = System.JSON.TJSONNumber;
+  TJsonObject = System.JSON.TJsonObject;
+  TJSONNull = System.JSON.TJSONNull;
+  TJSONPair = System.JSON.TJSONPair;
+  TJSONTrue = System.JSON.TJSONTrue;
+  TJSONFalse = System.JSON.TJSONFalse;
+{$ENDIF}
 
 implementation
-
-uses
-  Sempare.Template.Context,
-  Sempare.Template;
-
-type
-  TAdder = class
-  public
-    class function add(const a, b: extended): extended; static;
-  end;
-
-class function TAdder.add(const a, b: extended): extended;
-begin
-  exit(a + b);
-end;
-
-procedure TTestTemplateCall.TestFunctionCall;
-
-var
-  ctx: ITemplateContext;
-begin
-  ctx := Template.Context;
-  ctx.functions.addfunctions(TAdder);
-  Assert.AreEqual('before 22 coool after ', Template.Eval(ctx, 'before <% add(15,7) %> <% trim(''   coool   '') %> after '));
-end;
-
-type
-  TMethodClass = class
-  public
-    function Echo(const AArg: string): string;
-  end;
-
-  TRec = record
-    o: TMethodClass;
-  end;
-
-procedure TTestTemplateCall.TestMethodCall;
-var
-  r: TRec;
-begin
-  r.o := TMethodClass.Create;
-  Assert.AreEqual('a', Template.Eval('<% _.Echo(''a'') %>', r.o));
-  Assert.AreEqual('b', Template.Eval('<% _.o.Echo(''b'') %>', r));
-  r.o.Free;
-end;
-
-{ TMethodClass }
-
-function TMethodClass.Echo(const AArg: string): string;
-begin
-  exit(AArg);
-end;
-
-initialization
-
-TDUnitX.RegisterTestFixture(TTestTemplateCall);
 
 end.

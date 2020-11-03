@@ -319,7 +319,7 @@ type
   end;
 
   IForRangeStmt = interface(IStmt)
-    ['{DE078CDD-B50A-4036-987E-E2FD241950F6}']
+    ['{16645615-2E4E-4F1C-85BA-0EA3F1012F47}']
 
     function GetVariable: string;
     function GetForOp: TForOp;

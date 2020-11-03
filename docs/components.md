@@ -50,54 +50,54 @@ The Template class provides many other useful methods:
 ```
    Template = class
   public
-    class function Context(AOptions: TVelocityEvaluationOptions = []): IVelocityContext; inline; static;
-    class function Parser(const AContext: IVelocityContext): IVelocityParser; overload; inline; static;
-    class function Parser(): IVelocityParser; overload; inline; static;
-    class function PrettyPrint(const ATemplate: IVelocityTemplate): string; inline; static;
+    class function Context(AOptions: TTemplateEvaluationOptions = []): ITemplateContext; inline; static;
+    class function Parser(const AContext: ITemplateContext): ITemplateParser; overload; inline; static;
+    class function Parser(): ITemplateParser; overload; inline; static;
+    class function PrettyPrint(const ATemplate: ITemplate): string; inline; static;
 
     // EVAL output to stream
 
-    class procedure Eval(const ATemplate: string; const AStream: TStream; const AOptions: TVelocityEvaluationOptions = []); overload; static;
-    class procedure Eval<T>(const ATemplate: string; const AValue: T; const AStream: TStream; const AOptions: TVelocityEvaluationOptions = []); overload; static;
-    class procedure Eval<T>(const ATemplate: IVelocityTemplate; const AValue: T; const AStream: TStream; const AOptions: TVelocityEvaluationOptions = []); overload; static;
-    class procedure Eval(const ATemplate: IVelocityTemplate; const AStream: TStream; const AOptions: TVelocityEvaluationOptions = []); overload; static;
-    class procedure Eval<T>(const AContext: IVelocityContext; const ATemplate: IVelocityTemplate; const AValue: T; const AStream: TStream); overload; static;
-    class procedure Eval<T>(const AContext: IVelocityContext; const ATemplate: string; const AValue: T; const AStream: TStream); overload; static;
-    class procedure Eval(const AContext: IVelocityContext; const ATemplate: string; const AStream: TStream); overload; static;
-    class procedure Eval(const AContext: IVelocityContext; const ATemplate: IVelocityTemplate; const AStream: TStream); overload; static;
+    class procedure Eval(const ATemplate: string; const AStream: TStream; const AOptions: TTemplateEvaluationOptions = []); overload; static;
+    class procedure Eval<T>(const ATemplate: string; const AValue: T; const AStream: TStream; const AOptions: TTemplateEvaluationOptions = []); overload; static;
+    class procedure Eval<T>(const ATemplate: ITemplate; const AValue: T; const AStream: TStream; const AOptions: TTemplateEvaluationOptions = []); overload; static;
+    class procedure Eval(const ATemplate: ITemplate; const AStream: TStream; const AOptions: TTemplateEvaluationOptions = []); overload; static;
+    class procedure Eval<T>(const AContext: ITemplateContext; const ATemplate: ITemplate; const AValue: T; const AStream: TStream); overload; static;
+    class procedure Eval<T>(const AContext: ITemplateContext; const ATemplate: string; const AValue: T; const AStream: TStream); overload; static;
+    class procedure Eval(const AContext: ITemplateContext; const ATemplate: string; const AStream: TStream); overload; static;
+    class procedure Eval(const AContext: ITemplateContext; const ATemplate: ITemplate; const AStream: TStream); overload; static;
 
     // EVAL returning string
 
-    class function Eval(const ATemplate: string; const AOptions: TVelocityEvaluationOptions = []): string; overload; static;
-    class function Eval<T>(const ATemplate: string; const AValue: T; const AOptions: TVelocityEvaluationOptions = []): string; overload; static;
-    class function Eval<T>(const ATemplate: IVelocityTemplate; const AValue: T; const AOptions: TVelocityEvaluationOptions = []): string; overload; static;
-    class function Eval(const ATemplate: IVelocityTemplate; const AOptions: TVelocityEvaluationOptions = []): string; overload; static;
+    class function Eval(const ATemplate: string; const AOptions: TTemplateEvaluationOptions = []): string; overload; static;
+    class function Eval<T>(const ATemplate: string; const AValue: T; const AOptions: TTemplateEvaluationOptions = []): string; overload; static;
+    class function Eval<T>(const ATemplate: ITemplate; const AValue: T; const AOptions: TTemplateEvaluationOptions = []): string; overload; static;
+    class function Eval(const ATemplate: ITemplate; const AOptions: TTemplateEvaluationOptions = []): string; overload; static;
 
-    class function Eval<T>(const AContext: IVelocityContext; const ATemplate: IVelocityTemplate; const AValue: T): string; overload; static;
-    class function Eval<T>(const AContext: IVelocityContext; const ATemplate: string; const AValue: T): string; overload; static;
-    class function Eval(const AContext: IVelocityContext; const ATemplate: string): string; overload; static;
-    class function Eval(const AContext: IVelocityContext; const ATemplate: IVelocityTemplate): string; overload; static;
+    class function Eval<T>(const AContext: ITemplateContext; const ATemplate: ITemplate; const AValue: T): string; overload; static;
+    class function Eval<T>(const AContext: ITemplateContext; const ATemplate: string; const AValue: T): string; overload; static;
+    class function Eval(const AContext: ITemplateContext; const ATemplate: string): string; overload; static;
+    class function Eval(const AContext: ITemplateContext; const ATemplate: ITemplate): string; overload; static;
 
     // PARSING
 
     // string operations
-    class function Parse(const AString: string): IVelocityTemplate; overload; static;
-    class function Parse(const AContext: IVelocityContext; const AString: string): IVelocityTemplate; overload; static;
+    class function Parse(const AString: string): ITemplate; overload; static;
+    class function Parse(const AContext: ITemplateContext; const AString: string): ITemplate; overload; static;
 
     // stream operations
-    class function Parse(const AStream: TStream): IVelocityTemplate; overload; static;
-    class function Parse(const AContext: IVelocityContext; const AStream: TStream): IVelocityTemplate; overload; static;
+    class function Parse(const AStream: TStream): ITemplate; overload; static;
+    class function Parse(const AContext: ITemplateContext; const AStream: TStream): ITemplate; overload; static;
 
     // file operations
-    class function ParseFile(const AFile: string): IVelocityTemplate; overload; static;
-    class function ParseFile(const AContext: IVelocityContext; const AFile: string): IVelocityTemplate; overload; static;
+    class function ParseFile(const AFile: string): ITemplate; overload; static;
+    class function ParseFile(const AContext: ITemplateContext; const AFile: string): ITemplate; overload; static;
 
   end;
 
 ```
 ### ITemplateContext
 
-The Velocity context object is a container for configuration used when parsing or evaluating templats.
+The Template context object is a container for configuration used when parsing or evaluating templats.
 ```
     var ctx := Template.Context();
     ctx.MaxRuntimeMs := 5;
@@ -121,7 +121,7 @@ Defining variables in a context allows them to be used in made available to mult
 
 ### ITemplate
 
-The output of the Velocity parser is an object implementing the IVelocityTemplate interface.
+The output of the Template parser is an object implementing the ITemplate interface.
 ```
     var ctx := Template.Context();
     var tpl := Template.Parse(ctx, 'this is a template'); 

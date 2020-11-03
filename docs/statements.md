@@ -163,7 +163,7 @@ This will produce
 
 ### include
 
-You may want to decompose templates into reusable parts. You register templates on a Velocity context. 
+You may want to decompose templates into reusable parts. You register templates on a Template context. 
 
 ```
 type
@@ -177,9 +177,9 @@ begin
    ctx['year'] := 2019;
    ctx['company'] := 'Sempare Limited';
    ctx['email'] := 'info@sempare.ltd';
-   ctx.RegisterTemplate('header', Velocity.Parse('Copyright (c) <% year %> <% company %> '));
-   ctx.RegisterTemplate('footer', Velocity.Parse('Contact us <% email %> '));
-   var tpl := Velocity.parse('<% include (''header'') %> some content <% include (''footer'') %>');
+   ctx.RegisterTemplate('header', Template.Parse('Copyright (c) <% year %> <% company %> '));
+   ctx.RegisterTemplate('footer', Template.Parse('Contact us <% email %> '));
+   var tpl := Template.parse('<% include (''header'') %> some content <% include (''footer'') %>');
 ```
 
 include() can also take a second parameter, allowing for improved scoping of variables, similar to the _with_ statement.
@@ -210,7 +210,7 @@ begin
 	Template.Eval('<% level1.level2.level3.level4.value %> <% level1.level2.level3.level4.value %> <% level1.level2.level3.level4.value %>', info)
 
 	// can be replaced with
-	Velocity.Eval('<% with level1.level2.level3.level4 %><% value %> <% value %> <% value %><% end %>', info)
+	Template.Eval('<% with level1.level2.level3.level4 %><% value %> <% value %> <% value %><% end %>', info)
 
 ```
 

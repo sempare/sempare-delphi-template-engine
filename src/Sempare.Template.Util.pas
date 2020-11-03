@@ -38,7 +38,6 @@ interface
 
 type
   IPreserveValue<T> = interface
-    ['{32528639-7ADF-4F69-AE33-E56CA47024F8}']
 
     // A helper to allow a reference to be maintained
     // so that the object does not get optimised out
@@ -49,7 +48,7 @@ type
   end;
 
 type
-  Preseve = class
+  Preserve = class
     class function Value<T>(var AValue: T): IPreserveValue<T>; overload; static;
     class function Value<T>(var AValue: T; const NewValue: T): IPreserveValue<T>; overload; static;
   end;
@@ -91,6 +90,11 @@ begin
   AValue := NewValue;
 end;
 
+procedure TPreserveValue<T>.SetValue(const AValue: T);
+begin
+  FValuePtr^ := AValue;
+end;
+
 destructor TPreserveValue<T>.Destroy;
 begin
   if FReset then
@@ -109,11 +113,6 @@ begin
   SetValue(AValue);
 end;
 
-procedure TPreserveValue<T>.SetValue(const AValue: T);
-begin
-  FValuePtr^ := AValue;
-end;
-
 procedure TPreserveValue<T>.NoReset;
 begin
   FReset := false;
@@ -121,14 +120,14 @@ end;
 
 { Preseve }
 
-class function Preseve.Value<T>(var AValue: T): IPreserveValue<T>;
+class function Preserve.Value<T>(var AValue: T): IPreserveValue<T>;
 begin
-  result := TPreserveValue<T>.Create(AValue);
+  exit(TPreserveValue<T>.Create(AValue));
 end;
 
-class function Preseve.Value<T>(var AValue: T; const NewValue: T): IPreserveValue<T>;
+class function Preserve.Value<T>(var AValue: T; const NewValue: T): IPreserveValue<T>;
 begin
-  result := TPreserveValue<T>.Create(AValue, NewValue);
+  exit(TPreserveValue<T>.Create(AValue, NewValue));
 end;
 
 end.

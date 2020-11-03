@@ -34,17 +34,19 @@ unit Sempare.Template.Test;
 
 interface
 
+{$I 'Sempare.Template.Compiler.inc'}
+
 uses
   DUnitX.TestFramework;
 
 type
 
-  // [TestFixture]
+  [TestFixture]
   TTestTemplate = class
   public
     [Test]
     procedure TestComment;
-    [Test]
+    [Test {$IFNDEF SEMPARE_TEMPLATE_HAS_HTML_ENCODER}, Ignore{$ENDIF}]
     procedure TestHtmlEncoding;
     [Test]
     procedure TestNonMutation;
@@ -77,8 +79,6 @@ type
 
 implementation
 
-{$I 'Sempare.Template.Compiler.inc'}
-
 uses
   System.Generics.Collections,
   Sempare.Template.Context,
@@ -103,7 +103,7 @@ begin
 end;
 
 procedure TTestTemplate.TestHtmlEncoding;
-{$IFDEF SUPPORT_NET_ENCODING}
+{$IFDEF SEMPARE_TEMPLATE_HAS_HTML_ENCODER}
 type
   TRec = record
     content: string;
@@ -230,7 +230,7 @@ begin
   ctx := Template.Context;
   ctx.TemplateResolver := function(AContext: ITemplateContext; const ATemplate: string): ITemplate
     begin
-      result := Template.parse(AContext, '_' + ATemplate + '_');
+      exit(Template.parse(AContext, '_' + ATemplate + '_'));
     end;
   Assert.AreEqual('_abc__def__abc_', Template.Eval(ctx, '<% include(''abc'') %><% include(''def'') %><% include(''abc'') %>'));
 end;

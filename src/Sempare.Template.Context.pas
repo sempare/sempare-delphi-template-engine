@@ -109,7 +109,7 @@ type
     function GetEncoding: TEncoding;
     procedure SetEncoding(const AEncoding: TEncoding);
 
-{$IFDEF SUPPORT_NET_ENCODING}
+{$IFDEF SEMPARE_TEMPLATE_HAS_HTML_ENCODER}
     procedure UseHtmlVariableEncoder;
 {$ENDIF}
     function GetVariableEncoder: TTemplateEncodeFunction;
@@ -138,6 +138,11 @@ type
     procedure ApplyTo(const AScope: TStackFrame);
   end;
 
+  TUTF8WithoutPreambleEncoding = class(TUTF8Encoding)
+  public
+    function GetPreamble: TBytes; override;
+  end;
+
 function CreateTemplateContext(const AOptions: TTemplateEvaluationOptions = []): ITemplateContext;
 
 var
@@ -146,21 +151,17 @@ var
   GDefaultCloseTag: string = '%>';
   GNewLine: string = #13#10;
   GDefaultEncoding: TEncoding;
-
-type
-  TUTF8WithoutPreambleEncoding = class(TUTF8Encoding)
-  public
-    function GetPreamble: TBytes; override;
-  end;
-
-var
-  UTF8WithoutPreambleEncoding: TUTF8WithoutPreambleEncoding;
+  GUTF8WithoutPreambleEncoding: TUTF8WithoutPreambleEncoding;
 
 implementation
 
 uses
+{$IFDEF SEMPARE_TEMPLATE_HAS_HTML_ENCODER}
 {$IFDEF SUPPORT_NET_ENCODING}
   System.NetEncoding,
+{$ELSE}
+  IdStrings,
+{$ENDIF}
 {$ENDIF}
   System.SyncObjs,
   Sempare.Template,
@@ -213,7 +214,7 @@ type
     function GetMaxRunTimeMs: integer;
     procedure SetMaxRunTimeMs(const ATimeMS: integer);
 
-{$IFDEF SUPPORT_NET_ENCODING}
+{$IFDEF SEMPARE_TEMPLATE_HAS_HTML_ENCODER}
     procedure UseHtmlVariableEncoder;
 {$ENDIF}
     function GetVariableEncoder: TTemplateEncodeFunction;
@@ -231,7 +232,7 @@ type
 
 function CreateTemplateContext(const AOptions: TTemplateEvaluationOptions): ITemplateContext;
 begin
-  result := TTemplateContext.Create(AOptions);
+  exit(TTemplateContext.Create(AOptions));
 end;
 
 { TTemplateContext }
@@ -248,12 +249,10 @@ end;
 
 procedure TTemplateContext.ApplyTo(const AScope: TStackFrame);
 var
-  p: TPair<string, TValue>;
+  LPair: TPair<string, TValue>;
 begin
-  for p in FVariables do
-  begin
-    AScope[p.Key] := p.Value;
-  end;
+  for LPair in FVariables do
+    AScope[LPair.Key] := LPair.Value;
 end;
 
 constructor TTemplateContext.Create(const AOptions: TTemplateEvaluationOptions);
@@ -289,7 +288,7 @@ begin
         FFunctions.RegisterDefaults;
       FFunctionsSet := true;
     end;
-    result := FFunctions.TryGetValue(AName.ToLower, AFunction);
+    exit(FFunctions.TryGetValue(AName.ToLower, AFunction));
   finally
     FLock.Leave;
   end;
@@ -297,34 +296,34 @@ end;
 
 function TTemplateContext.GetEncoding: TEncoding;
 begin
-  result := FEncoding;
+  exit(FEncoding);
 end;
 
 function TTemplateContext.GetFunctions: ITemplateFunctions;
 begin
-  result := FFunctions;
+  exit(FFunctions);
 end;
 
 function TTemplateContext.GetMaxRunTimeMs: integer;
 begin
-  result := FMaxRuntimeMs;
+  exit(FMaxRuntimeMs);
 end;
 
 function TTemplateContext.GetNewLine: string;
 begin
-  result := FNewLine;
+  exit(FNewLine);
 end;
 
 function TTemplateContext.GetOptions: TTemplateEvaluationOptions;
 begin
-  result := FOptions;
+  exit(FOptions);
 end;
 
 function TTemplateContext.GetVariable(const AName: string): TValue;
 begin
   FLock.Enter;
   try
-    result := FVariables[AName];
+    exit(FVariables[AName]);
   finally
     FLock.Leave;
   end;
@@ -337,23 +336,23 @@ end;
 
 function TTemplateContext.GetVariables: ITemplateVariables;
 begin
-  result := FVariables;
+  exit(FVariables);
 end;
 
 function TTemplateContext.GetScriptEndToken: string;
 begin
-  result := FEndToken;
+  exit(FEndToken);
 end;
 
 function TTemplateContext.GetScriptStartToken: string;
 begin
-  result := FStartToken;
+  exit(FStartToken);
 end;
 
 function TTemplateContext.GetTemplate(const AName: string): ITemplate;
 begin
   if not TryGetTemplate(AName, result) then
-    result := nil;
+    exit(nil);
 end;
 
 function TTemplateContext.GetTemplateResolver: TTemplateResolver;
@@ -440,17 +439,22 @@ function TTemplateContext.TryGetVariable(const AName: string; out AValue: TValue
 begin
   FLock.Enter;
   try
-    result := FVariables.TryGetItem(AName, AValue);
+    exit(FVariables.TryGetItem(AName, AValue));
   finally
     FLock.Leave;
   end;
 end;
 
-{$IFDEF SUPPORT_NET_ENCODING}
+{$IFDEF SEMPARE_TEMPLATE_HAS_HTML_ENCODER}
 
 function HtmlEncode(const AString: string): string;
 begin
-  result := TNetEncoding.HTML.Encode(AString);
+{$IFDEF SUPPORT_NET_ENCODING}
+  exit(TNetEncoding.HTML.Encode(AString));
+{$ENDIF}
+{$IFDEF SEMPARE_TEMPLATE_INDY}
+  exit(StrHtmlEncode(AString));
+{$ENDIF}
 end;
 
 procedure TTemplateContext.UseHtmlVariableEncoder;
@@ -471,12 +475,12 @@ end;
 initialization
 
 // setup our global
-UTF8WithoutPreambleEncoding := TUTF8WithoutPreambleEncoding.Create;
+GUTF8WithoutPreambleEncoding := TUTF8WithoutPreambleEncoding.Create;
 
 GDefaultEncoding := TEncoding.UTF8WithoutBOM;
 
 finalization
 
-UTF8WithoutPreambleEncoding.Free;
+GUTF8WithoutPreambleEncoding.Free;
 
 end.

@@ -40,9 +40,7 @@ uses
   System.Rtti,
   System.TypInfo,
   System.SysUtils,
-{$IFDEF SUPPORT_JSON}
-  System.JSON,
-{$ENDIF}
+  Sempare.Template.JSON,
   Sempare.Template.StackFrame,
   Sempare.Template.AST;
 
@@ -60,9 +58,9 @@ function isNull(const AValue: TValue): boolean;
 function isEnumerable(const AValue: TValue): boolean;
 function Contains(APosition: IPosition; const ALeft, ARight: TValue): boolean;
 
-function isEqual(const left: TValue; const right: TValue): boolean;
-function isLessThan(const left: TValue; const right: TValue): boolean;
-function isGreaterThan(const left: TValue; const right: TValue): boolean;
+function isEqual(const ALeft: TValue; const ARight: TValue): boolean;
+function isLessThan(const ALeft: TValue; const ARight: TValue): boolean;
+function isGreaterThan(const ALeft: TValue; const ARight: TValue): boolean;
 
 procedure AssertBoolean(APositional: IPosition; const ALeft: TValue); overload;
 procedure AssertBoolean(APositional: IPosition; const ALeft: TValue; const ARight: TValue); overload;
@@ -94,6 +92,11 @@ var
 implementation
 
 uses
+{$IFDEF SUPPORT_JSON_DBX}
+  Data.DBXJSON,
+{$ELSE}
+  System.JSON,
+{$ENDIF}
   System.Math,
   Data.DB,
   System.Generics.Collections,
@@ -126,79 +129,79 @@ end;
 
 function PopulateStackFrame(const StackFrame: TStackFrame; const ARttiType: TRttiType; const AClass: TValue): boolean;
 var
-  p: TPair<TPopulateMatchFunction, TPopulateStackFrame>;
+  LFuncPair: TPair<TPopulateMatchFunction, TPopulateStackFrame>;
 begin
-  for p in GPopulateFunctions do
+  for LFuncPair in GPopulateFunctions do
   begin
-    if p.Key(ARttiType.Handle, ARttiType.ClassType) then
+    if LFuncPair.Key(ARttiType.Handle, ARttiType.ClassType) then
     begin
-      p.Value(StackFrame, ARttiType, AClass);
+      LFuncPair.Value(StackFrame, ARttiType, AClass);
       exit(true);
     end;
   end;
-  result := false;
+  exit(false);
 end;
 
 function isNull(const AValue: TValue): boolean;
 begin
-  result := AValue.IsEmpty;
+  exit(AValue.IsEmpty);
 end;
 
 function Contains(APosition: IPosition; const ALeft, ARight: TValue): boolean;
 var
-  T: TRttiType;
-  procedure visitobject;
+  TRightType: TRttiType;
+
+  procedure VisitObject;
   var
-    val: TValue;
-    e: TObject;
-    m, movenext: TRttiMethod;
-    current: TRttiProperty;
+    LValue: TValue;
+    LEnumObject: TObject;
+    LObjectGetEnumMethod: TRttiMethod;
+    LEnumMoveNextMethod: TRttiMethod;
+    LEnumCurrentProperty: TRttiProperty;
   begin
-    m := T.GetMethod('GetEnumerator');
-    if m = nil then
+    LObjectGetEnumMethod := TRightType.GetMethod('GetEnumerator');
+    if LObjectGetEnumMethod = nil then
       RaiseError(APosition, 'GetEnumerator not found on object.');
-    val := m.Invoke(ARight.AsObject, []).AsObject;
-    if val.IsEmpty then
+    LValue := LObjectGetEnumMethod.Invoke(ARight.AsObject, []);
+    if LValue.IsEmpty then
       RaiseError(APosition, 'Value is not enumerable');
-    e := val.AsObject;
+    LEnumObject := LValue.AsObject;
     try
-      T := GRttiContext.GetType(e.ClassType);
-      movenext := T.GetMethod('MoveNext');
-      current := T.GetProperty('Current');
-      result := false;
-      while movenext.Invoke(e, []).AsBoolean do
+      TRightType := GRttiContext.GetType(LEnumObject.ClassType);
+      LEnumMoveNextMethod := TRightType.GetMethod('MoveNext');
+      LEnumCurrentProperty := TRightType.GetProperty('Current');
+      while LEnumMoveNextMethod.Invoke(LEnumObject, []).AsBoolean do
       begin
-        val := current.GetValue(e);
-        if val.TypeInfo = TypeInfo(TValue) then
-          val := val.Astype<TValue>();
-        if isEqual(ALeft, val) then
+        LValue := LEnumCurrentProperty.GetValue(LEnumObject);
+        if LValue.TypeInfo = TypeInfo(TValue) then
+          LValue := LValue.Astype<TValue>();
+        if isEqual(ALeft, LValue) then
         begin
           result := true;
           exit;
         end;
       end;
     finally
-      e.Free;
+      LEnumObject.Free;
     end;
     exit;
   end;
 
   procedure visitarray;
   var
-    at: TRttiArrayType;
-    i: integer;
-    v: TValue;
+    LArrayType: TRttiArrayType;
+    LIndex: integer;
+    LElementValue: TValue;
   begin
-    at := T as TRttiArrayType;
-    if at.DimensionCount > 1 then
+    LArrayType := TRightType as TRttiArrayType;
+    if LArrayType.DimensionCount > 1 then
       RaiseError(APosition, 'Only one dimensional arrays are supported.');
-    result := false;
-    for i := 0 to ARight.GetArrayLength - 1 do
+    for LIndex := 0 to ARight.GetArrayLength - 1 do
     begin
-      v := ARight.GetArrayElement(i);
-      if v.TypeInfo = TypeInfo(TValue) then
-        v := v.Astype<TValue>();
-      if isEqual(ALeft, v) then
+      LElementValue := ARight.GetArrayElement(LIndex);
+      if LElementValue.TypeInfo = TypeInfo(TValue) then
+        LElementValue := LElementValue.Astype<TValue>();
+      if isEqual(ALeft, LElementValue) then
       begin
         result := true;
         exit;
@@ -206,18 +209,17 @@ var
     end;
   end;
 
-  procedure visitdynarray;
+  procedure VisitDynArray;
   var
-    i: integer;
-    v: TValue;
+    LIndex: integer;
+    LElementValue: TValue;
   begin
-    result := false;
-    for i := 0 to ARight.GetArrayLength - 1 do
+    for LIndex := 0 to ARight.GetArrayLength - 1 do
     begin
-      v := ARight.GetArrayElement(i);
-      if v.TypeInfo = TypeInfo(TValue) then
-        v := v.Astype<TValue>();
-      if isEqual(ALeft, v) then
+      LElementValue := ARight.GetArrayElement(LIndex);
+      if LElementValue.TypeInfo = TypeInfo(TValue) then
+        LElementValue := LElementValue.Astype<TValue>();
+      if isEqual(ALeft, LElementValue) then
       begin
         result := true;
         exit;
@@ -226,18 +228,19 @@ var
   end;
 
 begin
+  result := false;
   if not isEnumerable(ARight) then
     RaiseError(APosition, 'Expression must be enumerable');
 
-  T := GRttiContext.GetType(ARight.TypeInfo);
+  TRightType := GRttiContext.GetType(ARight.TypeInfo);
 
-  case T.TypeKind of
+  case TRightType.TypeKind of
     tkClass, tkClassRef:
-      visitobject;
+      VisitObject;
     tkArray:
       visitarray;
     tkDynArray:
-      visitdynarray;
+      VisitDynArray;
   else
     RaiseError(APosition, 'GetEnumerator not found on object.');
   end;
@@ -248,83 +251,83 @@ function isEnumerable(const AValue: TValue): boolean;
 begin
   case AValue.Kind of
     tkDynArray, tkArray:
-      result := true;
+      exit(true);
     tkClass, tkClassRef:
-      result := GRttiContext.GetType(AValue.TypeInfo).GetMethod('GetEnumerator') <> nil;
+      exit(GRttiContext.GetType(AValue.TypeInfo).GetMethod('GetEnumerator') <> nil);
   else
-    result := false;
+    exit(false);
   end;
 end;
 
 function isStrLike(const AValue: TValue): boolean;
 begin
-  result := AValue.Kind in STR_LIKE;
+  exit(AValue.Kind in STR_LIKE);
 end;
 
 function isIntLike(const AValue: TValue): boolean;
 begin
-  result := AValue.Kind in INT_LIKE;
+  exit(AValue.Kind in INT_LIKE);
 end;
 
 function isNumLike(const AValue: TValue): boolean;
 begin
-  result := AValue.Kind in NUMBER_LIKE;
+  exit(AValue.Kind in NUMBER_LIKE);
 end;
 
 function AsNum(const AValue: TValue): extended;
 begin
   case AValue.Kind of
     tkfloat:
-      result := AValue.AsExtended;
+      exit(AValue.AsExtended);
     tkString, tkWString, tkUString, tkLString:
-      result := strtofloat(AValue.AsString);
+      exit(strtofloat(AValue.AsString));
     tkInteger, tkInt64:
-      result := AValue.AsInt64;
+      exit(AValue.AsInt64);
   else
-    result := 0;
+    exit(0);
   end;
 end;
 
 function AsInt(const AValue: TValue): int64;
 begin
-  result := floor(AsNum(AValue));
+  exit(floor(AsNum(AValue)));
 end;
 
 function isBool(const AValue: TValue): boolean;
 begin
-  result := AValue.TypeInfo = TypeInfo(boolean);
+  exit(AValue.TypeInfo = TypeInfo(boolean));
 end;
 
-function isEqual(const left: TValue; const right: TValue): boolean;
+function isEqual(const ALeft: TValue; const ARight: TValue): boolean;
 begin
-  if isNumLike(left) and isNumLike(right) then
-    exit(abs(AsNum(left) - AsNum(right)) < EQUALITY_PRECISION);
-  if isStrLike(left) and isStrLike(right) then
-    exit(left.AsString = right.AsString);
-  if isBool(left) and isBool(right) then
-    exit(left.AsBoolean = right.AsBoolean);
+  if isNumLike(ALeft) and isNumLike(ARight) then
+    exit(abs(AsNum(ALeft) - AsNum(ARight)) < EQUALITY_PRECISION);
+  if isStrLike(ALeft) and isStrLike(ARight) then
+    exit(ALeft.AsString = ARight.AsString);
+  if isBool(ALeft) and isBool(ARight) then
+    exit(ALeft.AsBoolean = ARight.AsBoolean);
   exit(false);
 end;
 
-function isLessThan(const left: TValue; const right: TValue): boolean;
+function isLessThan(const ALeft: TValue; const ARight: TValue): boolean;
 begin
-  if isNumLike(left) and isNumLike(right) then
-    exit(AsNum(left) < AsNum(right));
-  if isStrLike(left) and isStrLike(right) then
-    exit(left.AsString < right.AsString);
-  if isBool(left) and isBool(right) then
-    exit(left.AsBoolean < right.AsBoolean);
+  if isNumLike(ALeft) and isNumLike(ARight) then
+    exit(AsNum(ALeft) < AsNum(ARight));
+  if isStrLike(ALeft) and isStrLike(ARight) then
+    exit(ALeft.AsString < ARight.AsString);
+  if isBool(ALeft) and isBool(ARight) then
+    exit(ALeft.AsBoolean < ARight.AsBoolean);
   exit(false);
 end;
 
-function isGreaterThan(const left: TValue; const right: TValue): boolean;
+function isGreaterThan(const ALeft: TValue; const ARight: TValue): boolean;
 begin
-  if isNumLike(left) and isNumLike(right) then
-    exit(AsNum(left) > AsNum(right));
-  if isStrLike(left) and isStrLike(right) then
-    exit(left.AsString > right.AsString);
-  if isBool(left) and isBool(right) then
-    exit(left.AsBoolean > right.AsBoolean);
+  if isNumLike(ALeft) and isNumLike(ARight) then
+    exit(AsNum(ALeft) > AsNum(ARight));
+  if isStrLike(ALeft) and isStrLike(ARight) then
+    exit(ALeft.AsString > ARight.AsString);
+  if isBool(ALeft) and isBool(ARight) then
+    exit(ALeft.AsBoolean > ARight.AsBoolean);
   exit(false);
 end;
 
@@ -351,22 +354,22 @@ end;
 
 function ArrayAsString(const AValue: TValue): string;
 var
-  s: tstringbuilder;
-  i: integer;
+  LStringBuilder: tstringbuilder;
+  LIndex: integer;
 begin
-  s := tstringbuilder.Create;
-  s.append('[');
+  LStringBuilder := tstringbuilder.Create;
+  LStringBuilder.append('[');
   try
-    for i := 0 to AValue.GetArrayLength - 1 do
+    for LIndex := 0 to AValue.GetArrayLength - 1 do
     begin
-      if i > 0 then
-        s.append(',');
-      s.append(AsString(AValue.GetArrayElement(i)));
+      if LIndex > 0 then
+        LStringBuilder.append(',');
+      LStringBuilder.append(AsString(AValue.GetArrayElement(LIndex)));
     end;
-    s.append(']');
-    result := s.ToString;
+    LStringBuilder.append(']');
+    exit(LStringBuilder.ToString);
   finally
-    s.Free;
+    LStringBuilder.Free;
   end;
 end;
 
@@ -375,7 +378,7 @@ function AsString(const AValue: TValue): string;
 // Using this is a workaround for backward compatability casting
   function DoubleToDT(const AValue: double): TDateTime; inline;
   begin
-    result := TDateTime(AValue);
+    exit(TDateTime(AValue));
   end;
 
 begin
@@ -413,7 +416,7 @@ function AsDateTime(const AValue: TValue): TDateTime;
 // Using this is a workaround for backward compatability casting
   function DoubleToDT(const AValue: double): TDateTime; inline;
   begin
-    result := TDateTime(AValue);
+    exit(TDateTime(AValue));
   end;
 
 begin
@@ -429,104 +432,107 @@ begin
   end;
 end;
 
-function processTemplateVariables(APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; out AFound: boolean): TValue;
+function processTemplateVariables(APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; out AFound: boolean): TValue;
 var
-  RttiType: TRttiType;
-  RttiMethod: TRttiMethod;
+  LObjectType: TRttiType;
+  LGetItemMethod: TRttiMethod;
+  LContainsKeyMethod: TRttiMethod;
 begin
   // Ideally wuld like to use TryGetItem, but couldn't get it working
   // with TValue result...
-  RttiType := GRttiContext.GetType(obj.TypeInfo);
-  RttiMethod := RttiType.GetMethod('ContainsKey');
-  AFound := RttiMethod.Invoke(obj, [ADeref]).AsBoolean;
+  LObjectType := GRttiContext.GetType(AObj.TypeInfo);
+  LContainsKeyMethod := LObjectType.GetMethod('ContainsKey');
+  AFound := LContainsKeyMethod.Invoke(AObj, [ADeref]).AsBoolean;
   if not AFound then
     exit('');
-  RttiMethod := RttiType.GetMethod('GetItem');
+  LGetItemMethod := LObjectType.GetMethod('GetItem');
   try
-    result := RttiMethod.Invoke(obj, [ADeref]);
+    exit(LGetItemMethod.Invoke(AObj, [ADeref]));
   except
     on e: Exception do
     begin
       AFound := false;
-      result := '';
+      exit('');
     end;
   end;
 end;
 
-function GetFieldOrProperty(const APtr: pointer; RttiType: TRttiType; const ADeref: TValue; out AFound: boolean): TValue;
+function GetFieldOrProperty(const APtr: pointer; ADerefType: TRttiType; const ADeref: TValue; out AFound: boolean): TValue;
 var
-  RttiField: TRttiField;
-  RttiProp: TRttiProperty;
-  ref: string;
+  LDerefField: TRttiField;
+  LDerefProp: TRttiProperty;
+  LDerefFieldName: string;
 begin
   AFound := true;
-  ref := AsString(ADeref);
-  RttiField := RttiType.GetField(ref);
-  if RttiField <> nil then
-    exit(RttiField.GetValue(APtr));
-  RttiProp := RttiType.GetProperty(ref);
-  if RttiProp <> nil then
-    exit(RttiProp.GetValue(APtr));
+  LDerefFieldName := AsString(ADeref);
+  // first try check if there is a field
+  LDerefField := ADerefType.GetField(LDerefFieldName);
+  if LDerefField <> nil then
+    exit(LDerefField.GetValue(APtr));
+  // next check if it is a property
+  LDerefProp := ADerefType.GetProperty(LDerefFieldName);
+  if LDerefProp <> nil then
+    exit(LDerefProp.GetValue(APtr));
   AFound := false;
+  exit(TValue.Empty);
 end;
 
 function ProcessClass(APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AOwnObject: boolean; out AFound: boolean): TValue;
 var
   ClassType: TClass;
-  info: PTypeInfo;
-  p: TPair<TDerefMatchFunction, TDerefFunction>;
+  LClassInfo: PTypeInfo;
+  LFuncPair: TPair<TDerefMatchFunction, TDerefFunction>;
 begin
   AFound := false;
   ClassType := obj.AsObject.ClassType;
-  info := obj.TypeInfo;
+  LClassInfo := obj.TypeInfo;
   if not AOwnObject then
   begin
-    for p in GDerefFunctions do
+    for LFuncPair in GDerefFunctions do
     begin
-      if p.Key(info, ClassType) then
+      if LFuncPair.Key(LClassInfo, ClassType) then
       begin
-        result := p.Value(APosition, obj, ADeref, ARaiseIfMissing, AFound);
+        result := LFuncPair.Value(APosition, obj, ADeref, ARaiseIfMissing, AFound);
         if AFound then
           exit;
       end;
     end;
   end;
-  result := GetFieldOrProperty(obj.AsObject, GRttiContext.GetType(obj.TypeInfo), ADeref, AFound);
+  exit(GetFieldOrProperty(obj.AsObject, GRttiContext.GetType(obj.TypeInfo), ADeref, AFound));
 end;
 
-function processDictionary(APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; out AFound: boolean): TValue;
+function processDictionary(APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; out AFound: boolean): TValue;
 var
-  RttiType: TRttiType;
-  RttiMethod: TRttiMethod;
-  Deref: TValue;
+  LDictionaryType: TRttiType;
+  LDictGetItemMethod: TRttiMethod;
+  LDerefValue: TValue;
 begin
   AFound := false;
-  RttiType := GRttiContext.GetType(obj.TypeInfo);
-  RttiMethod := RttiType.GetMethod('GetItem');
+  LDictionaryType := GRttiContext.GetType(AObj.TypeInfo);
+  LDictGetItemMethod := LDictionaryType.GetMethod('GetItem');
 
   // values are sometime floats, so cast explicitly
-  Deref := ADeref;
-  if RttiMethod.GetParameters[0].ParamType.TypeKind in [tkInteger, tkInt64] then
-    Deref := AsInt(Deref);
+  LDerefValue := ADeref;
+  if LDictGetItemMethod.GetParameters[0].ParamType.TypeKind in [tkInteger, tkInt64] then
+    LDerefValue := AsInt(LDerefValue);
 
   try
-    result := RttiMethod.Invoke(obj, [Deref]);
+    result := LDictGetItemMethod.Invoke(AObj, [LDerefValue]);
     AFound := true;
   except
     on e: Exception do
     begin
-      result := ProcessClass(APosition, obj, ADeref, ARaiseIfMissing, true, AFound);
+      result := ProcessClass(APosition, AObj, ADeref, ARaiseIfMissing, true, AFound);
       if not AFound then
       begin
         if ARaiseIfMissing then
-          RaiseError(APosition, 'Cannot dereference ''%s'' in %s', [AsString(Deref), RttiType.QualifiedName]);
-        result := '';
+          RaiseError(APosition, 'Cannot dereference ''%s'' in %s', [AsString(LDerefValue), LDictionaryType.QualifiedName]);
+        exit('');
       end;
     end;
   end;
 end;
 
-{$IFDEF SUPPORT_JSON}
 
 function JsonValueToTValue(const AJsonValue: TJsonValue; out AValue: TValue): boolean;
 begin
@@ -573,44 +579,42 @@ end;
 
 procedure PopulateStackFrameFromJsonObject(const StackFrame: TStackFrame; const ARttiType: TRttiType; const AClass: TValue);
 var
-  AObj: TJsonObject;
-  p: tjsonpair;
-  v: TValue;
+  LJsonObject: TJsonObject;
+  LJsonPair: TJsonPair;
+  LJsonValueAsTValue: TValue;
 begin
-  AObj := TJsonObject(AClass.AsObject);
-  for p in AObj do
+  LJsonObject := TJsonObject(AClass.AsObject);
+  for LJsonPair in LJsonObject do
   begin
-    if JsonValueToTValue(p.JsonValue, v) then
-      StackFrame[p.JsonString.Value] := v;
+    if JsonValueToTValue(LJsonPair.JsonValue, LJsonValueAsTValue) then
+      StackFrame[LJsonPair.JsonString.Value] := LJsonValueAsTValue;
   end;
 end;
 
 function processJson(APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; out AFound: boolean): TValue;
 var
-  jsonobj: TJsonObject;
-  jsonval: TJsonValue;
-  Key: string;
+  LJsonObject: TJsonObject;
+  LJsonKey: string;
+  LJsonKeyVal: TJsonValue;
 begin
   AFound := true;
-  jsonobj := obj.AsObject as TJsonObject;
-  Key := AsString(ADeref);
-  jsonval := jsonobj.GetValue(Key);
-
-  if not JsonValueToTValue(jsonval, result) then
+  LJsonObject := obj.AsObject as TJsonObject;
+  LJsonKey := AsString(ADeref);
+  LJsonKeyVal := LJsonObject.GetValue(LJsonKey);
+  if not JsonValueToTValue(LJsonKeyVal, result) then
   begin
-    AFound := false;
     if ARaiseIfMissing then
-      RaiseError(APosition, 'Cannot dereference %s in dictionary', [Key]);
-    result := '';
+      RaiseError(APosition, 'Cannot dereference %s in dictionary', [LJsonKey]);
+    AFound := false;
+    exit('');
   end;
 end;
 
 function MatchJsonObject(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
 begin
-  result := AClass = TJsonObject;
+  exit(AClass = TJsonObject);
 end;
 
-{$ENDIF}
 
 function processDataSet(APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; out AFound: boolean): TValue;
 var
@@ -621,95 +625,94 @@ begin
   LDataSet := obj.AsObject as TDataSet;
   LKey := AsString(ADeref);
   try
-    result := TValue.FromVariant(LDataSet.FieldByName(LKey).AsVariant);
+    exit(TValue.FromVariant(LDataSet.FieldByName(LKey).AsVariant));
   except
     on e: Exception do
     begin
-      AFound := false;
       if ARaiseIfMissing then
         RaiseError(APosition, 'Cannot dereference %s in dataset', [LKey]);
-      result := '';
+      AFound := false;
+      exit('');
     end;
   end;
 end;
 
 function Deref(APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
 
-  function ProcessArray(obj: TValue; const ADeref: TValue; out AFound: boolean): TValue;
+  function ProcessArray(AObj: TValue; const ADeref: TValue; out AFound: boolean): TValue;
   var
-    i: int64;
-    RttiType: TRttiArrayType;
-    dimType: TRttiType;
-    min, max: int64;
+    LIndex: int64;
+    LElementType: TRttiArrayType;
+    LArrayDimType: TRttiType;
+    LMin: int64;
+    LMax: int64;
   begin
-    i := AsInt(ADeref);
+    LIndex := AsInt(ADeref);
     AFound := false;
-    RttiType := GRttiContext.GetType(obj.TypeInfo) as TRttiArrayType;
-    dimType := RttiType.Dimensions[0];
-    min := 0;
-    if dimType <> nil then
+    LElementType := GRttiContext.GetType(AObj.TypeInfo) as TRttiArrayType;
+    LArrayDimType := LElementType.Dimensions[0];
+    LMin := 0;
+    if LArrayDimType <> nil then
     begin
       // strange why this may happen
-      min := (dimType as TRttiOrdinalType).MinValue;
-      max := (dimType as TRttiOrdinalType).MaxValue;
-      if (i < min) or (i > max) then
+      LMin := (LArrayDimType as TRttiOrdinalType).MinValue;
+      LMax := (LArrayDimType as TRttiOrdinalType).MaxValue;
+      if (LIndex < LMin) or (LIndex > LMax) then
         raise Exception.Create('Index is out of bounds');
     end;
     AFound := true;
-    result := obj.GetArrayElement(i - min);
+    exit(AObj.GetArrayElement(LIndex - LMin));
   end;
 
-  function ProcessDynArray(obj: TValue; const ADeref: TValue; out AFound: boolean): TValue;
+  function ProcessDynArray(AObj: TValue; const ADeref: TValue; out AFound: boolean): TValue;
   var
-    i: integer;
+    LIndex: integer;
   begin
     AFound := false;
-    i := AsInt(ADeref);
-    if (i < 0) or (i >= obj.GetArrayLength) then
-    begin
-      exit;
-    end;
-    result := obj.GetArrayElement(i);
+    LIndex := AsInt(ADeref);
+    if (LIndex < 0) or (LIndex >= AObj.GetArrayLength) then
+      exit(TValue.Empty);
+    exit(AObj.GetArrayElement(LIndex));
   end;
 
-  function ProcessRecord(const obj: TValue; const ADeref: TValue; var AFound: boolean): TValue;
+  function ProcessRecord(const AObj: TValue; const ADeref: TValue; var AFound: boolean): TValue;
   begin
-    result := GetFieldOrProperty(obj.GetReferenceToRawData, GRttiContext.GetType(obj.TypeInfo), ADeref, AFound);
+    exit(GetFieldOrProperty(AObj.GetReferenceToRawData, GRttiContext.GetType(AObj.TypeInfo), ADeref, AFound));
   end;
 
-  function ProcessInterface(const obj: TValue; const ADeref: TValue; out AFound: boolean): TValue;
+  function ProcessInterface(const AObj: TValue; const ADeref: TValue; out AFound: boolean): TValue;
   var
-    p: TPair<TDerefMatchInterfaceFunction, TDerefFunction>;
-    i: IInterface;
+    LFunctionPair: TPair<TDerefMatchInterfaceFunction, TDerefFunction>;
+    LIntf: IInterface;
   begin
-    i := obj.AsInterface;
-    AFound := false;
-    for p in GDerefInterfaceFunctions do
+    LIntf := AObj.AsInterface;
+    for LFunctionPair in GDerefInterfaceFunctions do
     begin
-      if p.Key(i) then
+      if LFunctionPair.Key(LIntf) then
       begin
-        result := p.Value(APosition, obj, ADeref, ARaiseIfMissing, AFound);
+        result := LFunctionPair.Value(APosition, AObj, ADeref, ARaiseIfMissing, AFound);
         if AFound then
-          exit;
+          exit(true);
       end;
     end;
+    exit(false);
   end;
 
 var
-  found: boolean;
+  LVarFound: boolean;
 
 begin
   case AVar.Kind of
     tkInterface:
-      result := ProcessInterface(AVar, ADeref, found);
+      result := ProcessInterface(AVar, ADeref, LVarFound);
     tkClass:
-      result := ProcessClass(APosition, AVar, ADeref, ARaiseIfMissing, false, found);
+      result := ProcessClass(APosition, AVar, ADeref, ARaiseIfMissing, false, LVarFound);
     tkrecord:
-      result := ProcessRecord(AVar, ADeref, found);
+      result := ProcessRecord(AVar, ADeref, LVarFound);
     tkArray:
-      result := ProcessArray(AVar, ADeref, found);
+      result := ProcessArray(AVar, ADeref, LVarFound);
     tkDynArray:
-      result := ProcessDynArray(AVar, ADeref, found);
+      result := ProcessDynArray(AVar, ADeref, LVarFound);
   else
     begin
       if ARaiseIfMissing then
@@ -717,7 +720,7 @@ begin
       exit('');
     end;
   end;
-  if not found and ARaiseIfMissing then
+  if not LVarFound and ARaiseIfMissing then
     RaiseError(APosition, 'Cannot dereference variable');
 end;
 
@@ -765,80 +768,72 @@ end;
 
 function MatchDictionary(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
 var
-  Name: string;
+  LClassName: string;
 begin
-  name := AClass.QualifiedClassName;
-  result := name.StartsWith('System.Generics.Collections.TDictionary') or name.StartsWith('System.Generics.Collections.TObjectDictionary');
+  LClassName := AClass.QualifiedClassName;
+  exit(LClassName.StartsWith('System.Generics.Collections.TDictionary') or LClassName.StartsWith('System.Generics.Collections.TObjectDictionary'));
 end;
 
 function MatchStringDictionary(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
 var
-  Name: string;
+  LClassName: string;
 begin
-  name := AClass.QualifiedClassName;
-  result := name.StartsWith('System.Generics.Collections.TDictionary<System.string,') or name.StartsWith('System.Generics.Collections.TObjectDictionary<string,');
+  LClassName := AClass.QualifiedClassName;
+  exit(LClassName.StartsWith('System.Generics.Collections.TDictionary<System.string,') or LClassName.StartsWith('System.Generics.Collections.TObjectDictionary<string,'));
 end;
 
 function MatchDataSet(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
-var
-  n: string;
 begin
-  n := AClass.QualifiedClassName;
-  result := AClass.InheritsFrom(TDataSet);
+  exit(AClass.InheritsFrom(TDataSet));
 end;
 
 procedure PopulateStackFrameFromDictionary(const StackFrame: TStackFrame; const ARttiType: TRttiType; const AClass: TValue);
 var
-  e: TObject;
-  T: TRttiType;
-  m, movenext: TRttiMethod;
-  current: TRttiProperty;
-  Key, Value: TRttiField;
-  val: TValue;
-  k: string;
-  o: TValue;
-  obj: pointer;
-  ADict: TObject;
+  LEnumObject: TObject;
+  LEnumType: TRttiType;
+  LMethod: TRttiMethod;
+  LEnumMoveNextMethod: TRttiMethod;
+  LEnumCurrentProperty: TRttiProperty;
+  LPairKeyField, LPairValueField: TRttiField;
+  LEnumPair: TValue;
+  LPairRecordPtr: pointer;
+  LDictionary: TObject;
 
 begin
-  ADict := AClass.AsObject;
-  m := ARttiType.GetMethod('GetEnumerator');
-  val := m.Invoke(ADict, []).AsObject;
-  e := val.AsObject;
+  LDictionary := AClass.AsObject;
+  LMethod := ARttiType.GetMethod('GetEnumerator');
+  LEnumObject := LMethod.Invoke(LDictionary, []).AsObject;
   try
-    T := GRttiContext.GetType(e.ClassType);
-    k := e.ClassName;
-    movenext := T.GetMethod('MoveNext');
-    current := T.GetProperty('Current');
-    Key := nil;
-    Value := nil;
-    while movenext.Invoke(e, []).AsBoolean do
+    LEnumType := GRttiContext.GetType(LEnumObject.ClassType);
+    LEnumMoveNextMethod := LEnumType.GetMethod('MoveNext');
+    LEnumCurrentProperty := LEnumType.GetProperty('Current');
+    LPairKeyField := nil;
+    LPairValueField := nil;
+    while LEnumMoveNextMethod.Invoke(LEnumObject, []).AsBoolean do
     begin
-      o := current.GetValue(e); // this returns TPair record
-      obj := o.GetReferenceToRawData;
-      if Key = nil then
+      LEnumPair := LEnumCurrentProperty.GetValue(LEnumObject); // this returns TPair record
+      LPairRecordPtr := LEnumPair.GetReferenceToRawData;
+      if LPairKeyField = nil then
       begin
-        T := GRttiContext.GetType(o.TypeInfo);
-        Key := T.GetField('Key');
-        Value := T.GetField('Value');
+        LEnumType := GRttiContext.GetType(LEnumPair.TypeInfo);
+        LPairKeyField := LEnumType.GetField('Key');
+        LPairValueField := LEnumType.GetField('Value');
       end;
-      k := Key.GetValue(obj).AsString;
-      val := Value.GetValue(obj);
-      StackFrame[k] := val;
+      StackFrame[LPairKeyField.GetValue(LPairRecordPtr).AsString] := LPairValueField.GetValue(LPairRecordPtr);
     end;
   finally
-    e.Free;
+    LEnumObject.Free;
   end;
 end;
 
 function MatchTemplateVariables(AInterface: IInterface): boolean;
 begin
-  result := supports(AInterface, ITemplateVariables);
+  exit(supports(AInterface, ITemplateVariables));
 end;
 
 function MatchTemplateVariableObject(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
 begin
-  result := AClass = TTemplateVariables;
+  exit(AClass = TTemplateVariables);
 end;
 
 initialization
@@ -851,10 +846,8 @@ GPopulateFunctions := TList < TPair < TPopulateMatchFunction, TPopulateStackFram
 
 RegisterDeref(MatchTemplateVariableObject, processTemplateVariables);
 RegisterDeref(MatchDictionary, processDictionary);
-{$IFDEF SUPPORT_JSON}
 RegisterDeref(MatchJsonObject, processJson);
 RegisterPopulateStackFrame(MatchJsonObject, PopulateStackFrameFromJsonObject);
-{$ENDIF}
 RegisterPopulateStackFrame(MatchStringDictionary, PopulateStackFrameFromDictionary);
 RegisterDeref(MatchTemplateVariables, processTemplateVariables);
 RegisterDeref(MatchDataSet, processDataSet);

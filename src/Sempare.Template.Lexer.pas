@@ -138,13 +138,13 @@ type
 
 function CreateTemplateLexer(AContext: ITemplateContext; const AStream: TStream; const AFilename: string; const AManageStream: Boolean): ITemplateLexer;
 begin
-  Result := TTemplateLexer.Create(AContext, AStream, AFilename, AManageStream);
+  exit(TTemplateLexer.Create(AContext, AStream, AFilename, AManageStream));
 end;
 
 function TemplateSymbolToString(const ASymbol: TTemplateSymbol): string;
 begin
   if not GSymbolToKeyword.TryGetValue(ASymbol, Result) then
-    Result := GetEnumName(TypeInfo(TTemplateSymbol), integer(ASymbol));
+    exit(GetEnumName(TypeInfo(TTemplateSymbol), integer(ASymbol)));
 end;
 
 { TTemplateLexer }
@@ -186,14 +186,14 @@ end;
 
 function TTemplateLexer.Expecting(const Achar: Char): Boolean;
 begin
-  Result := FLookahead.Input = Achar;
+  exit(FLookahead.Input = Achar);
 end;
 
 function TTemplateLexer.Expecting(const Achars: TCharSet): Boolean;
 
 begin
 {$WARN WIDECHAR_REDUCED OFF}
-  Result := not FLookahead.Eof and (FLookahead.Input in Achars);
+  exit(not FLookahead.Eof and (FLookahead.Input in Achars));
 {$WARN WIDECHAR_REDUCED ON}
 end;
 
@@ -201,7 +201,7 @@ procedure TTemplateLexer.GetInput;
 begin
   Fcurrent := FLookahead;
   if FLookahead.Eof then
-    Exit;
+    exit;
   FLookahead.Eof := FReader.EndOfStream;
   if FLookahead.Eof then
     FLookahead.Input := #0
@@ -220,15 +220,15 @@ end;
 
 function TTemplateLexer.GetScriptToken: ITemplateSymbol;
 var
-  Line: integer;
-  Position: integer;
+  LLine: integer;
+  LPosition: integer;
 
   function MakePosition: IPosition;
   begin
     if eoNoPosition in FOptions then
-      Result := nil
+      exit(nil)
     else
-      Result := TPosition.Create(Ffilename, Line, Position);
+      exit(TPosition.Create(Ffilename, LLine, LPosition));
   end;
 
   function SimpleToken(const ASymbol: TTemplateSymbol): ITemplateSymbol;
@@ -259,8 +259,8 @@ const
 {$WARN WIDECHAR_REDUCED ON}
 begin
   FAccumulator.Clear;
-  Line := FLine;
-  Position := Fpos;
+  LLine := FLine;
+  LPosition := Fpos;
   while not Fcurrent.Eof do
   begin
 {$WARN WIDECHAR_REDUCED OFF}
@@ -277,7 +277,7 @@ begin
       FAccumulator.Append(Fcurrent.Input);
       while Expecting(VARIABLE_END) do
         Accumulate;
-      Exit(ValueToken(VsID));
+      exit(ValueToken(VsID));
     end
 {$WARN WIDECHAR_REDUCED OFF}
     else if Fcurrent.Input in NUMBER then
@@ -292,75 +292,75 @@ begin
         while Expecting(NUMBER) do
           Accumulate;
       end;
-      Exit(ValueToken(VsNumber));
+      exit(ValueToken(VsNumber));
     end
     else
       case Fcurrent.Input of
         ';':
-          Exit(SimpleToken(vsSemiColon));
+          exit(SimpleToken(vsSemiColon));
         ',':
-          Exit(SimpleToken(vsComma));
+          exit(SimpleToken(vsComma));
         '(':
           begin
             if not Expecting('*') then
-              Exit(SimpleToken(VsOpenRoundBracket));
+              exit(SimpleToken(VsOpenRoundBracket));
             SwallowInput;
             while not FLookahead.Eof and not((Fcurrent.Input = '*') and Expecting(')')) do
               SwallowInput;
             SwallowInput;
-            Exit(SimpleToken(VsComment));
+            exit(SimpleToken(VsComment));
           end;
         ')':
-          Exit(SimpleToken(VsCloseRoundBracket));
+          exit(SimpleToken(VsCloseRoundBracket));
         '[':
-          Exit(SimpleToken(VsOpenSquareBracket));
+          exit(SimpleToken(VsOpenSquareBracket));
         ']':
-          Exit(SimpleToken(VsCloseSquareBracket));
+          exit(SimpleToken(VsCloseSquareBracket));
         '.':
-          Exit(SimpleToken(VsDOT));
+          exit(SimpleToken(VsDOT));
         '?':
-          Exit(SimpleToken(vsQUESTION));
+          exit(SimpleToken(vsQUESTION));
         '+':
-          Exit(SimpleToken(VsPLUS));
+          exit(SimpleToken(VsPLUS));
         '-':
-          Exit(SimpleToken(VsMinus));
+          exit(SimpleToken(VsMinus));
         '*':
-          Exit(SimpleToken(VsMULT));
+          exit(SimpleToken(VsMULT));
         '/':
-          Exit(SimpleToken(VsSLASH));
+          exit(SimpleToken(VsSLASH));
         '<':
           if Expecting('=') then
           begin
             SwallowInput;
-            Exit(SimpleToken(vsLTE))
+            exit(SimpleToken(vsLTE))
           end
           else
-            Exit(SimpleToken(vsLT));
+            exit(SimpleToken(vsLT));
         '>':
           if Expecting('=') then
           begin
             SwallowInput;
-            Exit(SimpleToken(vsGTE))
+            exit(SimpleToken(vsGTE))
           end
           else
-            Exit(SimpleToken(vsGT));
+            exit(SimpleToken(vsGT));
         '=':
-          Exit(SimpleToken(VsEQ));
+          exit(SimpleToken(VsEQ));
         '''':
           begin
             while not FLookahead.Eof and (FLookahead.Input <> '''') do
               Accumulate;
             SwallowInput;
-            Exit(ValueToken(vsString));
+            exit(ValueToken(vsString));
           end;
         ':':
           if Expecting('=') then
           begin
             SwallowInput;
-            Exit(SimpleToken(VsCOLONEQ));
+            exit(SimpleToken(VsCOLONEQ));
           end
           else
-            Exit(SimpleToken(vsCOLON));
+            exit(SimpleToken(vsCOLON));
       else
         if Fcurrent.Input = FEndScript[1] then
         begin
@@ -377,7 +377,7 @@ begin
               Result := SimpleToken(VsEndScript);
             end;
             FState := SText;
-            Exit;
+            exit;
           end;
         end;
       end;
@@ -391,23 +391,21 @@ begin
     FNextToken := SimpleToken(VsEOF);
   end
   else
-  begin
-    Result := SimpleToken(VsEOF);
-  end;
+    exit(SimpleToken(VsEOF));
 end;
 
 function TTemplateLexer.GetTextToken: ITemplateSymbol;
 var
-  Line: integer;
-  Position: integer;
-  last, cur: Char;
+  LLine: integer;
+  LPosition: integer;
+  LLastChar, LCurChar: Char;
 
   function MakePosition: IPosition;
   begin
     if eoNoPosition in FOptions then
-      Result := nil
+      exit(nil)
     else
-      Result := TPosition.Create(Ffilename, Line, Position);
+      exit(TPosition.Create(Ffilename, LLine, LPosition));
   end;
 
   function SimpleToken(const ASymbol: TTemplateSymbol): ITemplateSymbol;
@@ -425,9 +423,9 @@ var
 
 begin
   FAccumulator.Clear;
-  Line := FLine;
-  Position := Fpos;
-  last := #0;
+  LLine := FLine;
+  LPosition := Fpos;
+  LLastChar := #0;
   if Fcurrent.Input = #0 then
     GetInput;
   while not Fcurrent.Eof do
@@ -437,19 +435,19 @@ begin
       Result := ValueToken(VsText);
       FState := SScript;
       FNextToken := SimpleToken(VsStartScript);
-      Exit();
+      exit();
     end
     else
     begin
-      cur := Fcurrent.Input;
-      if (eoConvertTabsToSpaces in FOptions) and (cur = #9) then
-        cur := ' ';
-      if (eoStripRecurringSpaces in FOptions) and (last = ' ') and (cur = ' ') then
+      LCurChar := Fcurrent.Input;
+      if (eoConvertTabsToSpaces in FOptions) and (LCurChar = #9) then
+        LCurChar := ' ';
+      if (eoStripRecurringSpaces in FOptions) and (LLastChar = ' ') and (LCurChar = ' ') then
         GetInput
       else
       begin
-        FAccumulator.Append(cur);
-        last := cur;
+        FAccumulator.Append(LCurChar);
+        LLastChar := LCurChar;
         GetInput;
       end;
     end;
@@ -461,9 +459,7 @@ begin
     FNextToken := SimpleToken(VsEOF);
   end
   else
-  begin
-    Result := SimpleToken(VsEOF);
-  end;
+    exit(SimpleToken(VsEOF));
 end;
 
 function TTemplateLexer.GetToken: ITemplateSymbol;
@@ -472,13 +468,13 @@ begin
   begin
     Result := FNextToken;
     FNextToken := nil;
-    Exit;
+    exit;
   end;
   case FState of
     SText:
-      Result := GetTextToken;
+      exit(GetTextToken);
     SScript:
-      Result := GetScriptToken;
+      exit(GetScriptToken);
   else
     raise ETemplateLexerException.Create('Unexpected lexer state');
   end;
@@ -499,12 +495,12 @@ end;
 
 function TSimpleTemplateSymbol.GetPosition: IPosition;
 begin
-  Result := FPosition;
+  exit(FPosition);
 end;
 
 function TSimpleTemplateSymbol.GetToken: TTemplateSymbol;
 begin
-  Result := FToken;
+  exit(FToken);
 end;
 
 procedure TSimpleTemplateSymbol.SetToken(const AToken: TTemplateSymbol);
@@ -522,20 +518,20 @@ end;
 
 function TTemplateValueSymbol.GetValue: string;
 begin
-  Result := FValue;
+  exit(FValue);
 end;
 
 procedure TTemplateValueSymbol.SetValue(const Avalue: string);
 var
-  token: TTemplateSymbol;
+  LSymbol: TTemplateSymbol;
 begin
   FValue := Avalue;
   if GetToken <> VsID then
-    Exit;
-  if GKeywords.TryGetValue(Avalue, token) then
+    exit;
+  if GKeywords.TryGetValue(Avalue, LSymbol) then
   begin
-    SetToken(token);
-    Exit;
+    SetToken(LSymbol);
+    exit;
   end;
 end;
 
