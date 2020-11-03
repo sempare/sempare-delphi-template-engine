@@ -126,8 +126,7 @@
                 <Source>
                     <Source Name="MainSource">Sempare.Template.Demo.dpr</Source>
                 </Source>
-                <Excluded_Packages>
-                </Excluded_Packages>
+                <Excluded_Packages/>
             </Delphi.Personality>
             <Deployment Version="3">
                 <DeployFile LocalName="Win32\Debug\Sempare.Template.Demo.exe" Configuration="Debug" Class="ProjectOutput">

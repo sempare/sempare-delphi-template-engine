@@ -139,15 +139,15 @@ uses
 
 procedure TFormRealTime.butClearClick(Sender: TObject);
 var
-  i: Integer;
+  LIdx: Integer;
 begin
   memoTemplate.Lines.Text := '';
   FFilename := '';
   butSave.Enabled := false;
-  for i := 1 to properties.RowCount do
+  for LIdx := 1 to properties.RowCount do
   begin
-    properties.Cells[0, i] := '';
-    properties.Cells[1, i] := '';
+    properties.Cells[0, LIdx] := '';
+    properties.Cells[1, LIdx] := '';
   end;
   Process;
 end;
@@ -279,7 +279,7 @@ begin
   memoPrettyPrint.Lines.Text := '';
   WebBrowser1.Enabled := true;
 {$IF defined(RELEASE)}
-  Context.MaxRunTimeMs := 5000;
+  FContext.MaxRunTimeMs := 5000;
 {$ENDIF}
   cbHtml.Checked := true;
   cbUseHtmlBR.Checked := true;
@@ -297,17 +297,17 @@ end;
 
 procedure TFormRealTime.GridPropsToContext;
 var
-  i: Integer;
-  k, v: string;
+  LIdx: Integer;
+  LKey, LValue: string;
 begin
   FContext.Variables.Clear;
-  for i := 1 to properties.RowCount do
+  for LIdx := 1 to properties.RowCount do
   begin
-    k := trim(properties.Cells[0, i]);
-    if k = '' then
+    LKey := trim(properties.Cells[0, LIdx]);
+    if LKey = '' then
       continue;
-    v := trim(properties.Cells[1, i]);
-    FContext.Variables[k] := v;
+    LValue := trim(properties.Cells[1, LIdx]);
+    FContext.Variables[LKey] := LValue;
   end;
 end;
 
