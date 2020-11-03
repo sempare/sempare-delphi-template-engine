@@ -113,7 +113,7 @@ end;
 
 function TStackFrame.Root: TValue;
 begin
-  exit( GetItem('_'));
+  exit(GetItem('_'));
 end;
 
 procedure TStackFrame.SetItem(const AKey: string; const Value: TValue);

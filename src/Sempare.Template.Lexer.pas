@@ -201,7 +201,7 @@ procedure TTemplateLexer.GetInput;
 begin
   Fcurrent := FLookahead;
   if FLookahead.Eof then
-    Exit;
+    exit;
   FLookahead.Eof := FReader.EndOfStream;
   if FLookahead.Eof then
     FLookahead.Input := #0
@@ -277,7 +277,7 @@ begin
       FAccumulator.Append(Fcurrent.Input);
       while Expecting(VARIABLE_END) do
         Accumulate;
-      Exit(ValueToken(VsID));
+      exit(ValueToken(VsID));
     end
 {$WARN WIDECHAR_REDUCED OFF}
     else if Fcurrent.Input in NUMBER then
@@ -292,75 +292,75 @@ begin
         while Expecting(NUMBER) do
           Accumulate;
       end;
-      Exit(ValueToken(VsNumber));
+      exit(ValueToken(VsNumber));
     end
     else
       case Fcurrent.Input of
         ';':
-          Exit(SimpleToken(vsSemiColon));
+          exit(SimpleToken(vsSemiColon));
         ',':
-          Exit(SimpleToken(vsComma));
+          exit(SimpleToken(vsComma));
         '(':
           begin
             if not Expecting('*') then
-              Exit(SimpleToken(VsOpenRoundBracket));
+              exit(SimpleToken(VsOpenRoundBracket));
             SwallowInput;
             while not FLookahead.Eof and not((Fcurrent.Input = '*') and Expecting(')')) do
               SwallowInput;
             SwallowInput;
-            Exit(SimpleToken(VsComment));
+            exit(SimpleToken(VsComment));
           end;
         ')':
-          Exit(SimpleToken(VsCloseRoundBracket));
+          exit(SimpleToken(VsCloseRoundBracket));
         '[':
-          Exit(SimpleToken(VsOpenSquareBracket));
+          exit(SimpleToken(VsOpenSquareBracket));
         ']':
-          Exit(SimpleToken(VsCloseSquareBracket));
+          exit(SimpleToken(VsCloseSquareBracket));
         '.':
-          Exit(SimpleToken(VsDOT));
+          exit(SimpleToken(VsDOT));
         '?':
-          Exit(SimpleToken(vsQUESTION));
+          exit(SimpleToken(vsQUESTION));
         '+':
-          Exit(SimpleToken(VsPLUS));
+          exit(SimpleToken(VsPLUS));
         '-':
-          Exit(SimpleToken(VsMinus));
+          exit(SimpleToken(VsMinus));
         '*':
-          Exit(SimpleToken(VsMULT));
+          exit(SimpleToken(VsMULT));
         '/':
-          Exit(SimpleToken(VsSLASH));
+          exit(SimpleToken(VsSLASH));
         '<':
           if Expecting('=') then
           begin
             SwallowInput;
-            Exit(SimpleToken(vsLTE))
+            exit(SimpleToken(vsLTE))
           end
           else
-            Exit(SimpleToken(vsLT));
+            exit(SimpleToken(vsLT));
         '>':
           if Expecting('=') then
           begin
             SwallowInput;
-            Exit(SimpleToken(vsGTE))
+            exit(SimpleToken(vsGTE))
           end
           else
-            Exit(SimpleToken(vsGT));
+            exit(SimpleToken(vsGT));
         '=':
-          Exit(SimpleToken(VsEQ));
+          exit(SimpleToken(VsEQ));
         '''':
           begin
             while not FLookahead.Eof and (FLookahead.Input <> '''') do
               Accumulate;
             SwallowInput;
-            Exit(ValueToken(vsString));
+            exit(ValueToken(vsString));
           end;
         ':':
           if Expecting('=') then
           begin
             SwallowInput;
-            Exit(SimpleToken(VsCOLONEQ));
+            exit(SimpleToken(VsCOLONEQ));
           end
           else
-            Exit(SimpleToken(vsCOLON));
+            exit(SimpleToken(vsCOLON));
       else
         if Fcurrent.Input = FEndScript[1] then
         begin
@@ -377,7 +377,7 @@ begin
               Result := SimpleToken(VsEndScript);
             end;
             FState := SText;
-            Exit;
+            exit;
           end;
         end;
       end;
@@ -435,7 +435,7 @@ begin
       Result := ValueToken(VsText);
       FState := SScript;
       FNextToken := SimpleToken(VsStartScript);
-      Exit();
+      exit();
     end
     else
     begin
@@ -468,7 +468,7 @@ begin
   begin
     Result := FNextToken;
     FNextToken := nil;
-    Exit;
+    exit;
   end;
   case FState of
     SText:
@@ -527,11 +527,11 @@ var
 begin
   FValue := Avalue;
   if GetToken <> VsID then
-    Exit;
+    exit;
   if GKeywords.TryGetValue(Avalue, LSymbol) then
   begin
     SetToken(LSymbol);
-    Exit;
+    exit;
   end;
 end;
 
