@@ -33,6 +33,7 @@
 unit Sempare.Template.TestFor;
 
 interface
+{$I 'Sempare.Template.Compiler.inc'}
 
 uses
   DUnitX.TestFramework;
@@ -66,10 +67,8 @@ type
     procedure TestWithInlineArray;
     [Test]
     procedure TestWithEmptyInlineArray;
-{$IFDEF SEMPARE_TEMPLATE_FIREDAC}
-    [Test]
+    [Test{$IFNDEF SEMPARE_TEMPLATE_FIREDAC}, IGNORE{$ENDIF}]
     procedure TestDataSet;
-{$ENDIF}
   end;
 
 implementation
@@ -128,6 +127,11 @@ begin
   finally
     ds.Free;
   end;
+end;
+{$ELSE}
+
+procedure TTestTemplateFor.TestDataSet;
+begin
 end;
 {$ENDIF}
 
