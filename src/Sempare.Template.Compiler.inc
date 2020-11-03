@@ -57,5 +57,37 @@
 {$ENDIF}
 // -----------------------------------------------
 
+// Uncomment the following to disable build hints
+// {$DEFINE SEMPARE_TEMPLATE_BUILD_NO_HINT}
+
+
 // Uncomment the following to test TDataSet using FIREDAC TFDMemTable
 // {$DEFINE SEMPARE_TEMPLATE_FIREDAC}
+{$IFNDEF SEMPARE_TEMPLATE_BUILD_NO_HINT}
+{$MESSAGE 'define SEMPARE_TEMPLATE_FIREDAC for running the tests'}
+{$ENDIF}
+// Uncomment the following if Indy is present
+// {$DEFINE SEMPARE_TEMPLATE_INDY}
+{$IFNDEF SEMPARE_TEMPLATE_BUILD_NO_HINT}
+{$MESSAGE 'define SEMPARE_TEMPLATE_INDY for older versions of Delphi (e.g. XE4)'}
+{$ENDIF}
+// -----------------------------------------------
+
+// the following uses the defines above to snure the correct defines
+// are in place
+{$IF defined(SEMPARE_TEMPLATE_INDY) or defined(SUPPORT_NET_ENCODING)}
+{$IFDEF SUPPORT_NET_ENCODING}
+{$UNDEF SEMPARE_TEMPLATE_INDY}
+{$ENDIF}
+{$IFNDEF SEMPARE_TEMPLATE_BUILD_NO_HINT}
+{$IFDEF SUPPORT_NET_ENCODING}
+{$MESSAGE 'using NetEncoding for html encoding'}
+{$ELSE}
+{$MESSAGE 'using IdStrings for html encoding'}
+{$ENDIF}
+{$ENDIF}
+{$DEFINE SEMPARE_TEMPLATE_HAS_HTML_ENCODER}
+{$ENDIF}
+{$IFNDEF SEMPARE_TEMPLATE_BUILD_NO_HINT}
+{$MESSAGE 'define SEMPARE_TEMPLATE_BUILD_NO_HINT to hide all Sempare Template hints'}
+{$ENDIF}

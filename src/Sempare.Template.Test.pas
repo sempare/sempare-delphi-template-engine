@@ -34,17 +34,19 @@ unit Sempare.Template.Test;
 
 interface
 
+{$I 'Sempare.Template.Compiler.inc'}
+
 uses
   DUnitX.TestFramework;
 
 type
 
-  // [TestFixture]
+  [TestFixture]
   TTestTemplate = class
   public
     [Test]
     procedure TestComment;
-    [Test]
+    [Test {$IFNDEF SEMPARE_TEMPLATE_HAS_HTML_ENCODER}, Ignore{$ENDIF}]
     procedure TestHtmlEncoding;
     [Test]
     procedure TestNonMutation;
@@ -77,8 +79,6 @@ type
 
 implementation
 
-{$I 'Sempare.Template.Compiler.inc'}
-
 uses
   System.Generics.Collections,
   Sempare.Template.Context,
@@ -103,7 +103,7 @@ begin
 end;
 
 procedure TTestTemplate.TestHtmlEncoding;
-{$IFDEF SUPPORT_NET_ENCODING}
+{$IFDEF SEMPARE_TEMPLATE_HAS_HTML_ENCODER}
 type
   TRec = record
     content: string;

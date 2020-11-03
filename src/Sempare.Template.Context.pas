@@ -109,7 +109,7 @@ type
     function GetEncoding: TEncoding;
     procedure SetEncoding(const AEncoding: TEncoding);
 
-{$IFDEF SUPPORT_NET_ENCODING}
+{$IFDEF SEMPARE_TEMPLATE_HAS_HTML_ENCODER}
     procedure UseHtmlVariableEncoder;
 {$ENDIF}
     function GetVariableEncoder: TTemplateEncodeFunction;
@@ -156,8 +156,12 @@ var
 implementation
 
 uses
+{$IFDEF SEMPARE_TEMPLATE_HAS_HTML_ENCODER}
 {$IFDEF SUPPORT_NET_ENCODING}
   System.NetEncoding,
+{$ELSE}
+  IdStrings,
+{$ENDIF}
 {$ENDIF}
   System.SyncObjs,
   Sempare.Template,
@@ -210,7 +214,7 @@ type
     function GetMaxRunTimeMs: integer;
     procedure SetMaxRunTimeMs(const ATimeMS: integer);
 
-{$IFDEF SUPPORT_NET_ENCODING}
+{$IFDEF SEMPARE_TEMPLATE_HAS_HTML_ENCODER}
     procedure UseHtmlVariableEncoder;
 {$ENDIF}
     function GetVariableEncoder: TTemplateEncodeFunction;
@@ -441,11 +445,16 @@ begin
   end;
 end;
 
-{$IFDEF SUPPORT_NET_ENCODING}
+{$IFDEF SEMPARE_TEMPLATE_HAS_HTML_ENCODER}
 
 function HtmlEncode(const AString: string): string;
 begin
+{$IFDEF SUPPORT_NET_ENCODING}
   exit(TNetEncoding.HTML.Encode(AString));
+{$ENDIF}
+{$IFDEF SEMPARE_TEMPLATE_INDY}
+  exit(StrHtmlEncode(AString));
+{$ENDIF}
 end;
 
 procedure TTemplateContext.UseHtmlVariableEncoder;
