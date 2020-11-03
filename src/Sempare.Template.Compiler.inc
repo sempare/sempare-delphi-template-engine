@@ -32,28 +32,34 @@
  *************************************************************************************************%*)
 // -----------------------------------------------
 {$IF CompilerVersion >= 25} // from XE4 onwards
-{$DEFINE SUPPORT_JSON_DBX}
+{$DEFINE SUPPORT_JSON_DBX true}
 {$ENDIF}
 // -----------------------------------------------
 {$IF CompilerVersion >= 26} // from XE5 onwards
 {$UNDEF SUPPORT_JSON_DBX}
-{$DEFINE SUPPORT_JSON}
+{$DEFINE SUPPORT_JSON true}
+{$ENDIF}
+{$IFDEF   SUPPORT_JSON_DBX}
+{$MESSAGE 'SUPPORT_JSON_DBX'}
+{$ENDIF}
+{$IFDEF   SUPPORT_JSON}
+{$MESSAGE 'SUPPORT_JSON'}
 {$ENDIF}
 // -----------------------------------------------
 {$IF CompilerVersion >= 28}  // from XE7 onwards
-{$DEFINE SUPPORT_NET_ENCODING}
+{$DEFINE SUPPORT_NET_ENCODING true}
 {$ENDIF}
 // -----------------------------------------------
 {$IF CompilerVersion >= 29}  // from XE8 onwards
-{$DEFINE SUPPORT_AS_VARREC}
+{$DEFINE SUPPORT_AS_VARREC true}
 {$ENDIF}
 // -----------------------------------------------
 {$IF CompilerVersion >= 30} // from Delphi 10.0 Seatle onwards
-{$DEFINE SUPPORT_JSON_BOOL}
+{$DEFINE SUPPORT_JSON_BOOL true}
 {$ENDIF}
 // -----------------------------------------------
 {$IF CompilerVersion >= 31}  // from Delphi 10.1 Berlin onwards
-{$DEFINE SUPPORT_BUFFERED_STREAM}
+{$DEFINE SUPPORT_BUFFERED_STREAM true}
 {$ENDIF}
 // -----------------------------------------------
 
@@ -64,7 +70,7 @@
 // {$DEFINE SEMPARE_TEMPLATE_NO_INDY}
 
 {$IFNDEF SEMPARE_TEMPLATE_NO_INDY}
-{$DEFINE SEMPARE_TEMPLATE_INDY}
+{$DEFINE SEMPARE_TEMPLATE_INDY true}
 {$ENDIF}
 // -----------------------------------------------
 
@@ -74,7 +80,7 @@
 {$IFDEF SUPPORT_NET_ENCODING}
 {$UNDEF SEMPARE_TEMPLATE_INDY}
 {$ENDIF}
-{$DEFINE SEMPARE_TEMPLATE_HAS_HTML_ENCODER}
+{$DEFINE SEMPARE_TEMPLATE_HAS_HTML_ENCODER true}
 {$ENDIF}
 {$IFNDEF SEMPARE_TEMPLATE_HAS_HTML_ENCODER}
 {$MESSAGE 'No default html encoder present.'}
