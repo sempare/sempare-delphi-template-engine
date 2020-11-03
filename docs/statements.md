@@ -121,8 +121,8 @@ While blocks are very flexibe looping constructs based on a boolean condition be
 <% i := 1 %>
 <% while i <= 3 %>
    <% i %>
-   <% i := 1 + 1%>
-<% end %
+   <% i := i + 1%>
+<% end %>
 ```
 
 This produces the following:
@@ -153,7 +153,7 @@ An example using 'break':
 ```
 <% i := 0 %>
 <% while true %>
- <% if i = 3%><% break %><% end %><% i %>
+ <% if i = 3%><% break %><% end %><% i %><% i:=i+1%>
 <% end %>
 ```
 This will produce
