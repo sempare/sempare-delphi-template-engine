@@ -1,7 +1,7 @@
 {
 	"id": "{5E49A5F3-310D-47D8-87E4-78A2FD7809E9}",
 	"name": "Sempare Template Engine for Delphi",
-	"picture": "images/sempare-logo-45px.png",
+	"picture": "images\\sempare-logo-45px.png",
 	"licenses": [
 		{
 			"type": "GPL-3.0",
@@ -9,14 +9,10 @@
 		},
 		{
 			"type": "Sempare Limited Commerial License",
-			"file": "docs/commercial.license.md"
+			"file": "docs\\commercial.license.md"
 		}
 	],
 	"platforms": "Win32;Win64;OSX32;OSX64;Android;iOSDevice32;iOSDevice64;Linux64",
 	"package_compiler_min": 29,
-	"package_compiler_max": 34,
-	"compiler_min": 29,
-	"compiler_min": 34,
-	"report_url": "https://github.com/sempare/sempare-delphi-template-engine/issues",
-	"dependencies": []
+	"compiler_min": 29
 }
