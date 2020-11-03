@@ -533,7 +533,6 @@ begin
   end;
 end;
 
-{$IFDEF SUPPORT_JSON}
 
 function JsonValueToTValue(const AJsonValue: TJsonValue; out AValue: TValue): boolean;
 begin
@@ -616,7 +615,6 @@ begin
   exit(AClass = TJsonObject);
 end;
 
-{$ENDIF}
 
 function processDataSet(APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; out AFound: boolean): TValue;
 var
@@ -848,10 +846,8 @@ GPopulateFunctions := TList < TPair < TPopulateMatchFunction, TPopulateStackFram
 
 RegisterDeref(MatchTemplateVariableObject, processTemplateVariables);
 RegisterDeref(MatchDictionary, processDictionary);
-{$IF defined(SUPPORT_JSON) or defined(SUPPORT_JSON_DBX)}
 RegisterDeref(MatchJsonObject, processJson);
 RegisterPopulateStackFrame(MatchJsonObject, PopulateStackFrameFromJsonObject);
-{$ENDIF}
 RegisterPopulateStackFrame(MatchStringDictionary, PopulateStackFrameFromDictionary);
 RegisterDeref(MatchTemplateVariables, processTemplateVariables);
 RegisterDeref(MatchDataSet, processDataSet);
