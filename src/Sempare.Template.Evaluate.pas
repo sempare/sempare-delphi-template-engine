@@ -128,6 +128,7 @@ implementation
 
 uses
   Data.DB,
+  System.TypInfo, // needed for XE6 and below to access the TTypeKind variables
   Sempare.Template.Rtti,
   Sempare.Template.Util;
 
@@ -156,30 +157,27 @@ end;
 { TEvaluationTemplateVisitor }
 
 constructor TEvaluationTemplateVisitor.Create(AContext: ITemplateContext; const AValue: TValue; const AStream: TStream);
-var
-  StackFrame: TStackFrame;
 begin
-  StackFrame := TStackFrame.Create(AValue, nil);
-  Create(AContext, StackFrame, AStream);
+  Create(AContext, TStackFrame.Create(AValue, nil), AStream);
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(AExpr: IValueExpr);
 var
-  val: TValue;
+  LValue: TValue;
 begin
-  val := AExpr.Value;
-  if val.IsType<TValue> then
-    val := val.AsType<TValue>();
-  FEvalStack.push(val);
+  LValue := AExpr.Value;
+  if LValue.IsType<TValue> then
+    LValue := LValue.AsType<TValue>();
+  FEvalStack.push(LValue);
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(AExprList: IExprList);
 var
-  i: integer;
+  LIdx: integer;
 begin
-  for i := AExprList.Count - 1 downto 0 do
+  for LIdx := AExprList.Count - 1 downto 0 do
   begin
-    acceptvisitor(AExprList.Expr[i], self);
+    acceptvisitor(AExprList.Expr[LIdx], self);
   end;
   // push count onto stack
   FEvalStack.push(AExprList.Count);
@@ -192,115 +190,115 @@ end;
 
 procedure TEvaluationTemplateVisitor.Visit(AExpr: IVariableDerefExpr);
 var
-  Derefvar: TValue;
-  variable: TValue;
-  val: TValue;
-  AllowRootDeref: IPreserveValue<boolean>;
+  LDerefKey: TValue;
+  LDerefObj: TValue;
+  LDerefedValue: TValue;
+  LAllowRootDeref: IPreserveValue<boolean>;
 begin
-  AllowRootDeref := Preseve.Value(FAllowRootDeref, true);
+  LAllowRootDeref := Preserve.Value<boolean>(FAllowRootDeref, true);
 
   acceptvisitor(AExpr.variable, self);
-  variable := FEvalStack.pop;
+  LDerefObj := FEvalStack.pop;
 
-  AllowRootDeref.SetValue(AExpr.DerefType = dtArray);
+  LAllowRootDeref.SetValue(AExpr.DerefType = dtArray);
   acceptvisitor(AExpr.DerefExpr, self);
-  Derefvar := FEvalStack.pop;
+  LDerefKey := FEvalStack.pop;
 
-  val := Deref(Position(AExpr), variable, Derefvar, eoRaiseErrorWhenVariableNotFound in FContext.Options);
-  if val.IsType<TValue> then
-    val := val.AsType<TValue>();
-  FEvalStack.push(val);
+  LDerefedValue := Deref(Position(AExpr), LDerefObj, LDerefKey, eoRaiseErrorWhenVariableNotFound in FContext.Options);
+  if LDerefedValue.IsType<TValue> then
+    LDerefedValue := LDerefedValue.AsType<TValue>();
+  FEvalStack.push(LDerefedValue);
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(AExpr: IBinopExpr);
 var
-  left: TValue;
-  right: TValue;
-  res: TValue;
+  LLeft: TValue;
+  LRight: TValue;
+  LResult: TValue;
 begin
   acceptvisitor(AExpr.LeftExpr, self);
   acceptvisitor(AExpr.RightExpr, self);
-  right := FEvalStack.pop;
-  left := FEvalStack.pop;
+  LRight := FEvalStack.pop;
+  LLeft := FEvalStack.pop;
   case AExpr.BinOp of
     boIN:
-      res := contains(Position(AExpr.RightExpr), left, right);
+      LResult := contains(Position(AExpr.RightExpr), LLeft, LRight);
     boAND:
       begin
-        AssertBoolean(Position(AExpr.LeftExpr), left, right);
-        res := AsBoolean(left) and AsBoolean(right);
+        AssertBoolean(Position(AExpr.LeftExpr), LLeft, LRight);
+        LResult := AsBoolean(LLeft) and AsBoolean(LRight);
       end;
     boOR:
       begin
-        AssertBoolean(Position(AExpr.LeftExpr), left, right);
-        res := AsBoolean(left) or AsBoolean(right);
+        AssertBoolean(Position(AExpr.LeftExpr), LLeft, LRight);
+        LResult := AsBoolean(LLeft) or AsBoolean(LRight);
       end;
     boPlus:
-      if isNumLike(left) and isNumLike(right) then
-        res := Asnum(left) + Asnum(right)
-      else if isStrLike(left) and isStrLike(right) then
-        res := left.AsString + right.AsString
-      else if isStrLike(left) and isNumLike(right) then
-        res := left.AsString + AsString(right)
+      if isNumLike(LLeft) and isNumLike(LRight) then
+        LResult := Asnum(LLeft) + Asnum(LRight)
+      else if isStrLike(LLeft) and isStrLike(LRight) then
+        LResult := LLeft.AsString + LRight.AsString
+      else if isStrLike(LLeft) and isNumLike(LRight) then
+        LResult := LLeft.AsString + AsString(LRight)
       else
         RaiseError(Position(AExpr.LeftExpr), 'String or numeric types expected');
     boMinus:
       begin
-        AssertNumeric(Position(AExpr.LeftExpr), left, right);
-        res := Asnum(left) - Asnum(right);
+        AssertNumeric(Position(AExpr.LeftExpr), LLeft, LRight);
+        LResult := Asnum(LLeft) - Asnum(LRight);
       end;
     boSlash:
       begin
-        AssertNumeric(Position(AExpr.LeftExpr), left, right);
-        res := Asnum(left) / Asnum(right);
+        AssertNumeric(Position(AExpr.LeftExpr), LLeft, LRight);
+        LResult := Asnum(LLeft) / Asnum(LRight);
       end;
     boDiv:
       begin
-        AssertNumeric(Position(AExpr.LeftExpr), left, right);
-        res := trunc(Asnum(left)) div trunc(Asnum(right));
+        AssertNumeric(Position(AExpr.LeftExpr), LLeft, LRight);
+        LResult := trunc(Asnum(LLeft)) div trunc(Asnum(LRight));
       end;
     boMult:
       begin
-        AssertNumeric(Position(AExpr.LeftExpr), left, right);
-        res := Asnum(left) * Asnum(right);
+        AssertNumeric(Position(AExpr.LeftExpr), LLeft, LRight);
+        LResult := Asnum(LLeft) * Asnum(LRight);
       end;
     boMod:
       begin
-        AssertNumeric(Position(AExpr.LeftExpr), left, right);
-        res := asint(left) mod asint(right);
+        AssertNumeric(Position(AExpr.LeftExpr), LLeft, LRight);
+        LResult := asint(LLeft) mod asint(LRight);
       end;
     boEQ:
-      res := isEqual(left, right);
+      LResult := isEqual(LLeft, LRight);
     boNotEQ:
-      res := not isEqual(left, right);
+      LResult := not isEqual(LLeft, LRight);
     boLT:
-      res := isLessThan(left, right);
+      LResult := isLessThan(LLeft, LRight);
     boLTE:
-      res := not isGreaterThan(left, right);
+      LResult := not isGreaterThan(LLeft, LRight);
     boGT:
-      res := isGreaterThan(left, right);
+      LResult := isGreaterThan(LLeft, LRight);
     boGTE:
-      res := not isLessThan(left, right);
+      LResult := not isLessThan(LLeft, LRight);
   else
     RaiseError(Position(AExpr.LeftExpr), 'Binop not supported');
   end;
-  FEvalStack.push(res);
+  FEvalStack.push(LResult);
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(AExpr: IUnaryExpr);
 var
-  v: TValue;
+  LValue: TValue;
 begin
   acceptvisitor(AExpr.Condition, self);
-  v := FEvalStack.pop;
+  LValue := FEvalStack.pop;
   case AExpr.UnaryOp of
     uoMinus:
       begin
-        FEvalStack.push(-Asnum(v));
+        FEvalStack.push(-Asnum(LValue));
       end;
     uoNot:
       begin
-        FEvalStack.push(not AsBoolean(v));
+        FEvalStack.push(not AsBoolean(LValue));
       end
   else
     RaiseError(Position(AExpr), 'Unary op not supported');
@@ -309,17 +307,17 @@ end;
 
 procedure TEvaluationTemplateVisitor.Visit(AExpr: IVariableExpr);
 var
-  StackFrame: TStackFrame;
-  val: TValue;
+  LStackFrame: TStackFrame;
+  LValue: TValue;
 begin
   if FAllowRootDeref then
   begin
-    StackFrame := FStackFrames.peek;
-    val := StackFrame[AExpr.variable];
-    if val.IsEmpty then
+    LStackFrame := FStackFrames.peek;
+    LValue := LStackFrame[AExpr.variable];
+    if LValue.IsEmpty then
     begin
       try
-        val := Deref(Position(AExpr), StackFrame.Root, AExpr.variable, eoRaiseErrorWhenVariableNotFound in FContext.Options);
+        LValue := Deref(Position(AExpr), LStackFrame.Root, AExpr.variable, eoRaiseErrorWhenVariableNotFound in FContext.Options);
       except
         on e: exception do
         begin
@@ -328,16 +326,16 @@ begin
         end;
       end;
     end;
-    if val.IsEmpty and (eoRaiseErrorWhenVariableNotFound in FContext.Options) then
+    if LValue.IsEmpty and (eoRaiseErrorWhenVariableNotFound in FContext.Options) then
       RaiseError(Position(AExpr), 'Variable ''%s'' could not be found.', [AExpr.variable]);
   end
   else
   begin
-    val := AExpr.variable;
+    LValue := AExpr.variable;
   end;
-  if val.IsType<TValue> then
-    val := val.AsType<TValue>();
-  FEvalStack.push(val);
+  if LValue.IsType<TValue> then
+    LValue := LValue.AsType<TValue>();
+  FEvalStack.push(LValue);
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(AStmt: IBreakStmt);
@@ -347,11 +345,11 @@ end;
 
 procedure TEvaluationTemplateVisitor.Visit(AStmt: IWhileStmt);
 var
-  LoopOptions: IPreserveValue<TLoopOptions>;
+  LLoopOptions: IPreserveValue<TLoopOptions>;
 begin
   if HasBreakOrContinue then
     exit;
-  LoopOptions := Preseve.Value<TLoopOptions>(FLoopOptions, []);
+  LLoopOptions := Preserve.Value<TLoopOptions>(FLoopOptions, []);
   FStackFrames.push(FStackFrames.peek.Clone);
   while true do
   begin
@@ -367,91 +365,97 @@ end;
 
 procedure TEvaluationTemplateVisitor.Visit(AStmt: IForInStmt);
 var
-  LoopOptions: IPreserveValue<TLoopOptions>;
-  e: TObject;
-  v: string;
-  val, Eval: TValue;
-  T: TRttiType;
-  m, movenext: TRttiMethod;
-  current: TRttiProperty;
+  LLoopOptions: IPreserveValue<TLoopOptions>;
+  LVariableName: string;
+  LLoopExpr: TValue;
+  LLoopExprType: TRttiType;
 
   procedure VisitDataSet;
   var
-    i: integer;
+    LIdx: integer;
+    LDataSetFirstMethod: TRttiMethod;
+    LDataSetNextMethod: TRttiMethod;
+    LDataSetEOFProperty: TRttiProperty;
+    LObj: TObject;
   begin
-    i := 1;
-    m := T.GetMethod('First');
-    e := Eval.AsObject;
-    m.Invoke(e, []);
-    current := T.getProperty('EOF');
-    movenext := T.GetMethod('Next');
-    while not current.GetValue(e).AsBoolean do
+    LIdx := 1;
+    LDataSetFirstMethod := LLoopExprType.GetMethod('First');
+    LObj := LLoopExpr.AsObject;
+    LDataSetFirstMethod.Invoke(LObj, []);
+    LDataSetEOFProperty := LLoopExprType.getProperty('EOF');
+    LDataSetNextMethod := LLoopExprType.GetMethod('Next');
+    while not LDataSetEOFProperty.GetValue(LObj).AsBoolean do
     begin
       if coBreak in FLoopOptions then
         break;
-      FStackFrames.peek[v] := i;
+      FStackFrames.peek[LVariableName] := LIdx;
       exclude(FLoopOptions, coContinue);
       CheckRunTime(Position(AStmt));
       acceptvisitor(AStmt.Container, self);
-      movenext.Invoke(e, []);
-      inc(i);
+      LDataSetNextMethod.Invoke(LObj, []);
+      inc(LIdx);
     end;
   end;
 
   procedure visitobject;
+  var
+    LEnumGetEnumeratorMethod: TRttiMethod;
+    LEnumObj: TObject;
+    LEnumMoveNextMethod: TRttiMethod;
+    LEnumCurrentProperty: TRttiProperty;
+    LEnumValue: TValue;
   begin
-    if T.AsInstance.MetaclassType.InheritsFrom(TDataSet) then
+    if LLoopExprType.AsInstance.MetaclassType.InheritsFrom(TDataSet) then
     begin
       VisitDataSet;
       exit;
     end;
-    m := T.GetMethod('GetEnumerator');
-    if m = nil then
+    LEnumGetEnumeratorMethod := LLoopExprType.GetMethod('GetEnumerator');
+    if LEnumGetEnumeratorMethod = nil then
       RaiseError(Position(AStmt), 'GetEnumerator not found on object.');
-    val := m.Invoke(Eval.AsObject, []).AsObject;
-    if val.IsEmpty then
+    LEnumValue := LEnumGetEnumeratorMethod.Invoke(LLoopExpr.AsObject, []);
+    if LEnumValue.IsEmpty then
       raise exception.Create('Value is not enumerable');
+    LEnumObj := LEnumValue.AsObject;
     try
-      e := val.AsObject;
-      T := GRttiContext.GetType(e.ClassType);
-      movenext := T.GetMethod('MoveNext');
-      current := T.getProperty('Current');
+      LLoopExprType := GRttiContext.GetType(LEnumObj.ClassType);
+      LEnumMoveNextMethod := LLoopExprType.GetMethod('MoveNext');
+      LEnumCurrentProperty := LLoopExprType.getProperty('Current');
 
-      while movenext.Invoke(e, []).AsBoolean do
+      while LEnumMoveNextMethod.Invoke(LEnumObj, []).AsBoolean do
       begin
         if coBreak in FLoopOptions then
           break;
-        FStackFrames.peek[v] := current.GetValue(e);
+        FStackFrames.peek[LVariableName] := LEnumCurrentProperty.GetValue(LEnumObj);
         exclude(FLoopOptions, coContinue);
         CheckRunTime(Position(AStmt));
         acceptvisitor(AStmt.Container, self);
       end;
     finally
-      e.Free;
+      LEnumObj.Free;
     end;
   end;
 
   procedure visitarray;
   var
-    at: TRttiArrayType;
-    Dt: TRttiOrdinalType;
-    i, min: int64;
-    c: TRttiContext;
+    LArrayType: TRttiArrayType;
+    LDimOrdType: TRttiOrdinalType;
+    LIdx: int64;
+    LMin: int64;
   begin
-    c := TRttiContext.Create;
-    at := T as TRttiArrayType;
-    if at.DimensionCount <> 1 then
+    LArrayType := LLoopExprType as TRttiArrayType;
+    if LArrayType.DimensionCount <> 1 then
       RaiseError(Position(AStmt), 'Only one dimensional arrays are supported.');
-    Dt := at.Dimensions[0] as TRttiOrdinalType;
-    if Dt = nil then
-      min := 0
+    LDimOrdType := LArrayType.Dimensions[0] as TRttiOrdinalType;
+    if LDimOrdType = nil then
+      LMin := 0
     else
-      min := Dt.MinValue;
-    for i := 0 to Eval.GetArrayLength - 1 do
+      LMin := LDimOrdType.MinValue;
+    for LIdx := 0 to LLoopExpr.GetArrayLength - 1 do
     begin
       if coBreak in FLoopOptions then
         break;
-      FStackFrames.peek[v] := i + min;
+      FStackFrames.peek[LVariableName] := LIdx + LMin;
       exclude(FLoopOptions, coContinue);
       CheckRunTime(Position(AStmt));
       acceptvisitor(AStmt.Container, self);
@@ -460,13 +464,13 @@ var
 
   procedure visitdynarray;
   var
-    i: int64;
+    LIdx: int64;
   begin
-    for i := 0 to Eval.GetArrayLength - 1 do
+    for LIdx := 0 to LLoopExpr.GetArrayLength - 1 do
     begin
       if coBreak in FLoopOptions then
         break;
-      FStackFrames.peek[v] := i;
+      FStackFrames.peek[LVariableName] := LIdx;
       exclude(FLoopOptions, coContinue);
       CheckRunTime(Position(AStmt));
       acceptvisitor(AStmt.Container, self);
@@ -476,19 +480,19 @@ var
 begin
   if HasBreakOrContinue then
     exit;
-  LoopOptions := Preseve.Value<TLoopOptions>(FLoopOptions, []);
+  LLoopOptions := Preserve.Value<TLoopOptions>(FLoopOptions, []);
   FStackFrames.push(FStackFrames.peek.Clone);
-  v := AStmt.variable;
+  LVariableName := AStmt.variable;
 
   acceptvisitor(AStmt.Expr, self);
-  Eval := FEvalStack.pop;
-  if Eval.IsType<TValue> then
-    Eval := Eval.AsType<TValue>();
-  if not Eval.IsEmpty then
+  LLoopExpr := FEvalStack.pop;
+  if LLoopExpr.IsType<TValue> then
+    LLoopExpr := LLoopExpr.AsType<TValue>();
+  if not LLoopExpr.IsEmpty then
   begin
-    T := GRttiContext.GetType(Eval.typeinfo);
+    LLoopExprType := GRttiContext.GetType(LLoopExpr.typeinfo);
 
-    case T.TypeKind of
+    case LLoopExprType.TypeKind of
       tkClass, tkClassRef:
         visitobject;
       tkArray:
@@ -510,8 +514,9 @@ end;
 
 constructor TEvaluationTemplateVisitor.Create(AContext: ITemplateContext; const AStackFrame: TStackFrame; const AStream: TStream);
 var
-  apply: ITemplateContextForScope;
+  LApply: ITemplateContextForScope;
 begin
+  inherited Create();
   FAllowRootDeref := true;
   FStopWatch := TStopWatch.Create;
   FStopWatch.Start;
@@ -528,8 +533,8 @@ begin
   FStackFrames := TObjectStack<TStackFrame>.Create;
   FStackFrames.push(AStackFrame);
 
-  if supports(AContext, ITemplateContextForScope, apply) then
-    apply.ApplyTo(FStackFrames.peek);
+  if supports(AContext, ITemplateContextForScope, LApply) then
+    LApply.ApplyTo(FStackFrames.peek);
 end;
 
 destructor TEvaluationTemplateVisitor.Destroy;
@@ -552,34 +557,34 @@ end;
 
 function TEvaluationTemplateVisitor.ExprListArgs(AExprList: IExprList): TArray<TValue>;
 var
-  i: integer;
-  Count: integer;
+  LIdx: integer;
+  LCount: integer;
 begin
   AExprList.Accept(self);
 
-  Count := asint(FEvalStack.pop());
-  if Count <> AExprList.Count then // this should not happen
+  LCount := asint(FEvalStack.pop());
+  if LCount <> AExprList.Count then // this should not happen
     RaiseError(nil, 'Number of arguments mismatch');
-  setlength(result, Count);
-  for i := 0 to Count - 1 do
+  setlength(result, LCount);
+  for LIdx := 0 to LCount - 1 do
   begin
-    result[i] := FEvalStack.pop;
+    result[LIdx] := FEvalStack.pop;
   end;
 end;
 
 function TEvaluationTemplateVisitor.HasBreakOrContinue: boolean;
 begin
-  result := (coContinue in FLoopOptions) or (coBreak in FLoopOptions);
+  exit((coContinue in FLoopOptions) or (coBreak in FLoopOptions));
 end;
 
 function ForToCond(const ALow: integer; const AHigh: integer): boolean;
 begin
-  result := ALow <= AHigh;
+  exit(ALow <= AHigh);
 end;
 
 function ForDownToCond(const ALow: integer; const AHigh: integer): boolean;
 begin
-  result := ALow >= AHigh;
+  exit(ALow >= AHigh);
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(AStmt: IForRangeStmt);
@@ -587,64 +592,66 @@ type
   TCompare = function(const ALow: integer; const AHigh: integer): boolean;
 
 var
-  LoopOptions: IPreserveValue<TLoopOptions>;
-  i, lowVal, highVal: int64;
-  delta: integer;
-  v: string;
-  comp: TCompare;
+  LLoopOptions: IPreserveValue<TLoopOptions>;
+  LIdx: int64;
+  LStartVal: int64;
+  LEndVal: int64;
+  LDelta: integer;
+  LVariable: string;
+  LDirectionTestFunc: TCompare;
 
 begin
   if HasBreakOrContinue then
     exit;
-  v := AStmt.variable;
-  LoopOptions := Preseve.Value<TLoopOptions>(FLoopOptions, []);
+  LVariable := AStmt.variable;
+  LLoopOptions := Preserve.Value<TLoopOptions>(FLoopOptions, []);
 
   acceptvisitor(AStmt.LowExpr, self);
-  lowVal := asint(FEvalStack.pop);
+  LStartVal := asint(FEvalStack.pop);
 
   acceptvisitor(AStmt.HighExpr, self);
-  highVal := asint(FEvalStack.pop);
+  LEndVal := asint(FEvalStack.pop);
 
   case AStmt.ForOp of
     foTo:
       begin
-        delta := 1;
-        comp := ForToCond;
+        LDelta := 1;
+        LDirectionTestFunc := ForToCond;
       end;
     foDownto:
       begin
-        delta := -1;
-        comp := ForDownToCond;
+        LDelta := -1;
+        LDirectionTestFunc := ForDownToCond;
       end
   else
     raise exception.Create('ForOp not supported');
   end;
   FStackFrames.push(FStackFrames.peek.Clone);
-  i := lowVal;
-  while comp(i, highVal) do
+  LIdx := LStartVal;
+  while LDirectionTestFunc(LIdx, LEndVal) do
   begin
-    FStackFrames.peek[v] := i;
+    FStackFrames.peek[LVariable] := LIdx;
     if coBreak in FLoopOptions then
       break;
     exclude(FLoopOptions, coContinue);
     CheckRunTime(Position(AStmt));
     acceptvisitor(AStmt.Container, self);
-    inc(i, delta);
+    inc(LIdx, LDelta);
   end;
   FStackFrames.pop;
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(AStmt: IAssignStmt);
 var
-  v: string;
-  val: TValue;
+  LVariable: string;
+  LValue: TValue;
 begin
-  v := AStmt.variable;
+  LVariable := AStmt.variable;
   acceptvisitor(AStmt.Expr, self);
-  val := FEvalStack.pop;
-  if val.IsType<TValue> then
-    val := val.AsType<TValue>;
-  FStackFrames.peek[v] := val;
+  LValue := FEvalStack.pop;
+  if LValue.IsType<TValue> then
+    LValue := LValue.AsType<TValue>;
+  FStackFrames.peek[LVariable] := LValue;
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(AStmt: IIfStmt);
@@ -665,26 +672,26 @@ end;
 
 procedure TEvaluationTemplateVisitor.Visit(AStmt: IIncludeStmt);
 var
-  Name: string;
-  T: ITemplate;
+  LTemplateName: string;
+  LTemplate: ITemplate;
 
 begin
   if HasBreakOrContinue then
     exit;
   acceptvisitor(AStmt.Expr, self);
-  name := FEvalStack.pop.AsString;
+  LTemplateName := FEvalStack.pop.AsString;
 
-  if FLocalTemplates.TryGetValue(name, T) or FContext.TryGetTemplate(name, T) then
+  if FLocalTemplates.TryGetValue(LTemplateName, LTemplate) or FContext.TryGetTemplate(LTemplateName, LTemplate) then
   begin
     FStackFrames.push(FStackFrames.peek.Clone());
     try
-      Visit(T);
+      Visit(LTemplate);
     finally
       FStackFrames.pop;
     end;
   end
   else
-    raise exception.Createfmt('Template not found: %s', [name]);
+    raise exception.Createfmt('Template not found: %s', [LTemplateName]);
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(AStmt: IPrintStmt);
@@ -719,9 +726,9 @@ end;
 
 function GetArgs(const AMethod: TRttiMethod; const AArgs: TArray<TValue>): TArray<TValue>;
 var
-  arg: TRttiParameter;
-  i: integer;
-  v: TValue;
+  LParameter: TRttiParameter;
+  LParamIdx: integer;
+  LParamValue: TValue;
 begin
   if (length(AMethod.GetParameters) = 1) and (AMethod.GetParameters[0].ParamType.TypeKind = tkDynArray) then
   begin
@@ -730,33 +737,33 @@ begin
     exit;
   end;
   setlength(result, length(AArgs));
-  i := 0;
-  for arg in AMethod.GetParameters do
+  LParamIdx := 0;
+  for LParameter in AMethod.GetParameters do
   begin
-    v := CastArg(AArgs[i], arg.ParamType);
-    if v.IsType<TValue> then
-      v := v.AsType<TValue>();
-    result[i] := v;
-    inc(i);
+    LParamValue := CastArg(AArgs[LParamIdx], LParameter.ParamType);
+    if LParamValue.IsType<TValue> then
+      LParamValue := LParamValue.AsType<TValue>();
+    result[LParamIdx] := LParamValue;
+    inc(LParamIdx);
   end;
 end;
 
 function TEvaluationTemplateVisitor.Invoke(AFuncCall: IFunctionCallExpr; const AArgs: TArray<TValue>): TValue;
 var
-  m: TRttiMethod;
+  LMethod: TRttiMethod;
 begin
   // there should always be at least one element
-  m := AFuncCall.FunctionInfo[0];
+  LMethod := AFuncCall.FunctionInfo[0];
   if length(AFuncCall.FunctionInfo) > 1 then
   begin
-    for m in AFuncCall.FunctionInfo do
-      if length(m.GetParameters) = length(AArgs) then
+    for LMethod in AFuncCall.FunctionInfo do
+      if length(LMethod.GetParameters) = length(AArgs) then
         break;
   end;
-  if length(m.GetParameters) = 0 then
-    result := m.Invoke(nil, [])
+  if length(LMethod.GetParameters) = 0 then
+    result := LMethod.Invoke(nil, [])
   else
-    result := m.Invoke(nil, GetArgs(m, AArgs));
+    result := LMethod.Invoke(nil, GetArgs(LMethod, AArgs));
   if result.IsType<TValue> then
     result := result.AsType<TValue>();
 end;
@@ -773,26 +780,26 @@ end;
 
 function TEvaluationTemplateVisitor.Invoke(AExpr: IMethodCallExpr; const AObject: TValue; const AArgs: TArray<TValue>): TValue;
 var
-  RttiType: TRttiType;
+  LObjType: TRttiType;
 begin
   if AExpr.RttiMethod = nil then
   begin
-    RttiType := GRttiContext.GetType(AObject.typeinfo);
-    AExpr.RttiMethod := RttiType.GetMethod(AExpr.Method);
+    LObjType := GRttiContext.GetType(AObject.typeinfo);
+    AExpr.RttiMethod := LObjType.GetMethod(AExpr.Method);
   end;
   result := AExpr.RttiMethod.Invoke(AObject, AArgs);
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(AExpr: IMethodCallExpr);
 var
-  obj: TValue;
-  args: TArray<TValue>;
+  LObj: TValue;
+  LArgs: TArray<TValue>;
 begin
   acceptvisitor(AExpr.ObjectExpr, self);
-  obj := FEvalStack.pop;
-  args := ExprListArgs(AExpr.exprlist);
+  LObj := FEvalStack.pop;
+  LArgs := ExprListArgs(AExpr.exprlist);
   try
-    FEvalStack.push(Invoke(AExpr, obj, args));
+    FEvalStack.push(Invoke(AExpr, LObj, LArgs));
   except
     on e: exception do
       RaiseError(Position(AExpr), e.Message);
@@ -807,42 +814,45 @@ end;
 
 procedure TEvaluationTemplateVisitor.Visit(AStmt: IProcessTemplateStmt);
 var
-  prevState: boolean;
+  LPrevNewLineState: boolean;
 begin
-  prevState := FStreamWriter.IgnoreNewLine;
-  FStreamWriter.IgnoreNewLine := not AStmt.AllowNewLine;
-  acceptvisitor(AStmt.Container, self);
-  FStreamWriter.IgnoreNewLine := prevState;
+  LPrevNewLineState := FStreamWriter.IgnoreNewLine;
+  try
+    FStreamWriter.IgnoreNewLine := not AStmt.AllowNewLine;
+    acceptvisitor(AStmt.Container, self);
+  finally
+    FStreamWriter.IgnoreNewLine := LPrevNewLineState;
+  end;
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(AStmt: IDefineTemplateStmt);
 var
-  Name: TValue;
+  LTemplateName: TValue;
 begin
   acceptvisitor(AStmt.Name, self);
-  name := FEvalStack.pop;
-  AssertString(Position(AStmt), name);
-  FLocalTemplates.AddOrSetValue(AsString(name), AStmt.Container);
+  LTemplateName := FEvalStack.pop;
+  AssertString(Position(AStmt), LTemplateName);
+  FLocalTemplates.AddOrSetValue(AsString(LTemplateName), AStmt.Container);
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(AStmt: IWithStmt);
 
 var
-  StackFrame: TStackFrame;
+  LStackFrame: TStackFrame;
 
 procedure ScanClass(const ARttiType: TRttiType; const AClass: TValue); forward;
 procedure ScanRecord(const ARttiType: TRttiType; const ARecord: TValue); forward;
 
   procedure ScanValue(const ARecord: TValue);
   var
-    RttiType: TRttiType;
+    LRttiType: TRttiType;
   begin
-    RttiType := GRttiContext.GetType(ARecord.typeinfo);
-    case RttiType.TypeKind of
+    LRttiType := GRttiContext.GetType(ARecord.typeinfo);
+    case LRttiType.TypeKind of
       tkClass, tkClassRef:
-        ScanClass(RttiType, ARecord);
+        ScanClass(LRttiType, ARecord);
       tkrecord:
-        ScanRecord(RttiType, ARecord);
+        ScanRecord(LRttiType, ARecord);
     else
       raise exception.Create('StackFrame must be defined on a class or record.');
     end;
@@ -850,42 +860,41 @@ procedure ScanRecord(const ARttiType: TRttiType; const ARecord: TValue); forward
 
   procedure ScanClass(const ARttiType: TRttiType; const AClass: TValue);
   var
-    field: TRttiField;
-    prop: TRttiProperty;
-    obj: TObject;
+    LField: TRttiField;
+    LProperty: TRttiProperty;
+    LObj: TObject;
   begin
-    obj := AClass.AsObject;
-
-    if PopulateStackFrame(StackFrame, ARttiType, AClass) then
+    LObj := AClass.AsObject;
+    if PopulateStackFrame(LStackFrame, ARttiType, AClass) then
       exit;
     // we can't do anything on generic collections. we can loop using _ if we need to do anything.
-    if obj.ClassType.QualifiedClassName.StartsWith('System.Generics.Collections') then
+    if LObj.ClassType.QualifiedClassName.StartsWith('System.Generics.Collections') then
       exit;
-    for field in ARttiType.GetFields do
-      StackFrame[field.Name] := field.GetValue(obj);
-    for prop in ARttiType.GetProperties do
-      StackFrame[prop.Name] := prop.GetValue(obj);
+    for LField in ARttiType.GetFields do
+      LStackFrame[LField.Name] := LField.GetValue(LObj);
+    for LProperty in ARttiType.GetProperties do
+      LStackFrame[LProperty.Name] := LProperty.GetValue(LObj);
   end;
 
   procedure ScanRecord(const ARttiType: TRttiType; const ARecord: TValue);
   var
-    field: TRttiField;
-    obj: pointer;
+    LField: TRttiField;
+    LRecordPtr: pointer;
   begin
-    obj := ARecord.GetReferenceToRawData;
-    for field in ARttiType.GetFields do
-      StackFrame[field.Name] := field.GetValue(obj);
+    LRecordPtr := ARecord.GetReferenceToRawData;
+    for LField in ARttiType.GetFields do
+      LStackFrame[LField.Name] := LField.GetValue(LRecordPtr);
   end;
 
 var
-  Expr: TValue;
+  LExpr: TValue;
 begin
   acceptvisitor(AStmt.Expr, self);
-  Expr := FEvalStack.pop;
-  StackFrame := FStackFrames.peek.Clone;
-  FStackFrames.push(StackFrame);
+  LExpr := FEvalStack.pop;
+  LStackFrame := FStackFrames.peek.Clone;
+  FStackFrames.push(LStackFrame);
 
-  ScanValue(Expr);
+  ScanValue(LExpr);
   acceptvisitor(AStmt.Container, self);
 
   FStackFrames.pop;
@@ -893,30 +902,25 @@ end;
 
 procedure TEvaluationTemplateVisitor.Visit(AStmt: IRequireStmt);
 var
-  exprs: TArray<TValue>;
-  InputType: string;
-  i: integer;
+  LExprs: TArray<TValue>;
+  LInputType: string;
+  LIndex: integer;
 begin
-  InputType := GRttiContext.GetType(FStackFrames.peek['_'].typeinfo).Name.ToLower;
-  exprs := ExprListArgs(AStmt.exprlist);
-  if length(exprs) = 0 then
+  LInputType := GRttiContext.GetType(FStackFrames.peek['_'].typeinfo).Name.ToLower;
+  LExprs := ExprListArgs(AStmt.exprlist);
+  if length(LExprs) = 0 then
     exit;
-  for i := 0 to length(exprs) do
+  for LIndex := 0 to high(LExprs) do
   begin
-    if AsString(exprs[i]).ToLower = InputType then
+    if AsString(LExprs[LIndex]).ToLower = LInputType then
       exit;
   end;
   RaiseError(Position(AStmt), 'Input of required tpe not found');
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(AExpr: IArrayExpr);
-var
-  exprs: TArray<TValue>;
-  v: TValue;
 begin
-  exprs := ExprListArgs(AExpr.exprlist);
-  v := TValue.From < TArray < TValue >> (exprs);
-  FEvalStack.push(v);
+  FEvalStack.push(TValue.From < TArray < TValue >> (ExprListArgs(AExpr.exprlist)));
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(AExpr: ITernaryExpr);
@@ -965,25 +969,25 @@ end;
 
 procedure TNewLineStreamWriter.Write(const AString: string);
 var
-  c: char;
+  LChar: char;
 
   procedure Append(const ANext: TNLState);
   begin
-    FBuffer.Append(c);
+    FBuffer.Append(LChar);
     FState := ANext;
   end;
 
 begin
-  for c in AString do
+  for LChar in AString do
   begin
     case FState of
       nlsStartOfLine:
-        if IsWhitespace(c) then
+        if IsWhitespace(LChar) then
         begin
           if not(eoTrimLines in FOptions) then
             Append(nlsHasText);
         end
-        else if IsNewline(c) then
+        else if IsNewline(LChar) then
         begin
           if not FIgnoreNewline and not(eoStripRecurringNewlines in FOptions) then
           begin
@@ -994,9 +998,9 @@ begin
         else
           Append(nlsHasText);
       nlsHasText:
-        if IsWhitespace(c) then
+        if IsWhitespace(LChar) then
           Append(nlsHasText)
-        else if IsNewline(c) then
+        else if IsNewline(LChar) then
         begin
           if not FIgnoreNewline then
           begin
@@ -1009,12 +1013,12 @@ begin
         else
           Append(nlsHasText);
       nlsNewLine:
-        if IsWhitespace(c) then
+        if IsWhitespace(LChar) then
         begin
           if not(eoTrimLines in FOptions) then
             Append(nlsNewLine);
         end
-        else if IsNewline(c) then
+        else if IsNewline(LChar) then
         begin
           if not FIgnoreNewline and not(eoStripRecurringNewlines in FOptions) then
           begin

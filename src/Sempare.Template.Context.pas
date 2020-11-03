@@ -138,6 +138,11 @@ type
     procedure ApplyTo(const AScope: TStackFrame);
   end;
 
+  TUTF8WithoutPreambleEncoding = class(TUTF8Encoding)
+  public
+    function GetPreamble: TBytes; override;
+  end;
+
 function CreateTemplateContext(const AOptions: TTemplateEvaluationOptions = []): ITemplateContext;
 
 var
@@ -146,15 +151,7 @@ var
   GDefaultCloseTag: string = '%>';
   GNewLine: string = #13#10;
   GDefaultEncoding: TEncoding;
-
-type
-  TUTF8WithoutPreambleEncoding = class(TUTF8Encoding)
-  public
-    function GetPreamble: TBytes; override;
-  end;
-
-var
-  UTF8WithoutPreambleEncoding: TUTF8WithoutPreambleEncoding;
+  GUTF8WithoutPreambleEncoding: TUTF8WithoutPreambleEncoding;
 
 implementation
 
@@ -248,12 +245,10 @@ end;
 
 procedure TTemplateContext.ApplyTo(const AScope: TStackFrame);
 var
-  p: TPair<string, TValue>;
+  LPair: TPair<string, TValue>;
 begin
-  for p in FVariables do
-  begin
-    AScope[p.Key] := p.Value;
-  end;
+  for LPair in FVariables do
+    AScope[LPair.Key] := LPair.Value;
 end;
 
 constructor TTemplateContext.Create(const AOptions: TTemplateEvaluationOptions);
@@ -471,12 +466,12 @@ end;
 initialization
 
 // setup our global
-UTF8WithoutPreambleEncoding := TUTF8WithoutPreambleEncoding.Create;
+GUTF8WithoutPreambleEncoding := TUTF8WithoutPreambleEncoding.Create;
 
 GDefaultEncoding := TEncoding.UTF8WithoutBOM;
 
 finalization
 
-UTF8WithoutPreambleEncoding.Free;
+GUTF8WithoutPreambleEncoding.Free;
 
 end.

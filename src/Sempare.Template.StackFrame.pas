@@ -101,32 +101,33 @@ end;
 
 function TStackFrame.GetItem(const AKey: string): TValue;
 var
-  l: string;
-  StackFrame: TStackFrame;
+  LKey: string;
+  LStackFrame: TStackFrame;
 begin
-  l := AKey.ToLower;
-  StackFrame := FindStackFrame(l);
-  if (StackFrame <> nil) then
-    StackFrame.FVariables.TryGetValue(l, result);
+  result := nil;
+  LKey := AKey.ToLower;
+  LStackFrame := FindStackFrame(LKey);
+  if (LStackFrame <> nil) then
+    LStackFrame.FVariables.TryGetValue(LKey, result);
 end;
 
 function TStackFrame.Root: TValue;
 begin
-  result := GetItem('_');
+  exit( GetItem('_'));
 end;
 
 procedure TStackFrame.SetItem(const AKey: string; const Value: TValue);
 
 var
-  l: string;
-  StackFrame: TStackFrame;
+  LKey: string;
+  LStackFrame: TStackFrame;
 begin
-  l := AKey.ToLower;
-  StackFrame := FindStackFrame(l);
-  if StackFrame <> nil then
-    StackFrame.FVariables.AddOrSetValue(l, Value)
+  LKey := AKey.ToLower;
+  LStackFrame := FindStackFrame(LKey);
+  if LStackFrame <> nil then
+    LStackFrame.FVariables.AddOrSetValue(LKey, Value)
   else
-    FVariables.AddOrSetValue(l, Value);
+    FVariables.AddOrSetValue(LKey, Value);
 end;
 
 end.

@@ -95,10 +95,10 @@ end;
 
 procedure TBaseTemplateVisitor.Visit(AExprList: IExprList);
 var
-  i: integer;
+  LIndex: integer;
 begin
-  for i := 0 to AExprList.Count - 1 do
-    AcceptVisitor(AExprList[i], self);
+  for LIndex := 0 to AExprList.Count - 1 do
+    AcceptVisitor(AExprList[LIndex], self);
 end;
 
 procedure TBaseTemplateVisitor.Visit(AStmt: IStmt);
@@ -148,10 +148,10 @@ end;
 
 procedure TBaseTemplateVisitor.Visit(AContainer: ITemplate);
 var
-  i: integer;
+  LIdx: integer;
 begin
-  for i := 0 to AContainer.Count - 1 do
-    AContainer.Items[i].Accept(self);
+  for LIdx := 0 to AContainer.Count - 1 do
+    AContainer.Items[LIdx].Accept(self);
 end;
 
 procedure TBaseTemplateVisitor.Visit(AStmt: IAssignStmt);

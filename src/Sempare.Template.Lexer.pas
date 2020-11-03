@@ -220,15 +220,15 @@ end;
 
 function TTemplateLexer.GetScriptToken: ITemplateSymbol;
 var
-  Line: integer;
-  Position: integer;
+  LLine: integer;
+  LPosition: integer;
 
   function MakePosition: IPosition;
   begin
     if eoNoPosition in FOptions then
       Result := nil
     else
-      Result := TPosition.Create(Ffilename, Line, Position);
+      Result := TPosition.Create(Ffilename, LLine, LPosition);
   end;
 
   function SimpleToken(const ASymbol: TTemplateSymbol): ITemplateSymbol;
@@ -259,8 +259,8 @@ const
 {$WARN WIDECHAR_REDUCED ON}
 begin
   FAccumulator.Clear;
-  Line := FLine;
-  Position := Fpos;
+  LLine := FLine;
+  LPosition := Fpos;
   while not Fcurrent.Eof do
   begin
 {$WARN WIDECHAR_REDUCED OFF}
@@ -398,16 +398,16 @@ end;
 
 function TTemplateLexer.GetTextToken: ITemplateSymbol;
 var
-  Line: integer;
-  Position: integer;
-  last, cur: Char;
+  LLine: integer;
+  LPosition: integer;
+  LLastChar, LCurChar: Char;
 
   function MakePosition: IPosition;
   begin
     if eoNoPosition in FOptions then
       Result := nil
     else
-      Result := TPosition.Create(Ffilename, Line, Position);
+      Result := TPosition.Create(Ffilename, LLine, LPosition);
   end;
 
   function SimpleToken(const ASymbol: TTemplateSymbol): ITemplateSymbol;
@@ -425,9 +425,9 @@ var
 
 begin
   FAccumulator.Clear;
-  Line := FLine;
-  Position := Fpos;
-  last := #0;
+  LLine := FLine;
+  LPosition := Fpos;
+  LLastChar := #0;
   if Fcurrent.Input = #0 then
     GetInput;
   while not Fcurrent.Eof do
@@ -441,15 +441,15 @@ begin
     end
     else
     begin
-      cur := Fcurrent.Input;
-      if (eoConvertTabsToSpaces in FOptions) and (cur = #9) then
-        cur := ' ';
-      if (eoStripRecurringSpaces in FOptions) and (last = ' ') and (cur = ' ') then
+      LCurChar := Fcurrent.Input;
+      if (eoConvertTabsToSpaces in FOptions) and (LCurChar = #9) then
+        LCurChar := ' ';
+      if (eoStripRecurringSpaces in FOptions) and (LLastChar = ' ') and (LCurChar = ' ') then
         GetInput
       else
       begin
-        FAccumulator.Append(cur);
-        last := cur;
+        FAccumulator.Append(LCurChar);
+        LLastChar := LCurChar;
         GetInput;
       end;
     end;
@@ -527,14 +527,14 @@ end;
 
 procedure TTemplateValueSymbol.SetValue(const Avalue: string);
 var
-  token: TTemplateSymbol;
+  LSymbol: TTemplateSymbol;
 begin
   FValue := Avalue;
   if GetToken <> VsID then
     Exit;
-  if GKeywords.TryGetValue(Avalue, token) then
+  if GKeywords.TryGetValue(Avalue, LSymbol) then
   begin
-    SetToken(token);
+    SetToken(LSymbol);
     Exit;
   end;
 end;

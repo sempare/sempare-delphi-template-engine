@@ -145,31 +145,31 @@ end;
 
 function Position(AStmt: IStmt): IPosition; overload;
 var
-  symbol: IPositional;
+  LSymbol: IPositional;
 begin
-  AStmt.QueryInterface(IPositional, symbol);
-  result := symbol.Position;
+  AStmt.QueryInterface(IPositional, LSymbol);
+  result := LSymbol.Position;
 end;
 
 function Position(AExpr: IExpr): IPosition; overload;
 var
-  symbol: IPositional;
+  LSymbol: IPositional;
 begin
-  AExpr.QueryInterface(IPositional, symbol);
-  result := symbol.Position;
+  AExpr.QueryInterface(IPositional, LSymbol);
+  result := LSymbol.Position;
 end;
 
 function Position(APositional: IPosition): string; overload;
 var
-  Name: string;
+  LName: string;
 begin
   if APositional = nil then
     exit('');
   if APositional.FileName = '' then
-    name := ''
+    LName := ''
   else
-    name := APositional.FileName + ':';
-  result := format('%s%d[%d]', [name, APositional.Line, APositional.Pos]);
+    LName := APositional.FileName + ':';
+  result := format('%s%d[%d]', [LName, APositional.Line, APositional.Pos]);
 end;
 
 procedure RaiseError(APositional: IPosition; const AFormat: string; const AArgs: array of const); overload;

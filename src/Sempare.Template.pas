@@ -145,12 +145,12 @@ end;
 
 class procedure Template.Eval<T>(AContext: ITemplateContext; ATemplate: ITemplate; const AValue: T; const AStream: TStream);
 var
-  v: TTemplateValue;
+  LValue: TTemplateValue;
 begin
-  v := TTemplateValue.From<T>(AValue);
+  LValue := TTemplateValue.From<T>(AValue);
   if typeinfo(T) = typeinfo(TTemplateValue) then
-    v := v.AsType<TTemplateValue>();
-  AcceptVisitor(ATemplate, TEvaluationTemplateVisitor.Create(AContext, v, AStream));
+    LValue := LValue.AsType<TTemplateValue>();
+  AcceptVisitor(ATemplate, TEvaluationTemplateVisitor.Create(AContext, LValue, AStream));
 end;
 
 class procedure Template.Eval(ATemplate: ITemplate; const AStream: TStream; const AOptions: TTemplateEvaluationOptions);
@@ -190,11 +190,11 @@ end;
 
 class function Template.PrettyPrint(ATemplate: ITemplate): string;
 var
-  v: ITemplateVisitor;
+  LVisitor: ITemplateVisitor;
 begin
-  v := TPrettyPrintTemplateVisitor.Create();
-  AcceptVisitor(ATemplate, v);
-  result := TPrettyPrintTemplateVisitor(v).ToString;
+  LVisitor := TPrettyPrintTemplateVisitor.Create();
+  AcceptVisitor(ATemplate, LVisitor);
+  exit(TPrettyPrintTemplateVisitor(LVisitor).ToString);
 end;
 
 class procedure Template.Eval(AContext: ITemplateContext; const ATemplate: string; const AStream: TStream);
@@ -220,13 +220,13 @@ type
   TFStream = TFileStream;
 {$ENDIF}
 var
-  fs: TFStream;
+  LFileStream: TFStream;
 begin
-  fs := TFStream.Create(AFile, fmOpenRead);
+  LFileStream := TFStream.Create(AFile, fmOpenRead);
   try
-    result := Parse(AContext, fs);
+    exit(Parse(AContext, LFileStream));
   finally
-    fs.Free;
+    LFileStream.Free;
   end;
 end;
 
@@ -267,25 +267,25 @@ end;
 
 class function Template.Eval<T>(AContext: ITemplateContext; ATemplate: ITemplate; const AValue: T): string;
 var
-  s: TStringStream;
+  LStringStream: TStringStream;
 begin
-  s := TStringStream.Create('', AContext.Encoding, false);
+  LStringStream := TStringStream.Create('', AContext.Encoding, false);
   try
-    Eval(AContext, ATemplate, AValue, s);
-    result := s.DataString;
+    Eval(AContext, ATemplate, AValue, LStringStream);
+    exit(LStringStream.DataString);
   finally
-    s.Free;
+    LStringStream.Free;
   end;
 end;
 
 class function Template.Eval<T>(AContext: ITemplateContext; const ATemplate: string; const AValue: T): string;
 begin
-  result := Eval(AContext, Template.Parse(AContext, ATemplate), AValue);
+  exit(Eval(AContext, Template.Parse(AContext, ATemplate), AValue));
 end;
 
 class function Template.Eval(AContext: ITemplateContext; ATemplate: ITemplate): string;
 begin
-  result := Eval(AContext, ATemplate, GEmpty);
+  exit(Eval(AContext, ATemplate, GEmpty));
 end;
 
 class procedure Template.Eval(AContext: ITemplateContext; ATemplate: ITemplate; const AStream: TStream);
@@ -297,7 +297,7 @@ end;
 
 class function TEncodingHelper.GetUTF8WithoutBOM: TEncoding;
 begin
-  result := UTF8WithoutPreambleEncoding;
+  exit(GUTF8WithoutPreambleEncoding);
 end;
 
 initialization
