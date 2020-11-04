@@ -6,7 +6,7 @@
  *                                    |_|                                                           *
  ****************************************************************************************************
  *                                                                                                  *
- *                        Sempare Templating Engine                                                 *
+ *                          Sempare Template Engine                                                 *
  *                                                                                                  *
  *                                                                                                  *
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
@@ -43,6 +43,9 @@ uses
   Sempare.Template.JSON,
   Sempare.Template.StackFrame,
   Sempare.Template.AST;
+
+type
+  ETemplateRTTI = class(ETemplate);
 
 function AsBoolean(const AValue: TValue): boolean;
 function AsString(const AValue: TValue): string;
@@ -95,6 +98,7 @@ uses
   System.Math,
   Data.DB,
   System.Generics.Collections,
+  Sempare.Template.ResourceStrings,
   Sempare.Template.Common;
 
 var
@@ -156,10 +160,10 @@ var
   begin
     LObjectGetEnumMethod := TRightType.GetMethod('GetEnumerator');
     if LObjectGetEnumMethod = nil then
-      RaiseError(APosition, 'GetEnumerator not found on object.');
+      RaiseError(APosition, SGetEnumeratorNotFoundOnObject);
     LValue := LObjectGetEnumMethod.Invoke(ARight.AsObject, []);
     if LValue.IsEmpty then
-      RaiseError(APosition, 'Value is not enumerable');
+      RaiseError(APosition, SValueIsNotEnumerable);
     LEnumObject := LValue.AsObject;
     try
       TRightType := GRttiContext.GetType(LEnumObject.ClassType);
@@ -190,7 +194,7 @@ var
   begin
     LArrayType := TRightType as TRttiArrayType;
     if LArrayType.DimensionCount > 1 then
-      RaiseError(APosition, 'Only one dimensional arrays are supported.');
+      RaiseError(APosition, SOnlyOneDimensionalArraysAreSupported);
     for LIndex := 0 to ARight.GetArrayLength - 1 do
     begin
       LElementValue := ARight.GetArrayElement(LIndex);
@@ -225,7 +229,7 @@ var
 begin
   result := false;
   if not isEnumerable(ARight) then
-    RaiseError(APosition, 'Expression must be enumerable');
+    RaiseError(APosition, SValueIsNotEnumerable);
 
   TRightType := GRttiContext.GetType(ARight.TypeInfo);
 
@@ -237,7 +241,7 @@ begin
     tkDynArray:
       VisitDynArray;
   else
-    RaiseError(APosition, 'GetEnumerator not found on object.');
+    RaiseError(APosition, SGetEnumeratorNotFoundOnObject);
   end;
 end;
 
@@ -521,7 +525,7 @@ begin
       if not AFound then
       begin
         if ARaiseIfMissing then
-          RaiseError(APosition, 'Cannot dereference ''%s'' in %s', [AsString(LDerefValue), LDictionaryType.QualifiedName]);
+          RaiseError(APosition, SCannotDereferenceValueOnObject, [AsString(LDerefValue), LDictionaryType.QualifiedName]);
         exit('');
       end;
     end;
@@ -598,7 +602,7 @@ begin
   if not JsonValueToTValue(LJsonKeyVal, result) then
   begin
     if ARaiseIfMissing then
-      RaiseError(APosition, 'Cannot dereference %s in dictionary', [LJsonKey]);
+      RaiseError(APosition, SCannotDereferenceValueOnObject, [LJsonKey, SDictionary]);
     AFound := false;
     exit('');
   end;
@@ -623,7 +627,7 @@ begin
     on e: Exception do
     begin
       if ARaiseIfMissing then
-        RaiseError(APosition, 'Cannot dereference %s in dataset', [LKey]);
+        RaiseError(APosition, SCannotDereferenceValueOnObject, [LKey, SDataSet]);
       AFound := false;
       exit('');
     end;
@@ -651,7 +655,7 @@ function Deref(APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfM
       LMin := (LArrayDimType as TRttiOrdinalType).MinValue;
       LMax := (LArrayDimType as TRttiOrdinalType).MaxValue;
       if (LIndex < LMin) or (LIndex > LMax) then
-        raise Exception.Create('Index is out of bounds');
+        raise ETemplateRTTI.Create(SIndexOutOfBounds);
     end;
     AFound := true;
     exit(AObj.GetArrayElement(LIndex - LMin));
@@ -709,54 +713,54 @@ begin
   else
     begin
       if ARaiseIfMissing then
-        RaiseError(APosition, 'Cannot dereference variable');
+        RaiseError(APosition, SCannotDereferenceValiable);
       exit('');
     end;
   end;
   if not LVarFound and ARaiseIfMissing then
-    RaiseError(APosition, 'Cannot dereference variable');
+    RaiseError(APosition, SCannotDereferenceValiable);
 end;
 
 procedure AssertBoolean(APositional: IPosition; const ALeft: TValue); overload;
 begin
   if isBool(ALeft) then
     exit;
-  RaiseError(APositional, 'Boolean type expected');
+  RaiseError(APositional, SBooleanTypeExpected);
 end;
 
 procedure AssertBoolean(APositional: IPosition; const ALeft: TValue; const ARight: TValue); overload;
 begin
   if isBool(ALeft) and isBool(ARight) then
     exit;
-  RaiseError(APositional, 'Boolean types expected');
+  RaiseError(APositional, SBooleanTypeExpected);
 end;
 
 procedure AssertNumeric(APositional: IPosition; const ALeft: TValue); overload;
 begin
   if isNumLike(ALeft) then
     exit;
-  RaiseError(APositional, 'Numeric type expected');
+  RaiseError(APositional, SNumericTypeExpected);
 end;
 
 procedure AssertNumeric(APositional: IPosition; const ALeft: TValue; const ARight: TValue); overload;
 begin
   if isNumLike(ALeft) and isNumLike(ARight) then
     exit;
-  RaiseError(APositional, 'Numeric types expected');
+  RaiseError(APositional, SNumericTypeExpected);
 end;
 
 procedure AssertString(APositional: IPosition; const AValue: TValue);
 begin
   if isStrLike(AValue) then
     exit;
-  RaiseError(APositional, 'String type expected');
+  RaiseError(APositional, SStringTypeExpected);
 end;
 
 procedure AssertArray(APositional: IPosition; const AValue: TValue);
 begin
   if isEnumerable(AValue) then
     exit;
-  RaiseError(APositional, 'Enumerable type expected');
+  RaiseError(APositional, SEnumerableTypeExpected);
 end;
 
 function MatchDictionary(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;

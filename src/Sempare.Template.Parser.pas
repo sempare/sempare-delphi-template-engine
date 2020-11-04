@@ -6,7 +6,7 @@
  *                                    |_|                                                           *
  ****************************************************************************************************
  *                                                                                                  *
- *                        Sempare Templating Engine                                                 *
+ *                          Sempare Template Engine                                                 *
  *                                                                                                  *
  *                                                                                                  *
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
@@ -40,6 +40,8 @@ uses
   Sempare.Template.Context;
 
 type
+  ETemplateParser = class(ETemplate);
+
   ITemplateParser = interface
     ['{DAF8A08D-9158-4D2C-9E76-BE80E9DA50A3}']
 
@@ -56,6 +58,7 @@ uses
   System.Rtti,
   System.Generics.Collections,
   Sempare.Template,
+  Sempare.Template.ResourceStrings,
   Sempare.Template.PrettyPrint,
   Sempare.Template.Evaluate,
   Sempare.Template.Common,
@@ -368,7 +371,7 @@ type
     constructor Create(APosition: IPosition; const AUnaryOp: TUnaryOp; ACondition: IExpr);
   end;
 
-  EEndOfBlock = class(Exception);
+  EEndOfBlock = class(ETemplate);
 
   TTemplateSymbolSet = set of TTemplateSymbol;
 
@@ -472,7 +475,7 @@ begin
     vsin:
       exit(foIn);
   else
-    raise EParserError.Createfmt('Forop not supported: %s', [TemplateSymbolToString(ASymbol)]);
+    raise ETemplateParser.Createfmt(SForOpNotSupported, [TemplateSymbolToString(ASymbol)]);
   end;
 end;
 
@@ -753,9 +756,7 @@ begin
             else if isStrLike(AsValue(result)) and isStrLike(AsValue(LRightExpr)) then
               exit(TValueExpr.Create(LSymbol.Position, asString(AsValue(result)) + asString(AsValue(LRightExpr))))
             else if isStrLike(AsValue(result)) and isNumLike(AsValue(LRightExpr)) then
-              exit(TValueExpr.Create(LSymbol.Position, asString(AsValue(result)) + floattostr(asnum(AsValue(LRightExpr)))))
-            else
-              RaiseError(LSymbol.Position, 'Evaluation not supported.');
+              exit(TValueExpr.Create(LSymbol.Position, asString(AsValue(result)) + floattostr(asnum(AsValue(LRightExpr)))));
           end;
         boMinus:
           exit(TValueExpr.Create(LSymbol.Position, asnum(AsValue(result)) - asnum(AsValue(LRightExpr))));
@@ -919,7 +920,7 @@ begin
   match(vsBreak);
   match(VsEndScript);
   if not(poInLoop in FOptions) then
-    RaiseError(LSymbol.Position, 'Continue should be in a for/while Stmt');
+    RaiseError(LSymbol.Position, SContinueShouldBeInALoop);
   exit(TBreakStmt.Create(LSymbol.Position));
 end;
 
@@ -941,7 +942,7 @@ begin
   match(vsContinue);
   match(VsEndScript);
   if not(poInLoop in FOptions) then
-    RaiseError(LSymbol.Position, 'Continue should be in a for/while Stmt');
+    RaiseError(LSymbol.Position, SContinueShouldBeInALoop);
   exit(TContinueStmt.Create(LSymbol.Position));
 end;
 
@@ -955,7 +956,7 @@ var
 begin
   LSymbol := FLookahead;
   if not(poAllowElIf in FOptions) then
-    RaiseError(LSymbol.Position, 'ElIF expected');
+    RaiseError(LSymbol.Position, SElIfExpected);
 
   LOptions := Preserve.Value<TParserOptions>(FOptions, FOptions + [poAllowElse, poHasElse, poAllowEnd]);
 
@@ -1002,7 +1003,7 @@ begin
   LSymbol := FLookahead;
   // NOTE: we do not match anything as we want lookahead functions to continue to work
   if not(poAllowEnd in FOptions) then
-    RaiseError(LSymbol.Position, 'End not expected');
+    RaiseError(LSymbol.Position, SEndNotExpected);
   exit(TEndStmt.Create(LSymbol.Position));
 end;
 
@@ -1129,7 +1130,7 @@ begin
     if FLookahead.Token in [vsDownto, vsTo] then
       match(FLookahead.Token)
     else
-      RaiseError(LSymbol.Position, 'downto/to token expected in for loop.');
+      RaiseError(LSymbol.Position, SUnexpectedToken);
     LHighValueExpr := ruleExpression();
   end;
 
@@ -1154,7 +1155,7 @@ var
 begin
   LSymbol := FLookahead;
   if not FContext.TryGetFunction(ASymbol, LFunctions) then
-    RaiseError(LSymbol.Position, 'Function %s not registered in context.', [ASymbol]);
+    RaiseError(LSymbol.Position, SFunctionNotRegisteredInContext, [ASymbol]);
   match(VsOpenRoundBracket);
   result := TFunctionCallExpr.Create(LSymbol.Position, LFunctions, ruleExprList);
   match(VsCloseRoundBracket);
@@ -1317,7 +1318,7 @@ begin
     FLookahead := FLexer.GetToken;
     exit;
   end;
-  RaiseError(LSymbol.Position, format('Parsing error expecting %s', [TemplateSymbolToString(ASymbol)]));
+  RaiseError(LSymbol.Position, format(SParsingErrorExpecting, [TemplateSymbolToString(ASymbol)]));
 end;
 
 procedure TTemplateParser.match(ASymbol: ITemplateSymbol);
@@ -1341,7 +1342,7 @@ begin
     FLookahead := FLexer.GetToken;
     exit;
   end;
-  RaiseError(LSymbol.Position, format('Parsing error expecting %s', [TemplateSymbolToString(ASymbol)]));
+  RaiseError(LSymbol.Position, format(SParsingErrorExpecting, [TemplateSymbolToString(ASymbol)]));
 end;
 
 function TTemplateParser.Parse(const AStream: TStream; const AManagedStream: boolean): ITemplate;

@@ -168,6 +168,7 @@
         <DCCReference Include="src\Sempare.Template.AST.pas"/>
         <DCCReference Include="src\Sempare.Template.pas"/>
         <DCCReference Include="src\Sempare.Template.JSON.pas"/>
+        <DCCReference Include="src\Sempare.Template.ResourceStrings.pas"/>
         <RcCompile Include="src\TSempareTemplate.rc">
             <Form>TSempareTemplate.res</Form>
         </RcCompile>

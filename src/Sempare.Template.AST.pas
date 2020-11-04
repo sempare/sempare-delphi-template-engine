@@ -6,7 +6,7 @@
  *                                    |_|                                                           *
  ****************************************************************************************************
  *                                                                                                  *
- *                        Sempare Templating Engine                                                 *
+ *                          Sempare Template Engine                                                 *
  *                                                                                                  *
  *                                                                                                  *
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
@@ -35,9 +35,12 @@ unit Sempare.Template.AST;
 interface
 
 uses
+  System.SysUtils,
   System.Rtti;
 
 type
+  ETemplate = class(Exception);
+
   TForOp = ( //
     foTo, foDownto, // for var := low to high
     foIn // for var in enumerable

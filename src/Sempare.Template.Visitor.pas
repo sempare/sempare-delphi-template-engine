@@ -6,7 +6,7 @@
  *                                    |_|                                                           *
  ****************************************************************************************************
  *                                                                                                  *
- *                        Sempare Templating Engine                                                 *
+ *                          Sempare Template Engine                                                 *
  *                                                                                                  *
  *                                                                                                  *
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
@@ -39,6 +39,8 @@ uses
   Sempare.Template.Common;
 
 type
+  ETemplateVisitor = class(ETemplate);
+
   TBaseTemplateVisitor = class(TInterfacedObject, ITemplateVisitor)
   public
     procedure Visit(AContainer: ITemplate); overload; virtual;
@@ -79,6 +81,7 @@ type
 implementation
 
 uses
+  Sempare.Template.ResourceStrings,
   System.SysUtils;
 
 { TBaseTemplateVisitor }
@@ -103,7 +106,7 @@ end;
 
 procedure TBaseTemplateVisitor.Visit(AStmt: IStmt);
 begin
-  raise Exception.Create('Statment not supported in visitor');
+  raise ETemplateVisitor.Create(SStatementNotSupportedInVisitor);
 end;
 
 procedure TBaseTemplateVisitor.Visit(AContainer: ITemplateVisitorHost);
@@ -113,7 +116,7 @@ end;
 
 procedure TBaseTemplateVisitor.Visit(AExpr: IExpr);
 begin
-  raise Exception.Create('Expression not supported in visitor');
+  raise ETemplateVisitor.Create(SExpressionNotSupportedInVisitor);
 end;
 
 procedure TBaseTemplateVisitor.Visit(AExpr: IBinopExpr);

@@ -30,80 +30,47 @@
  * limitations under the License.                                                                   *
  *                                                                                                  *
  *************************************************************************************************%*)
-unit Sempare.Template.Test.Arr;
+unit Sempare.Template.ResourceStrings;
 
 interface
 
-uses
-  DUnitX.TestFramework;
-
-type
-
-  [TestFixture]
-  TTestTemplateArr = class
-
-  public
-    [Test]
-    procedure TestArray;
-
-    [Test]
-    procedure TestDerefArray;
-
-    [Test]
-    procedure TestDerefDynArray;
-
-    [Test]
-    procedure TestDynArray;
-  end;
+resourcestring
+  SStatementNotSupportedInVisitor = 'Statement not supported in visitor';
+  SExpressionNotSupportedInVisitor = 'Expression not supported in visitor';
+  SIndexOutOfBounds = 'Index out of bounds';
+  SContextStartTokenMustBeTwoCharsLong = 'Context StartToken must be two characters long.';
+  SContextEndTokenMustBeTwoCharsLong = 'Context EndToken must be two characters long.';
+  SUnexpectedLexerState = 'Unexpected lexer state.';
+  STypeNotSupported = 'Type not supported.';
+  STypesAreNotOfTheSameType = 'Types are not of the same type';
+  STemplateNotFound = 'Template not found: %s';
+  SStackFrameCanOnlyBeDefinedOnAClassOrRecord = 'StackFrame must be defined on a class or record.';
+  SGetEnumeratorNotFoundOnObject = 'GetEnumerator not found on object.';
+  SValueIsNotEnumerable = 'Value is not enumerable';
+  SOnlyOneDimensionalArraysAreSupported = 'Only one dimensional arrays are supported.';
+  SCannotDereferenceValueOnObject = 'Cannot dereference ''%s'' in %s';
+  SDictionary = 'dictionary';
+  SDataset = 'dataset';
+  SCannotDereferenceValiable = 'Cannot dereference variable';
+  SCannotFindValiable = 'Cannot find variable ''%s''';
+  SBooleanTypeExpected = 'Boolean type(s) expected';
+  SNumericTypeExpected = 'Numeric type(s) expected';
+  SStringTypeExpected = 'String type expected';
+  SEnumerableTypeExpected = 'Enumerable type expected';
+  SForOpNotSupported = 'Forop not supported: %s';
+  SContinueShouldBeInALoop = 'Continue should be in a for/while Stmt';
+  SElIfExpected = 'ElIF expected';
+  SEndNotExpected = 'End not expected';
+  SUnexpectedToken = 'UnexpectedToken';
+  SFunctionNotRegisteredInContext = 'Function %s not registered in context.';
+  SParsingErrorExpecting = 'Parsing error. Expecting: %s';
+  SStringOrNumericTypesExpected = 'String or numeric types expected';
+  SBinOpNotSupported = 'Binop not supported';
+  SUnaryOpNotSupported = 'Unary op not supported';
+  SMaxRuntimeOfMsHasBeenExceeded = 'Max runtime of %dms has been exceeded.';
+  SNumberOfArgsMismatch = 'Number of arguments mismatch';
+  SInputOfRequiredTypeNotFound = 'Input of required type not found';
 
 implementation
-
-uses
-  Sempare.Template;
-
-procedure TTestTemplateArr.TestArray;
-var
-  a: array [5 .. 10] of integer;
-  i: integer;
-begin
-  for i := Low(a) to High(a) do
-    a[i] := i * 2;
-  Assert.AreEqual('5 6 7 8 9 10 ', Template.Eval('<%for i in _%><%i%> <%end%>', a));
-end;
-
-procedure TTestTemplateArr.TestDerefArray;
-
-var
-  a: array [1 .. 10] of integer;
-begin
-  a[5] := 123;
-  Assert.AreEqual('123', Template.Eval('<% _[5] %>', a));
-end;
-
-procedure TTestTemplateArr.TestDerefDynArray;
-var
-  a: tarray<integer>;
-begin
-  setlength(a, 10);
-  a[5] := 123;
-  a[6] := 321;
-  Assert.AreEqual('123', Template.Eval('<% _[5] %>', a));
-  Assert.AreEqual('321', Template.Eval('<% _[6] %>', a));
-end;
-
-procedure TTestTemplateArr.TestDynArray;
-var
-  a: tarray<integer>;
-  i: integer;
-begin
-  setlength(a, 5);
-  for i := Low(a) to High(a) do
-    a[i] := i * 2;
-  Assert.AreEqual('0 2 4 6 8 ', Template.Eval('<%for i in _%><% _[i]%> <%end%>', a));
-end;
-
-initialization
-
-TDUnitX.RegisterTestFixture(TTestTemplateArr);
 
 end.
