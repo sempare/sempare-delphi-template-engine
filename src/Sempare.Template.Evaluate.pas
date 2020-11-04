@@ -6,7 +6,7 @@
  *                                    |_|                                                           *
  ****************************************************************************************************
  *                                                                                                  *
- *                        Sempare Templating Engine                                                 *
+ *                          Sempare Template Engine                                                 *
  *                                                                                                  *
  *                                                                                                  *
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
@@ -48,6 +48,8 @@ uses
   Sempare.Template.Visitor;
 
 type
+  ETemplateEval = class(ETemplate);
+
   TLoopOption = (coContinue, coBreak);
   TLoopOptions = set of TLoopOption;
 
@@ -129,6 +131,7 @@ implementation
 uses
   Data.DB,
   System.TypInfo, // needed for XE6 and below to access the TTypeKind variables
+  Sempare.Template.ResourceStrings,
   Sempare.Template.Rtti,
   Sempare.Template.Util;
 
@@ -241,7 +244,7 @@ begin
       else if isStrLike(LLeft) and isNumLike(LRight) then
         LResult := LLeft.AsString + AsString(LRight)
       else
-        RaiseError(Position(AExpr.LeftExpr), 'String or numeric types expected');
+        RaiseError(Position(AExpr.LeftExpr), SStringOrNumericTypesExpected);
     boMinus:
       begin
         AssertNumeric(Position(AExpr.LeftExpr), LLeft, LRight);
@@ -280,7 +283,7 @@ begin
     boGTE:
       LResult := not isLessThan(LLeft, LRight);
   else
-    RaiseError(Position(AExpr.LeftExpr), 'Binop not supported');
+    RaiseError(Position(AExpr.LeftExpr), SBinOpNotSupported);
   end;
   FEvalStack.push(LResult);
 end;
@@ -301,7 +304,7 @@ begin
         FEvalStack.push(not AsBoolean(LValue));
       end
   else
-    RaiseError(Position(AExpr), 'Unary op not supported');
+    RaiseError(Position(AExpr), SUnaryOpNotSupported);
   end;
 end;
 
@@ -322,12 +325,12 @@ begin
         on e: exception do
         begin
           if (eoRaiseErrorWhenVariableNotFound in FContext.Options) then
-            RaiseError(Position(AExpr), 'Variable ''%s'' could not be found.', [AExpr.variable]);
+            RaiseError(Position(AExpr), SCannotFindValiable, [AExpr.variable]);
         end;
       end;
     end;
     if LValue.IsEmpty and (eoRaiseErrorWhenVariableNotFound in FContext.Options) then
-      RaiseError(Position(AExpr), 'Variable ''%s'' could not be found.', [AExpr.variable]);
+      RaiseError(Position(AExpr), SCannotFindValiable, [AExpr.variable]);
   end
   else
   begin
@@ -412,10 +415,10 @@ var
     end;
     LEnumGetEnumeratorMethod := LLoopExprType.GetMethod('GetEnumerator');
     if LEnumGetEnumeratorMethod = nil then
-      RaiseError(Position(AStmt), 'GetEnumerator not found on object.');
+      RaiseError(Position(AStmt), SGetEnumeratorNotFoundOnObject);
     LEnumValue := LEnumGetEnumeratorMethod.Invoke(LLoopExpr.AsObject, []);
     if LEnumValue.IsEmpty then
-      raise exception.Create('Value is not enumerable');
+      raise ETemplateEval.Create(SValueIsNotEnumerable);
     LEnumObj := LEnumValue.AsObject;
     try
       LLoopExprType := GRttiContext.GetType(LEnumObj.ClassType);
@@ -445,7 +448,7 @@ var
   begin
     LArrayType := LLoopExprType as TRttiArrayType;
     if LArrayType.DimensionCount <> 1 then
-      RaiseError(Position(AStmt), 'Only one dimensional arrays are supported.');
+      RaiseError(Position(AStmt), SOnlyOneDimensionalArraysAreSupported);
     LDimOrdType := LArrayType.Dimensions[0] as TRttiOrdinalType;
     if LDimOrdType = nil then
       LMin := 0
@@ -500,7 +503,7 @@ begin
       tkDynArray:
         visitdynarray;
     else
-      RaiseError(Position(AStmt), 'GetEnumerator not found on object.');
+      RaiseError(Position(AStmt), SGetEnumeratorNotFoundOnObject);
     end;
   end;
   FStackFrames.pop;
@@ -509,7 +512,7 @@ end;
 procedure TEvaluationTemplateVisitor.CheckRunTime(APosition: IPosition);
 begin
   if FStopWatch.ElapsedMilliseconds > FContext.MaxRunTimeMs then
-    RaiseError(APosition, 'Max runtime of %dms has been exceeded.', [FContext.MaxRunTimeMs]);
+    RaiseError(APosition, SMaxRuntimeOfMsHasBeenExceeded, [FContext.MaxRunTimeMs]);
 end;
 
 constructor TEvaluationTemplateVisitor.Create(AContext: ITemplateContext; const AStackFrame: TStackFrame; const AStream: TStream);
@@ -564,7 +567,7 @@ begin
 
   LCount := AsInt(FEvalStack.pop());
   if LCount <> AExprList.Count then // this should not happen
-    RaiseError(nil, 'Number of arguments mismatch');
+    RaiseError(nil, SNumberOfArgsMismatch);
   setlength(result, LCount);
   for LIdx := 0 to LCount - 1 do
   begin
@@ -624,7 +627,7 @@ begin
         LDirectionTestFunc := ForDownToCond;
       end
   else
-    raise exception.Create('ForOp not supported');
+    raise ETemplateEval.Create(STypeNotSupported);
   end;
   FStackFrames.push(FStackFrames.peek.Clone);
   LIdx := LStartVal;
@@ -691,7 +694,7 @@ begin
     end;
   end
   else
-    raise exception.Createfmt('Template not found: %s', [LTemplateName]);
+    raise ETemplateEval.Createfmt(STemplateNotFound, [LTemplateName]);
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(AStmt: IPrintStmt);
@@ -851,7 +854,7 @@ procedure ScanRecord(const ARttiType: TRttiType; const ARecord: TValue); forward
       tkrecord:
         ScanRecord(LRttiType, ARecord);
     else
-      raise exception.Create('StackFrame must be defined on a class or record.');
+      raise ETemplateEval.Create(SStackFrameCanOnlyBeDefinedOnAClassOrRecord);
     end;
   end;
 
@@ -912,7 +915,7 @@ begin
     if AsString(LExprs[LIndex]).ToLower = LInputType then
       exit;
   end;
-  RaiseError(Position(AStmt), 'Input of required tpe not found');
+  RaiseError(Position(AStmt), SInputOfRequiredTypeNotFound);
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(AExpr: IArrayExpr);

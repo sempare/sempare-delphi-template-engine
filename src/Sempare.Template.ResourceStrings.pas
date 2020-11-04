@@ -30,71 +30,47 @@
  * limitations under the License.                                                                   *
  *                                                                                                  *
  *************************************************************************************************%*)
-unit Sempare.Template.TestInclude;
+unit Sempare.Template.ResourceStrings;
 
 interface
 
-uses
-  DUnitX.TestFramework;
-
-type
-
-  [TestFixture]
-  TTestTemplateInclude = class
-  public
-    [Test]
-    procedure TestInclude;
-
-  end;
+resourcestring
+  SStatementNotSupportedInVisitor = 'Statement not supported in visitor';
+  SExpressionNotSupportedInVisitor = 'Expression not supported in visitor';
+  SIndexOutOfBounds = 'Index out of bounds';
+  SContextStartTokenMustBeTwoCharsLong = 'Context StartToken must be two characters long.';
+  SContextEndTokenMustBeTwoCharsLong = 'Context EndToken must be two characters long.';
+  SUnexpectedLexerState = 'Unexpected lexer state.';
+  STypeNotSupported = 'Type not supported.';
+  STypesAreNotOfTheSameType = 'Types are not of the same type';
+  STemplateNotFound = 'Template not found: %s';
+  SStackFrameCanOnlyBeDefinedOnAClassOrRecord = 'StackFrame must be defined on a class or record.';
+  SGetEnumeratorNotFoundOnObject = 'GetEnumerator not found on object.';
+  SValueIsNotEnumerable = 'Value is not enumerable';
+  SOnlyOneDimensionalArraysAreSupported = 'Only one dimensional arrays are supported.';
+  SCannotDereferenceValueOnObject = 'Cannot dereference ''%s'' in %s';
+  SDictionary = 'dictionary';
+  SDataset = 'dataset';
+  SCannotDereferenceValiable = 'Cannot dereference variable';
+  SCannotFindValiable = 'Cannot find variable ''%s''';
+  SBooleanTypeExpected = 'Boolean type(s) expected';
+  SNumericTypeExpected = 'Numeric type(s) expected';
+  SStringTypeExpected = 'String type expected';
+  SEnumerableTypeExpected = 'Enumerable type expected';
+  SForOpNotSupported = 'Forop not supported: %s';
+  SContinueShouldBeInALoop = 'Continue should be in a for/while Stmt';
+  SElIfExpected = 'ElIF expected';
+  SEndNotExpected = 'End not expected';
+  SUnexpectedToken = 'UnexpectedToken';
+  SFunctionNotRegisteredInContext = 'Function %s not registered in context.';
+  SParsingErrorExpecting = 'Parsing error. Expecting: %s';
+  SStringOrNumericTypesExpected = 'String or numeric types expected';
+  SBinOpNotSupported = 'Binop not supported';
+  SUnaryOpNotSupported = 'Unary op not supported';
+  SMaxRuntimeOfMsHasBeenExceeded = 'Max runtime of %dms has been exceeded.';
+  SNumberOfArgsMismatch = 'Number of arguments mismatch';
+  SInputOfRequiredTypeNotFound = 'Input of required type not found';
 
 implementation
-
-uses
-  System.Generics.Collections,
-  Sempare.Template.Context,
-  Sempare.Template;
-
-type
-  THeaderContentFooter = record
-    header: record
-      Name: string;
-    end;
-
-    content: TList<string>;
-
-    footer: record
-      Year: integer;
-    end;
-  end;
-
-procedure TTestTemplateInclude.TestInclude;
-var
-  c: ITemplate;
-  x: THeaderContentFooter;
-  ctx: ITemplateContext;
-
-begin
-  ctx := Template.Context;
-
-  ctx.Template['header'] := Template.parse('header <% header.name %> <% footer.year %>');
-  ctx.Template['footer'] := Template.parse('footer Copyright <% footer.year %>');
-
-  c := Template.parse('<% suffix := ''er''%><% include (''head'' + suffix) %>' + '<%for v in content %>' + '<% v %>' + '<% end %>' + '<% include (''foot'' + suffix) %>');
-
-  x.content := TList<string>.create;
-  x.content.Add('conrad');
-  x.content.Add('christa');
-  x.header.Name := 'Sempare Ltd';
-  x.footer.Year := 2020;
-  try
-    Assert.AreEqual('header Sempare Ltd 2020conradchristafooter Copyright 2020', Template.Eval(ctx, c, x));
-  finally
-    x.content.Free;
-  end;
-end;
-
-initialization
-
-TDUnitX.RegisterTestFixture(TTestTemplateInclude);
 
 end.

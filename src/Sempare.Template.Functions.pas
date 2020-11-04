@@ -6,7 +6,7 @@
  *                                    |_|                                                           *
  ****************************************************************************************************
  *                                                                                                  *
- *                        Sempare Templating Engine                                                 *
+ *                          Sempare Template Engine                                                 *
  *                                                                                                  *
  *                                                                                                  *
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
@@ -36,7 +36,11 @@ interface
 
 uses
   System.Rtti,
+  Sempare.Template.AST,
   Sempare.Template.Context;
+
+type
+  ETemplateFunction = class(ETemplate);
 
 function CreateTemplateFunctions(const ARegisterDefaults: boolean = true): ITemplateFunctions;
 function ToArrayTVarRec(const AArgs: TArray<TValue>): TArray<TVarrec>;
@@ -53,6 +57,7 @@ uses
   System.RegularExpressions,
   System.Generics.Collections,
   System.Generics.Defaults,
+  Sempare.Template.ResourceStrings,
   Sempare.Template.Common,
   Sempare.Template.Rtti;
 
@@ -365,7 +370,7 @@ begin
         exit;
       end;
   end;
-  raise Exception.Create('Unsupported type');
+  raise ETemplateFunction.Create(STypeNotSupported);
 end;
 
 function ToArrayTVarRec(const AArgs: TArray<TValue>): TArray<TVarrec>;
@@ -529,7 +534,7 @@ end;
 function TValueCompare.Compare(const ALeft, ARight: TValue): integer;
 begin
   if ALeft.TypeInfo <> ARight.TypeInfo then
-    raise Exception.Create('Types are not of the same type');
+    raise ETemplateFunction.Create(STypesAreNotOfTheSameType);
   case ALeft.Kind of
     tkInteger, tkInt64:
       exit(TComparer<Int64>.Default.Compare(ALeft.AsInt64, ARight.AsInt64));
@@ -538,7 +543,7 @@ begin
     tkString, tkLString, tkWString, tkUString:
       exit(TComparer<string>.Default.Compare(ALeft.AsString, ARight.AsString));
   else
-    raise Exception.Create('Type not supported');
+    raise ETemplateFunction.Create(STypeNotSupported);
   end;
 end;
 

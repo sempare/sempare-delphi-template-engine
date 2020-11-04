@@ -6,7 +6,7 @@
  *                                    |_|                                                           *
  ****************************************************************************************************
  *                                                                                                  *
- *                        Sempare Templating Engine                                                 *
+ *                          Sempare Template Engine                                                 *
  *                                                                                                  *
  *                                                                                                  *
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
@@ -58,6 +58,8 @@ type
 
 implementation
 
+{$I 'Sempare.Template.Compiler.inc'}
+
 uses
   Sempare.Template;
 
@@ -65,10 +67,16 @@ procedure TTestTemplateArr.TestArray;
 var
   a: array [5 .. 10] of integer;
   i: integer;
+  res: string;
 begin
   for i := Low(a) to High(a) do
     a[i] := i * 2;
-  Assert.AreEqual('5 6 7 8 9 10 ', Template.Eval('<%for i in _%><%i%> <%end%>', a));
+  res := Template.Eval('<%for i in _%><%i%> : <% _[i] %> <%end%>', a);
+{$IFDEF BROKEN_ARRAY_BOUNDS}
+  Assert.AreEqual('0 : 10 1 : 12 2 : 14 3 : 16 4 : 18 5 : 20 ', res);
+{$ELSE}
+  Assert.AreEqual('5 : 10 6 : 12 7 : 14 8 : 16 9 : 18 10 : 20 ', res);
+{$ENDIF}
 end;
 
 procedure TTestTemplateArr.TestDerefArray;
@@ -77,7 +85,11 @@ var
   a: array [1 .. 10] of integer;
 begin
   a[5] := 123;
+{$IFDEF BROKEN_ARRAY_BOUNDS}
+  Assert.AreEqual('123', Template.Eval('<% _[4] %>', a));
+{$ELSE}
   Assert.AreEqual('123', Template.Eval('<% _[5] %>', a));
+{$ENDIF}
 end;
 
 procedure TTestTemplateArr.TestDerefDynArray;

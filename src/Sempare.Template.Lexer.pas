@@ -6,7 +6,7 @@
  *                                    |_|                                                           *
  ****************************************************************************************************
  *                                                                                                  *
- *                        Sempare Templating Engine                                                 *
+ *                          Sempare Template Engine                                                 *
  *                                                                                                  *
  *                                                                                                  *
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
@@ -49,7 +49,7 @@ type
     property Value: string read GetValue write SetValue;
   end;
 
-  ETemplateLexerException = class(Exception);
+  ETemplateLexer = class(ETemplate);
 
   ITemplateLexer = interface
     ['{839FAB50-B21E-4C31-ACAA-2E50AEAA1456}']
@@ -65,6 +65,7 @@ implementation
 uses
   TypInfo,
   System.Generics.Collections,
+  Sempare.Template.ResourceStrings,
   Sempare.Template.Common;
 
 var
@@ -159,9 +160,9 @@ begin
   FStartScript := AContext.StartToken;
   FEndScript := AContext.EndToken;
   if length(FStartScript) <> 2 then
-    raise Exception.Create('Context StartToken must be two characters long.');
+    raise ETemplateLexer.Create(SContextStartTokenMustBeTwoCharsLong);
   if length(FEndScript) <> 2 then
-    raise Exception.Create('Context EndToken must be two characters long.');
+    raise ETemplateLexer.Create(SContextEndTokenMustBeTwoCharsLong);
   FStream := AStream;
   FManageStream := AManageStream;
   Ffilename := AFilename;
@@ -476,7 +477,7 @@ begin
     SScript:
       exit(GetScriptToken);
   else
-    raise ETemplateLexerException.Create('Unexpected lexer state');
+    raise ETemplateLexer.Create(SUnexpectedLexerState);
   end;
 end;
 

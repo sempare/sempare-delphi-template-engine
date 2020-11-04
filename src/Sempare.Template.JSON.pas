@@ -6,7 +6,7 @@
  *                                    |_|                                                           *
  ****************************************************************************************************
  *                                                                                                  *
- *                        Sempare Templating Engine                                                 *
+ *                          Sempare Template Engine                                                 *
  *                                                                                                  *
  *                                                                                                  *
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
@@ -47,7 +47,6 @@ uses
 type
 {$IFDEF SUPPORT_JSON_DBX}
   TJsonValue = Data.DBXJSON.TJsonValue;
-  TJSONBool = Data.DBXJSON.TJSONBool;
   TJSONString = Data.DBXJSON.TJSONString;
   TJSONNumber = Data.DBXJSON.TJSONNumber;
   TJsonObject = Data.DBXJSON.TJsonObject;

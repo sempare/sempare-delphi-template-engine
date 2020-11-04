@@ -22,3 +22,5 @@ Copyright (c) 2020 [Sempare Limited](http://www.sempare.ltd)
 	- SUPPORT_JSON_BOOL - Workaround on TJsonBool not being available in early versions.
 	- SUPPORT_NET_ENCODING - Disables html encoding if not available. (todo workaround)
 	- SUPPORT_BUFFERED_STREAM - Falls back to TFileStream from TBufferedStream when reading from files.
+
+- In XE4, it seems that the metadata on one dimensional static arrays may be missing from RTTI, so when doing range enumeration, the template library starts from offset 0.

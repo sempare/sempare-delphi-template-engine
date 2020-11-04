@@ -6,7 +6,7 @@
  *                                    |_|                                                           *
  ****************************************************************************************************
  *                                                                                                  *
- *                        Sempare Templating Engine                                                 *
+ *                          Sempare Template Engine                                                 *
  *                                                                                                  *
  *                                                                                                  *
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
@@ -58,7 +58,7 @@ type
     constructor Create(const AFilename: string; const Aline, Apos: integer);
   end;
 
-  ETemplateEvaluationError = class(Exception, IPosition)
+  ETemplateEvaluationError = class(ETemplate, IPosition)
   private
     FPosition: IPosition;
   public
