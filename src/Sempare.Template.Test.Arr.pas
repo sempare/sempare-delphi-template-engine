@@ -58,6 +58,8 @@ type
 
 implementation
 
+{$I 'Sempare.Template.Compiler.inc'}
+
 uses
   Sempare.Template;
 
