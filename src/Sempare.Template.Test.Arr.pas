@@ -65,10 +65,12 @@ procedure TTestTemplateArr.TestArray;
 var
   a: array [5 .. 10] of integer;
   i: integer;
+  res: string;
 begin
   for i := Low(a) to High(a) do
     a[i] := i * 2;
-  Assert.AreEqual('5 6 7 8 9 10 ', Template.Eval('<%for i in _%><%i%> <%end%>', a));
+  res := Template.Eval('<%for i in _%><%i%> : <% _[i] %> <%end%>', a);
+  Assert.AreEqual('5 : 10 6 : 12 7 : 14 8 : 16 9 : 18 10 : 20 ', res);
 end;
 
 procedure TTestTemplateArr.TestDerefArray;

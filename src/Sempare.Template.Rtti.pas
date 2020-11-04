@@ -391,7 +391,7 @@ begin
   case AValue.Kind of
     tkInteger, tkInt64:
       exit(inttostr(AValue.AsInt64));
-    tkfloat:
+    tkFloat:
       if AValue.TypeInfo = TypeInfo(TDateTime) then
         exit(datetimetostr(DoubleToDT(AValue.AsExtended)))
       else
@@ -400,7 +400,7 @@ begin
       exit(AValue.AsString);
     tkDynArray, tkArray:
       exit(ArrayAsString(AValue));
-    tkrecord:
+    tkRecord:
       if AValue.TypeInfo = TypeInfo(TValue) then
         exit(AsString(AValue.Astype<TValue>()))
       else
@@ -641,6 +641,7 @@ function Deref(APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfM
     LIndex: int64;
     LElementType: TRttiArrayType;
     LArrayDimType: TRttiType;
+    LArrayOrdType :TRttiOrdinalType;
     LMin: int64;
     LMax: int64;
   begin
@@ -651,9 +652,9 @@ function Deref(APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfM
     LMin := 0;
     if LArrayDimType <> nil then
     begin
-      // strange why this may happen
-      LMin := (LArrayDimType as TRttiOrdinalType).MinValue;
-      LMax := (LArrayDimType as TRttiOrdinalType).MaxValue;
+      LArrayOrdType:= LArrayDimType as TRttiOrdinalType;
+      LMin := LArrayOrdType.MinValue;
+      LMax := LArrayOrdType.MaxValue;
       if (LIndex < LMin) or (LIndex > LMax) then
         raise ETemplateRTTI.Create(SIndexOutOfBounds);
     end;
@@ -704,7 +705,7 @@ begin
       result := ProcessInterface(AVar, ADeref, LVarFound);
     tkClass:
       result := ProcessClass(APosition, AVar, ADeref, ARaiseIfMissing, false, LVarFound);
-    tkrecord:
+    tkRecord:
       result := ProcessRecord(AVar, ADeref, LVarFound);
     tkArray:
       result := ProcessArray(AVar, ADeref, LVarFound);
