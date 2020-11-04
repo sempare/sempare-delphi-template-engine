@@ -40,7 +40,6 @@ uses
   System.Rtti,
   System.TypInfo,
   System.SysUtils,
-  Sempare.Template.JSON,
   Sempare.Template.StackFrame,
   Sempare.Template.AST;
 
@@ -95,6 +94,11 @@ var
 implementation
 
 uses
+{$IFDEF SUPPORT_JSON_DBX}
+  Data.DBXJSON,
+{$ELSE}
+  System.JSON,
+{$ENDIF}
   System.Math,
   Data.DB,
   System.Generics.Collections,
@@ -108,7 +112,7 @@ var
 
 const
   INT_LIKE: set of TTypeKind = [tkInteger, tkInt64];
-  NUMBER_LIKE: set of TTypeKind = [tkInteger, tkInt64, tkfloat];
+  NUMBER_LIKE: set of TTypeKind = [tkInteger, tkInt64, tkFloat];
   STR_LIKE: set of TTypeKind = [tkString, tkWString, tkUString, tkLString];
 
 procedure RegisterDeref(const AMatch: TDerefMatchInterfaceFunction; const AFunction: TDerefFunction);
@@ -276,7 +280,7 @@ end;
 function AsNum(const AValue: TValue): extended;
 begin
   case AValue.Kind of
-    tkfloat:
+    tkFloat:
       exit(AValue.AsExtended);
     tkString, tkWString, tkUString, tkLString:
       exit(strtofloat(AValue.AsString));
@@ -339,7 +343,7 @@ begin
   case AValue.Kind of
     tkInteger, tkInt64:
       exit(AValue.AsInt64 <> 0);
-    tkfloat:
+    tkFloat:
       exit(AValue.AsExtended <> 0);
     tkString, tkWString, tkUString, tkLString:
       exit(AValue.AsString <> '');
@@ -422,7 +426,7 @@ begin
   case AValue.Kind of
     tkInteger, tkInt64:
       exit(DoubleToDT(AValue.AsInt64));
-    tkfloat:
+    tkFloat:
       exit(DoubleToDT(AValue.AsExtended));
     tkString, tkWString, tkUString, tkLString:
       exit(StrToDateTime(AValue.AsString));
@@ -641,7 +645,7 @@ function Deref(APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfM
     LIndex: int64;
     LElementType: TRttiArrayType;
     LArrayDimType: TRttiType;
-    LArrayOrdType :TRttiOrdinalType;
+    LArrayOrdType: TRttiOrdinalType;
     LMin: int64;
     LMax: int64;
   begin
@@ -652,7 +656,7 @@ function Deref(APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfM
     LMin := 0;
     if LArrayDimType <> nil then
     begin
-      LArrayOrdType:= LArrayDimType as TRttiOrdinalType;
+      LArrayOrdType := LArrayDimType as TRttiOrdinalType;
       LMin := LArrayOrdType.MinValue;
       LMax := LArrayOrdType.MaxValue;
       if (LIndex < LMin) or (LIndex > LMax) then
