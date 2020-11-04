@@ -108,6 +108,7 @@ Tests currently run using the DUnitX TestFramework.
 
 An attempt has been made not to use the latest features to ease backward compatability.
 Although the development was done on Delphi 10.3.3, build and tests have been run on the following versions:
+- Delphi XE 4
 - Delphi XE 8
 - Delphi 10.0 Seatle
 - Delphi 10.1 Berlin
@@ -146,6 +147,11 @@ Open __Sempare.Template.Engine.Group.groupproj__ which will include:
 - __demo\VelocityDemo\Sempare.Template.Demo.dproj__
 
    The velocity real-time demo.   
+   
+   
+## Help needed
+
+I have not been able to test on XE5-XE7 as I don't have access to those compilers. If anyone in the community can help check the output of the tests, that will be extremely helpful.
 
 ## Feedback
 
