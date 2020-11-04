@@ -96,9 +96,9 @@ The playlist has a few videos that are very short (most less than a minute - bli
 
 ## Objectives
 
-The Sempare Templating Engine is not intended to be a fully featured general purpose programming language such as PHP where the script itself could be a self contained programming language (but it does have most of the features).
+The Sempare Template Engine is not intended to be a fully featured general purpose programming language such as PHP where the script itself could be a self contained programming language (but it does have most of the features).
 
-Sempare Templating Engine aims to provide just enough functionality to allow you to easily work with the 'view' aspects of a template. Any enhanced functionality required from the scripting environment should be provided by the custom functions written in Pascal.
+Sempare Template Engine aims to provide just enough functionality to allow you to easily work with the 'view' aspects of a template. Any enhanced functionality required from the scripting environment should be provided by the custom functions written in Pascal.
 
 ## Requirements
 
@@ -129,7 +129,7 @@ The Sempare Template Engine for Delphi can be installed via the [Delphinus](http
 
 This will add the *src* folder to the search path so you can start working immediately.
 
-### Using the Sempare Templating Engine in your Delphi project
+### Using the Sempare Template Engine in your Delphi project
 
 Start by adding the *src* folder to the Delphi search path. Otherwise, there are some projects you can use:
 
