@@ -594,7 +594,7 @@ begin
   AFound := true;
   LJsonObject := obj.AsObject as TJsonObject;
   LJsonKey := AsString(ADeref);
-  LJsonKeyVal := LJsonObject.GetValue(LJsonKey);
+  LJsonKeyVal := LJsonObject.Get(LJsonKey).JsonValue;
   if not JsonValueToTValue(LJsonKeyVal, result) then
   begin
     if ARaiseIfMissing then
