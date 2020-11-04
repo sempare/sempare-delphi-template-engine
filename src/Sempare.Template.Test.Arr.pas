@@ -72,7 +72,7 @@ begin
   for i := Low(a) to High(a) do
     a[i] := i * 2;
   res := Template.Eval('<%for i in _%><%i%> : <% _[i] %> <%end%>', a);
-{$IF BROKEN_ARRAY_BOUNDS}
+{$IFDEF BROKEN_ARRAY_BOUNDS}
   Assert.AreEqual('0 : 10 1 : 12 2 : 14 3 : 16 4 : 18 5 : 20 ', res);
 {$ELSE}
   Assert.AreEqual('5 : 10 6 : 12 7 : 14 8 : 16 9 : 18 10 : 20 ', res);
@@ -85,7 +85,7 @@ var
   a: array [1 .. 10] of integer;
 begin
   a[5] := 123;
-{$IF BROKEN_ARRAY_BOUNDS}
+{$IFDEF BROKEN_ARRAY_BOUNDS}
   Assert.AreEqual('123', Template.Eval('<% _[4] %>', a));
 {$ELSE}
   Assert.AreEqual('123', Template.Eval('<% _[5] %>', a));
