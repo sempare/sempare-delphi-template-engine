@@ -33,10 +33,12 @@
 // -----------------------------------------------
 {$IF CompilerVersion >= 25} // from XE4 onwards
 {$DEFINE SUPPORT_JSON_DBX true}
+{$DEFINE BROKEN_ARRAY_BOUNDS true}
 {$ENDIF}
 // -----------------------------------------------
 {$IF CompilerVersion >= 26} // from XE5 onwards
 {$UNDEF SUPPORT_JSON_DBX}
+{$UNDEF BROKEN_ARRAY_BOUNDS}
 {$DEFINE SUPPORT_JSON true}
 {$ENDIF}
 // -----------------------------------------------
