@@ -96,14 +96,47 @@ procedure TTestNewLineOption.TestRecurringSpaces;
 var
   s: TStringStream;
   w: TNewLineStreamWriter;
+  s2:string;
 begin
   s := TStringStream.create;
+  w := TNewLineStreamWriter.create(s, TEncoding.ASCII, #10, []);
+  try
+    w.Write('  '#10#10'  '#10#10);
+  finally
+    w.Free;
+    s2:=s.datastring;
+    Assert.AreEqual('  '#10#10'  '#10#10, s2);
+    s.Free;
+  end;
+   s := TStringStream.create;
+  w := TNewLineStreamWriter.create(s, TEncoding.ASCII, #10, [eoTrimLines]);
+  try
+    w.Write('  '#10#10'  '#10#10);
+  finally
+    w.Free;
+    s2:=s.datastring;
+    Assert.AreEqual(''#10#10''#10#10, s2);
+    s.Free;
+  end;
+
+  s := TStringStream.create;
+  w := TNewLineStreamWriter.create(s, TEncoding.ASCII, #10, []);
+  try
+    w.Write('     hello     '#10#10'    world   ');
+  finally
+    w.Free;
+    s2:=s.datastring;
+    Assert.AreEqual('     hello     '#10#10'    world   ', s2);
+    s.Free;
+  end;
+    s := TStringStream.create;
   w := TNewLineStreamWriter.create(s, TEncoding.ASCII, #10, [eoTrimLines]);
   try
     w.Write('     hello     '#10#10'    world   ');
   finally
     w.Free;
-    Assert.AreEqual('hello'#10#10'world', s.datastring);
+    s2:=s.datastring;
+    Assert.AreEqual('hello'#10#10'world', s2);
     s.Free;
   end;
 end;

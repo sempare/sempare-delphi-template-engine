@@ -138,8 +138,7 @@ uses
 {$WARN WIDECHAR_REDUCED OFF}
 
 const
-  WHITESPACE: set of char = [#9, ' '];
-  NEWLINE: set of char = [#10, #13];
+  WHITESPACE: set of char = [#9, ' ', #13];
 
 {$WARN WIDECHAR_REDUCED ON}
 
@@ -152,9 +151,7 @@ end;
 
 function IsNewline(const AChar: char): boolean; inline;
 begin
-{$WARN WIDECHAR_REDUCED OFF}
-  exit(AChar in NEWLINE);
-{$WARN WIDECHAR_REDUCED ON}
+  exit(AChar = #10);
 end;
 
 { TEvaluationTemplateVisitor }
