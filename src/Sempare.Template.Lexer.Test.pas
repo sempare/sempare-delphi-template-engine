@@ -45,6 +45,13 @@ type
 
     [Test]
     procedure TestLexer;
+
+    [test]
+    procedure TestString;
+    [test]
+    procedure TestEscapedString;
+    [test]
+    procedure TestDoubleQuotedString;
   end;
 
 implementation
@@ -57,6 +64,17 @@ uses
   Sempare.Template.Common,
   Sempare.Template.Lexer,
   Sempare.Template;
+
+procedure TTestTemplateLexer.TestDoubleQuotedString;
+begin
+  Assert.AreEqual('this is a test', Template.Eval('<% "this is a test" %>'));
+end;
+
+procedure TTestTemplateLexer.TestEscapedString;
+begin
+  Assert.AreEqual('that''s mine', Template.Eval('<% ''that\''s mine'' %>'));
+  Assert.AreEqual('that''s mine', Template.Eval('<% "that''s mine" %>'));
+end;
 
 procedure TTestTemplateLexer.TestLexer;
 
@@ -81,6 +99,11 @@ begin
       val := vs.Value;
     end;
   end;
+end;
+
+procedure TTestTemplateLexer.TestString;
+begin
+Assert.AreEqual('hello world', Template.Eval('<% ''hello'' + '' '' + ''world'' %>'));
 end;
 
 initialization
