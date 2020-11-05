@@ -38,3 +38,12 @@ end;
 If the variable is not found, the variable will be referenced on _.
 
 This means that <% a %> will be the same as <% _.a %>.
+
+# Strings
+
+Strings can be single quote or double quotes. There is no special meaning on either. The backslash can be used for escaping.
+
+```
+<% 'that\'s nice' %>
+<% "that's nice" %>
+```
