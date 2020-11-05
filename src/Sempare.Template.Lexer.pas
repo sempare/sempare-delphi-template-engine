@@ -91,10 +91,10 @@ type
     FNextToken: ITemplateSymbol;
     FStream: TStream;
     FLine: integer;
-    Fpos: integer;
-    Ffilename: string;
+    FPos: integer;
+    FFilename: string;
     FLookahead: TPair;
-    Fcurrent: TPair;
+    FCurrent: TPair;
     FManageStream: Boolean;
     FState: TState;
     FAccumulator: TStringBuilder;
@@ -165,9 +165,9 @@ begin
     raise ETemplateLexer.Create(SContextEndTokenMustBeTwoCharsLong);
   FStream := AStream;
   FManageStream := AManageStream;
-  Ffilename := AFilename;
+  FFilename := AFilename;
   FLine := 1;
-  Fpos := 0;
+  FPos := 0;
   FState := SText;
   FLookahead.Input := #0;
   FLookahead.Eof := AStream.Size = 0;
@@ -200,7 +200,7 @@ end;
 
 procedure TTemplateLexer.GetInput;
 begin
-  Fcurrent := FLookahead;
+  FCurrent := FLookahead;
   if FLookahead.Eof then
     exit;
   FLookahead.Eof := FReader.EndOfStream;
@@ -212,24 +212,34 @@ begin
     if FLookahead.Input = #10 then
     begin
       Inc(FLine);
-      Fpos := 0;
+      FPos := 0;
     end
     else
-      Inc(Fpos);
+      Inc(FPos);
   end;
 end;
 
 function TTemplateLexer.GetScriptToken: ITemplateSymbol;
+
+const
+{$WARN WIDECHAR_REDUCED OFF}
+  WHITESPACE: set of Char = [#0, ' ', #9, #10, #13];
+  VARIABLE_START: set of Char = ['a' .. 'z', 'A' .. 'Z', '_'];
+  VARIABLE_END: set of Char = ['a' .. 'z', 'A' .. 'Z', '0' .. '9', '_'];
+  NUMBER: set of Char = ['0' .. '9'];
+  ESCAPE = '\';
+{$WARN WIDECHAR_REDUCED ON}
 var
   LLine: integer;
   LPosition: integer;
+  LLast: Char;
 
   function MakePosition: IPosition;
   begin
     if eoNoPosition in FOptions then
       exit(nil)
     else
-      exit(TPosition.Create(Ffilename, LLine, LPosition));
+      exit(TPosition.Create(FFilename, LLine, LPosition));
   end;
 
   function SimpleToken(const ASymbol: TTemplateSymbol): ITemplateSymbol;
@@ -248,43 +258,50 @@ var
   procedure Accumulate;
   begin
     FAccumulator.Append(FLookahead.Input);
+    LLast := FLookahead.Input;
     GetInput;
   end;
 
-const
-{$WARN WIDECHAR_REDUCED OFF}
-  WHITESPACE: set of Char = [#0, ' ', #9, #10, #13];
-  VARIABLE_START: set of Char = ['a' .. 'z', 'A' .. 'Z', '_'];
-  VARIABLE_END: set of Char = ['a' .. 'z', 'A' .. 'Z', '0' .. '9', '_'];
-  NUMBER: set of Char = ['0' .. '9'];
-{$WARN WIDECHAR_REDUCED ON}
+  function ReturnString(const QuoteType: Char): ITemplateSymbol;
+  begin
+    while not FLookahead.Eof and ((FLookahead.Input <> QuoteType) or (LLast = ESCAPE)) do
+    begin
+      if FLookahead.Input = QuoteType then
+        FAccumulator.Remove(FAccumulator.length - 1, 1);
+      Accumulate;
+    end;
+    SwallowInput;
+    exit(ValueToken(vsString));
+  end;
+
 begin
   FAccumulator.Clear;
   LLine := FLine;
-  LPosition := Fpos;
-  while not Fcurrent.Eof do
+  LPosition := FPos;
+  LLast := #0;
+  while not FCurrent.Eof do
   begin
 {$WARN WIDECHAR_REDUCED OFF}
-    if Fcurrent.Input in WHITESPACE then
+    if FCurrent.Input in WHITESPACE then
 {$WARN WIDECHAR_REDUCED ON}
     begin
       SwallowInput;
       continue;
     end
 {$WARN WIDECHAR_REDUCED OFF}
-    else if Fcurrent.Input in VARIABLE_START then
+    else if FCurrent.Input in VARIABLE_START then
 {$WARN WIDECHAR_REDUCED ON}
     begin
-      FAccumulator.Append(Fcurrent.Input);
+      FAccumulator.Append(FCurrent.Input);
       while Expecting(VARIABLE_END) do
         Accumulate;
       exit(ValueToken(VsID));
     end
 {$WARN WIDECHAR_REDUCED OFF}
-    else if Fcurrent.Input in NUMBER then
+    else if FCurrent.Input in NUMBER then
 {$WARN WIDECHAR_REDUCED ON}
     begin
-      FAccumulator.Append(Fcurrent.Input);
+      FAccumulator.Append(FCurrent.Input);
       while Expecting(NUMBER) do
         Accumulate;
       if FLookahead.Input = '.' then
@@ -296,7 +313,7 @@ begin
       exit(ValueToken(VsNumber));
     end
     else
-      case Fcurrent.Input of
+      case FCurrent.Input of
         ';':
           exit(SimpleToken(vsSemiColon));
         ',':
@@ -306,7 +323,7 @@ begin
             if not Expecting('*') then
               exit(SimpleToken(VsOpenRoundBracket));
             SwallowInput;
-            while not FLookahead.Eof and not((Fcurrent.Input = '*') and Expecting(')')) do
+            while not FLookahead.Eof and not((FCurrent.Input = '*') and Expecting(')')) do
               SwallowInput;
             SwallowInput;
             exit(SimpleToken(VsComment));
@@ -348,12 +365,9 @@ begin
         '=':
           exit(SimpleToken(VsEQ));
         '''':
-          begin
-            while not FLookahead.Eof and (FLookahead.Input <> '''') do
-              Accumulate;
-            SwallowInput;
-            exit(ValueToken(vsString));
-          end;
+          exit(ReturnString(''''));
+        '"':
+          exit(ReturnString('"'));
         ':':
           if Expecting('=') then
           begin
@@ -363,7 +377,7 @@ begin
           else
             exit(SimpleToken(vsCOLON));
       else
-        if Fcurrent.Input = FEndScript[1] then
+        if FCurrent.Input = FEndScript[1] then
         begin
           if Expecting(FEndScript[2]) then
           begin
@@ -382,7 +396,7 @@ begin
           end;
         end;
       end;
-    FAccumulator.Append(Fcurrent.Input);
+    FAccumulator.Append(FCurrent.Input);
     GetInput;
   end;
 
@@ -406,7 +420,7 @@ var
     if eoNoPosition in FOptions then
       exit(nil)
     else
-      exit(TPosition.Create(Ffilename, LLine, LPosition));
+      exit(TPosition.Create(FFilename, LLine, LPosition));
   end;
 
   function SimpleToken(const ASymbol: TTemplateSymbol): ITemplateSymbol;
@@ -425,13 +439,13 @@ var
 begin
   FAccumulator.Clear;
   LLine := FLine;
-  LPosition := Fpos;
+  LPosition := FPos;
   LLastChar := #0;
-  if Fcurrent.Input = #0 then
+  if FCurrent.Input = #0 then
     GetInput;
-  while not Fcurrent.Eof do
+  while not FCurrent.Eof do
   begin
-    if (Fcurrent.Input = FStartScript[1]) and (FLookahead.Input = FStartScript[2]) then
+    if (FCurrent.Input = FStartScript[1]) and (FLookahead.Input = FStartScript[2]) then
     begin
       Result := ValueToken(VsText);
       FState := SScript;
@@ -440,7 +454,7 @@ begin
     end
     else
     begin
-      LCurChar := Fcurrent.Input;
+      LCurChar := FCurrent.Input;
       if (eoConvertTabsToSpaces in FOptions) and (LCurChar = #9) then
         LCurChar := ' ';
       if (eoStripRecurringSpaces in FOptions) and (LLastChar = ' ') and (LCurChar = ' ') then
