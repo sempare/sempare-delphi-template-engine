@@ -75,12 +75,21 @@ type
     procedure TestRequire;
     [Test]
     procedure testPrint;
+
+    [Test]
+    procedure TestIgnoreNL;
+
+    [Test]
+    procedure TestIgnoreNL2;
+
   end;
 
 implementation
 
 uses
+  System.SysUtils,
   System.Generics.Collections,
+  Sempare.Template.Util,
   Sempare.Template.Context,
   Sempare.Template;
 
@@ -123,7 +132,63 @@ end;
 
 begin
 end;
+
 {$ENDIF}
+
+procedure TTestTemplate.TestIgnoreNL;
+var
+  LStringBuilder: TStringBuilder;
+  LString, LResult: string;
+  LPreserveGlobalNL: IPreserveValue<string>;
+begin
+  LPreserveGlobalNL := Preserve.Value<string>(GNewLine, #10);
+  LStringBuilder := TStringBuilder.create;
+  try
+    LStringBuilder.append('hello ').append(#10);
+    LStringBuilder.append('world').append(#10);
+    LString := LStringBuilder.ToString;
+  finally
+    LStringBuilder.free;
+  end;
+
+  LResult := Template.Eval(LString);
+
+  Assert.AreEqual(LString, LResult);
+
+  LString := '<% ignorenl %>' + LString + '<%end%>';
+  LResult := Template.Eval(LString);
+  Assert.AreEqual('hello world', LResult);
+
+end;
+
+procedure TTestTemplate.TestIgnoreNL2;
+var
+  LStringBuilder: TStringBuilder;
+  LString, LResult: string;
+  LPreserveGlobalNL: IPreserveValue<string>;
+begin
+  LPreserveGlobalNL := Preserve.Value<string>(GNewLine, #10);
+  LStringBuilder := TStringBuilder.create;
+  try
+    LStringBuilder.append('<table>').append(#10);
+    LStringBuilder.append('<tr>').append(#10);
+    LStringBuilder.append('<td>col1</td>').append(#10);
+    LStringBuilder.append('<td>col2</td>').append(#10);
+    LStringBuilder.append('</tr>').append(#10);
+    LStringBuilder.append('</table>').append(#10);
+    LString := LStringBuilder.ToString;
+  finally
+    LStringBuilder.free;
+  end;
+
+  LResult := Template.Eval(LString);
+
+  Assert.AreEqual(LString, LResult);
+
+  LString := '<% ignorenl %>' + LString + '<%end%>';
+  LResult := Template.Eval(LString);
+  Assert.AreEqual('<table><tr><td>col1</td><td>col2</td></tr></table>', LResult);
+end;
 
 procedure TTestTemplate.TestNonMutation;
 type
@@ -244,7 +309,7 @@ begin
     L.AddRange(['1', '2', '3']);
     Assert.AreEqual('123', Template.Eval('<% for v in _ %><% v %><% end %>', L));
   finally
-    L.Free;
+    L.free;
   end;
 end;
 

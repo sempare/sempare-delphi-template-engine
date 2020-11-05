@@ -13,6 +13,7 @@ Copyright (c) 2020 [Sempare Limited](http://www.sempare.ltd)
 7. [with](#with)
 8. [template](#template)
 9. [require](#require)
+10. [ignorenl](#ignorenl)
 
 ### print
 
@@ -253,3 +254,27 @@ An exeption is thrown when the
 
 _require_ can take multiple parameters - in which case the input must match one of the types listed.
 
+### ignorenl
+
+The purpose of an _ignorenl_ block is to allow for template designers to space out content for easy maintenance, but to allow for the output to be more compact when required.
+
+```
+
+	<table>
+<% ignorenl %>
+		<tr>
+			<td>Col1</td>
+			<td>Col2</td>
+		</tr>
+<% end %>
+	</table>
+
+```
+
+This would yield something like
+
+```
+  <table>
+  	<tr><td>Col1</td><td>Col2</td></tr>
+  </table>
+```
