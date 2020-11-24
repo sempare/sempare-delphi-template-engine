@@ -45,6 +45,12 @@ type
     [Test]
     procedure TestInclude;
 
+    [Test]
+    procedure TestIncludeMissingData;
+
+    [Test]
+    procedure TestIncludeData;
+
   end;
 
 implementation
@@ -66,6 +72,48 @@ type
       Year: integer;
     end;
   end;
+
+procedure TTestTemplateInclude.TestIncludeData;
+var
+  c: ITemplate;
+  ctx: ITemplateContext;
+  x: record value: string;
+end;
+begin
+  ctx := Template.Context;
+  ctx.Template['test'] := Template.parse('test <% _ %>');
+  ctx.Template['test2'] := Template.parse('test <% value %>');
+
+  // illustrate simple template
+  Assert.AreEqual('test 123', Template.Eval(ctx, 'test <%_%>', '123'));
+
+  // test using include - stackframe is preserved
+  Assert.AreEqual('test 123', Template.Eval(ctx, '<%include (''test'') %>', '123'));
+
+  // test using include - variable referenced is not provided
+  // important to note: include() uses with() to create a scope, so a record or class must be provided
+  x.value := '123';
+  Assert.AreEqual('test 123', Template.Eval(ctx, '<%include (''test2'', _) %>', x));
+
+end;
+
+procedure TTestTemplateInclude.TestIncludeMissingData;
+
+begin
+  Assert.WillRaise(
+    procedure
+    var
+      c: ITemplate;
+      ctx: ITemplateContext;
+      x: record value: string;
+    end;
+    begin
+      ctx := Template.Context;
+      ctx.Template['test'] := Template.parse('test <% value %>');
+      x.value := '123';
+      Assert.AreEqual('test 123', Template.Eval(ctx, '<%include (''test'', missingvar) %>', x));
+    end);
+end;
 
 procedure TTestTemplateInclude.TestInclude;
 var
