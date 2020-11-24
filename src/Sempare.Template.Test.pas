@@ -82,6 +82,9 @@ type
     [Test]
     procedure TestIgnoreNL2;
 
+    [Test]
+    procedure TestGenPhp;
+
   end;
 
 implementation
@@ -298,6 +301,11 @@ begin
       exit(Template.parse(AContext, '_' + ATemplate + '_'));
     end;
   Assert.AreEqual('_abc__def__abc_', Template.Eval(ctx, '<% include(''abc'') %><% include(''def'') %><% include(''abc'') %>'));
+end;
+
+procedure TTestTemplate.TestGenPhp;
+begin
+  Assert.AreEqual('<?php print("some text"); ?>', Template.Eval('<?php print("<% _ %>"); ?>', 'some text'));
 end;
 
 procedure TTestTemplate.TestUnderscoreIn;
