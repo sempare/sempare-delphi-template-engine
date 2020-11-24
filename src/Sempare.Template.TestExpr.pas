@@ -58,13 +58,15 @@ type
     procedure TestTernary;
     [Test]
     procedure TestInExpr;
-
+    [Test]
+    procedure TestNotEqual;
   end;
 
 implementation
 
 uses
-  Sempare.Template;
+  Sempare.Template,
+  System.SysUtils;
 
 procedure TTestTemplateExpr.TestSimpleVariable;
 begin
@@ -108,6 +110,23 @@ begin
   Assert.AreEqual('false', Template.Eval('<% 4 in [1,2,3] %>'));
   Assert.AreEqual('true', Template.Eval('<% ''hello world'' in [1,''hello world'',3] %>'));
   Assert.AreEqual('false', Template.Eval('<% ''hello'' in [1,''hello world'',3] %>'));
+end;
+
+procedure TTestTemplateExpr.TestNotEqual;
+begin
+  // NOTE: NE is implemented as NOT Equal, so we test both scenarios here
+  Assert.AreEqual('result', Template.Eval('<% if _ <> ''value'' %>result<% end %>', 'x'));
+  Assert.AreEqual('', Template.Eval('<% if _ <> ''value'' %>result<% end %>', 'value'));
+
+  Assert.AreEqual('result', Template.Eval('<% if _ <> 123 %>result<% end %>', 456));
+  Assert.AreEqual('', Template.Eval('<% if _ <> 123 %>result<% end %>', 123));
+
+  Assert.AreEqual('result', Template.Eval('<% if _ <> false %>result<% end %>', true));
+  Assert.AreEqual('', Template.Eval('<% if _ <> false %>result<% end %>', false));
+
+  Assert.AreEqual('result', Template.Eval('<% if _ <> 123.123 %>result<% end %>', 456.123));
+  Assert.AreEqual('', Template.Eval('<% if _ <> 123.123 %>result<% end %>', 123.123));
+
 end;
 
 procedure TTestTemplateExpr.TestExprBool;

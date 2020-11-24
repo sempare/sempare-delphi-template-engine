@@ -347,7 +347,12 @@ begin
         '/':
           exit(SimpleToken(VsSLASH));
         '<':
-          if Expecting('=') then
+          if Expecting('>') then
+          begin
+            SwallowInput;
+            exit(SimpleToken(VsNotEQ))
+          end
+          else if Expecting('=') then
           begin
             SwallowInput;
             exit(SimpleToken(vsLTE))
@@ -567,7 +572,7 @@ begin
     GSymbolToKeyword.Add(ASymbol, akeyword);
 end;
 
-Procedure AddSymKeyword(const ASym: string; const ASymbol: TTemplateSymbol);
+procedure AddSymKeyword(const ASym: string; const ASymbol: TTemplateSymbol);
 begin
   GSymbolToKeyword.Add(ASymbol, ASym);
 end;
