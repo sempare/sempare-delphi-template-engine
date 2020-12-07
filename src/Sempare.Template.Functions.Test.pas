@@ -64,6 +64,8 @@ type
     [Test]
     procedure TestInt();
     [Test]
+    procedure TestNum();
+    [Test]
     procedure TestSplit();
     [Test]
     procedure TestLowercase();
@@ -158,6 +160,14 @@ begin
   Assert.AreEqual('fail', Template.Eval('<% (match(''b'',''a+'')?''ok'':''fail'') %>'));
   Assert.AreEqual('ok', Template.Eval('<% (match(''aaa'',''a+b*'')?''ok'':''fail'') %>'));
   Assert.AreEqual('ok', Template.Eval('<% (match(''aaaaabbbbb'',''a+b*'')?''ok'':''fail'') %>'));
+end;
+
+procedure TFunctionTest.TestNum;
+begin
+  Assert.AreEqual('123', Template.Eval('<% num(''123'') %>'));
+  Assert.AreEqual('123', Template.Eval('<% num(123) %>'));
+  Assert.AreEqual('123.45', Template.Eval('<% num(123.45) %>'));
+
 end;
 
 procedure TFunctionTest.TestPos;

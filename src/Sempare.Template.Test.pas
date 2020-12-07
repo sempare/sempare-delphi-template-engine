@@ -85,6 +85,15 @@ type
     [Test]
     procedure TestGenPhp;
 
+    [Test]
+    procedure TestList;
+
+  end;
+
+type
+  TTestClass = class
+    data: string;
+    constructor Create(const AData: string);
   end;
 
 implementation
@@ -145,7 +154,7 @@ var
   LPreserveGlobalNL: IPreserveValue<string>;
 begin
   LPreserveGlobalNL := Preserve.Value<string>(GNewLine, #10);
-  LStringBuilder := TStringBuilder.create;
+  LStringBuilder := TStringBuilder.Create;
   try
     LStringBuilder.append('hello ').append(#10);
     LStringBuilder.append('world').append(#10);
@@ -171,7 +180,7 @@ var
   LPreserveGlobalNL: IPreserveValue<string>;
 begin
   LPreserveGlobalNL := Preserve.Value<string>(GNewLine, #10);
-  LStringBuilder := TStringBuilder.create;
+  LStringBuilder := TStringBuilder.Create;
   try
     LStringBuilder.append('<table>').append(#10);
     LStringBuilder.append('<tr>').append(#10);
@@ -191,6 +200,34 @@ begin
   LString := '<% ignorenl %>' + LString + '<%end%>';
   LResult := Template.Eval(LString);
   Assert.AreEqual('<table><tr><td>col1</td><td>col2</td></tr></table>', LResult);
+end;
+
+procedure TTestTemplate.TestList;
+var
+  LList: TObjectList<TTestClass>;
+  LContainer: record data: TObjectList<TTestClass>;
+end;
+LEmptyContainer:
+record data: TObjectList<TTestClass>;
+end;
+
+begin
+  LList := TObjectList<TTestClass>.Create();
+  try
+    LList.add(TTestClass.Create('a'));
+    LList.add(TTestClass.Create('b'));
+    LContainer.data := LList;
+    LEmptyContainer.data := nil;
+
+    Assert.AreEqual('has data', Template.Eval('<% if data %>has data<% end %>', LContainer));
+    Assert.AreEqual('empty', Template.Eval('<% if not data %>empty<% end %>', LEmptyContainer));
+
+    Assert.AreEqual('2', Template.Eval('<% _.count %>', LList));
+    Assert.AreEqual('2', Template.Eval('<% data.count %>', LContainer));
+    Assert.AreEqual('TObjectList<Sempare.Template.Test.TTestClass>', Template.Eval('<% typeof(data) %>', LContainer));
+  finally
+    LList.free;
+  end;
 end;
 
 procedure TTestTemplate.TestNonMutation;
@@ -259,9 +296,16 @@ type
 
     footer: record
       copyright: integer;
+
     end;
 
   end;
+
+  { TTestClass }
+constructor TTestClass.Create(const AData: string);
+begin
+  data := AData;
+end;
 
 procedure TTestTemplate.TestSubTemplate;
 var
@@ -312,7 +356,7 @@ procedure TTestTemplate.TestUnderscoreIn;
 var
   L: TList<string>;
 begin
-  L := TList<string>.create;
+  L := TList<string>.Create;
   try
     L.AddRange(['1', '2', '3']);
     Assert.AreEqual('123', Template.Eval('<% for v in _ %><% v %><% end %>', L));
