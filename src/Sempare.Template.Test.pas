@@ -85,6 +85,9 @@ type
     [Test]
     procedure TestGenPhp;
 
+    [Test]
+    procedure TestHtml;
+
   end;
 
 implementation
@@ -112,6 +115,40 @@ begin
     '<% (* this is '#13#10#13#10'a comment *) %>' + //
     'after ' //
     ));
+end;
+
+procedure TTestTemplate.TestHtml;
+type
+  TRec = record
+    content: string;
+  end;
+var
+  ctx: ITemplateContext;
+  data: TRec;
+begin
+  data.content := 'a < b';
+  // no encoding
+  ctx := Template.Context;
+  Assert.AreEqual('a < b', //
+    Template.Eval(ctx, '<% content %>', data));
+
+  // encoding
+  ctx := Template.Context;
+  ctx.UseHtmlVariableEncoder;
+  Assert.AreEqual('a &lt; b', //
+    Template.Eval(ctx, '<% content %>', data));
+
+  // no encoding - using print
+  ctx := Template.Context;
+  Assert.AreEqual('a < b', //
+    Template.Eval(ctx, '<% print(content) %>', data));
+
+  // mix where print allows for raw output
+  ctx := Template.Context;
+  ctx.UseHtmlVariableEncoder;
+  Assert.AreEqual('a &lt; ba < b', //
+    Template.Eval(ctx, '<% content %><% print(content) %>', data));
+
 end;
 
 procedure TTestTemplate.TestHtmlEncoding;

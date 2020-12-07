@@ -75,7 +75,6 @@ type
 
 procedure TTestTemplateInclude.TestIncludeData;
 var
-  c: ITemplate;
   ctx: ITemplateContext;
   x: record value: string;
 end;
@@ -103,7 +102,6 @@ begin
   Assert.WillRaise(
     procedure
     var
-      c: ITemplate;
       ctx: ITemplateContext;
       x: record value: string;
     end;
