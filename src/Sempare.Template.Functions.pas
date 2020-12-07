@@ -150,6 +150,7 @@ type
     class function DtNow: TDateTime; static;
     class function BoolStr(const AValue: TValue): boolean; static;
     class function Bool(const AValue: TValue): boolean; static;
+    class function Num(const AValue: TValue): extended; static;
     class function Int(const AValue: TValue): integer; static;
     class function Str(const AValue: TValue): string; static;
     class function UCFirst(const AString: string): string; static;
@@ -262,6 +263,11 @@ begin
   exit(TRegex.IsMatch(AValue, ARegex));
 end;
 
+class function TInternalFuntions.Num(const AValue: TValue): extended;
+begin
+  exit(AsNum(AValue));
+end;
+
 class function TInternalFuntions.Uppercase(const AString: string): string;
 begin
   exit(AString.ToUpper());
@@ -273,8 +279,24 @@ begin
 end;
 
 class function TInternalFuntions.TypeOf(const AValue: TValue): string;
+var
+  lmsg: string;
+  lpos: integer;
 begin
-  exit(GRttiContext.GetType(AValue.AsType<TValue>.TypeInfo).QualifiedName);
+  try
+    exit(GRttiContext.GetType(AValue.AsType<TValue>.TypeInfo).QualifiedName);
+  except
+    on e: exception do
+    begin
+      lmsg := e.Message;
+      // a big hacky, but a workaround
+      lpos := lmsg.IndexOf(''' is not declared');
+      if lmsg.StartsWith('Type ''') and (lpos > 0) then
+        exit(copy(lmsg, 7, lpos - 6))
+      else
+        raise e;
+    end;
+  end;
 end;
 
 class function TInternalFuntions.SubStr(const AString: string; AStartOffset: integer; ALength: integer): string;

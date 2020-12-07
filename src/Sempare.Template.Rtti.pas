@@ -350,9 +350,8 @@ begin
     tkDynArray:
       exit(AValue.GetArrayLength > 0);
   else
-    exit(false);
+    exit(true);
   end;
-
 end;
 
 function ArrayAsString(const AValue: TValue): string;
