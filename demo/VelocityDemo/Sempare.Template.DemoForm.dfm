@@ -321,15 +321,11 @@ object FormRealTime: TFormRealTime
       Top = 1
       Width = 464
       Height = 253
-      ActivePage = tsPrettyPrint
+      ActivePage = tsTemplate
       Align = alLeft
       TabOrder = 0
       object tsTemplate: TTabSheet
         Caption = 'Template'
-        ExplicitLeft = 0
-        ExplicitTop = 0
-        ExplicitWidth = 0
-        ExplicitHeight = 0
         object memoTemplate: TMemo
           Left = 0
           Top = 0
@@ -369,10 +365,6 @@ object FormRealTime: TFormRealTime
       TabOrder = 1
       object tsOutput: TTabSheet
         Caption = 'Output'
-        ExplicitLeft = 0
-        ExplicitTop = 0
-        ExplicitWidth = 0
-        ExplicitHeight = 0
         object memoOutput: TMemo
           Left = 0
           Top = 0
@@ -521,6 +513,15 @@ object FormRealTime: TFormRealTime
         'UTF-8 (with BOM)'
         'UTF-8 (without BOM)')
     end
+    object cbAutoEvaluate: TCheckBox
+      Left = 208
+      Top = 114
+      Width = 153
+      Height = 17
+      Caption = 'Auto Evaluate'
+      TabOrder = 11
+      OnClick = cbConvertTabsToSpacesClick
+    end
   end
   object GroupBox1: TGroupBox
     Left = 18
@@ -544,6 +545,15 @@ object FormRealTime: TFormRealTime
       OnGetEditText = propertiesGetEditText
       OnSetEditText = propertiesSetEditText
     end
+  end
+  object butEval: TButton
+    Left = 389
+    Top = 194
+    Width = 75
+    Height = 25
+    Caption = '&Evaluate'
+    TabOrder = 7
+    OnClick = butEvalClick
   end
   object OpenDialog1: TOpenDialog
     Left = 744

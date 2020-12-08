@@ -51,7 +51,8 @@ uses
   Sempare.Template.Common,
   Vcl.StdCtrls,
   Vcl.OleCtrls,
-  SHDocVw, Vcl.Grids,
+  SHDocVw,
+  Vcl.Grids,
   Vcl.ComCtrls,
   Vcl.ExtCtrls,
   Vcl.Imaging.pngimage;
@@ -92,6 +93,8 @@ type
     lblTitle: TLabel;
     properties: TStringGrid;
     GroupBox1: TGroupBox;
+    butEval: TButton;
+    cbAutoEvaluate: TCheckBox;
     procedure cbConvertTabsToSpacesClick(Sender: TObject);
     procedure cbStripRecurringSpacesClick(Sender: TObject);
     procedure cbTrimLinesClick(Sender: TObject);
@@ -111,6 +114,7 @@ type
     procedure propertiesSetEditText(Sender: TObject; ACol, ARow: Integer; const Value: string);
     procedure butSaveAsClick(Sender: TObject);
     procedure FormResize(Sender: TObject);
+    procedure butEvalClick(Sender: TObject);
   private
     { Private declarations }
     FEncoding: TEncoding;
@@ -150,6 +154,20 @@ begin
     properties.Cells[1, LIdx] := '';
   end;
   Process;
+end;
+
+procedure TFormRealTime.butEvalClick(Sender: TObject);
+begin
+  try
+    if FFilename <> '' then
+      butSave.Enabled := true;
+    FTemplate := Template.Parse(memoTemplate.Lines.Text);
+    // Template.TemplateText := memoTemplate.Lines.Text;
+    Process;
+  except
+    on e: exception do
+      memoOutput.Lines.Text := e.Message;
+  end;
 end;
 
 procedure TFormRealTime.butOpenClick(Sender: TObject);
@@ -270,6 +288,9 @@ end;
 procedure TFormRealTime.FormCreate(Sender: TObject);
 begin
   FContext := Template.Context();
+  FContext.Variable['name'] := 'world';
+  properties.Cells[0, 1] := 'name';
+  properties.Cells[1, 1] := 'world';
   FEncoding := TEncoding.UTF8WithoutBOM;
   FTemplate := Template.Parse('');
   properties.Cells[0, 0] := 'Variable';
@@ -286,6 +307,52 @@ begin
   WebBrowser1.Enabled := true;
   pcTemplate.ActivePageIndex := 0;
   pcOutput.ActivePageIndex := 0;
+
+  memoTemplate.Text := '<% template("local_template") %> Hello <% name %><br> <% end %> ' + #13#10 + //
+    '  ' + #13#10 + //
+    ' Welcome to the Sempare Template Engine demo project. ' + #13#10 + //
+    '  ' + #13#10 + //
+    ' You can prototype and test templates here.<p> ' + #13#10 + //
+    '  ' + #13#10 + //
+    '  ' + #13#10 + //
+    ' For HTML output, preview using the brower tab to the right.<p> ' + #13#10 + //
+    '  ' + #13#10 + //
+    '  ' + #13#10 + //
+    ' Press the "Evaluate" button to process this template or enable the "auto evaluate" option to process on every keypress.<p> ' + #13#10 + //
+    '  ' + #13#10 + //
+    '  ' + #13#10 + //
+    ' <% include("local_template") %> ' + #13#10 + //
+    '  ' + #13#10 + //
+    ' This project is available on <a href="https://github.com/sempare/sempare-delphi-template-engine">https://github.com/sempare/sempare-delphi-template-engine</a><p> ' + #13#10 + //
+    '  ' + #13#10 + //
+    ' <% include("local_template") %> ' + #13#10 + //
+    '  ' + #13#10 + //
+    '  ' + #13#10 + //
+    ' Templates can work nicely on almost any Delphi construct.<p> ' + #13#10 + //
+    '  ' + #13#10 + //
+    '  You can have loops:<br> ' + #13#10 + //
+    '  ' + #13#10 + //
+
+    ' <% for i := 1 to 10 %> ' + #13#10 + //
+    '    <% i %><br> ' + #13#10 + //
+    ' <% end %> ' + #13#10 + //
+    '  <p>' + #13#10 + //
+    '  You can define local variables and have conditional blocks:<br> ' + #13#10 + //
+    '  ' + #13#10 + //
+
+    ' <% val := 42 %> <-- try change this ' + #13#10 + //
+    ' <% if val = 42 %> ' + #13#10 + //
+    '    the value is 42 ' + #13#10 + //
+    ' <% else %> ' + #13#10 + //
+    ' the value is <b><% val %></b>! ' + #13#10 + //
+    ' <% end %> ' + #13#10 + //
+    '  <p>' + #13#10 + //
+    ' Review the documentation and tests to explore all the features. ' + #13#10 + //
+    ' <p> ' + #13#10 + //
+    ' Otherwise, please raise an issue on github or email <a href="mailto:support@sempare.ltd">support@sempare.ltd</a> for support. ' + #13#10 + //
+    '  ' + #13#10 + //
+    ' If you like this project, please consider supporting enhancements via a commercial license which also entitles you to priority support.<p> ' + #13#10;
+
   Finit := true;
 end;
 
@@ -313,16 +380,9 @@ end;
 
 procedure TFormRealTime.memoTemplateChange(Sender: TObject);
 begin
-  try
-    if FFilename <> '' then
-      butSave.Enabled := true;
-    FTemplate := Template.Parse(memoTemplate.Lines.Text);
-    // Template.TemplateText := memoTemplate.Lines.Text;
-    Process;
-  except
-    on e: exception do
-      memoOutput.Lines.Text := e.Message;
-  end;
+  if not cbAutoEvaluate.Checked then
+    exit;
+  butEvalClick(Sender);
 end;
 
 procedure TFormRealTime.Process;
@@ -346,12 +406,14 @@ end;
 
 procedure TFormRealTime.propertiesGetEditText(Sender: TObject; ACol, ARow: Integer; var Value: string);
 begin
-  Process;
+  if cbAutoEvaluate.Checked then
+    Process;
 end;
 
 procedure TFormRealTime.propertiesSetEditText(Sender: TObject; ACol, ARow: Integer; const Value: string);
 begin
-  Process;
+  if cbAutoEvaluate.Checked then
+    Process;
 end;
 
 procedure TFormRealTime.SetOption(const AEnable: boolean; const AOption: TTemplateEvaluationOption);

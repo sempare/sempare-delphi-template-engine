@@ -15,10 +15,10 @@ A precompiled binary is in the repository to make it easier to demo and test: [S
 
 ```
 $ md5sum Sempare.Template.Demo.exe
-27bdc33aca231225f5a7c2269f84a801 *Sempare.Template.Demo.exe
+0a5a5a9d9f0e72b51e7d87bfa53ce37f *Sempare.Template.Demo.exe
 
 $ ls -al Sempare.Template.Demo.exe
--rwxr-xr-x 1 conrad 197121 4061184 Nov  3 14:32 Sempare.Template.Demo.exe*
+-rwxr-xr-x 1 conrad 197121 4066304 Dec  8 19:06 Sempare.Template.Demo.exe*
 
 ```
 

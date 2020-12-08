@@ -344,14 +344,14 @@ end;
 procedure TPrettyPrintTemplateVisitor.Visit(AStmt: IDefineTemplateStmt);
 begin
   tab();
-  write('<% define ');
+  write('<%% define (');
   AcceptVisitor(AStmt.Name, self);
-  writeln(' %>');
+  writeln(') %%>');
   delta(4);
   AcceptVisitor(AStmt.Container, self);
   delta(-4);
   tab();
-  writeln('<% end %>');
+  writeln('<%% end %%>');
 end;
 
 procedure TPrettyPrintTemplateVisitor.Visit(AStmt: IWithStmt);
