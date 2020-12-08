@@ -703,6 +703,8 @@ var
   LVarFound: boolean;
 
 begin
+  if AVar.IsEmpty then
+    exit(AVar);
   case AVar.Kind of
     tkInterface:
       result := ProcessInterface(AVar, ADeref, LVarFound);
