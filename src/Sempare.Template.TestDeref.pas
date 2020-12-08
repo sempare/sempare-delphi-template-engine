@@ -52,7 +52,16 @@ type
     procedure TestWith;
     [Test]
     procedure TestDerefError;
+    [test]
+    procedure TestDerefNull;
   end;
+
+  TNullable = class
+  public
+    Data : string;
+    Other : TNullable;
+  end;
+
 
 implementation
 
@@ -93,6 +102,22 @@ begin
     begin
       Template.Eval(ctx, '<% notfound %>', r);
     end);
+end;
+
+procedure TTestTemplateDeref.TestDerefNull;
+var
+  nullable : TNullable;
+begin
+  nullable := TNullable.Create;
+  nullable.Other := TNullable.Create;
+  nullable.Other.Data := 'hello';
+  nullable.Data := 'world';
+  try
+    Test(nullable, 'hello world', '<% other.data %> <% data %><% other.other.data%>'); // other.other.data is handled correctly
+  finally
+    nullable.Other.Free;
+    nullable.Free;
+  end;
 end;
 
 procedure TTestTemplateDeref.TestExprDrefef;

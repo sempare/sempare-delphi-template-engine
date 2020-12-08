@@ -262,6 +262,7 @@ begin
     Assert.AreEqual('2', Template.Eval('<% _.count %>', LList));
     Assert.AreEqual('2', Template.Eval('<% data.count %>', LContainer));
     Assert.AreEqual('TObjectList<Sempare.Template.Test.TTestClass>', Template.Eval('<% typeof(data) %>', LContainer));
+    Assert.AreEqual(' a b', Template.Eval('<% for x in data %> <% x.data %><% end %>', LContainer));
   finally
     LList.free;
   end;
