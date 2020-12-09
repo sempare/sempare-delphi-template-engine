@@ -23,7 +23,7 @@ begin
         v3 := 'c';
         v4 := 'd';
     end;
-    writeln(Template.Eval('<%for i := 1 to 4 %><% v['v' + i] %><% end %>'));
+    writeln(Template.Eval('<%for i := 1 to 4 %><% _["v" + i] %><% end %>', rec));
 end;
 ```
 The above example will produce:
