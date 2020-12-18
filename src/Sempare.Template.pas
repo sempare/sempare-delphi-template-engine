@@ -223,11 +223,7 @@ var
   LFileStream: TFStream;
 begin
   LFileStream := TFStream.Create(AFile, fmOpenRead);
-  try
-    exit(Parse(AContext, LFileStream));
-  finally
-    LFileStream.Free;
-  end;
+  exit(Parse(AContext, LFileStream));
 end;
 
 class function Template.ParseFile(const AFile: string): ITemplate;
