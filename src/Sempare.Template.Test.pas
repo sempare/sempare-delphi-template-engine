@@ -87,9 +87,12 @@ type
 
     [Test]
     procedure TestList;
-    
+
     [Test]
     procedure TestHtml;
+
+    [Test]
+    procedure TestParseFile;
 
   end;
 
@@ -288,6 +291,14 @@ begin
   ctx := Template.Context;
   ctx.Options := [eoStripRecurringSpaces];
   Assert.AreEqual(' hello world ', Template.Eval(ctx, '  hello   world    '));
+end;
+
+procedure TTestTemplate.TestParseFile;
+var
+  LTemplate : ITemplate;
+begin
+  // main thing is that we have no exception here!
+  ltemplate := Template.ParseFile('..\..\demo\VelocityDemo\velocity\international.velocity');
 end;
 
 procedure TTestTemplate.testPrint;
