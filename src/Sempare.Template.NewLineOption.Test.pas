@@ -112,7 +112,7 @@ procedure TTestNewLineOption.TestRecurringNLAndSpaces;
 var
   s: TStringStream;
   w: TNewLineStreamWriter;
-  str:string;
+  str: string;
 begin
   s := TStringStream.Create;
   w := TNewLineStreamWriter.Create(s, TEncoding.ASCII, #10, [eoTrimLines, eoStripRecurringNewlines]);
@@ -120,7 +120,7 @@ begin
     w.Write(#10#10#10#10#10'     hello     '#10#10#10#10'    world   '#10#10#10#10);
   finally
     w.Free;
-    str:=s.datastring;
+    str := s.datastring;
     Assert.AreEqual(#10'hello'#10'world'#10, str);
     s.Free;
   end;
@@ -130,7 +130,7 @@ procedure TTestNewLineOption.TestRecurringOnlyNL;
 var
   s: TStringStream;
   w: TNewLineStreamWriter;
-  str:string;
+  str: string;
 begin
   s := TStringStream.Create;
   w := TNewLineStreamWriter.Create(s, TEncoding.ASCII, #10, [eoStripRecurringNewlines]);
@@ -138,7 +138,7 @@ begin
     w.Write(#10#10#10#10#10'     hello     '#10#10#10#10'    world   '#10#10#10#10);
   finally
     w.Free;
-    str:=s.datastring;
+    str := s.datastring;
     Assert.AreEqual(#10'     hello     '#10'    world   '#10, str);
     s.Free;
   end;
@@ -203,10 +203,9 @@ var
   r: TRec;
   s: string;
 begin
-
   r.Value := 'a value';
   r.description := 'some desc';
-  s := Template.Eval(#$D#$A'Value: <% value %>'#$D#$A'Description: <% description %>'#$D#$A, r);
+  s := Template.Eval(#$D#$A'Value: <% value %>'#$D#$A#$D#$A'Description: <% description %>'#$D#$A, r);
   Assert.AreEqual(#$D#$A'Value: a value'#$D#$A#$D#$A'Description: some desc'#$D#$A, s);
 end;
 
