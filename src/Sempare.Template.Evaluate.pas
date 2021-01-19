@@ -1026,7 +1026,7 @@ begin
       end;
       if not LIgnoreNewline then
       begin
-        if not LStripRecurringNL or IsNewline(FLastChar) then
+        if not LStripRecurringNL or not IsNewline(FLastChar) then
         begin
           FBuffer.Append(FNL);
           FStartOfLine := true;
