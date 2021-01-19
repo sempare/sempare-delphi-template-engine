@@ -295,10 +295,10 @@ end;
 
 procedure TTestTemplate.TestParseFile;
 var
-  LTemplate : ITemplate;
+  LTemplate: ITemplate;
 begin
   // main thing is that we have no exception here!
-  ltemplate := Template.ParseFile('..\..\demo\VelocityDemo\velocity\international.velocity');
+  LTemplate := Template.ParseFile('..\..\demo\VelocityDemo\velocity\international.velocity');
 end;
 
 procedure TTestTemplate.testPrint;
