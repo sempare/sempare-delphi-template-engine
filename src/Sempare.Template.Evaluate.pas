@@ -149,11 +149,16 @@ begin
   exit(AChar in WHITESPACE);
 {$WARN WIDECHAR_REDUCED ON}
 end;
-(*
-  function IsNewline(const AChar: char): boolean; inline;
-  begin
-  exit((AChar = #10) or (AChar = #13));
-  end; *)
+
+function IsNewline(const AChar: char): boolean; inline;
+begin
+  exit(AChar = #10);
+end;
+
+function IsCR(const AChar: char): boolean; inline;
+begin
+  exit(AChar = #13);
+end;
 
 { TEvaluationTemplateVisitor }
 
@@ -1009,9 +1014,9 @@ begin
       FLastChar := LChar;
       continue;
     end;
-    if LChar = #10 then
+    if IsNewline(LChar) then
     begin
-      if FLastChar = #13 then
+      if IsCR(FLastChar) then
       begin
         TrimLast;
       end;
@@ -1021,7 +1026,7 @@ begin
       end;
       if not LIgnoreNewline then
       begin
-        if not LStripRecurringNL or (FLastChar <> #10) then
+        if not LStripRecurringNL or IsNewline(FLastChar) then
         begin
           FBuffer.Append(FNL);
           FStartOfLine := true;
