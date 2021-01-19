@@ -39,12 +39,17 @@ interface
 uses
   System.Rtti,
   System.SysUtils,
+  System.Classes,
   System.Generics.Collections,
   Sempare.Template.AST,
   Sempare.Template.StackFrame,
   Sempare.Template.Common;
 
 type
+  ITemplateContext = interface;
+
+  TStreamWriterProvider = reference to function(const AStream: TStream; AContext: ITemplateContext): TStreamWriter;
+
   ITemplateFunctions = interface
     ['{D80C777C-086E-4680-A97B-92B8FA08C995}']
 
@@ -72,8 +77,6 @@ type
     );
 
   TTemplateEvaluationOptions = set of TTemplateEvaluationOption;
-
-  ITemplateContext = interface;
 
   TTemplateResolver = reference to function(AContext: ITemplateContext; const AName: string): ITemplate;
 
@@ -119,6 +122,9 @@ type
     function GetNewLine: string;
     procedure SetNewLine(const ANewLine: string);
 
+    function GetStreamWriterProvider: TStreamWriterProvider;
+    procedure SetStreamWriterProvider(const AProvider: TStreamWriterProvider);
+
     property Functions: ITemplateFunctions read GetFunctions write SetFunctions;
     property NewLine: string read GetNewLine write SetNewLine;
     property TemplateResolver: TTemplateResolver read GetTemplateResolver write SetTemplateResolver;
@@ -131,6 +137,7 @@ type
     property Options: TTemplateEvaluationOptions read GetOptions write SetOptions;
     property StartToken: string read GetScriptStartToken write SetScriptStartToken;
     property EndToken: string read GetScriptEndToken write SetScriptEndToken;
+    property StreamWriterProvider: TStreamWriterProvider read GetStreamWriterProvider write SetStreamWriterProvider;
   end;
 
   ITemplateContextForScope = interface
@@ -152,6 +159,7 @@ var
   GNewLine: string = #13#10;
   GDefaultEncoding: TEncoding;
   GUTF8WithoutPreambleEncoding: TUTF8WithoutPreambleEncoding;
+  GStreamWriterProvider: TStreamWriterProvider;
 
 implementation
 
@@ -165,6 +173,7 @@ uses
 {$ENDIF}
   System.SyncObjs,
   Sempare.Template,
+  Sempare.Template.Evaluate,
   Sempare.Template.Functions;
 
 type
@@ -183,6 +192,7 @@ type
     FVariableEncoder: TTemplateEncodeFunction;
     FMaxRuntimeMs: integer;
     FLock: TCriticalSection;
+    FStreamWriterProvider: TStreamWriterProvider;
     FNewLine: string;
   public
     constructor Create(const AOptions: TTemplateEvaluationOptions);
@@ -228,6 +238,9 @@ type
     procedure SetNewLine(const ANewLine: string);
 
     procedure ApplyTo(const AScope: TStackFrame);
+
+    function GetStreamWriterProvider: TStreamWriterProvider;
+    procedure SetStreamWriterProvider(const AProvider: TStreamWriterProvider);
   end;
 
 function CreateTemplateContext(const AOptions: TTemplateEvaluationOptions): ITemplateContext;
@@ -267,6 +280,7 @@ begin
   FFunctions := GFunctions;
   FLock := TCriticalSection.Create;
   FNewLine := GNewLine;
+  FStreamWriterProvider := GStreamWriterProvider;
 end;
 
 destructor TTemplateContext.Destroy;
@@ -349,6 +363,11 @@ begin
   exit(FStartToken);
 end;
 
+function TTemplateContext.GetStreamWriterProvider: TStreamWriterProvider;
+begin
+  result := FStreamWriterProvider;
+end;
+
 function TTemplateContext.GetTemplate(const AName: string): ITemplate;
 begin
   if not TryGetTemplate(AName, result) then
@@ -409,6 +428,11 @@ end;
 procedure TTemplateContext.SetScriptStartToken(const AToken: string);
 begin
   FStartToken := AToken;
+end;
+
+procedure TTemplateContext.SetStreamWriterProvider(const AProvider: TStreamWriterProvider);
+begin
+  FStreamWriterProvider := AProvider;
 end;
 
 procedure TTemplateContext.SetTemplateResolver(const AResolver: TTemplateResolver);
@@ -478,6 +502,10 @@ initialization
 GUTF8WithoutPreambleEncoding := TUTF8WithoutPreambleEncoding.Create;
 
 GDefaultEncoding := TEncoding.UTF8WithoutBOM;
+GStreamWriterProvider := function(const AStream: TStream; AContext: ITemplateContext): TStreamWriter
+  begin
+    exit(TNewLineStreamWriter.Create(AStream, AContext.Encoding, AContext.NewLine, AContext.Options));
+  end;
 
 finalization
 
