@@ -102,8 +102,8 @@ type
     FLineOffset: integer;
     FStartScript: string;
     FEndScript: string;
-    FStartStripWSScript: string;
-    FEndStripWSScript: string;
+    FStartStripScript: string;
+    FEndStripScript: string;
     FOptions: TTemplateEvaluationOptions;
     procedure GetInput;
     procedure SwallowInput; // a descriptive helper
@@ -162,8 +162,8 @@ begin
   FOptions := AContext.Options;
   FStartScript := AContext.StartToken;
   FEndScript := AContext.EndToken;
-  FStartStripWSScript := AContext.StartStripWSToken;
-  FEndStripWSScript := AContext.EndStripWSToken;
+  FStartStripScript := AContext.StartStripToken;
+  FEndStripScript := AContext.EndStripToken;
   if length(FStartScript) <> 2 then
     raise ETemplateLexer.Create(SContextStartTokenMustBeTwoCharsLong);
   if length(FEndScript) <> 2 then
@@ -390,15 +390,15 @@ begin
             exit(SimpleToken(vsCOLON));
       else
         begin
-          if CharInSet(FCurrent.Input, [FEndScript[1], FEndStripWSScript[1]]) then
+          if CharInSet(FCurrent.Input, [FEndScript[1], FEndStripScript[1]]) then
           begin
             if FCurrent.Input = FEndScript[1] then
               LEndExpect := FEndScript[2]
             else
-              LEndExpect := FEndStripWSScript[2];
+              LEndExpect := FEndStripScript[2];
             if Expecting(LEndExpect) then
             begin
-              LEndStripWS := FCurrent.Input = FEndStripWSScript[1];
+              LEndStripWS := FCurrent.Input = FEndStripScript[1];
               GetInput;
               if FAccumulator.length > 0 then
               begin
@@ -465,7 +465,7 @@ begin
     GetInput;
   while not FCurrent.Eof do
   begin
-    LIsStartStripWSToken := (FCurrent.Input = FStartStripWSScript[1]) and (FLookahead.Input = FStartStripWSScript[2]);
+    LIsStartStripWSToken := (FCurrent.Input = FStartStripScript[1]) and (FLookahead.Input = FStartStripScript[2]);
     if (FCurrent.Input = FStartScript[1]) and (FLookahead.Input = FStartScript[2]) or LIsStartStripWSToken then
     begin
       Result := ValueToken(VsText);
