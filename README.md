@@ -26,7 +26,7 @@ Open Source: https://github.com/sempare/sempare-delphi-template-engine
 13. [Configuration](./docs/configuration.md)
 14. [Components](./docs/components.md)
 15. [Tricks](./docs/tricks.md)
-16. [Template Patterns](./docs/restrictions.md)
+16. [Template Patterns](./docs/template-patterns.md)
 17. [Internals](./docs/internals.md)
 18. [Restrictions/Limitations/Known Bugs](./docs/restrictions.md)
 19. [Todo](./docs/todo.md)
