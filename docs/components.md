@@ -1,6 +1,6 @@
 # ![](../images/sempare-logo-45px.png) Sempare Template Engine
 
-Copyright (c) 2020 [Sempare Limited](http://www.sempare.ltd)
+Copyright (c) 2019-2021 [Sempare Limited](http://www.sempare.ltd)
 
 ## Components
 
@@ -16,6 +16,9 @@ Key components of interest that are exposed to you are:
 1. [Template](#Template)
 2. [ITemplateContext](#ITemplateContext)
 3. [ITemplate](#ITemplate)
+
+Initially, some true Delphi Components (based off TComponent) were also provided. See [Design Considerations](./design-considerations.md) for more information.
+
 
 ### Template
 
@@ -127,14 +130,4 @@ The output of the Template parser is an object implementing the ITemplate interf
     var tpl := Template.Parse(ctx, 'this is a template'); 
     writeln(Template.Eval(ctx, tpl));
 ```
-##### Thread Safety
-The Sempare Template Engine should be totally thread safe. There is no shared state besides potential references a shared template context.
 
-Components that should be safe to share are instances of _ITemplateContext_ and _ITemplate_. 
-
-##### Example use case
-
-In a threaded environement like a web server, the following would take place:
-- the context and templates are initialised at startup.
-- templates are mapped to various routes used by various route controllers
-- controller methods would interact with a database service and pass data to the template engine.

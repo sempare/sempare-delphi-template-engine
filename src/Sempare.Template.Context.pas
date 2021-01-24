@@ -39,12 +39,17 @@ interface
 uses
   System.Rtti,
   System.SysUtils,
+  System.Classes,
   System.Generics.Collections,
   Sempare.Template.AST,
   Sempare.Template.StackFrame,
   Sempare.Template.Common;
 
 type
+  ITemplateContext = interface;
+
+  TStreamWriterProvider = reference to function(const AStream: TStream; AContext: ITemplateContext): TStreamWriter;
+
   ITemplateFunctions = interface
     ['{D80C777C-086E-4680-A97B-92B8FA08C995}']
 
@@ -68,12 +73,13 @@ type
     eoStripRecurringSpaces, //
     eoConvertTabsToSpaces, //
     eoNoDefaultFunctions, //
-    eoRaiseErrorWhenVariableNotFound //
+    eoRaiseErrorWhenVariableNotFound, //
+    eoAllowIgnoreNL, //
+
+    eoInternalUseNewLine //
     );
 
   TTemplateEvaluationOptions = set of TTemplateEvaluationOption;
-
-  ITemplateContext = interface;
 
   TTemplateResolver = reference to function(AContext: ITemplateContext; const AName: string): ITemplate;
 
@@ -119,6 +125,14 @@ type
     function GetNewLine: string;
     procedure SetNewLine(const ANewLine: string);
 
+    function GetStreamWriterProvider: TStreamWriterProvider;
+    procedure SetStreamWriterProvider(const AProvider: TStreamWriterProvider);
+
+    function GetScriptEndStripToken: string;
+    function GetScriptStartStripToken: string;
+    procedure SetScriptEndStripToken(const Value: string);
+    procedure SetScriptStartStripToken(const Value: string);
+
     property Functions: ITemplateFunctions read GetFunctions write SetFunctions;
     property NewLine: string read GetNewLine write SetNewLine;
     property TemplateResolver: TTemplateResolver read GetTemplateResolver write SetTemplateResolver;
@@ -131,6 +145,11 @@ type
     property Options: TTemplateEvaluationOptions read GetOptions write SetOptions;
     property StartToken: string read GetScriptStartToken write SetScriptStartToken;
     property EndToken: string read GetScriptEndToken write SetScriptEndToken;
+
+    property StartStripToken: string read GetScriptStartStripToken write SetScriptStartStripToken;
+    property EndStripToken: string read GetScriptEndStripToken write SetScriptEndStripToken;
+
+    property StreamWriterProvider: TStreamWriterProvider read GetStreamWriterProvider write SetStreamWriterProvider;
   end;
 
   ITemplateContextForScope = interface
@@ -152,6 +171,10 @@ var
   GNewLine: string = #13#10;
   GDefaultEncoding: TEncoding;
   GUTF8WithoutPreambleEncoding: TUTF8WithoutPreambleEncoding;
+  GStreamWriterProvider: TStreamWriterProvider;
+
+  GDefaultOpenStripWSTag: string = '<|';
+  GDefaultCloseWSTag: string = '|>';
 
 implementation
 
@@ -165,6 +188,7 @@ uses
 {$ENDIF}
   System.SyncObjs,
   Sempare.Template,
+  Sempare.Template.Evaluate,
   Sempare.Template.Functions;
 
 type
@@ -177,12 +201,15 @@ type
     FOptions: TTemplateEvaluationOptions;
     FStartToken: string;
     FEndToken: string;
+    FStartStripToken: string;
+    FEndStripToken: string;
     FEncoding: TEncoding;
     FFunctions: ITemplateFunctions;
     FFunctionsSet: boolean;
     FVariableEncoder: TTemplateEncodeFunction;
     FMaxRuntimeMs: integer;
     FLock: TCriticalSection;
+    FStreamWriterProvider: TStreamWriterProvider;
     FNewLine: string;
   public
     constructor Create(const AOptions: TTemplateEvaluationOptions);
@@ -211,6 +238,11 @@ type
     function GetScriptEndToken: string;
     procedure SetScriptEndToken(const AToken: string);
 
+    function GetScriptEndStripToken: string;
+    function GetScriptStartStripToken: string;
+    procedure SetScriptEndStripToken(const Value: string);
+    procedure SetScriptStartStripToken(const Value: string);
+
     function GetMaxRunTimeMs: integer;
     procedure SetMaxRunTimeMs(const ATimeMS: integer);
 
@@ -228,6 +260,9 @@ type
     procedure SetNewLine(const ANewLine: string);
 
     procedure ApplyTo(const AScope: TStackFrame);
+
+    function GetStreamWriterProvider: TStreamWriterProvider;
+    procedure SetStreamWriterProvider(const AProvider: TStreamWriterProvider);
   end;
 
 function CreateTemplateContext(const AOptions: TTemplateEvaluationOptions): ITemplateContext;
@@ -262,11 +297,14 @@ begin
   SetEncoding(GDefaultEncoding);
   FStartToken := GDefaultOpenTag;
   FEndToken := GDefaultCloseTag;
+  FStartStripToken := GDefaultOpenStripWSTag;
+  FEndStripToken := GDefaultCloseWSTag;
   FTemplates := TDictionary<string, ITemplate>.Create;
   FVariables := TTemplateVariables.Create;
   FFunctions := GFunctions;
   FLock := TCriticalSection.Create;
   FNewLine := GNewLine;
+  FStreamWriterProvider := GStreamWriterProvider;
 end;
 
 destructor TTemplateContext.Destroy;
@@ -339,14 +377,29 @@ begin
   exit(FVariables);
 end;
 
+function TTemplateContext.GetScriptEndStripToken: string;
+begin
+  exit(FEndStripToken);
+end;
+
 function TTemplateContext.GetScriptEndToken: string;
 begin
   exit(FEndToken);
 end;
 
+function TTemplateContext.GetScriptStartStripToken: string;
+begin
+  exit(FStartStripToken);
+end;
+
 function TTemplateContext.GetScriptStartToken: string;
 begin
   exit(FStartToken);
+end;
+
+function TTemplateContext.GetStreamWriterProvider: TStreamWriterProvider;
+begin
+  result := FStreamWriterProvider;
 end;
 
 function TTemplateContext.GetTemplate(const AName: string): ITemplate;
@@ -379,6 +432,7 @@ end;
 procedure TTemplateContext.SetNewLine(const ANewLine: string);
 begin
   FNewLine := ANewLine;
+  include(FOptions, eoInternalUseNewLine);
 end;
 
 procedure TTemplateContext.SetOptions(const AOptions: TTemplateEvaluationOptions);
@@ -401,14 +455,29 @@ begin
   FVariableEncoder := AEncoder;
 end;
 
+procedure TTemplateContext.SetScriptEndStripToken(const Value: string);
+begin
+  FEndStripToken := Value;
+end;
+
 procedure TTemplateContext.SetScriptEndToken(const AToken: string);
 begin
   FEndToken := AToken;
 end;
 
+procedure TTemplateContext.SetScriptStartStripToken(const Value: string);
+begin
+  FStartStripToken := Value;
+end;
+
 procedure TTemplateContext.SetScriptStartToken(const AToken: string);
 begin
   FStartToken := AToken;
+end;
+
+procedure TTemplateContext.SetStreamWriterProvider(const AProvider: TStreamWriterProvider);
+begin
+  FStreamWriterProvider := AProvider;
 end;
 
 procedure TTemplateContext.SetTemplateResolver(const AResolver: TTemplateResolver);
@@ -478,6 +547,13 @@ initialization
 GUTF8WithoutPreambleEncoding := TUTF8WithoutPreambleEncoding.Create;
 
 GDefaultEncoding := TEncoding.UTF8WithoutBOM;
+GStreamWriterProvider := function(const AStream: TStream; AContext: ITemplateContext): TStreamWriter
+  begin
+    if (eoTrimLines in AContext.Options) or (eoStripRecurringNewlines in AContext.Options) or (eoAllowIgnoreNL in AContext.Options) or (eoInternalUseNewLine in AContext.Options) then
+      exit(TNewLineStreamWriter.Create(AStream, AContext.Encoding, AContext.NewLine, AContext.Options))
+    else
+      exit(TStreamWriter.Create(AStream, AContext.Encoding));
+  end;
 
 finalization
 

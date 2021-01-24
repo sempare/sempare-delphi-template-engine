@@ -153,6 +153,8 @@ type
     function GetToken: TTemplateSymbol;
     procedure SetToken(const AToken: TTemplateSymbol);
 
+    function StripWS: boolean;
+
     property Token: TTemplateSymbol read GetToken write SetToken;
     property Position: IPosition read GetPosition;
   end;

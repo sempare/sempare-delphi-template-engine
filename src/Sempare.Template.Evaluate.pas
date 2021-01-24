@@ -54,15 +54,15 @@ type
   TLoopOptions = set of TLoopOption;
 
   TNewLineStreamWriter = class(TStreamWriter)
-  type
-    TNLState = (nlsStartOfLine, nlsHasText, nlsNewLine);
   private
     FOptions: TTemplateEvaluationOptions;
     FNL: string;
-    FState: TNLState;
     FBuffer: TStringBuilder;
     FIgnoreNewline: boolean;
+    FStartOfLine: boolean;
+    FLastChar: char;
     procedure TrimEndOfLine;
+    procedure TrimLast;
     procedure DoWrite();
   public
     constructor Create(const AStream: TStream; const AEncoding: TEncoding; const ANL: string; const AOptions: TTemplateEvaluationOptions);
@@ -77,7 +77,8 @@ type
     FStackFrames: TObjectStack<TStackFrame>;
     FEvalStack: TStack<TValue>;
     FStream: TStream;
-    FStreamWriter: TNewLineStreamWriter;
+    FStreamWriter: TStreamWriter;
+    FIsNLStreamWriter: boolean;
     FLoopOptions: TLoopOptions;
     FContext: ITemplateContext;
     FAllowRootDeref: boolean;
@@ -138,7 +139,7 @@ uses
 {$WARN WIDECHAR_REDUCED OFF}
 
 const
-  WHITESPACE: set of char = [#9, ' ', #13];
+  WHITESPACE: set of char = [#9, ' '];
 
 {$WARN WIDECHAR_REDUCED ON}
 
@@ -152,6 +153,11 @@ end;
 function IsNewline(const AChar: char): boolean; inline;
 begin
   exit(AChar = #10);
+end;
+
+function IsCR(const AChar: char): boolean; inline;
+begin
+  exit(AChar = #13);
 end;
 
 { TEvaluationTemplateVisitor }
@@ -527,7 +533,8 @@ begin
   FContext := AContext;
   FStream := AStream;
 
-  FStreamWriter := TNewLineStreamWriter.Create(FStream, FContext.Encoding, FContext.NEWLINE, FContext.Options);
+  FStreamWriter := FContext.StreamWriterProvider(FStream, FContext);
+  FIsNLStreamWriter := FStreamWriter is TNewLineStreamWriter;
 
   FEvalStack := TStack<TValue>.Create;
   FStackFrames := TObjectStack<TStackFrame>.Create;
@@ -812,13 +819,22 @@ end;
 procedure TEvaluationTemplateVisitor.Visit(AStmt: IProcessTemplateStmt);
 var
   LPrevNewLineState: boolean;
+  LSWriter: TNewLineStreamWriter;
 begin
-  LPrevNewLineState := FStreamWriter.IgnoreNewLine;
-  try
-    FStreamWriter.IgnoreNewLine := not AStmt.AllowNewLine;
+  if FIsNLStreamWriter then
+  begin
+    LSWriter := FStreamWriter as TNewLineStreamWriter;
+    LPrevNewLineState := LSWriter.IgnoreNewLine;
+    try
+      LSWriter.IgnoreNewLine := not AStmt.AllowNewLine;
+      acceptvisitor(AStmt.Container, self);
+    finally
+      LSWriter.IgnoreNewLine := LPrevNewLineState;
+    end;
+  end
+  else
+  begin
     acceptvisitor(AStmt.Container, self);
-  finally
-    FStreamWriter.IgnoreNewLine := LPrevNewLineState;
   end;
 end;
 
@@ -937,7 +953,8 @@ begin
   FBuffer := TStringBuilder.Create;
   FOptions := AOptions;
   FNL := ANL;
-  FState := nlsStartOfLine;
+  FStartOfLine := true;
+  FLastChar := #0;
 end;
 
 destructor TNewLineStreamWriter.Destroy;
@@ -964,68 +981,64 @@ begin
   end;
 end;
 
+procedure TNewLineStreamWriter.TrimLast;
+begin
+  if (FBuffer.length >= 1) then
+  begin
+    FBuffer.length := FBuffer.length - 1;
+    if FBuffer.length = 0 then
+      FLastChar := #0
+    else
+      FLastChar := FBuffer.Chars[FBuffer.length - 1];
+    FStartOfLine := FBuffer.length = 0;
+  end;
+end;
+
 procedure TNewLineStreamWriter.Write(const AString: string);
 var
   LChar: char;
-
-  procedure Append(const ANext: TNLState);
-  begin
-    FBuffer.Append(LChar);
-    FState := ANext;
-  end;
+  LTrimLines: boolean;
+  LStripRecurringNL: boolean;
+  LIgnoreNewline: boolean;
+  LIdx: integer;
 
 begin
-  for LChar in AString do
+  LTrimLines := eoTrimLines in FOptions;
+  LStripRecurringNL := eoStripRecurringNewlines in FOptions;
+  LIgnoreNewline := FIgnoreNewline;
+  for LIdx := 1 to length(AString) do
   begin
-    case FState of
-      nlsStartOfLine:
-        if IsWhitespace(LChar) then
-        begin
-          if not(eoTrimLines in FOptions) then
-            Append(nlsHasText);
-        end
-        else if IsNewline(LChar) then
-        begin
-          if not FIgnoreNewline and not(eoStripRecurringNewlines in FOptions) then
-          begin
-            Append(nlsNewLine);
-            DoWrite();
-          end;
-        end
-        else
-          Append(nlsHasText);
-      nlsHasText:
-        if IsWhitespace(LChar) then
-          Append(nlsHasText)
-        else if IsNewline(LChar) then
-        begin
-          if not FIgnoreNewline then
-          begin
-            TrimEndOfLine();
-            FBuffer.Append(FNL);
-            FState := nlsNewLine;
-            DoWrite();
-          end;
-        end
-        else
-          Append(nlsHasText);
-      nlsNewLine:
-        if IsWhitespace(LChar) then
-        begin
-          if not(eoTrimLines in FOptions) then
-            Append(nlsNewLine);
-        end
-        else if IsNewline(LChar) then
-        begin
-          if not FIgnoreNewline and not(eoStripRecurringNewlines in FOptions) then
-          begin
-            Append(nlsNewLine);
-            DoWrite();
-          end;
-        end
-        else
-          Append(nlsHasText);
+    LChar := AString[LIdx];
+    if IsWhitespace(LChar) and FStartOfLine and LTrimLines then
+    begin
+      FLastChar := LChar;
+      continue;
     end;
+    if IsNewline(LChar) then
+    begin
+      if IsCR(FLastChar) then
+      begin
+        TrimLast;
+      end;
+      if LTrimLines then
+      begin
+        TrimEndOfLine;
+      end;
+      if not LIgnoreNewline then
+      begin
+        if not LStripRecurringNL or not IsNewline(FLastChar) then
+        begin
+          FBuffer.Append(FNL);
+          FStartOfLine := true;
+        end;
+      end;
+    end
+    else
+    begin
+      FBuffer.Append(LChar);
+      FStartOfLine := false;
+    end;
+    FLastChar := LChar;
   end;
 end;
 

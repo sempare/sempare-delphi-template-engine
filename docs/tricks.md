@@ -1,6 +1,6 @@
 # ![](../images/sempare-logo-45px.png) Sempare Template Engine
 
-Copyright (c) 2020 [Sempare Limited](http://www.sempare.ltd)
+Copyright (c) 2019-2021 [Sempare Limited](http://www.sempare.ltd)
 
 ## Tricks
 
@@ -33,3 +33,21 @@ abcd
 ### Improving performance on larger templates
 
 A quick win would be to use buffered stream so that characters in the buffer are processed quickly.
+
+### Loading templates dynamically
+
+If you reference templates using the 'include' statement, you can rely on a TemplateResolver to load them if they are not
+defined within the template itself.
+
+e.g. This is illustrative:
+
+```
+  ctx := Template.Context;
+  ctx.TemplateResolver := function(AContext: ITemplateContext; const ATemplate: string): ITemplate
+    var
+    	LStream : TFileStream;
+    begin
+      LStream := TFileStream.Create(ATemplate + '.tpl', fmOpenRead);
+      exit(Template.Parse(AContext, LStream));
+    end;
+```
