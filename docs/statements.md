@@ -278,3 +278,5 @@ This would yield something like
   	<tr><td>Col1</td><td>Col2</td></tr>
   </table>
 ```
+
+The _eoAllowIgnoreNL_ must be provided in the Context.Options or via Template.Eval() options.
