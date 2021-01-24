@@ -375,7 +375,7 @@ type
 
   TTemplateSymbolSet = set of TTemplateSymbol;
 
-  TParserOption = (poAllowEnd, poAllowElse, poAllowElIf, poHasElse, poInLoop);
+  TParserOption = (poAllowEnd, poAllowElse, poAllowElIf, poHasElse, poInLoop, poStripWS);
   TParserOptions = set of TParserOption;
 
   TTemplateParser = class(TInterfacedObject, ITemplateParser)
@@ -659,6 +659,11 @@ var
     exit(rulePrintStmtVariable(TValueExpr.Create(LSymbol.Position, LText)));
   end;
 
+  procedure SkipStmt;
+  begin
+    matchValue(VsText)
+  end;
+
 begin
   Container.QueryInterface(ITemplateAdd, LParentContainer);
   LLoop := true;
@@ -670,9 +675,16 @@ begin
     LStmt := nil;
     case LSymbol.Token of
       VsText:
-        LStmt := AddPrintStmt;
+        begin
+          if poStripWS in FOptions then
+            SkipStmt
+          else
+            LStmt := AddPrintStmt;
+        end;
       VsStartScript:
         begin
+          if LSymbol.StripWS then
+            exclude(FOptions, poStripWS);
           LStmt := ruleStmt;
           if LStmt = nil then
             LLoop := false;
@@ -1315,6 +1327,15 @@ begin
   LSymbol := FLookahead;
   if ASymbol = FLookahead.Token then
   begin
+    if LSymbol.StripWS then
+    begin
+      case ASymbol of
+        VsStartScript:
+          exclude(FOptions, poStripWS);
+        VsEndScript:
+          include(FOptions, poStripWS);
+      end;
+    end;
     FLookahead := FLexer.GetToken;
     exit;
   end;
@@ -1339,6 +1360,7 @@ begin
   if ASymbol = FLookahead.Token then
   begin
     result := lookaheadValue;
+
     FLookahead := FLexer.GetToken;
     exit;
   end;
@@ -1902,7 +1924,7 @@ procedure initOps;
 var
   LSymbol: TTemplateSymbol;
 begin
-  for LSymbol := Low(TTemplateSymbol) to High(TTemplateSymbol) do
+  for LSymbol := low(TTemplateSymbol) to high(TTemplateSymbol) do
     GTemplateBinOps[LSymbol] := boInvalid;
   GTemplateBinOps[vsin] := boIN;
   GTemplateBinOps[VsAND] := boAND;

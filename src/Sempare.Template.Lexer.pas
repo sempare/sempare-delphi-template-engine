@@ -77,13 +77,13 @@ type
   type
     TState = (SText, SScript);
 {$WARN WIDECHAR_REDUCED OFF}
-    TCharSet = set of Char;
+    TCharSet = set of char;
 {$WARN WIDECHAR_REDUCED ON}
 
     TPair = record
-      Input: Char;
+      Input: char;
       Eof: Boolean;
-      constructor Create(const Ainput: Char; const Aeof: Boolean);
+      constructor Create(const Ainput: char; const Aeof: Boolean);
     end;
 
   private
@@ -102,14 +102,15 @@ type
     FLineOffset: integer;
     FStartScript: string;
     FEndScript: string;
+    FStartStripWSScript: string;
+    FEndStripWSScript: string;
     FOptions: TTemplateEvaluationOptions;
     procedure GetInput;
     procedure SwallowInput; // a descriptive helper
-    function Expecting(const Achar: Char): Boolean; overload;
+    function Expecting(const Achar: char): Boolean; overload;
     function Expecting(const Achars: TCharSet): Boolean; overload;
     function GetTextToken: ITemplateSymbol;
     function GetScriptToken: ITemplateSymbol;
-
   public
     constructor Create(AContext: ITemplateContext; const AStream: TStream; const AFilename: string; const AManageStream: Boolean = True);
     destructor Destroy; override;
@@ -121,11 +122,13 @@ type
   private
     FToken: TTemplateSymbol;
     FPosition: IPosition;
+    FStripWS: Boolean;
     function GetPosition: IPosition;
   public
-    constructor Create(APosition: IPosition; const AToken: TTemplateSymbol);
+    constructor Create(APosition: IPosition; const AToken: TTemplateSymbol; const AStripWS: Boolean = false);
     procedure SetToken(const AToken: TTemplateSymbol);
     function GetToken: TTemplateSymbol;
+    function StripWS: Boolean;
   end;
 
   TTemplateValueSymbol = class(TSimpleTemplateSymbol, ITemplateValueSymbol)
@@ -159,6 +162,8 @@ begin
   FOptions := AContext.Options;
   FStartScript := AContext.StartToken;
   FEndScript := AContext.EndToken;
+  FStartStripWSScript := AContext.StartStripWSToken;
+  FEndStripWSScript := AContext.EndStripWSToken;
   if length(FStartScript) <> 2 then
     raise ETemplateLexer.Create(SContextStartTokenMustBeTwoCharsLong);
   if length(FEndScript) <> 2 then
@@ -185,7 +190,7 @@ begin
   inherited;
 end;
 
-function TTemplateLexer.Expecting(const Achar: Char): Boolean;
+function TTemplateLexer.Expecting(const Achar: char): Boolean;
 begin
   exit(FLookahead.Input = Achar);
 end;
@@ -208,7 +213,7 @@ begin
     FLookahead.Input := #0
   else
   begin
-    FLookahead.Input := Char(FReader.Read());
+    FLookahead.Input := char(FReader.Read());
     if FLookahead.Input = #10 then
     begin
       Inc(FLine);
@@ -223,16 +228,18 @@ function TTemplateLexer.GetScriptToken: ITemplateSymbol;
 
 const
 {$WARN WIDECHAR_REDUCED OFF}
-  WHITESPACE: set of Char = [#0, ' ', #9, #10, #13];
-  VARIABLE_START: set of Char = ['a' .. 'z', 'A' .. 'Z', '_'];
-  VARIABLE_END: set of Char = ['a' .. 'z', 'A' .. 'Z', '0' .. '9', '_'];
-  NUMBER: set of Char = ['0' .. '9'];
+  WHITESPACE: set of char = [#0, ' ', #9, #10, #13];
+  VARIABLE_START: set of char = ['a' .. 'z', 'A' .. 'Z', '_'];
+  VARIABLE_END: set of char = ['a' .. 'z', 'A' .. 'Z', '0' .. '9', '_'];
+  NUMBER: set of char = ['0' .. '9'];
   ESCAPE = '\';
 {$WARN WIDECHAR_REDUCED ON}
 var
   LLine: integer;
   LPosition: integer;
-  LLast: Char;
+  LLast: char;
+  LEndExpect: char;
+  LEndStripWS: Boolean;
 
   function MakePosition: IPosition;
   begin
@@ -242,9 +249,9 @@ var
       exit(TPosition.Create(FFilename, LLine, LPosition));
   end;
 
-  function SimpleToken(const ASymbol: TTemplateSymbol): ITemplateSymbol;
+  function SimpleToken(const ASymbol: TTemplateSymbol; const AStripWS: Boolean = false): ITemplateSymbol;
   begin
-    Result := TSimpleTemplateSymbol.Create(MakePosition, ASymbol);
+    Result := TSimpleTemplateSymbol.Create(MakePosition, ASymbol, AStripWS);
     GetInput;
   end;
 
@@ -262,7 +269,7 @@ var
     GetInput;
   end;
 
-  function ReturnString(const QuoteType: Char): ITemplateSymbol;
+  function ReturnString(const QuoteType: char): ITemplateSymbol;
   begin
     while not FLookahead.Eof and ((FLookahead.Input <> QuoteType) or (LLast = ESCAPE)) do
     begin
@@ -382,22 +389,29 @@ begin
           else
             exit(SimpleToken(vsCOLON));
       else
-        if FCurrent.Input = FEndScript[1] then
         begin
-          if Expecting(FEndScript[2]) then
+          if CharInSet(FCurrent.Input, [FEndScript[1], FEndStripWSScript[1]]) then
           begin
-            GetInput;
-            if FAccumulator.length > 0 then
-            begin
-              Result := ValueToken(VsText);
-              FNextToken := SimpleToken(VsEndScript);
-            end
+            if FCurrent.Input = FEndScript[1] then
+              LEndExpect := FEndScript[2]
             else
+              LEndExpect := FEndStripWSScript[2];
+            if Expecting(LEndExpect) then
             begin
-              Result := SimpleToken(VsEndScript);
+              LEndStripWS := FCurrent.Input = FEndStripWSScript[1];
+              GetInput;
+              if FAccumulator.length > 0 then
+              begin
+                Result := ValueToken(VsText);
+                FNextToken := SimpleToken(VsEndScript, LEndStripWS);
+              end
+              else
+              begin
+                Result := SimpleToken(VsEndScript, LEndStripWS);
+              end;
+              FState := SText;
+              exit;
             end;
-            FState := SText;
-            exit;
           end;
         end;
       end;
@@ -418,7 +432,8 @@ function TTemplateLexer.GetTextToken: ITemplateSymbol;
 var
   LLine: integer;
   LPosition: integer;
-  LLastChar, LCurChar: Char;
+  LLastChar, LCurChar: char;
+  LIsStartStripWSToken: Boolean;
 
   function MakePosition: IPosition;
   begin
@@ -428,9 +443,9 @@ var
       exit(TPosition.Create(FFilename, LLine, LPosition));
   end;
 
-  function SimpleToken(const ASymbol: TTemplateSymbol): ITemplateSymbol;
+  function SimpleToken(const ASymbol: TTemplateSymbol; const AStripWS: Boolean = false): ITemplateSymbol;
   begin
-    Result := TSimpleTemplateSymbol.Create(MakePosition, ASymbol);
+    Result := TSimpleTemplateSymbol.Create(MakePosition, ASymbol, AStripWS);
     GetInput;
   end;
 
@@ -450,11 +465,12 @@ begin
     GetInput;
   while not FCurrent.Eof do
   begin
-    if (FCurrent.Input = FStartScript[1]) and (FLookahead.Input = FStartScript[2]) then
+    LIsStartStripWSToken := (FCurrent.Input = FStartStripWSScript[1]) and (FLookahead.Input = FStartStripWSScript[2]);
+    if (FCurrent.Input = FStartScript[1]) and (FLookahead.Input = FStartScript[2]) or LIsStartStripWSToken then
     begin
       Result := ValueToken(VsText);
       FState := SScript;
-      FNextToken := SimpleToken(VsStartScript);
+      FNextToken := SimpleToken(VsStartScript, LIsStartStripWSToken);
       exit();
     end
     else
@@ -507,10 +523,11 @@ end;
 
 { TSimpleMustacheToken }
 
-constructor TSimpleTemplateSymbol.Create(APosition: IPosition; const AToken: TTemplateSymbol);
+constructor TSimpleTemplateSymbol.Create(APosition: IPosition; const AToken: TTemplateSymbol; const AStripWS: Boolean);
 begin
   FToken := AToken;
   FPosition := APosition;
+  FStripWS := AStripWS;
 end;
 
 function TSimpleTemplateSymbol.GetPosition: IPosition;
@@ -528,11 +545,16 @@ begin
   FToken := AToken;
 end;
 
+function TSimpleTemplateSymbol.StripWS: Boolean;
+begin
+  exit(FStripWS);
+end;
+
 { TStringMustacheToken }
 
 constructor TTemplateValueSymbol.Create(APosition: IPosition; const AToken: TTemplateSymbol; const AString: string);
 begin
-  inherited Create(APosition, AToken);
+  inherited Create(APosition, AToken, false);
   SetValue(AString);
 end;
 
@@ -557,7 +579,7 @@ end;
 
 { TTemplateLexer.TPair }
 
-constructor TTemplateLexer.TPair.Create(const Ainput: Char; const Aeof: Boolean);
+constructor TTemplateLexer.TPair.Create(const Ainput: char; const Aeof: Boolean);
 begin
   Input := Ainput;
   Eof := Aeof;

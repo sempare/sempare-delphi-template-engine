@@ -94,6 +94,9 @@ type
     [Test]
     procedure TestParseFile;
 
+    [Test]
+    procedure TestStripWSScripts;
+
   end;
 
 type
@@ -335,6 +338,15 @@ end;
 procedure TTestTemplate.TestStmts;
 begin
   Assert.AreEqual('1', Template.Eval('<% a := 1; print(a) %>'));
+end;
+
+procedure TTestTemplate.TestStripWSScripts;
+begin
+  Assert.AreEqual('', Template.Eval('<% a := 1 |>2<| a:=3 %>'));
+  Assert.AreEqual('12345678910', Template.Eval('<% for i := 1 to 10 |><%print(i)%><| end %>'));
+  Assert.AreEqual('12345678910', Template.Eval('<% for i := 1 to 10 |>'#13#10'<%print(i)%>'#13#10'<| end %>'));
+  Assert.AreEqual(#$D#$A'1'#$D#$A#$D#$A'2'#$D#$A#$D#$A'3'#$D#$A#$D#$A'4'#$D#$A#$D#$A'5'#$D#$A, Template.Eval('<% for i := 1 to 5 %>'#13#10'<%print(i)%>'#13#10'<% end %>'));
+  Assert.AreEqual('hellomiddleworld', Template.Eval('<% print("hello") |> this should '#13#10'<% print("middle") %>'#13#10' go missing<| print("world")  %>'));
 end;
 
 type

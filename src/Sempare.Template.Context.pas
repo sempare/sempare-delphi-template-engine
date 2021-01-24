@@ -125,6 +125,11 @@ type
     function GetStreamWriterProvider: TStreamWriterProvider;
     procedure SetStreamWriterProvider(const AProvider: TStreamWriterProvider);
 
+    function GetScriptEndStripWSToken: string;
+    function GetScriptStartStripWSToken: string;
+    procedure SetScriptEndStripWSToken(const Value: string);
+    procedure SetScriptStartStripWSToken(const Value: string);
+
     property Functions: ITemplateFunctions read GetFunctions write SetFunctions;
     property NewLine: string read GetNewLine write SetNewLine;
     property TemplateResolver: TTemplateResolver read GetTemplateResolver write SetTemplateResolver;
@@ -137,6 +142,10 @@ type
     property Options: TTemplateEvaluationOptions read GetOptions write SetOptions;
     property StartToken: string read GetScriptStartToken write SetScriptStartToken;
     property EndToken: string read GetScriptEndToken write SetScriptEndToken;
+
+    property StartStripWSToken: string read GetScriptStartStripWSToken write SetScriptStartStripWSToken;
+    property EndStripWSToken: string read GetScriptEndStripWSToken write SetScriptEndStripWSToken;
+
     property StreamWriterProvider: TStreamWriterProvider read GetStreamWriterProvider write SetStreamWriterProvider;
   end;
 
@@ -160,6 +169,9 @@ var
   GDefaultEncoding: TEncoding;
   GUTF8WithoutPreambleEncoding: TUTF8WithoutPreambleEncoding;
   GStreamWriterProvider: TStreamWriterProvider;
+
+  GDefaultOpenStripWSTag: string = '<|';
+  GDefaultCloseWSTag: string = '|>';
 
 implementation
 
@@ -186,6 +198,8 @@ type
     FOptions: TTemplateEvaluationOptions;
     FStartToken: string;
     FEndToken: string;
+    FStartStripWSToken: string;
+    FEndStripWSToken: string;
     FEncoding: TEncoding;
     FFunctions: ITemplateFunctions;
     FFunctionsSet: boolean;
@@ -220,6 +234,11 @@ type
     procedure SetScriptStartToken(const AToken: string);
     function GetScriptEndToken: string;
     procedure SetScriptEndToken(const AToken: string);
+
+    function GetScriptEndStripWSToken: string;
+    function GetScriptStartStripWSToken: string;
+    procedure SetScriptEndStripWSToken(const Value: string);
+    procedure SetScriptStartStripWSToken(const Value: string);
 
     function GetMaxRunTimeMs: integer;
     procedure SetMaxRunTimeMs(const ATimeMS: integer);
@@ -275,6 +294,8 @@ begin
   SetEncoding(GDefaultEncoding);
   FStartToken := GDefaultOpenTag;
   FEndToken := GDefaultCloseTag;
+  FStartStripWSToken := GDefaultOpenStripWSTag;
+  FEndStripWSToken := GDefaultCloseWSTag;
   FTemplates := TDictionary<string, ITemplate>.Create;
   FVariables := TTemplateVariables.Create;
   FFunctions := GFunctions;
@@ -353,9 +374,19 @@ begin
   exit(FVariables);
 end;
 
+function TTemplateContext.GetScriptEndStripWSToken: string;
+begin
+  exit(FEndStripWSToken);
+end;
+
 function TTemplateContext.GetScriptEndToken: string;
 begin
   exit(FEndToken);
+end;
+
+function TTemplateContext.GetScriptStartStripWSToken: string;
+begin
+  exit(FStartStripWSToken);
 end;
 
 function TTemplateContext.GetScriptStartToken: string;
@@ -420,9 +451,19 @@ begin
   FVariableEncoder := AEncoder;
 end;
 
+procedure TTemplateContext.SetScriptEndStripWSToken(const Value: string);
+begin
+  FEndStripWSToken := Value;
+end;
+
 procedure TTemplateContext.SetScriptEndToken(const AToken: string);
 begin
   FEndToken := AToken;
+end;
+
+procedure TTemplateContext.SetScriptStartStripWSToken(const Value: string);
+begin
+  FStartStripWSToken := Value;
 end;
 
 procedure TTemplateContext.SetScriptStartToken(const AToken: string);
