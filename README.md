@@ -2,13 +2,35 @@
 
 # ![](./images/sempare-logo-45px.png) Sempare Template Engine
 
-Copyright (c) 2020 [Sempare Limited](http://www.sempare.ltd)
+Copyright (c) 2019-2021 [Sempare Limited](http://www.sempare.ltd)
 
 Contact: <info@sempare.ltd>
 
 License: [GPL v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html) or [Sempare Limited Commercial License](./docs/commercial.license.md)
 
 Open Source: https://github.com/sempare/sempare-delphi-template-engine
+
+## Contents
+1. [Introduction](#Introduction)
+2. [Quickstart](#Quickstart)
+3. [Features](#Features)
+4. [Objectives](#Objectives)
+5. [Requirements](#Requirements)
+6. [Installation: GetIt](#Installation__GetIt)
+7. [Installation: Delphinus](#Installation__Delphinus_Support)
+8. [Feedback](#Feedback)
+9. [Statements](./docs/statements.md)
+10. [Expressions](./docs/expressions.md)
+11. [Builtin functions](./docs/builtin-functions.md)
+12. [Custom functions](./docs/custom-functions.md)
+13. [Configuration](./docs/configuration.md)
+14. [Components](./docs/components.md)
+15. [Tricks](./docs/tricks.md)
+16. [Template Patterns](./docs/restrictions.md)
+17. [Internals](./docs/internals.md)
+18. [Restrictions/Limitations/Known Bugs](./docs/restrictions.md)
+19. [Todo](./docs/todo.md)
+20. [License](#License)
 
 ## Introduction
 
@@ -50,25 +72,6 @@ In the example above, you can see that the '<%' start and '%>' end the scripting
 Quick tutorials on [You Tube](https://www.youtube.com/playlist?list=PLjjz4SuVScHreGKEInvrjPtLPMBU6l130). 
 The playlist has a few videos that are very short (most less than a minute - blink and they are done). You can drag the slider in the videos if you miss something or refer to the rest of the documentation. 
 
-## Contents
-1. [Introduction](#Introduction)
-2. [Features](#Features)
-3. [Objectives](#Objectives)
-4. [Requirements](#Requirements)
-5. [Feedback](#Feedback)
-6. [Statements](./docs/statements.md)
-7. [Expressions](./docs/expressions.md)
-8. [Builtin functions](./docs/builtin-functions.md)
-9. [Custom functions](./docs/custom-functions.md)
-10. [Stack Frames](./docs/stack-frames.md)
-11. [Tricks](./docs/tricks.md)
-12. [Configuration](./docs/configuration.md)
-13. [Debugging the script behaviour](./docs/debugging.md)
-14. [Simplified Grammar definition](./docs/simplified-grammar.md)
-15. [Design considerations](./docs/design-considerations.md)
-16. [Internals](./docs/internals.md)
-17. [Restrictions](./docs/restrictions.md)
-18. [Todo](./docs/todo.md)
 
 ## Features
 - statements
@@ -92,7 +95,7 @@ The playlist has a few videos that are very short (most less than a minute - bli
 - lazy template resolution
 - parse time evaluation of expressions/statements
 - allow use of custom encoding (UTF-8 with BOM, UTF-8 without BOM, ASCII, etc)
-- extensibile RTTI interface to easily dereference classes and interfaces (current customisations for IVelocityVariables, TDictionary, TJsonObject)
+- extensibile RTTI interface to easily dereference classes and interfaces (current customisations for ITemplateVariables, TDictionary, TJsonObject)
 
 ## Objectives
 
@@ -124,6 +127,12 @@ Have a look at Sempare.Template.Compiler.inc. The following defines can be defin
 - SEMPARE_TEMPLATE_FIREDAC - to support tests for TDataSet
 - SEMPARE_TEMPLATE_NO_INDY - if Indy is not present. This is used to access an html encoder if TNetEncoding is not available.
 
+## Installation: GetIt
+
+The Sempare Template Engine for Delphi can be installed via the [Embarcadero GetIt manager](https://getitnow.embarcadero.com/?q=sempare&product=rad-studio)
+
+This will add the *src* folder to the search path so you can start working immediately.
+
 ## Installation: Delphinus-Support
 
 The Sempare Template Engine for Delphi can be installed via the [Delphinus](https://github.com/Memnarch/Delphinus) package manager.
@@ -142,7 +151,7 @@ Open __Sempare.Template.Engine.Group.groupproj__ which will include:
      
 - __Sempare.Template.Tester.dproj__
 
-   80+ unit tests
+   100+ unit tests
 
 - __demo\VelocityDemo\Sempare.Template.Demo.dproj__
 
@@ -159,16 +168,22 @@ You can raise issues on [GitHub](https://github.com/sempare/sempare.template) an
 
 Most features have some basic tests in place. If a bug is been discovered, please include a basic test/scenario replicating the issue if possible as this will ease the investigation process.
 
+# Contributions
+
+Please see the [contibution terms and conditions](./docs/CONTRIBUTION.pdf)
+
 # License
 
-The Sempare Template library is dual-licensed. You may choose to use it under the restrictions of the [GPL v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html) at
+The Sempare Template Engien is dual-licensed. You may choose to use it under the restrictions of the [GPL v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html) at
 no cost to you, or you may purchase for user under the [Sempare Limited Commercial License](./docs/commercial.license.md)
 
-A commercial licence grants you the right to use Sempare Template in your own applications, royalty free, and without any requirement to disclose your source code nor any modifications to
-Sempare Templte to any other party. A commercial licence lasts into perpetuity, and entitles you to all future updates, free of charge.
+The dual-licensing scheme allows you to test the library with no restrictions, but subject to the terms of the GPL. A nominal fee is requested to support the maintenance of the library if the product is to be used in commercial products. This support fee binds you to the commercial license, removing any of the GPL restrictions, and allowing you to use the library in your products as you will.
 
-A commercial licence is sold per developer developing applications that use Sempare Template. The initial cost is £35 per developer and includes first year of support.
-For support thereafter, a nominal fee of £15 per developer per year if required (the cost of a few cups of coffee).
+A commercial licence grants you the right to use Sempare Template in your own applications, royalty free, and without any requirement to disclose your source code nor any modifications to
+Sempare Templte to any other party. A commercial licence lasts into perpetuity, and entitles you to all future updates - free of charge.
+
+A commercial licence is provided per developer developing applications that use the Sempare Template Engine. The initial cost is $70 per developer and includes first year of support.
+For support thereafter, at your discretion, a support fee of $30 per developer per year would be appreciated (the cost of a few cups of coffee). Please contact us for site license pricing.
 
 Please send an e-mail to info@sempare.ltd to request an invoice which will contain the bank details.
 
