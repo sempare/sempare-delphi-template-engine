@@ -207,13 +207,11 @@ begin
   end;
 
   LResult := Template.Eval(LString);
-
   Assert.AreEqual(LString, LResult);
 
   LString := '<% ignorenl %>' + LString + '<%end%>';
-  LResult := Template.Eval(LString);
+  LResult := Template.Eval(LString, [eoAllowIgnoreNL]);
   Assert.AreEqual('hello world', LResult);
-
 end;
 
 procedure TTestTemplate.TestIgnoreNL2;
@@ -241,7 +239,7 @@ begin
   Assert.AreEqual(LString, LResult);
 
   LString := '<% ignorenl %>' + LString + '<%end%>';
-  LResult := Template.Eval(LString);
+  LResult := Template.Eval(LString, [eoAllowIgnoreNL]);
   Assert.AreEqual('<table><tr><td>col1</td><td>col2</td></tr></table>', LResult);
 end;
 

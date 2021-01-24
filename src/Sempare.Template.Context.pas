@@ -73,7 +73,10 @@ type
     eoStripRecurringSpaces, //
     eoConvertTabsToSpaces, //
     eoNoDefaultFunctions, //
-    eoRaiseErrorWhenVariableNotFound //
+    eoRaiseErrorWhenVariableNotFound, //
+    eoAllowIgnoreNL, //
+
+    eoInternalUseNewLine //
     );
 
   TTemplateEvaluationOptions = set of TTemplateEvaluationOption;
@@ -429,6 +432,7 @@ end;
 procedure TTemplateContext.SetNewLine(const ANewLine: string);
 begin
   FNewLine := ANewLine;
+  include(FOptions, eoInternalUseNewLine);
 end;
 
 procedure TTemplateContext.SetOptions(const AOptions: TTemplateEvaluationOptions);
@@ -545,7 +549,10 @@ GUTF8WithoutPreambleEncoding := TUTF8WithoutPreambleEncoding.Create;
 GDefaultEncoding := TEncoding.UTF8WithoutBOM;
 GStreamWriterProvider := function(const AStream: TStream; AContext: ITemplateContext): TStreamWriter
   begin
-    exit(TNewLineStreamWriter.Create(AStream, AContext.Encoding, AContext.NewLine, AContext.Options));
+    if (eoTrimLines in AContext.Options) or (eoStripRecurringNewlines in AContext.Options) or (eoAllowIgnoreNL in AContext.Options) or (eoInternalUseNewLine in AContext.Options) then
+      exit(TNewLineStreamWriter.Create(AStream, AContext.Encoding, AContext.NewLine, AContext.Options))
+    else
+      exit(TStreamWriter.Create(AStream, AContext.Encoding));
   end;
 
 finalization
