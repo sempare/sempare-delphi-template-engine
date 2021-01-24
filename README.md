@@ -40,7 +40,7 @@ Template engines are used often in in the technology where text needs to be cust
 - mail merge 
 - notification messages 
 
-The Sempare Template Engine is small templating engine for [Delphi](https://www.embarcadero.com/products/delphi) (Object Pascal) that allows for templates to be created easily and efficiently by providing a simple and easy to use interface.
+The Sempare Template Engine is a small templating engine for [Delphi](https://www.embarcadero.com/products/delphi) (Object Pascal) that allows for templates to be created easily and efficiently by providing a simple and easy to use interface.
 
 Example usage:
 ```
