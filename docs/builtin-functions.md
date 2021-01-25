@@ -31,6 +31,12 @@ Copyright (c) 2019-2021 [Sempare Limited](http://www.sempare.ltd)
 - [sort](#sort)
 - [chr](#chr)
 - [ord](#ord)
+- [padleft](#padleft)
+- [padright](#padright)
+- [tabs](#tabs)
+- [spaces](#spaces)
+- [crnl](#crnl)
+- [nl](#nl)
 
 
 ## trim(string)
@@ -166,4 +172,40 @@ Convert a numeric value to the character counterpart.
 Convert a character to the numeric counterpart.
 ```
 <% ord('a') %>
+```
+
+## padleft(str, len[, padchar=' '])
+Pad string with padchar from the left till the string is len long.
+```
+<% padleft('123', 6) %>
+```
+
+## padright(str, len[, padchar=' '])
+Pad string with padchar from the right till the string is len long.
+```
+<% padright('123', 6) %>
+```
+
+## tabs(len)
+Return len tabs
+```
+<% tabs(2) %>
+```
+
+## spaces(len)
+return len spaces
+```
+<% spaces(2) %>
+```
+
+## crnl(len)
+return a string with len #13#10
+```
+<% crnl(2) %>
+```
+
+## nl(len)
+return a string with len #10
+```
+<% nl(2) %>
 ```

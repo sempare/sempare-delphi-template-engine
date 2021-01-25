@@ -85,6 +85,8 @@ type
     procedure TestSort;
     [Test]
     procedure TestChrOrd();
+    [Test]
+    procedure TestPadding;
 
   end;
 
@@ -178,6 +180,18 @@ begin
   Assert.AreEqual('123', Template.Eval('<% num(123) %>'));
   Assert.AreEqual('123.45', Template.Eval('<% num(123.45) %>'));
 
+end;
+
+procedure TFunctionTest.TestPadding;
+begin
+  Assert.AreEqual('   123', Template.Eval('<% padleft(123, 6) %>'));
+  Assert.AreEqual('000123', Template.Eval('<% padleft(123, 6, "0") %>'));
+  Assert.AreEqual('123   ', Template.Eval('<% padright(123, 6) %>'));
+  Assert.AreEqual('123000', Template.Eval('<% padright(123, 6, "0") %>'));
+  Assert.AreEqual(#9#9#9#9#9, Template.Eval('<% tabs(5) %>'));
+  Assert.AreEqual('     ', Template.Eval('<% spaces(5) %>'));
+  Assert.AreEqual(#10#10#10#10#10, Template.Eval('<% nl(5) %>'));
+  Assert.AreEqual(#13#10#13#10, Template.Eval('<% crnl(2) %>'));
 end;
 
 procedure TFunctionTest.TestPos;
