@@ -42,9 +42,10 @@ type
   [TestFixture]
   TContextTest = class
   public
-
     [Test]
     procedure TestVariables();
+    [Test]
+    procedure TestCRNLTAB;
   end;
 
 implementation
@@ -63,6 +64,14 @@ begin
   ctx.Variable['company'] := 'Sempare Limited';
 
   Assert.AreEqual('Sempare Limited 2019', Template.Eval(ctx, '<% company %> <% _ %>', 2019));
+end;
+
+procedure TContextTest.TestCRNLTAB;
+begin
+  Assert.AreEqual(#10, Template.Eval('<% nl %>'));
+  Assert.AreEqual(#13, Template.Eval('<% cr %>'));
+  Assert.AreEqual(#13#10, Template.Eval('<% crnl %>'));
+  Assert.AreEqual(#9, Template.Eval('<% tab %>'));
 end;
 
 end.
