@@ -29,6 +29,8 @@ Copyright (c) 2019-2021 [Sempare Limited](http://www.sempare.ltd)
 - [replace](#replace)
 - [match](#match)
 - [sort](#sort)
+- [chr](#chr)
+- [ord](#ord)
 
 
 ## trim(string)
@@ -152,4 +154,16 @@ For more information, see http://docwiki.embarcadero.com/Libraries/Rio/en/System
 Sorts basic arrays of integer, double, extended and string or something enumerable of these types.
 ```
 <% values := sort(split('g,f,d,s,d,a', ',')) %>
+```
+
+## chr(val)
+Convert a numeric value to the character counterpart.
+```
+<% chr(10) %>
+```
+
+## ord(char)
+Convert a character to the numeric counterpart.
+```
+<% ord('a') %>
 ```

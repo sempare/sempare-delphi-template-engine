@@ -83,6 +83,9 @@ type
     procedure TestMatch;
     [Test]
     procedure TestSort;
+    [Test]
+    procedure TestChrOrd();
+
   end;
 
 type
@@ -98,6 +101,13 @@ uses
   Sempare.Template;
 
 { TFunctionTest }
+
+procedure TFunctionTest.TestChrOrd;
+begin
+  Assert.AreEqual(#10, Template.Eval('<% chr(10) %>'));
+  Assert.AreEqual(#9, Template.Eval('<% chr(9) %>'));
+  Assert.AreEqual('200', Template.Eval('<% ord(chr(200)) %>'));
+end;
 
 procedure TFunctionTest.TestDtNow;
 var
