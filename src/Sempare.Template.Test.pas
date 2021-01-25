@@ -97,6 +97,10 @@ type
     [Test]
     procedure TestStripWSScripts;
 
+    [Test]
+    // Not Yet Supported
+    procedure TestSemiColon;
+
   end;
 
 type
@@ -323,6 +327,15 @@ begin
     end);
 end;
 
+procedure TTestTemplate.TestSemiColon;
+begin
+  Assert.WillRaise(
+    procedure
+    begin
+      Assert.AreEqual('hello world', Template.Eval('<% a:= "hello" ; b:= "world" ; print(a + " " + b) %>'));
+    end);
+end;
+
 procedure TTestTemplate.TestStartEndToken;
 var
   ctx: ITemplateContext;
@@ -345,6 +358,7 @@ begin
   Assert.AreEqual('12345678910', Template.Eval('<% for i := 1 to 10 |>'#13#10'<%print(i)%>'#13#10'<| end %>'));
   Assert.AreEqual(#$D#$A'1'#$D#$A#$D#$A'2'#$D#$A#$D#$A'3'#$D#$A#$D#$A'4'#$D#$A#$D#$A'5'#$D#$A, Template.Eval('<% for i := 1 to 5 %>'#13#10'<%print(i)%>'#13#10'<% end %>'));
   Assert.AreEqual('hellomiddleworld', Template.Eval('<% print("hello") |> this should '#13#10'<% print("middle") %>'#13#10' go missing<| print("world")  %>'));
+  Assert.AreEqual('12345', Template.Eval('<% for i:=1 to 5 |> <%i%>     '#13#10'<| end %>'));
 end;
 
 type

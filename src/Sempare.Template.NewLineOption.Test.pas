@@ -54,6 +54,8 @@ type
     procedure TestNewLineWithCustomStreamWriter;
     [Test]
     procedure TestNewLineWithContext;
+    [Test]
+    procedure TestNL;
   end;
 
 implementation
@@ -106,6 +108,14 @@ begin
   r.description := 'some desc';
   s := Template.Eval(ctx, 'Value: <% value %>'#$D#$A'Description: <% description %>', r);
   Assert.AreEqual('Value: a value'#$D#$A'Description: some desc', s);
+end;
+
+procedure TTestNewLineOption.TestNL;
+var
+  s: string;
+begin
+  s := Template.Eval('<% print("hello" + chr(13) + chr(10) + crnl) %>');
+  Assert.AreEqual('hello'#13#10#13#10, s);
 end;
 
 procedure TTestNewLineOption.TestRecurringNLAndSpaces;

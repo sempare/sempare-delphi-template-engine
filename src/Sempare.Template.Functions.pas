@@ -168,7 +168,32 @@ type
     class function Replace(const AValue, AWith, AIn: string): string; static;
     class function Match(const AValue, ARegex: string): boolean; static;
     class function Sort(const AArray: TValue): TValue; static;
+    class function Chr(const AValue: int64): string; static;
+    class function Ord(const AValue: string): int64; static;
+    class function tabs(const ANum: integer): string; static;
+    class function spaces(const ANum: integer): string; static;
+    class function crnl(const ANum: integer): string; static;
+    class function nl(const ANum: integer): string; static;
+    class function PadLeft(const AStr: string; const ANum: integer; const APadChar: char): string; overload; static;
+    class function PadLeft(const AStr: string; const ANum: integer): string; overload; static;
+    class function PadRight(const AStr: string; const ANum: integer): string; overload; static;
+    class function PadRight(const AStr: string; const ANum: integer; const APadChar: char): string; overload; static;
   end;
+
+class function TInternalFuntions.PadLeft(const AStr: string; const ANum: integer): string;
+begin
+  exit(AStr.PadLeft(ANum));
+end;
+
+class function TInternalFuntions.PadRight(const AStr: string; const ANum: integer; const APadChar: char): string;
+begin
+  exit(AStr.PadRight(ANum, APadChar));
+end;
+
+class function TInternalFuntions.PadRight(const AStr: string; const ANum: integer): string;
+begin
+  exit(AStr.PadRight(ANum));
+end;
 
 class function TInternalFuntions.Pos(const search, Str: string): integer;
 begin
@@ -248,6 +273,11 @@ begin
     exit(AArray)
 end;
 
+class function TInternalFuntions.spaces(const ANum: integer): string;
+begin
+  exit(''.PadLeft(ANum, ' '));
+end;
+
 class function TInternalFuntions.Split(const AString: string; const ASep: string): TArray<string>;
 begin
   exit(AString.Split([ASep], MaxInt, TStringSplitOptions.None));
@@ -263,9 +293,21 @@ begin
   exit(TRegex.IsMatch(AValue, ARegex));
 end;
 
+class function TInternalFuntions.nl(const ANum: integer): string;
+begin
+  exit(''.PadLeft(ANum, #10));
+end;
+
 class function TInternalFuntions.Num(const AValue: TValue): extended;
 begin
   exit(AsNum(AValue));
+end;
+
+class function TInternalFuntions.Ord(const AValue: string): int64;
+begin
+  if length(AValue) = 1 then
+    exit(System.Ord(AValue[1]));
+  exit(0);
 end;
 
 class function TInternalFuntions.Uppercase(const AString: string): string;
@@ -311,6 +353,11 @@ end;
 class function TInternalFuntions.Substring(const AString: string; AStartOffset: integer): string;
 begin
   exit(Substring(AString, AStartOffset, length(AString)));
+end;
+
+class function TInternalFuntions.tabs(const ANum: integer): string;
+begin
+  exit(''.PadLeft(ANum, #9));
 end;
 
 class function TInternalFuntions.SubStr(const AString: string; AStartOffset: integer): string;
@@ -437,6 +484,26 @@ begin
     exit(AsBoolean(AValue));
 end;
 
+class function TInternalFuntions.Chr(const AValue: int64): string;
+begin
+   exit(System.Chr(AValue));
+end;
+
+class function TInternalFuntions.crnl(const ANum: integer): string;
+var
+  Lsb: tstringbuilder;
+  LIdx: integer;
+begin
+  Lsb := tstringbuilder.Create;
+  try
+    for LIdx := 1 to ANum do
+      Lsb.Append(#13#10);
+    exit(Lsb.ToString());
+  finally
+    Lsb.Free;
+  end;
+end;
+
 class function TInternalFuntions.DtNow(): TDateTime;
 begin
   exit(System.SysUtils.Now);
@@ -559,7 +626,7 @@ begin
     raise ETemplateFunction.Create(STypesAreNotOfTheSameType);
   case ALeft.Kind of
     tkInteger, tkInt64:
-      exit(TComparer<Int64>.Default.Compare(ALeft.AsInt64, ARight.AsInt64));
+      exit(TComparer<int64>.Default.Compare(ALeft.AsInt64, ARight.AsInt64));
     tkFloat:
       exit(TComparer<extended>.Default.Compare(ALeft.AsExtended, ARight.AsExtended));
     tkString, tkLString, tkWString, tkUString:
@@ -567,6 +634,11 @@ begin
   else
     raise ETemplateFunction.Create(STypeNotSupported);
   end;
+end;
+
+class function TInternalFuntions.PadLeft(const AStr: string; const ANum: integer; const APadChar: char): string;
+begin
+  exit(AStr.PadLeft(ANum, APadChar));
 end;
 
 initialization

@@ -305,6 +305,10 @@ begin
   FLock := TCriticalSection.Create;
   FNewLine := GNewLine;
   FStreamWriterProvider := GStreamWriterProvider;
+  FVariables.Items['CR'] := #13;
+  FVariables.Items['NL'] := #10;
+  FVariables.Items['CRNL'] := #13#10;
+  FVariables.Items['TAB'] := #9;
 end;
 
 destructor TTemplateContext.Destroy;
