@@ -55,6 +55,7 @@ type
 
     function GetIsEmpty: boolean;
     procedure AddFunctions(const AClass: TClass);
+    procedure Remove(const AName: string);
     procedure RegisterDefaults;
     function TryGetValue(const AName: string; out AMethod: TArray<TRttiMethod>): boolean;
     function Add(const AMethod: TRttiMethod): boolean;
