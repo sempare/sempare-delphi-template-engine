@@ -43,6 +43,9 @@ type
   TTestTemplateLexer = class
   public
 
+    [test]
+    procedure TestDouble;
+
     [Test]
     procedure TestLexer;
 
@@ -64,6 +67,12 @@ uses
   Sempare.Template.Common,
   Sempare.Template.Lexer,
   Sempare.Template;
+
+procedure TTestTemplateLexer.TestDouble;
+begin
+  Assert.AreEqual('543.21', Template.Eval('<% x:= 543.21 %><% x %>'));
+  Assert.AreEqual('5.1234', Template.Eval('<% x:= 5.1234 %><% x %>'));
+end;
 
 procedure TTestTemplateLexer.TestDoubleQuotedString;
 begin
