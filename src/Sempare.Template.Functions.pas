@@ -79,6 +79,7 @@ type
     function GetIsEmpty: boolean;
 
     procedure AddFunctions(const AClass: TClass);
+    procedure Remove(const AName: string);
     procedure RegisterDefaults;
 
     function TryGetValue(const AName: string; out AMethods: TArray<TRttiMethod>): boolean;
@@ -447,8 +448,8 @@ var
   LIdx: integer;
 begin
   setlength(result, length(AArgs));
-  for LIdx := low(AArgs) to high(AArgs) do
-    result[LIdx] := UnWrap(AArgs[LIdx]).AsLimitedVarRec;
+  for LIdx := 0 to high(AArgs) do
+    result[LIdx] := AArgs[LIdx].AsVarRec;
 end;
 
 class function TInternalFuntions.EndsWith(const AString, ASearch: string): boolean;
@@ -463,7 +464,7 @@ end;
 
 class function TInternalFuntions.Fmt(const AArgs: TArray<TValue>): string;
 begin
-  exit(format(AsString(AArgs[0]), ToArrayTVarRec(copy(AArgs, 1, length(AArgs) - 1))));
+  exit(format(AsString(AArgs[0]), ToArrayTVarRec(copy(AArgs, 1, length(aargs)-1)));
 end;
 
 class function TInternalFuntions.FmtDt(const AFormat: string; const ADateTime: TDateTime): string;
@@ -486,7 +487,7 @@ end;
 
 class function TInternalFuntions.Chr(const AValue: int64): string;
 begin
-   exit(System.Chr(AValue));
+  exit(System.Chr(AValue));
 end;
 
 class function TInternalFuntions.crnl(const ANum: integer): string;
@@ -611,6 +612,11 @@ end;
 procedure TTemplateFunctions.RegisterDefaults;
 begin
   AddFunctions(TInternalFuntions);
+end;
+
+procedure TTemplateFunctions.Remove(const AName: string);
+begin
+  FFunctions.Remove(AName);
 end;
 
 function TTemplateFunctions.TryGetValue(const AName: string; out AMethods: TArray<TRttiMethod>): boolean;
