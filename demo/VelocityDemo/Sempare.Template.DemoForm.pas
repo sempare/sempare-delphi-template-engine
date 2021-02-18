@@ -128,6 +128,7 @@ type
     procedure SetOption(const AEnable: boolean; const AOption: TTemplateEvaluationOption);
   public
     { Public declarations }
+    procedure OnException(Sender: TObject; E: Exception);
   end;
 
 var
@@ -157,6 +158,8 @@ begin
 end;
 
 procedure TFormRealTime.butEvalClick(Sender: TObject);
+var
+  LActivePage: TTabSheet;
 begin
   try
     if FFilename <> '' then
@@ -164,9 +167,15 @@ begin
     FTemplate := Template.Parse(memoTemplate.Lines.Text);
     // Template.TemplateText := memoTemplate.Lines.Text;
     Process;
+    // this is a hack so that app does not throw an exception
+    // during shutdown. it seems that the webbrowser must be visible
+    // or else it does not shutdown properly
+    LActivePage := pcOutput.ActivePage;
+    pcOutput.ActivePage := tsWebBrowser;
+    pcOutput.ActivePage := LActivePage;
   except
-    on e: exception do
-      memoOutput.Lines.Text := e.Message;
+    on E: Exception do
+      memoOutput.Lines.Text := E.Message;
   end;
 end;
 
@@ -385,6 +394,10 @@ begin
   butEvalClick(Sender);
 end;
 
+procedure TFormRealTime.OnException(Sender: TObject; E: Exception);
+begin
+end;
+
 procedure TFormRealTime.Process;
 begin
   if not Finit then
@@ -395,9 +408,9 @@ begin
     memoOutput.Lines.Text := Template.Eval(FContext, FTemplate);
     memoPrettyPrint.Lines.Text := Sempare.Template.Template.PrettyPrint(FTemplate);
   except
-    on e: exception do
+    on E: Exception do
     begin
-      memoOutput.Lines.Text := e.Message;
+      memoOutput.Lines.Text := E.Message;
       memoPrettyPrint.Lines.Text := '';
     end;
   end;
@@ -436,7 +449,7 @@ begin
     url := 'file://' + ExpandUNCFileName(GetCurrentDir).Replace('\', '/', [rfReplaceAll]) + '/out.htm';
     WebBrowser1.navigate(url);
   except
-    on e: exception do
+    on E: Exception do
     begin
 
     end;
