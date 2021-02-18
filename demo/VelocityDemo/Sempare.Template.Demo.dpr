@@ -1,4 +1,4 @@
- (*%*************************************************************************************************
+(*%*************************************************************************************************
  *                 ___                                                                              *
  *                / __|  ___   _ __    _ __   __ _   _ _   ___                                      *
  *                \__ \ / -_) | '  \  | '_ \ / _` | | '_| / -_)                                     *
@@ -42,5 +42,6 @@ begin
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
   Application.CreateForm(TFormRealTime, FormRealTime);
+  Application.OnException := FormRealTime.OnException;
   Application.Run;
 end.
