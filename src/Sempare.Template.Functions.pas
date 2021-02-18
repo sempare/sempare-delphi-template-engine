@@ -464,7 +464,7 @@ end;
 
 class function TInternalFuntions.Fmt(const AArgs: TArray<TValue>): string;
 begin
-  exit(format(AsString(AArgs[0]), ToArrayTVarRec(copy(AArgs, 1, length(aargs)-1)));
+  exit(format(AsString(AArgs[0]), ToArrayTVarRec(copy(AArgs, 1, length(aargs)-1))));
 end;
 
 class function TInternalFuntions.FmtDt(const AFormat: string; const ADateTime: TDateTime): string;
