@@ -400,6 +400,8 @@ begin
     exit(AArg);
 end;
 
+{$IFNDEF SUPPORT_AS_VARREC}
+
 type
   TValueHelper = record helper for TValue
     function AsLimitedVarRec: TVarrec;
@@ -407,41 +409,47 @@ type
 
 function TValueHelper.AsLimitedVarRec: TVarrec;
 begin
-  case Kind of
-    tkInteger:
-      begin
-        result.VType := vtInteger;
-        result.VInteger := AsInteger;
-        exit;
-      end;
-    tkFloat:
-      begin
-        result.VType := vtExtended;
-        result.VExtended := GetReferenceToRawData;
-        exit;
-      end;
-    tkString, tkWString, tkLString, tkUString:
-      begin
-        result.VType := vtUnicodeString;
-        result.VUnicodeString := Pointer(AsString);
-        exit;
-      end;
-    tkInt64:
-      begin
-        result.VType := vtInt64;
-        result.VInt64 := GetReferenceToRawData;
-        exit;
-      end;
-    tkEnumeration:
-      if true then
-      begin
-        result.VType := vtBoolean;
-        result.VBoolean := AsBoolean;
-        exit;
-      end;
-  end;
-  raise ETemplateFunction.Create(STypeNotSupported);
+  FillChar(result, sizeof(result), 0);
+  with result do
+    case Kind of
+      tkInteger:
+        begin
+          Vtype := vtInteger;
+          VInteger := AsInteger;
+        end;
+      tkFloat:
+        begin
+          Vtype := vtExtended;
+          VExtended := GetReferenceToRawData;
+        end;
+      tkString, tkWString, tkLString, tkUString:
+        begin
+          Vtype := vtUnicodeString;
+          VUnicodeString := Pointer(AsString);
+        end;
+      tkInt64:
+        begin
+          Vtype := vtInteger;
+          VInt64 := GetReferenceToRawData;
+        end;
+      tkEnumeration:
+        begin
+          if IsType<boolean> then
+          begin
+            Vtype := vtBoolean;
+            VBoolean := AsBoolean;
+          end
+          else
+          begin
+            Vtype := vtInteger;
+            VInteger := AsInteger;
+          end;
+        end;
+    else
+      raise ETemplateFunction.Create(STypeNotSupported);
+    end;
 end;
+{$ENDIF}
 
 function ToArrayTVarRec(const AArgs: TArray<TValue>): TArray<TVarrec>;
 var
@@ -449,7 +457,11 @@ var
 begin
   setlength(result, length(AArgs));
   for LIdx := 0 to high(AArgs) do
+{$IFNDEF SUPPORT_AS_VARREC}
+    result[LIdx] := AArgs[LIdx].AsLimitedVarRec;
+{$ELSE}
     result[LIdx] := AArgs[LIdx].AsVarRec;
+{$ENDIF}
 end;
 
 class function TInternalFuntions.EndsWith(const AString, ASearch: string): boolean;
@@ -464,7 +476,7 @@ end;
 
 class function TInternalFuntions.Fmt(const AArgs: TArray<TValue>): string;
 begin
-  exit(format(AsString(AArgs[0]), ToArrayTVarRec(copy(AArgs, 1, length(aargs)-1))));
+  exit(format(AsString(AArgs[0]), ToArrayTVarRec(copy(AArgs, 1, length(AArgs) - 1))));
 end;
 
 class function TInternalFuntions.FmtDt(const AFormat: string; const ADateTime: TDateTime): string;
