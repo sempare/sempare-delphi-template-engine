@@ -89,9 +89,6 @@ type
     procedure TestPadding;
     [Test]
     procedure AddFmtNumTest;
-    [Test]
-    procedure AddFmtNumLocalOverrideTest;
-
   end;
 
 type
@@ -109,34 +106,7 @@ uses
   Sempare.Template,
   Sempare.Template.Rtti;
 
-type
-  TFormatFn = class
-  public
-    class function Fmt(const AArgs: TArray<TValue>): string; static;
-  end;
-
-class function TFormatFn.Fmt(const AArgs: TArray<TValue>): string;
-var
-  LArgs: TArray<TVarrec>;
-  LIdx: integer;
-begin
-  setlength(LArgs, high(AArgs));
-  for LIdx := 1 to high(AArgs) do
-    LArgs[LIdx - 1] := AArgs[LIdx].AsVarRec;
-  exit(format(AsString(AArgs[0]), LArgs));
-end;
-
 { TFunctionTest }
-
-procedure TFunctionTest.AddFmtNumLocalOverrideTest;
-var
-  LCtx: ITemplateContext;
-begin
-  LCtx := Template.Context();
-  LCtx.Functions.Remove('fmt');
-  LCtx.Functions.AddFunctions(TFormatFn);
-  Assert.AreEqual('123.457', Template.Eval(LCtx, '<% x := 123.456789 %><% fmt("%6.3f", x) %>'));
-end;
 
 procedure TFunctionTest.AddFmtNumTest;
 begin
