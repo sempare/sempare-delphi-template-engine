@@ -12,7 +12,7 @@
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
  ****************************************************************************************************
  *                                                                                                  *
- * Copyright (c) 2020 Sempare Limited                                                               *
+ * Copyright (c) 2019-2021 Sempare Limited                                                          *
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
@@ -100,6 +100,9 @@ type
     [Test]
     // Not Yet Supported
     procedure TestSemiColon;
+
+    [Test]
+    procedure TestExtractVariablesAndFunctions;
 
   end;
 
@@ -418,6 +421,23 @@ begin
       exit(Template.parse(AContext, '_' + ATemplate + '_'));
     end;
   Assert.AreEqual('_abc__def__abc_', Template.Eval(ctx, '<% include(''abc'') %><% include(''def'') %><% include(''abc'') %>'));
+end;
+
+procedure TTestTemplate.TestExtractVariablesAndFunctions;
+var
+  LVariables: TArray<string>;
+  LFunctions: TArray<string>;
+  LTemplate: ITemplate;
+begin
+  LTemplate := Template.parse('<% v1 %> <% for i in _ %> <% x := substr("abc",1,2) %> <% end %> <% firstname %> <% lastname %>');
+  Template.ExtractReferences(LTemplate, LVariables, LFunctions);
+  Assert.AreEqual(4, length(LVariables));
+  Assert.AreEqual('v1', LVariables[0]);
+  Assert.AreEqual('_', LVariables[1]);
+  Assert.AreEqual('firstname', LVariables[2]);
+  Assert.AreEqual('lastname', LVariables[3]);
+  Assert.AreEqual(1, length(LFunctions));
+  Assert.AreEqual('SubStr', LFunctions[0]);
 end;
 
 procedure TTestTemplate.TestGenPhp;
