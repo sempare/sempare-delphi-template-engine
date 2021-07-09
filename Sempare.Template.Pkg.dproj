@@ -158,7 +158,6 @@
         <DCCReference Include="src\Sempare.Template.StackFrame.pas"/>
         <DCCReference Include="src\Sempare.Template.Rtti.pas"/>
         <DCCReference Include="src\Sempare.Template.PrettyPrint.pas"/>
-        <DCCReference Include="src\Sempare.Boot.Template.Velocity.pas"/>
         <DCCReference Include="src\Sempare.Template.Parser.pas"/>
         <DCCReference Include="src\Sempare.Template.Lexer.pas"/>
         <DCCReference Include="src\Sempare.Template.Functions.pas"/>
