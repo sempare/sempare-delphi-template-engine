@@ -112,6 +112,10 @@ type
     class function ParseFile(const AFile: string): ITemplate; overload; static;
     class function ParseFile(AContext: ITemplateContext; const AFile: string): ITemplate; overload; static;
 
+    // extract references
+
+    class procedure ExtractReferences(ATemplate: ITemplate; out AVariables: TArray<string>; out AFunctions: TArray<string>); static;
+
   end;
 
   TEncodingHelper = class helper for TEncoding
@@ -123,6 +127,7 @@ implementation
 
 uses
   Sempare.Template.Evaluate,
+  Sempare.Template.VariableExtraction,
   Sempare.Template.PrettyPrint;
 
 type
@@ -277,6 +282,16 @@ end;
 class function Template.Eval<T>(AContext: ITemplateContext; const ATemplate: string; const AValue: T): string;
 begin
   exit(Eval(AContext, Template.Parse(AContext, ATemplate), AValue));
+end;
+
+class procedure Template.ExtractReferences(ATemplate: ITemplate; out AVariables: TArray<string>; out AFunctions: TArray<string>);
+var
+  LVisitor: ITemplateVisitor;
+begin
+  LVisitor := TTemplateReferenceExtractionVisitor.Create();
+  AcceptVisitor(ATemplate, LVisitor);
+  AVariables := TTemplateReferenceExtractionVisitor(LVisitor).Variables;
+  AFunctions := TTemplateReferenceExtractionVisitor(LVisitor).Functions;
 end;
 
 class function Template.Eval(AContext: ITemplateContext; ATemplate: ITemplate): string;
