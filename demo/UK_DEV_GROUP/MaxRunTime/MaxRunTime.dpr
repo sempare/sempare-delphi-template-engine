@@ -7,16 +7,16 @@ program MaxRunTime;
 uses
   System.SysUtils,
   System.Generics.Collections,
-  Sempare.Boot.Template.Velocity;
+  Sempare.Template;
 
 var
-  ctx : IVelocityContext;
+  ctx : ITemplateContext;
 
 begin
   try
-  ctx := Velocity.Context();
+  ctx := Template.Context();
   ctx.MaxRunTimeMs := 5;
-  Velocity.Eval(ctx, '<% i := 0 %> <% while i < 10000 %> <% i %> <% i := i + 1 %> <% end %>');
+  Template.Eval(ctx, '<% i := 0 %> <% while i < 10000 %> <% i %> <% i := i + 1 %> <% end %>');
   except
     on E: Exception do
       Writeln(E.ClassName, ': ', E.Message);
