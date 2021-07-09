@@ -6,7 +6,7 @@ program UsingArray;
 uses
   System.SysUtils,
   System.Generics.Collections,
-  Sempare.Boot.Template.Velocity;
+  Sempare.Template;
 
 type
 
@@ -36,7 +36,7 @@ begin
   a[2] := TMyClass.Create('f');
   a[3] := TMyClass.Create('g');
 
-  writeln(Velocity.Eval('<% for i in _%><%_[i].name%><%end%>  ', a));
+  writeln(Template.Eval('<% for i in _%><%_[i].name%><%end%>  ', a));
 
   for v in a do
     v.Free;
@@ -50,7 +50,7 @@ begin
   a[2] := TMyRec.Create('a', 'A');
   a[3] := TMyRec.Create('b', 'B');
   a[4] := TMyRec.Create('c', 'C');
-  writeln(Velocity.Eval('<% for i in _%>' + //
+  writeln(Template.Eval('<% for i in _%>' + //
     '<%_[i].firstname%> <% _[i].lastname%>' + //
     '<% _[i].num(i) %>' +
     '<%end%>  ', a));
@@ -61,7 +61,7 @@ var
   a: TArray<TMyRec>;
 begin
   a := [TMyRec.Create('a', 'A'), TMyRec.Create('b', 'B'), TMyRec.Create('c', 'C')];
-  writeln(Velocity.Eval('<% for i in _%><%_[i].firstname%> <% _[i].lastname%><%end%>  ', a));
+  writeln(Template.Eval('<% for i in _%><%_[i].firstname%> <% _[i].lastname%><%end%>  ', a));
 end;
 
 procedure demo3;
@@ -74,7 +74,7 @@ begin
     TMyRec.Create('y', 'Y'), //
     TMyRec.Create('z', 'Z') //
     ]);
-  writeln(Velocity.Eval('<% for i in _%><%i.firstname%> <% i.lastname%><%end%>', a));
+  writeln(Template.Eval('<% for i in _%><%i.firstname%> <% i.lastname%><%end%>', a));
 
   a.Free;
 end;
@@ -90,7 +90,7 @@ begin
     TMyClass.Create('E') //
     ]);
 
-  writeln(Velocity.Eval('<% for i in _%><%i.name%><%end%>', a));
+  writeln(Template.Eval('<% for i in _%><%i.name%><%end%>', a));
   a.Free;
 end;
 

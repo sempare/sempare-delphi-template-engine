@@ -6,7 +6,7 @@ program UsingDictionary;
 uses
   System.SysUtils,
   System.Generics.Collections,
-  Sempare.Boot.Template.Velocity;
+  Sempare.Template;
 
 procedure Demo1;
 
@@ -27,8 +27,8 @@ begin
   r.v2 := 'value2';
   try
     r.d.add('firstname', 'conrad');
-    writeln(Velocity.Eval('<% d[''firstname''] %>', r));
-    writeln(Velocity.Eval('<% for i := 0 to 2%> <% _[''v'' + i ] %> <% end %>', r));
+    writeln(Template.Eval('<% d[''firstname''] %>', r));
+    writeln(Template.Eval('<% for i := 0 to 2%> <% _[''v'' + i ] %> <% end %>', r));
   finally
     r.d.Free;
   end;
@@ -37,21 +37,21 @@ end;
 procedure Demo2;
 
 var
-  ctx: IVelocityContext;
+  ctx: ITemplateContext;
   r: record firstname: string;
   d: TDictionary<string, TArray<string>>;
 end;
 
 begin
-  ctx := Velocity.Context();
+  ctx := Template.Context();
   ctx['firstname'] := 'conrad';
   r.d := TDictionary < string, TArray < string >>.create;
   try
     r.d.add('list1', ['a', 'b', 'c', 'd']);
     r.d.add('list2', ['d', 'e', 'f', 'g', 'h']);
-    writeln(Velocity.Eval(ctx, 'hello <% firstname %>'));
-    writeln(Velocity.Eval(ctx, '<%for i in d[''list1''] %> <% d[''list1''][i] %> <% end %>  ', r));
-    writeln(Velocity.Eval(ctx, '<%for i in d[''list2''] %> <% d[''list2''][i] %> <% end %>  ', r));
+    writeln(Template.Eval(ctx, 'hello <% firstname %>'));
+    writeln(Template.Eval(ctx, '<%for i in d[''list1''] %> <% d[''list1''][i] %> <% end %>  ', r));
+    writeln(Template.Eval(ctx, '<%for i in d[''list2''] %> <% d[''list2''][i] %> <% end %>  ', r));
   finally
     r.d.Free;
   end;
