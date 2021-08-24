@@ -105,8 +105,8 @@ type
     class function Parse(AContext: ITemplateContext; const AString: string): ITemplate; overload; static;
 
     // stream operations
-    class function Parse(const AStream: TStream): ITemplate; overload; static;
-    class function Parse(AContext: ITemplateContext; const AStream: TStream): ITemplate; overload; static;
+    class function Parse(const AStream: TStream; const AManagedStream:boolean=true): ITemplate; overload; static;
+    class function Parse(AContext: ITemplateContext; const AStream: TStream; const AManagedStream:boolean=true): ITemplate; overload; static;
 
     // file operations
     class function ParseFile(const AFile: string): ITemplate; overload; static;
@@ -173,9 +173,9 @@ begin
   Eval(Template.Parse(ATemplate), AValue, AStream, AOptions);
 end;
 
-class function Template.Parse(const AStream: TStream): ITemplate;
+class function Template.Parse(const AStream: TStream; const AManagedStream:boolean): ITemplate;
 begin
-  exit(Parser.Parse(AStream));
+  exit(Parser.Parse(AStream, AManagedStream));
 end;
 
 class function Template.Parser(AContext: ITemplateContext): ITemplateParser;
@@ -212,9 +212,9 @@ begin
   Eval(AContext, Parse(ATemplate), AValue, AStream);
 end;
 
-class function Template.Parse(AContext: ITemplateContext; const AStream: TStream): ITemplate;
+class function Template.Parse(AContext: ITemplateContext; const AStream: TStream; const AManagedStream:boolean): ITemplate;
 begin
-  exit(Parser(AContext).Parse(AStream));
+  exit(Parser(AContext).Parse(AStream, AManagedStream));
 end;
 
 class function Template.ParseFile(AContext: ITemplateContext; const AFile: string): ITemplate;
