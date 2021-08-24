@@ -12,7 +12,7 @@
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
  ****************************************************************************************************
  *                                                                                                  *
- * Copyright (c) 2020 Sempare Limited                                                               *
+ * Copyright (c) 2019-2021 Sempare Limited                                                          * 
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
@@ -69,7 +69,6 @@ contains
   Sempare.Template.StackFrame in 'src\Sempare.Template.StackFrame.pas',
   Sempare.Template.Rtti in 'src\Sempare.Template.Rtti.pas',
   Sempare.Template.PrettyPrint in 'src\Sempare.Template.PrettyPrint.pas',
-  Sempare.Boot.Template.Velocity in 'src\Sempare.Boot.Template.Velocity.pas',
   Sempare.Template.Parser in 'src\Sempare.Template.Parser.pas',
   Sempare.Template.Lexer in 'src\Sempare.Template.Lexer.pas',
   Sempare.Template.Functions in 'src\Sempare.Template.Functions.pas',
@@ -79,6 +78,7 @@ contains
   Sempare.Template.AST in 'src\Sempare.Template.AST.pas',
   Sempare.Template in 'src\Sempare.Template.pas',
   Sempare.Template.JSON in 'src\Sempare.Template.JSON.pas',
-  Sempare.Template.ResourceStrings in 'src\Sempare.Template.ResourceStrings.pas';
+  Sempare.Template.ResourceStrings in 'src\Sempare.Template.ResourceStrings.pas',
+  Sempare.Template.VariableExtraction in 'src\Sempare.Template.VariableExtraction.pas';
 
 end.
