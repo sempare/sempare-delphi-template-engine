@@ -169,7 +169,7 @@ begin
     LName := ''
   else
     LName := APositional.FileName + ':';
-  exit(format('%s%d[%d]', [LName, APositional.Line, APositional.Pos]));
+  exit(format('%s (Line %d, Column %d) ', [LName, APositional.Line, APositional.Pos]));
 end;
 
 procedure RaiseError(APositional: IPosition; const AFormat: string; const AArgs: array of const); overload;
