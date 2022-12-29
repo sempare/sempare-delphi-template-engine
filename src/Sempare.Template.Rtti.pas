@@ -403,7 +403,7 @@ begin
       exit(AValue.AsString);
     tkDynArray, tkArray:
       exit(ArrayAsString(AValue));
-    tkRecord:
+    tkRecord,tkMRecord:
       if AValue.TypeInfo = TypeInfo(TValue) then
         exit(AsString(AValue.Astype<TValue>()))
       else
@@ -710,7 +710,7 @@ begin
       result := ProcessInterface(AVar, ADeref, LVarFound);
     tkClass:
       result := ProcessClass(APosition, AVar, ADeref, ARaiseIfMissing, false, LVarFound);
-    tkRecord:
+    tkRecord,tkMRecord:
       result := ProcessRecord(AVar, ADeref, LVarFound);
     tkArray:
       result := ProcessArray(AVar, ADeref, LVarFound);

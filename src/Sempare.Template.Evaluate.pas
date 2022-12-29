@@ -860,11 +860,13 @@ procedure ScanRecord(const ARttiType: TRttiType; const ARecord: TValue); forward
   var
     LRttiType: TRttiType;
   begin
+    if ARecord.IsEmpty then
+      exit;
     LRttiType := GRttiContext.GetType(ARecord.typeinfo);
     case LRttiType.TypeKind of
       tkClass, tkClassRef:
         ScanClass(LRttiType, ARecord);
-      tkrecord:
+      tkRecord, tkMRecord:
         ScanRecord(LRttiType, ARecord);
     else
       raise ETemplateEval.Create(SStackFrameCanOnlyBeDefinedOnAClassOrRecord);
