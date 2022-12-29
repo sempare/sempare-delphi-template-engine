@@ -12,3 +12,5 @@ lib
 iOSDevice32
 *.tvsconfig
 *.mes
+*.dcu
+Thumbs.db
