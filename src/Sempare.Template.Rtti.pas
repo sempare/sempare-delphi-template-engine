@@ -341,6 +341,10 @@ begin
   if AValue.IsEmpty then
     exit(false);
   case AValue.Kind of
+    tkEnumeration:
+      exit(AValue.AsOrdinal <> 0);
+    tkClass:
+      exit(AValue.AsObject <> nil);
     tkInteger, tkInt64:
       exit(AValue.AsInt64 <> 0);
     tkFloat:

@@ -582,7 +582,7 @@ end;
 
 class function TInternalFuntions.IsNull(const AValue: TValue): boolean;
 begin
-  exit(IsNull(AValue));
+  exit(Sempare.Template.Rtti.IsNull(AValue));
 end;
 
 class function TInternalFuntions.IsStr(const AValue: TValue): boolean;
