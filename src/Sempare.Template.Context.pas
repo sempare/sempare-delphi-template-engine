@@ -134,6 +134,11 @@ type
     procedure SetScriptEndStripToken(const Value: string);
     procedure SetScriptStartStripToken(const Value: string);
 
+    function GetValueSeparator: char;
+    function GetDecimalSeparator: char;
+    procedure SetDecimalSeparator(const ASeparator: char);
+    function GetFormatSettings: TFormatSettings;
+
     property Functions: ITemplateFunctions read GetFunctions write SetFunctions;
     property NewLine: string read GetNewLine write SetNewLine;
     property TemplateResolver: TTemplateResolver read GetTemplateResolver write SetTemplateResolver;
@@ -149,6 +154,10 @@ type
 
     property StartStripToken: string read GetScriptStartStripToken write SetScriptStartStripToken;
     property EndStripToken: string read GetScriptEndStripToken write SetScriptEndStripToken;
+
+    property ValueSeparator: char read GetValueSeparator;
+    property DecimalSeparator: char read GetDecimalSeparator write SetDecimalSeparator;
+    property FormatSettings: TFormatSettings read GetFormatSettings;
 
     property StreamWriterProvider: TStreamWriterProvider read GetStreamWriterProvider write SetStreamWriterProvider;
   end;
@@ -212,6 +221,8 @@ type
     FLock: TCriticalSection;
     FStreamWriterProvider: TStreamWriterProvider;
     FNewLine: string;
+    FValueSeparator: char;
+    FFormatSettings: TFormatSettings;
   public
     constructor Create(const AOptions: TTemplateEvaluationOptions);
     destructor Destroy; override;
@@ -264,6 +275,14 @@ type
 
     function GetStreamWriterProvider: TStreamWriterProvider;
     procedure SetStreamWriterProvider(const AProvider: TStreamWriterProvider);
+
+    function GetValueSeparator: char;
+    function GetDecimalSeparator: char;
+
+    function GetFormatSettings: TFormatSettings;
+
+    procedure SetDecimalSeparator(const ASeparator: char);
+
   end;
 
 function CreateTemplateContext(const AOptions: TTemplateEvaluationOptions): ITemplateContext;
@@ -310,6 +329,8 @@ begin
   FVariables.Items['NL'] := #10;
   FVariables.Items['CRNL'] := #13#10;
   FVariables.Items['TAB'] := #9;
+  FFormatSettings := TFormatSettings.Create;
+  SetDecimalSeparator(FFormatSettings.DecimalSeparator);
 end;
 
 destructor TTemplateContext.Destroy;
@@ -337,9 +358,19 @@ begin
   end;
 end;
 
+function TTemplateContext.GetDecimalSeparator: char;
+begin
+  exit(FFormatSettings.DecimalSeparator);
+end;
+
 function TTemplateContext.GetEncoding: TEncoding;
 begin
   exit(FEncoding);
+end;
+
+function TTemplateContext.GetFormatSettings: TFormatSettings;
+begin
+  exit(FFormatSettings);
 end;
 
 function TTemplateContext.GetFunctions: ITemplateFunctions;
@@ -416,6 +447,24 @@ end;
 function TTemplateContext.GetTemplateResolver: TTemplateResolver;
 begin
   result := FTemplateResolver;
+end;
+
+function TTemplateContext.GetValueSeparator: char;
+begin
+  exit(FValueSeparator);
+end;
+
+procedure TTemplateContext.SetDecimalSeparator(const ASeparator: char);
+begin
+  FFormatSettings.DecimalSeparator := ASeparator;
+{$WARN WIDECHAR_REDUCED OFF}
+  if not(FFormatSettings.DecimalSeparator in ['.', ',']) then
+    raise ETemplate.Create('Decimal separator must be a comma or a full stop');
+{$WARN WIDECHAR_REDUCED ON}
+  if FFormatSettings.DecimalSeparator = '.' then
+    FValueSeparator := ','
+  else
+    FValueSeparator := ';';
 end;
 
 procedure TTemplateContext.SetEncoding(const AEncoding: TEncoding);

@@ -737,7 +737,7 @@ begin
   begin
     result := ruleFactor;
     if (eoEvalEarly in FContext.Options) and IsValue(result) then
-      exit(TValueExpr.Create(LSymbol.Position, -asnum(AsValue(result))))
+      exit(TValueExpr.Create(LSymbol.Position, -asnum(AsValue(result), FContext)))
     else
       exit(TUnaryExpr.Create(LSymbol.Position, uoMinus, result))
   end;
@@ -764,14 +764,14 @@ begin
         boPlus:
           begin
             if isNumLike(AsValue(result)) and isNumLike(AsValue(LRightExpr)) then
-              exit(TValueExpr.Create(LSymbol.Position, asnum(AsValue(result)) + asnum(AsValue(LRightExpr))))
+              exit(TValueExpr.Create(LSymbol.Position, asnum(AsValue(result), FContext) + asnum(AsValue(LRightExpr), FContext)))
             else if isStrLike(AsValue(result)) and isStrLike(AsValue(LRightExpr)) then
-              exit(TValueExpr.Create(LSymbol.Position, asString(AsValue(result)) + asString(AsValue(LRightExpr))))
+              exit(TValueExpr.Create(LSymbol.Position, asString(AsValue(result), FContext) + asString(AsValue(LRightExpr), FContext)))
             else if isStrLike(AsValue(result)) and isNumLike(AsValue(LRightExpr)) then
-              exit(TValueExpr.Create(LSymbol.Position, asString(AsValue(result)) + floattostr(asnum(AsValue(LRightExpr)))));
+              exit(TValueExpr.Create(LSymbol.Position, asString(AsValue(result), FContext) + floattostr(asnum(AsValue(LRightExpr), FContext), FContext.FormatSettings)));
           end;
         boMinus:
-          exit(TValueExpr.Create(LSymbol.Position, asnum(AsValue(result)) - asnum(AsValue(LRightExpr))));
+          exit(TValueExpr.Create(LSymbol.Position, asnum(AsValue(result), FContext) - asnum(AsValue(LRightExpr), FContext)));
       end;
     end;
     exit(TBinopExpr.Create(LSymbol.Position, result, LBinOp, LRightExpr));
@@ -798,13 +798,13 @@ begin
         boAND:
           exit(TValueExpr.Create(LSymbol.Position, AsBoolean(AsValue(result)) and AsBoolean(AsValue(LRightExpr))));
         boMult:
-          exit(TValueExpr.Create(LSymbol.Position, asnum(AsValue(result)) * asnum(AsValue(LRightExpr))));
+          exit(TValueExpr.Create(LSymbol.Position, asnum(AsValue(result), FContext) * asnum(AsValue(LRightExpr), FContext)));
         boDiv:
-          exit(TValueExpr.Create(LSymbol.Position, trunc(asnum(AsValue(result))) div trunc(asnum(AsValue(LRightExpr)))));
+          exit(TValueExpr.Create(LSymbol.Position, trunc(asnum(AsValue(result), FContext)) div trunc(asnum(AsValue(LRightExpr), FContext))));
         boSlash:
-          exit(TValueExpr.Create(LSymbol.Position, asnum(AsValue(result)) / asnum(AsValue(LRightExpr))));
+          exit(TValueExpr.Create(LSymbol.Position, asnum(AsValue(result), FContext) / asnum(AsValue(LRightExpr), FContext)));
         boMod:
-          exit(TValueExpr.Create(LSymbol.Position, AsInt(AsValue(result)) mod AsInt(AsValue(LRightExpr))));
+          exit(TValueExpr.Create(LSymbol.Position, AsInt(AsValue(result), FContext) mod AsInt(AsValue(LRightExpr), FContext)));
       end;
     end;
 
@@ -888,7 +888,7 @@ begin
           match(VsOpenSquareBracket);
           LExpr := self.ruleExpression;
           if (eoEvalVarsEarly in FContext.Options) and IsValue(result) and IsValue(LExpr) then
-            result := TValueExpr.Create(LSymbol.Position, deref(LSymbol.Position, AsValue(result), AsValue(LExpr), eoRaiseErrorWhenVariableNotFound in FContext.Options))
+            result := TValueExpr.Create(LSymbol.Position, deref(LSymbol.Position, AsValue(result), AsValue(LExpr), eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext))
           else
             result := TVariableDerefExpr.Create(LSymbol.Position, dtArray, result, LExpr);
           match(VsCloseSquareBracket);
@@ -902,7 +902,7 @@ begin
           else
           begin
             if (eoEvalVarsEarly in FContext.Options) and IsValue(result) and IsValue(LExpr) then
-              result := TValueExpr.Create(LSymbol.Position, deref(LSymbol.Position, AsValue(result), AsValue(LExpr), eoRaiseErrorWhenVariableNotFound in FContext.Options))
+              result := TValueExpr.Create(LSymbol.Position, deref(LSymbol.Position, AsValue(result), AsValue(LExpr), eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext))
             else
               result := TVariableDerefExpr.Create(LSymbol.Position, dtObject, result, LExpr);
           end;
@@ -1038,17 +1038,17 @@ begin
     begin
       case LBinOp of
         boEQ:
-          exit(TValueExpr.Create(LSymbol.Position, isequal(AsValue(result), AsValue(LRight))));
+          exit(TValueExpr.Create(LSymbol.Position, isequal(AsValue(result), AsValue(LRight), FContext)));
         boNotEQ:
-          exit(TValueExpr.Create(LSymbol.Position, not isequal(AsValue(result), AsValue(LRight))));
+          exit(TValueExpr.Create(LSymbol.Position, not isequal(AsValue(result), AsValue(LRight), FContext)));
         boLT:
-          exit(TValueExpr.Create(LSymbol.Position, isLessThan(AsValue(result), AsValue(LRight))));
+          exit(TValueExpr.Create(LSymbol.Position, isLessThan(AsValue(result), AsValue(LRight), FContext)));
         boGTE:
-          exit(TValueExpr.Create(LSymbol.Position, not isLessThan(AsValue(result), AsValue(LRight))));
+          exit(TValueExpr.Create(LSymbol.Position, not isLessThan(AsValue(result), AsValue(LRight), FContext)));
         boGT:
-          exit(TValueExpr.Create(LSymbol.Position, isGreaterThan(AsValue(result), AsValue(LRight))));
+          exit(TValueExpr.Create(LSymbol.Position, isGreaterThan(AsValue(result), AsValue(LRight), FContext)));
         boLTE:
-          exit(TValueExpr.Create(LSymbol.Position, not isGreaterThan(AsValue(result), AsValue(LRight))));
+          exit(TValueExpr.Create(LSymbol.Position, not isGreaterThan(AsValue(result), AsValue(LRight), FContext)));
       end;
     end;
     result := TBinopExpr.Create(LSymbol.Position, result, LBinOp, LRight);
@@ -1267,7 +1267,7 @@ var
   LValueExpr: IValueExpr;
 begin
   LSymbol := FLookahead;
-  if supports(AExpr, IValueExpr, LValueExpr) and (asString(LValueExpr.Value) = '') then
+  if supports(AExpr, IValueExpr, LValueExpr) and (asString(LValueExpr.Value, FContext) = '') then
     exit(nil);
   exit(TPrintStmt.Create(LSymbol.Position, AExpr));
 end;
@@ -1275,14 +1275,19 @@ end;
 function TTemplateParser.ruleExprList(const AEndToken: TTemplateSymbol): IExprList;
 var
   LSymbol: ITemplateSymbol;
+  LValueSeparator: TTemplateSymbol;
 begin
   LSymbol := FLookahead;
   result := TExprList.Create(LSymbol.Position);
   if FLookahead.Token <> AEndToken then
     result.AddExpr(ruleExpression);
-  while FLookahead.Token = vsComma do
+  if FContext.ValueSeparator = ';' then
+    LValueSeparator := VsSemiColon
+  else
+    LValueSeparator := vsComma;
+  while FLookahead.Token = LValueSeparator do
   begin
-    match(vsComma);
+    match(LValueSeparator);
     result.AddExpr(ruleExpression);
   end;
 end;
@@ -1349,7 +1354,7 @@ end;
 
 function TTemplateParser.matchNumber(const ASymbol: TTemplateSymbol): extended;
 begin
-  exit(strtofloat(matchValue(ASymbol)));
+  exit(StrToFloat(matchValue(ASymbol), FContext.FormatSettings));
 end;
 
 function TTemplateParser.matchValue(const ASymbol: TTemplateSymbol): string;
