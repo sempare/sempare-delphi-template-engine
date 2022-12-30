@@ -48,6 +48,10 @@ type
     [Test]
     procedure TestDoubleLocalisation;
     [Test]
+    procedure TestDoubleExponent;
+    [Test]
+    procedure TestDoubleExponentLocalisation;
+    [Test]
     procedure TestLexer;
     [Test]
     procedure TestString;
@@ -76,6 +80,27 @@ begin
   LContext.DecimalSeparator := ',';
   Assert.AreEqual('543,21', Template.Eval(LContext, '<% x:= 543,21 %><% x %>'));
   Assert.AreEqual('5,1234', Template.Eval(LContext, '<% x:= 5,1234 %><% x %>'));
+  Assert.AreEqual('12,34 43,21 ', Template.Eval(LContext, '<% vals := [ 12,34 ; 43,21] %><% for x in vals %><% vals[x] %> <% end %>'));
+end;
+
+procedure TTestTemplateLexer.TestDoubleExponent;
+begin
+  Assert.AreEqual('12.345', Template.Eval('<% x:= 12345e-3 %><% x %>'));
+  Assert.AreEqual('-12.345', Template.Eval('<% x:= -12345e-3 %><% x %>'));
+  Assert.AreEqual('-1234500', Template.Eval('<% x:= -1234.5e3 %><% x %>'));
+  Assert.AreEqual('-123450', Template.Eval('<% x:= -1234.5e+2 %><% x %>'));
+end;
+
+procedure TTestTemplateLexer.TestDoubleExponentLocalisation;
+var
+  LContext: ITemplateContext;
+begin
+  LContext := Template.Context();
+  LContext.DecimalSeparator := ',';
+  Assert.AreEqual('12,345', Template.Eval(LContext, '<% x:= 12345e-3 %><% x %>'));
+  Assert.AreEqual('-12,345', Template.Eval(LContext, '<% x:= -12345e-3 %><% x %>'));
+  Assert.AreEqual('-1234500', Template.Eval(LContext, '<% x:= -1234,5e3 %><% x %>'));
+  Assert.AreEqual('-123450', Template.Eval(LContext, '<% x:= -1234,5e+2 %><% x %>'));
 end;
 
 procedure TTestTemplateLexer.TestDoubleLocalisation;

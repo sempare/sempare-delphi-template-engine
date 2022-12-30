@@ -317,6 +317,20 @@ begin
         while Expecting(NUMBER) do
           Accumulate;
       end;
+{$WARN WIDECHAR_REDUCED OFF}
+      if FLookahead.Input in ['e', 'E'] then
+{$WARN WIDECHAR_REDUCED ON}
+      begin
+        Accumulate;
+{$WARN WIDECHAR_REDUCED OFF}
+        if FLookahead.Input in ['-', '+'] then
+{$WARN WIDECHAR_REDUCED ON}
+        begin
+          Accumulate;
+        end;
+        while Expecting(NUMBER) do
+          Accumulate;
+      end;
       exit(ValueToken(VsNumber));
     end
     else
