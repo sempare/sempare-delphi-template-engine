@@ -2,7 +2,7 @@
 
 # ![](./images/sempare-logo-45px.png) Sempare Template Engine
 
-Copyright (c) 2019-2021 [Sempare Limited](http://www.sempare.ltd)
+Copyright (c) 2019-2023 [Sempare Limited](http://www.sempare.ltd)
 
 Contact: <info@sempare.ltd>
 
@@ -106,7 +106,7 @@ Sempare Template Engine aims to provide just enough functionality to allow you t
 
 ## Requirements
 
-This should work with most modern versions of [Delphi](https://www.embarcadero.com/products/delphi). 
+The template engine works with modern versions of [Delphi](https://www.embarcadero.com/products/delphi). 
 
 Tests currently run using the DUnitX TestFramework.
 
@@ -119,7 +119,7 @@ Although the development was done on Delphi 10.3.3, build and tests have been ru
 - Delphi 10.2 Tokyo
 - Delphi 10.3.3 Rio
 - Delphi 10.4 Sydney
-- Delphi 10.4.1 Sydney
+- Delphi 11 Alexandria
 
 There should be no platform specific restrictions.
 
@@ -159,10 +159,6 @@ Open __Sempare.Template.Engine.Group.groupproj__ which will include:
    The velocity real-time demo.   
    
    
-## Help needed
-
-I have not been able to test on XE5-XE7 as I don't have access to those compilers. If anyone in the community can help check the output of the tests, that will be extremely helpful.
-
 ## Feedback
 
 You can raise issues on [GitHub](https://github.com/sempare/sempare.template) and they will be addressed based on priority.
@@ -175,7 +171,7 @@ Please see the [contibution terms and conditions](./docs/CONTRIBUTION.pdf)
 
 # License
 
-The Sempare Template Engien is dual-licensed. You may choose to use it under the restrictions of the [GPL v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html) at
+The Sempare Template Engine is dual-licensed. You may choose to use it under the restrictions of the [GPL v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html) at
 no cost to you, or you may purchase for user under the [Sempare Limited Commercial License](./docs/commercial.license.md)
 
 The dual-licensing scheme allows you to test the library with no restrictions, but subject to the terms of the GPL. A nominal fee is requested to support the maintenance of the library if the product is to be used in commercial products. This support fee binds you to the commercial license, removing any of the GPL restrictions, and allowing you to use the library in your products as you will.
