@@ -51,6 +51,10 @@ var
 implementation
 
 uses
+{$IFDEF SEMPARE_TEMPLATE_FIREDAC}
+  Data.DB,
+  FireDAC.Comp.Client,
+{$ENDIF}
   System.TypInfo, // needed for XE6 and below to access the TTypeKind variables
   System.SysUtils,
   System.Math,
@@ -179,6 +183,9 @@ type
     class function PadLeft(const AStr: string; const ANum: integer): string; overload; static;
     class function PadRight(const AStr: string; const ANum: integer): string; overload; static;
     class function PadRight(const AStr: string; const ANum: integer; const APadChar: char): string; overload; static;
+{$IFDEF SEMPARE_TEMPLATE_FIREDAC}
+    class function RecordCount(const ADataset: TDataSet): integer; static;
+{$ENDIF}
   end;
 
 class function TInternalFuntions.PadLeft(const AStr: string; const ANum: integer): string;
@@ -658,6 +665,14 @@ class function TInternalFuntions.PadLeft(const AStr: string; const ANum: integer
 begin
   exit(AStr.PadLeft(ANum, APadChar));
 end;
+
+{$IFDEF SEMPARE_TEMPLATE_FIREDAC}
+
+class function TInternalFuntions.RecordCount(const ADataset: TDataSet): integer;
+begin
+  exit(ADataset.RecordCount);
+end;
+{$ENDIF}
 
 initialization
 

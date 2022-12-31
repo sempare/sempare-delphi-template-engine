@@ -33,6 +33,7 @@
 unit Sempare.Template.TestFor;
 
 interface
+
 {$I 'Sempare.Template.Compiler.inc'}
 
 uses
@@ -67,8 +68,11 @@ type
     procedure TestWithInlineArray;
     [Test]
     procedure TestWithEmptyInlineArray;
-    [Test{$IFNDEF SEMPARE_TEMPLATE_FIREDAC}, IGNORE{$ENDIF}]
+    [Test{$IFNDEF SEMPARE_TEMPLATE_FIREDAC}, Ignore{$ENDIF}]
     procedure TestDataSet;
+    [Test{$IFNDEF SEMPARE_TEMPLATE_FIREDAC}, Ignore{$ENDIF}]
+    procedure TestDataSetCount;
+
   end;
 
 implementation
@@ -128,11 +132,30 @@ begin
     ds.Free;
   end;
 end;
+
+procedure TTestTemplateFor.TestDataSetCount;
+var
+  ds: TDataSet;
+begin
+  ds := CreateMockUsersTable();
+  try
+    Assert.AreEqual('3', //
+      Template.Eval('<% RecordCount(_) %>', ds));
+  finally
+    ds.Free;
+  end;
+end;
 {$ELSE}
 
 procedure TTestTemplateFor.TestDataSet;
 begin
 end;
+
+procedure TTestTemplateFor.TestDataSetCount;
+begin
+
+end;
+
 {$ENDIF}
 
 procedure TTestTemplateFor.TestForIn;
