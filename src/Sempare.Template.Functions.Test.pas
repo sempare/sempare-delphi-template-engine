@@ -12,7 +12,7 @@
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
  ****************************************************************************************************
  *                                                                                                  *
- * Copyright (c) 2019-2021 Sempare Limited                                                          *
+ * Copyright (c) 2019-2023 Sempare Limited                                                          *
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
@@ -89,6 +89,8 @@ type
     procedure TestPadding;
     [Test]
     procedure AddFmtNumTest;
+    [Test]
+    procedure TestIsNil;
   end;
 
 type
@@ -161,6 +163,26 @@ end;
 procedure TFunctionTest.TestInt;
 begin
   Assert.AreEqual('123', Template.Eval('<% int(''123'') %>'));
+end;
+
+procedure TFunctionTest.TestIsNil;
+type
+  TRecord = record
+    Obj: TObject;
+  end;
+var
+  LRecord: TRecord;
+begin
+  LRecord.Obj := nil;
+  Assert.AreEqual('', Template.Eval<TRecord>('<% if Obj %>has value<% end %>', LRecord));
+  Assert.AreEqual('', Template.Eval<TRecord>('<% if not IsNull(Obj) %>has value<% end %>', LRecord));
+  LRecord.Obj := TObject.Create;
+  try
+    Assert.AreEqual('has value', Template.Eval<TRecord>('<% if Obj %>has value<% end %>', LRecord));
+    Assert.AreEqual('has value', Template.Eval<TRecord>('<% if not IsNull(Obj) %>has value<% end %>', LRecord));
+  finally
+    LRecord.Obj.Free;
+  end;
 end;
 
 procedure TFunctionTest.TestLen;

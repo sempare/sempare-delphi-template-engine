@@ -12,7 +12,7 @@
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
  ****************************************************************************************************
  *                                                                                                  *
- * Copyright (c) 2019-2021 Sempare Limited                                                          *
+ * Copyright (c) 2019-2023 Sempare Limited                                                          *
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
@@ -342,6 +342,10 @@ begin
   if AValue.IsEmpty then
     exit(false);
   case AValue.Kind of
+    tkEnumeration:
+      exit(AValue.AsOrdinal <> 0);
+    tkClass:
+      exit(AValue.AsObject <> nil);
     tkInteger, tkInt64:
       exit(AValue.AsInt64 <> 0);
     tkFloat:
@@ -404,7 +408,7 @@ begin
       exit(AValue.AsString);
     tkDynArray, tkArray:
       exit(ArrayAsString(AValue, AContext));
-    tkRecord:
+    tkRecord, tkMRecord:
       if AValue.TypeInfo = TypeInfo(TValue) then
         exit(AsString(AValue.Astype<TValue>(), AContext))
       else
@@ -711,7 +715,7 @@ begin
       result := ProcessInterface(AVar, ADeref, LVarFound);
     tkClass:
       result := ProcessClass(APosition, AVar, ADeref, ARaiseIfMissing, false, AContext, LVarFound);
-    tkRecord:
+    tkRecord, tkMRecord:
       result := ProcessRecord(AVar, ADeref, LVarFound);
     tkArray:
       result := ProcessArray(AVar, ADeref, LVarFound);

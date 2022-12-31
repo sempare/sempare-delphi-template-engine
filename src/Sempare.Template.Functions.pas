@@ -12,7 +12,7 @@
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
  ****************************************************************************************************
  *                                                                                                  *
- * Copyright (c) 2019-2021 Sempare Limited                                                          *
+ * Copyright (c) 2019-2023 Sempare Limited                                                          *
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
@@ -582,7 +582,7 @@ end;
 
 class function TInternalFuntions.IsNull(const AValue: TValue): boolean;
 begin
-  exit(IsNull(AValue));
+  exit(Sempare.Template.Rtti.IsNull(AValue));
 end;
 
 class function TInternalFuntions.IsStr(const AValue: TValue): boolean;
