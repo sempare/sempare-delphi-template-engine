@@ -146,14 +146,14 @@ type
     class function Pos(const search, Str: string; offset: integer): integer; overload; static;
     class function Pos(const search, Str: string): integer; overload; static;
     class function Len(const AString: TValue): integer; static;
-    class function Fmt(const AArgs: TArray<TValue>): string; static;
+    class function Fmt(const AContext: ITemplateContext; const AArgs: TArray<TValue>): string; static;
     class function FmtDt(const AFormat: string; const ADateTime: TDateTime): string; static;
     class function DtNow: TDateTime; static;
-    class function BoolStr(const AValue: TValue): boolean; static;
+    class function BoolStr(const AContext: ITemplateContext; const AValue: TValue): boolean; static;
     class function Bool(const AValue: TValue): boolean; static;
-    class function Num(const AValue: TValue): extended; static;
-    class function Int(const AValue: TValue): integer; static;
-    class function Str(const AValue: TValue): string; static;
+    class function Num(const AContext: ITemplateContext; const AValue: TValue): extended; static;
+    class function Int(const AContext: ITemplateContext; const AValue: TValue): integer; static;
+    class function Str(const AContext: ITemplateContext; const AValue: TValue): string; static;
     class function UCFirst(const AString: string): string; static;
     class function Rev(const AString: string): string; static;
     class function IsNull(const AValue: TValue): boolean; static;
@@ -299,9 +299,9 @@ begin
   exit(''.PadLeft(ANum, #10));
 end;
 
-class function TInternalFuntions.Num(const AValue: TValue): extended;
+class function TInternalFuntions.Num(const AContext: ITemplateContext; const AValue: TValue): extended;
 begin
-  exit(AsNum(AValue));
+  exit(AsNum(AValue, AContext));
 end;
 
 class function TInternalFuntions.Ord(const AValue: string): int64;
@@ -474,9 +474,9 @@ begin
   exit(AString.EndsWith(ASearch, AIgnoreCase));
 end;
 
-class function TInternalFuntions.Fmt(const AArgs: TArray<TValue>): string;
+class function TInternalFuntions.Fmt(const AContext: ITemplateContext; const AArgs: TArray<TValue>): string;
 begin
-  exit(format(AsString(AArgs[0]), ToArrayTVarRec(copy(AArgs, 1, length(AArgs) - 1))));
+  exit(format(AsString(AArgs[0], AContext), ToArrayTVarRec(copy(AArgs, 1, length(AArgs) - 1))));
 end;
 
 class function TInternalFuntions.FmtDt(const AFormat: string; const ADateTime: TDateTime): string;
@@ -489,10 +489,10 @@ begin
   exit(AsBoolean(AValue));
 end;
 
-class function TInternalFuntions.BoolStr(const AValue: TValue): boolean;
+class function TInternalFuntions.BoolStr(const AContext: ITemplateContext; const AValue: TValue): boolean;
 begin
   if isStrLike(AValue) then
-    exit(AsString(AValue) = 'true')
+    exit(AsString(AValue, AContext) = 'true')
   else
     exit(AsBoolean(AValue));
 end;
@@ -522,9 +522,9 @@ begin
   exit(System.SysUtils.Now);
 end;
 
-class function TInternalFuntions.Int(const AValue: TValue): integer;
+class function TInternalFuntions.Int(const AContext: ITemplateContext; const AValue: TValue): integer;
 begin
-  exit(asInt(AValue));
+  exit(asInt(AValue, AContext));
 end;
 
 class function TInternalFuntions.StartsWith(const AString, ASearch: string): boolean;
@@ -542,9 +542,9 @@ begin
   exit(AString.StartsWith(ASearch, AIgnoreCase));
 end;
 
-class function TInternalFuntions.Str(const AValue: TValue): string;
+class function TInternalFuntions.Str(const AContext: ITemplateContext; const AValue: TValue): string;
 begin
-  exit(AsString(AValue));
+  exit(AsString(AValue, AContext));
 end;
 
 function reverse(const AStr: string): string;

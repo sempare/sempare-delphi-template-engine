@@ -105,6 +105,7 @@ type
     FStartStripScript: string;
     FEndStripScript: string;
     FOptions: TTemplateEvaluationOptions;
+    FContext: ITemplateContext;
     procedure GetInput;
     procedure SwallowInput; // a descriptive helper
     function Expecting(const Achar: char): Boolean; overload;
@@ -155,10 +156,10 @@ end;
 
 constructor TTemplateLexer.Create(AContext: ITemplateContext; const AStream: TStream; const AFilename: string; const AManageStream: Boolean);
 begin
+  FContext := AContext;
   FReader := TStreamReader.Create(AStream, AContext.Encoding, false, 4096);
   FPrevLineOffset := -1;
   FLineOffset := 0;
-  FNextToken := nil;
   FOptions := AContext.Options;
   FStartScript := AContext.StartToken;
   FEndScript := AContext.EndToken;
@@ -182,7 +183,6 @@ end;
 
 destructor TTemplateLexer.Destroy;
 begin
-  FNextToken := nil;
   FAccumulator.Free;
   FReader.Free;
   if FManageStream then
@@ -311,9 +311,23 @@ begin
       FAccumulator.Append(FCurrent.Input);
       while Expecting(NUMBER) do
         Accumulate;
-      if FLookahead.Input = '.' then
+      if FLookahead.Input = FContext.DecimalSeparator then
       begin
         Accumulate;
+        while Expecting(NUMBER) do
+          Accumulate;
+      end;
+{$WARN WIDECHAR_REDUCED OFF}
+      if FLookahead.Input in ['e', 'E'] then
+{$WARN WIDECHAR_REDUCED ON}
+      begin
+        Accumulate;
+{$WARN WIDECHAR_REDUCED OFF}
+        if FLookahead.Input in ['-', '+'] then
+{$WARN WIDECHAR_REDUCED ON}
+        begin
+          Accumulate;
+        end;
         while Expecting(NUMBER) do
           Accumulate;
       end;
@@ -587,16 +601,16 @@ end;
 
 procedure AddHashedKeyword(const akeyword: string; const ASymbol: TTemplateSymbol);
 begin
-  GKeywords.Add(akeyword, ASymbol);
+  GKeywords.add(akeyword, ASymbol);
 
   // true/false both map onto vsboolean
   if ASymbol <> vsBoolean then
-    GSymbolToKeyword.Add(ASymbol, akeyword);
+    GSymbolToKeyword.add(ASymbol, akeyword);
 end;
 
 procedure AddSymKeyword(const ASym: string; const ASymbol: TTemplateSymbol);
 begin
-  GSymbolToKeyword.Add(ASymbol, ASym);
+  GSymbolToKeyword.add(ASymbol, ASym);
 end;
 
 initialization

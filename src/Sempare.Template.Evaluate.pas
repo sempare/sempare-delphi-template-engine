@@ -210,7 +210,7 @@ begin
   acceptvisitor(AExpr.DerefExpr, self);
   LDerefKey := FEvalStack.pop;
 
-  LDerefedValue := Deref(Position(AExpr), LDerefObj, LDerefKey, eoRaiseErrorWhenVariableNotFound in FContext.Options);
+  LDerefedValue := Deref(Position(AExpr), LDerefObj, LDerefKey, eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext);
   if LDerefedValue.IsType<TValue> then
     LDerefedValue := LDerefedValue.AsType<TValue>();
   FEvalStack.push(LDerefedValue);
@@ -228,7 +228,7 @@ begin
   LLeft := FEvalStack.pop;
   case AExpr.BinOp of
     boIN:
-      LResult := contains(Position(AExpr.RightExpr), LLeft, LRight);
+      LResult := contains(Position(AExpr.RightExpr), LLeft, LRight, FContext);
     boAND:
       begin
         AssertBoolean(Position(AExpr.LeftExpr), LLeft, LRight);
@@ -241,50 +241,50 @@ begin
       end;
     boPlus:
       if isNumLike(LLeft) and isNumLike(LRight) then
-        LResult := AsNum(LLeft) + AsNum(LRight)
+        LResult := AsNum(LLeft, FContext) + AsNum(LRight, FContext)
       else if isStrLike(LLeft) and isStrLike(LRight) then
         LResult := LLeft.AsString + LRight.AsString
       else if isStrLike(LLeft) and isNumLike(LRight) then
-        LResult := LLeft.AsString + AsString(LRight)
+        LResult := LLeft.AsString + AsString(LRight, FContext)
       else
         RaiseError(Position(AExpr.LeftExpr), SStringOrNumericTypesExpected);
     boMinus:
       begin
         AssertNumeric(Position(AExpr.LeftExpr), LLeft, LRight);
-        LResult := AsNum(LLeft) - AsNum(LRight);
+        LResult := AsNum(LLeft, FContext) - AsNum(LRight, FContext);
       end;
     boSlash:
       begin
         AssertNumeric(Position(AExpr.LeftExpr), LLeft, LRight);
-        LResult := AsNum(LLeft) / AsNum(LRight);
+        LResult := AsNum(LLeft, FContext) / AsNum(LRight, FContext);
       end;
     boDiv:
       begin
         AssertNumeric(Position(AExpr.LeftExpr), LLeft, LRight);
-        LResult := trunc(AsNum(LLeft)) div trunc(AsNum(LRight));
+        LResult := trunc(AsNum(LLeft, FContext)) div trunc(AsNum(LRight, FContext));
       end;
     boMult:
       begin
         AssertNumeric(Position(AExpr.LeftExpr), LLeft, LRight);
-        LResult := AsNum(LLeft) * AsNum(LRight);
+        LResult := AsNum(LLeft, FContext) * AsNum(LRight, FContext);
       end;
     boMod:
       begin
         AssertNumeric(Position(AExpr.LeftExpr), LLeft, LRight);
-        LResult := AsInt(LLeft) mod AsInt(LRight);
+        LResult := AsInt(LLeft, FContext) mod AsInt(LRight, FContext);
       end;
     boEQ:
-      LResult := isEqual(LLeft, LRight);
+      LResult := isEqual(LLeft, LRight, FContext);
     boNotEQ:
-      LResult := not isEqual(LLeft, LRight);
+      LResult := not isEqual(LLeft, LRight, FContext);
     boLT:
-      LResult := isLessThan(LLeft, LRight);
+      LResult := isLessThan(LLeft, LRight, FContext);
     boLTE:
-      LResult := not isGreaterThan(LLeft, LRight);
+      LResult := not isGreaterThan(LLeft, LRight, FContext);
     boGT:
-      LResult := isGreaterThan(LLeft, LRight);
+      LResult := isGreaterThan(LLeft, LRight, FContext);
     boGTE:
-      LResult := not isLessThan(LLeft, LRight);
+      LResult := not isLessThan(LLeft, LRight, FContext);
   else
     RaiseError(Position(AExpr.LeftExpr), SBinOpNotSupported);
   end;
@@ -300,7 +300,7 @@ begin
   case AExpr.UnaryOp of
     uoMinus:
       begin
-        FEvalStack.push(-AsNum(LValue));
+        FEvalStack.push(-AsNum(LValue, FContext));
       end;
     uoNot:
       begin
@@ -323,7 +323,7 @@ begin
     if LValue.IsEmpty then
     begin
       try
-        LValue := Deref(Position(AExpr), LStackFrame.Root, AExpr.variable, eoRaiseErrorWhenVariableNotFound in FContext.Options);
+        LValue := Deref(Position(AExpr), LStackFrame.Root, AExpr.variable, eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext);
       except
         on e: exception do
         begin
@@ -559,7 +559,7 @@ function TEvaluationTemplateVisitor.EncodeVariable(const AValue: TValue): TValue
 begin
   if FContext.VariableEncoder = nil then
     exit(AValue);
-  exit(FContext.VariableEncoder(AsString(AValue)));
+  exit(FContext.VariableEncoder(AsString(AValue, FContext)));
 end;
 
 function TEvaluationTemplateVisitor.ExprListArgs(AExprList: IExprList): TArray<TValue>;
@@ -569,7 +569,7 @@ var
 begin
   AExprList.Accept(self);
 
-  LCount := AsInt(FEvalStack.pop());
+  LCount := AsInt(FEvalStack.pop(), FContext);
   if LCount <> AExprList.Count then // this should not happen
     RaiseError(nil, SNumberOfArgsMismatch);
   setlength(result, LCount);
@@ -614,10 +614,10 @@ begin
   LLoopOptions := Preserve.Value<TLoopOptions>(FLoopOptions, []);
 
   acceptvisitor(AStmt.LowExpr, self);
-  LStartVal := AsInt(FEvalStack.pop);
+  LStartVal := AsInt(FEvalStack.pop, FContext);
 
   acceptvisitor(AStmt.HighExpr, self);
-  LEndVal := AsInt(FEvalStack.pop);
+  LEndVal := AsInt(FEvalStack.pop, FContext);
 
   case AStmt.ForOp of
     foTo:
@@ -706,21 +706,21 @@ begin
   if HasBreakOrContinue then
     exit;
   acceptvisitor(AStmt.Expr, self);
-  FStreamWriter.Write(AsString(FEvalStack.pop));
+  FStreamWriter.Write(AsString(FEvalStack.pop, FContext));
 end;
 
-function CastArg(const AValue: TValue; const AType: TRttiType): TValue;
+function CastArg(const AValue: TValue; const AType: TRttiType; const AContext: ITemplateContext): TValue;
 begin
   case AType.TypeKind of
     tkInteger, tkInt64:
       if not(AValue.Kind in [tkInteger, tkInt64]) then
-        exit(AsInt(AValue));
+        exit(AsInt(AValue, AContext));
     tkFloat:
       if AValue.Kind <> tkFloat then
-        exit(AsNum(AValue));
+        exit(AsNum(AValue, AContext));
     tkString, tkWString, tkLString, tkUString:
       if not(AValue.Kind in [tkString, tkWString, tkLString, tkUString]) then
-        exit(AsString(AValue));
+        exit(AsString(AValue, AContext));
     tkEnumeration:
       if AType.Handle = typeinfo(boolean) then
         exit(AsBoolean(AValue));
@@ -728,46 +728,68 @@ begin
   exit(AValue);
 end;
 
-function GetArgs(const AMethod: TRttiMethod; const AArgs: TArray<TValue>): TArray<TValue>;
+function GetArgs(const AMethod: TRttiMethod; const AArgs: TArray<TValue>; const AContext: ITemplateContext): TArray<TValue>;
 var
   LParameter: TRttiParameter;
   LParamIdx: integer;
   LParamValue: TValue;
+  LOffset: integer;
+  LNumParams: integer;
+  LParams: TArray<TRttiParameter>;
 begin
-  if (length(AMethod.GetParameters) = 1) and (AMethod.GetParameters[0].ParamType.TypeKind = tkDynArray) then
+  LParams := AMethod.GetParameters;
+  LNumParams := length(LParams);
+  LOffset := 0;
+  setlength(result, LNumParams);
+  if (LNumParams > 0) and (LParams[0].ParamType.Handle = typeinfo(ITemplateContext)) then
   begin
-    setlength(result, 1);
-    result[0] := TValue.From(AArgs);
+    result[0] := TValue.From<ITemplateContext>(AContext);
+    LOffset := 1;
+  end;
+  if (LNumParams > 0) and (LParams[LNumParams - 1].ParamType.TypeKind = tkDynArray) then
+  begin
+    if LNumParams > 2 then
+      raise ETemplateEval.Create('Too many parameters');
+    result[LOffset] := TValue.From(AArgs);
     exit;
   end;
-  setlength(result, length(AArgs));
-  LParamIdx := 0;
-  for LParameter in AMethod.GetParameters do
+  for LParamIdx := LOffset to LNumParams - 1 do
   begin
-    LParamValue := CastArg(AArgs[LParamIdx], LParameter.ParamType);
+    LParameter := LParams[LParamIdx];
+    LParamValue := CastArg(AArgs[LParamIdx - LOffset], LParameter.ParamType, AContext);
     if LParamValue.IsType<TValue> then
       LParamValue := LParamValue.AsType<TValue>();
     result[LParamIdx] := LParamValue;
-    inc(LParamIdx);
   end;
 end;
 
 function TEvaluationTemplateVisitor.Invoke(AFuncCall: IFunctionCallExpr; const AArgs: TArray<TValue>): TValue;
 var
   LMethod: TRttiMethod;
+
+  function GetParamCount: integer;
+  begin
+    result := length(LMethod.GetParameters);
+    if result > 0 then
+    begin
+      if LMethod.GetParameters[0].ParamType.Handle = typeinfo(ITemplateContext) then
+        dec(result);
+    end;
+  end;
+
 begin
   // there should always be at least one element
   LMethod := AFuncCall.FunctionInfo[0];
   if length(AFuncCall.FunctionInfo) > 1 then
   begin
     for LMethod in AFuncCall.FunctionInfo do
-      if length(LMethod.GetParameters) = length(AArgs) then
+      if GetParamCount = length(AArgs) then
         break;
   end;
   if length(LMethod.GetParameters) = 0 then
     result := LMethod.Invoke(nil, [])
   else
-    result := LMethod.Invoke(nil, GetArgs(LMethod, AArgs));
+    result := LMethod.Invoke(nil, GetArgs(LMethod, AArgs, FContext));
   if result.IsType<TValue> then
     result := result.AsType<TValue>();
 end;
@@ -806,7 +828,7 @@ begin
     FEvalStack.push(Invoke(AExpr, LObj, LArgs));
   except
     on e: exception do
-      RaiseError(Position(AExpr), aexpr.Method + ':' + e.Message);
+      RaiseError(Position(AExpr), AExpr.Method + ':' + e.Message);
   end;
 end;
 
@@ -845,7 +867,7 @@ begin
   acceptvisitor(AStmt.Name, self);
   LTemplateName := FEvalStack.pop;
   AssertString(Position(AStmt), LTemplateName);
-  FLocalTemplates.AddOrSetValue(AsString(LTemplateName), AStmt.Container);
+  FLocalTemplates.AddOrSetValue(AsString(LTemplateName, FContext), AStmt.Container);
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(AStmt: IWithStmt);
@@ -925,7 +947,7 @@ begin
     exit;
   for LIndex := 0 to high(LExprs) do
   begin
-    if AsString(LExprs[LIndex]).ToLower = LInputType then
+    if AsString(LExprs[LIndex], FContext).ToLower = LInputType then
       exit;
   end;
   RaiseError(Position(AStmt), SInputOfRequiredTypeNotFound);
