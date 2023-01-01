@@ -187,6 +187,12 @@ type
     ['{6D37028E-A0C0-41F1-8A59-EDC0C9ADD9C7}']
   end;
 
+  IDebugStmt = interface(IStmt)
+    ['{1052F5A0-00BC-4BBB-A3BF-C214B1FB2166}']
+    function GetStmt: IStmt;
+    property Stmt : IStmt read GetStmt;
+  end;
+
   ITemplate = interface
     ['{93AAB971-5B4B-4959-93F2-6C7DAE15C91B}']
 
@@ -515,6 +521,7 @@ type
     procedure Visit(AStmt: IDefineTemplateStmt); overload;
     procedure Visit(AStmt: IWithStmt); overload;
     procedure Visit(AStmt: ICycleStmt); overload;
+    procedure Visit(AStmt: IDebugStmt); overload;
   end;
 
 implementation

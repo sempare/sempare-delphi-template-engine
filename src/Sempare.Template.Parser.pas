@@ -94,6 +94,15 @@ type
   TAbstractStmt = class abstract(TAbstractBase, IStmt)
   end;
 
+  TDebugStmt = class(TAbstractStmt, IDebugStmt)
+  private
+    FStmt: IStmt;
+    procedure Accept(AVisitor: ITemplateVisitor); override;
+    function GetStmt: IStmt;
+  public
+    constructor Create(const AStmt: IStmt);
+  end;
+
   TEndStmt = class(TAbstractStmt, IEndStmt)
   private
     procedure Accept(AVisitor: ITemplateVisitor); override;
@@ -834,49 +843,53 @@ function TTemplateParser.ruleStmt: IStmt;
 var
   LSymbol: ITemplateSymbol;
 begin
+  result := nil;
   LSymbol := FLookahead;
   match(vsStartScript);
   case FLookahead.Token of
     vsEndScript: // we don't do anything
       ;
     vsBreak:
-      exit(ruleBreakStmt);
+      result := ruleBreakStmt;
     vsContinue:
-      exit(ruleContinueStmt);
+      result := ruleContinueStmt;
     vsIgnoreNL:
-      exit(ruleIgnoreNewline);
+      result := ruleIgnoreNewline;
     vsComment:
-      exit(ruleCommentStmt);
+      result := ruleCommentStmt;
     vsInclude:
-      exit(ruleIncludeStmt);
+      result := ruleIncludeStmt;
     vsEND:
-      exit(ruleEndStmt);
+      result := ruleEndStmt;
     vsElse: // we don't do anything
       ;
     vsIF:
-      exit(ruleIfStmt);
+      result := ruleIfStmt;
     vsELIF: // we don't do anything
       ;
     vsFor:
-      exit(ruleForStmt);
+      result := ruleForStmt;
     vsCycle:
-      exit(ruleCycleStmt);
+      result := ruleCycleStmt;
     vsPrint:
-      exit(rulePrintStmt);
+      result := rulePrintStmt;
     vsWhile:
-      exit(ruleWhileStmt);
+      result := ruleWhileStmt;
     vswith:
-      exit(ruleWithStmt);
+      result := ruleWithStmt;
     vsRequire:
-      exit(ruleRequireStmt);
+      result := ruleRequireStmt;
     vsTemplate:
-      exit(ruleTemplateStmt);
+      result := ruleTemplateStmt;
     vsID:
-      exit(ruleIdStmt);
+      result := ruleIdStmt;
   else
-    exit(ruleExprStmt);
+    result := ruleExprStmt;
   end;
-  exit(nil);
+  if (eoEmbedException in FContext.Options) and (result <> nil) then
+  begin
+    result := TDebugStmt.Create(result);
+  end;
 end;
 
 function TTemplateParser.ruleVariable: IExpr;
@@ -2135,6 +2148,23 @@ end;
 function TCycleStmt.GetList: IExprList;
 begin
   exit(FExprList);
+end;
+
+{ TDebugStmt }
+
+procedure TDebugStmt.Accept(AVisitor: ITemplateVisitor);
+begin
+  AVisitor.Visit(self);
+end;
+
+constructor TDebugStmt.Create(const AStmt: IStmt);
+begin
+  FStmt := AStmt;
+end;
+
+function TDebugStmt.GetStmt: IStmt;
+begin
+  exit(FStmt);
 end;
 
 initialization

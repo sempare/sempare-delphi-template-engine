@@ -56,6 +56,10 @@ type
     procedure TestNewLineWithContext;
     [Test]
     procedure TestNL;
+    [Test]
+    procedure RemoveEmptyAndStripLines;
+    [Test]
+    procedure RemoveEmptyLines;
   end;
 
 implementation
@@ -199,6 +203,42 @@ begin
     w.Free;
     s2 := s.datastring;
     Assert.AreEqual('hello'#10#10'world', s2);
+    s.Free;
+  end;
+end;
+
+procedure TTestNewLineOption.RemoveEmptyAndStripLines;
+var
+  s: TStringStream;
+  w: TNewLineStreamWriter;
+  str: string;
+begin
+  s := TStringStream.Create;
+  w := TNewLineStreamWriter.Create(s, TEncoding.ASCII, #10, [eoStripEmptyLines, eoTrimLines]);
+  try
+    w.Write(#10#10#10#10#10'     hello     '#10#10#10#10'    world   '#10#10#10#10);
+  finally
+    w.Free;
+    str := s.datastring;
+    Assert.AreEqual('hello'#10'world'#10, str);
+    s.Free;
+  end;
+end;
+
+procedure TTestNewLineOption.RemoveEmptyLines;
+var
+  s: TStringStream;
+  w: TNewLineStreamWriter;
+  str: string;
+begin
+  s := TStringStream.Create;
+  w := TNewLineStreamWriter.Create(s, TEncoding.ASCII, #10, [eoStripEmptyLines]);
+  try
+    w.Write(#10#10#10#10#10'     hello     '#10#10#10#10'    world   '#10#10#10#10);
+  finally
+    w.Free;
+    str := s.datastring;
+    Assert.AreEqual('     hello     '#10'    world   '#10, str);
     s.Free;
   end;
 end;

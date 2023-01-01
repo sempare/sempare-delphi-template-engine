@@ -104,6 +104,8 @@ type
     [Test]
     procedure TestExtractVariablesAndFunctions;
 
+    [Test]
+    procedure TestException;
   end;
 
 type
@@ -118,6 +120,7 @@ uses
   System.SysUtils,
   System.Generics.Collections,
   Sempare.Template.Util,
+  Sempare.Template.Functions,
   Sempare.Template.Context,
   Sempare.Template;
 
@@ -389,8 +392,7 @@ var
 begin
   info.header.company := 'sempare ltd';
   info.footer.copyright := 2019;
-  Assert.AreEqual('sempare ltd  Copyright (c) 2019', Template.Eval('<% template ''prefix'' %><%company%><% end %>' + '<% template ''suffix'' %> Copyright (c) <%copyright%><% end %>' +
-    '<%include(''prefix'', _.header)%> <%include(''suffix'', _.footer)%>', info));
+  Assert.AreEqual('sempare ltd  Copyright (c) 2019', Template.Eval('<% template ''prefix'' %><%company%><% end %>' + '<% template ''suffix'' %> Copyright (c) <%copyright%><% end %>' + '<%include(''prefix'', _.header)%> <%include(''suffix'', _.footer)%>', info));
 end;
 
 procedure TTestTemplate.TestTabToSpace;
@@ -421,6 +423,32 @@ begin
       exit(Template.parse(AContext, '_' + ATemplate + '_'));
     end;
   Assert.AreEqual('_abc__def__abc_', Template.Eval(ctx, '<% include(''abc'') %><% include(''def'') %><% include(''abc'') %>'));
+end;
+
+type
+  TMyExceptProc = class
+  public
+    class procedure RaiseExcept(const AValue: string); static;
+  end;
+
+class procedure TMyExceptProc.RaiseExcept(const AValue: string);
+begin
+  raise Exception.Create(AValue);
+end;
+
+procedure TTestTemplate.TestException;
+var
+  LContext: ITemplateContext;
+  Functions: ITemplateFunctions;
+begin
+  Functions := CreateTemplateFunctions;
+  Functions.RegisterDefaults;
+  Functions.AddFunctions(TMyExceptProc);
+  LContext := Template.Context([eoEmbedException]);
+  LContext.Functions := Functions;
+  Assert.AreEqual(#$D#$A#$D#$A'ERROR:  (Line 1, Column 16) test'#$D#$A#$D#$A, Template.Eval(LContext, '<% RaiseExcept(''test'') %>'));
+  LContext.DebugErrorFormat := '<b>Error:</b><i>%s</i>';
+  Assert.AreEqual('<b>Error:</b><i> (Line 1, Column 16) test2</i>', Template.Eval(LContext, '<% RaiseExcept(''test2'') %>'));
 end;
 
 procedure TTestTemplate.TestExtractVariablesAndFunctions;

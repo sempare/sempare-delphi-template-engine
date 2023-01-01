@@ -61,6 +61,10 @@ type
     FIgnoreNewline: boolean;
     FStartOfLine: boolean;
     FLastChar: char;
+    FTrimLines: boolean;
+    FStripRecurringNL: boolean;
+    FRemoveEmpty: boolean;
+    FLastNL: boolean;
     procedure TrimEndOfLine;
     procedure TrimLast;
     procedure DoWrite();
@@ -125,6 +129,7 @@ type
     procedure Visit(AStmt: IDefineTemplateStmt); overload; override;
     procedure Visit(AStmt: IWithStmt); overload; override;
     procedure Visit(AStmt: ICycleStmt); overload; override;
+    procedure Visit(AStmt: IDebugStmt); overload; override;
   end;
 
 implementation
@@ -186,7 +191,7 @@ var
 begin
   for LIdx := AExprList.Count - 1 downto 0 do
   begin
-    acceptvisitor(AExprList.Expr[LIdx], self);
+    AcceptVisitor(AExprList.Expr[LIdx], self);
   end;
   // push count onto stack
   FEvalStack.push(AExprList.Count);
@@ -206,11 +211,11 @@ var
 begin
   LAllowRootDeref := Preserve.Value<boolean>(FAllowRootDeref, true);
 
-  acceptvisitor(AExpr.variable, self);
+  AcceptVisitor(AExpr.variable, self);
   LDerefObj := FEvalStack.pop;
 
   LAllowRootDeref.SetValue(AExpr.DerefType = dtArray);
-  acceptvisitor(AExpr.DerefExpr, self);
+  AcceptVisitor(AExpr.DerefExpr, self);
   LDerefKey := FEvalStack.pop;
 
   LDerefedValue := Deref(Position(AExpr), LDerefObj, LDerefKey, eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext);
@@ -225,8 +230,8 @@ var
   LRight: TValue;
   LResult: TValue;
 begin
-  acceptvisitor(AExpr.LeftExpr, self);
-  acceptvisitor(AExpr.RightExpr, self);
+  AcceptVisitor(AExpr.LeftExpr, self);
+  AcceptVisitor(AExpr.RightExpr, self);
   LRight := FEvalStack.pop;
   LLeft := FEvalStack.pop;
   case AExpr.BinOp of
@@ -298,7 +303,7 @@ procedure TEvaluationTemplateVisitor.Visit(AExpr: IUnaryExpr);
 var
   LValue: TValue;
 begin
-  acceptvisitor(AExpr.Condition, self);
+  AcceptVisitor(AExpr.Condition, self);
   LValue := FEvalStack.pop;
   case AExpr.UnaryOp of
     uoMinus:
@@ -366,7 +371,7 @@ var
     end
     else
     begin
-      acceptvisitor(AExpr, self);
+      AcceptVisitor(AExpr, self);
       exit(AsInt(FEvalStack.pop, FContext));
     end;
   end;
@@ -385,14 +390,14 @@ begin
 
   while ((LLimit = -1) or (LLoops < LLimit)) do
   begin
-    acceptvisitor(AStmt.Condition, self);
+    AcceptVisitor(AStmt.Condition, self);
     if not AsBoolean(FEvalStack.pop) or (coBreak in FLoopOptions) then
       break;
     CheckRunTime(Position(AStmt));
     if (LOffset = -1) or (i >= LOffset) then
     begin
       exclude(FLoopOptions, coContinue);
-      acceptvisitor(AStmt.Container, self);
+      AcceptVisitor(AStmt.Container, self);
       inc(LLoops);
     end;
     inc(i);
@@ -434,7 +439,7 @@ var
       CheckRunTime(Position(AStmt));
       if (LOffset = -1) or (i >= LOffset) then
       begin
-        acceptvisitor(AStmt.Container, self);
+        AcceptVisitor(AStmt.Container, self);
         inc(LLoops);
       end;
       LDataSetNextMethod.Invoke(LObj, []);
@@ -477,7 +482,7 @@ var
         if (LOffset = -1) or (i >= LOffset) then
         begin
           exclude(FLoopOptions, coContinue);
-          acceptvisitor(AStmt.Container, self);
+          AcceptVisitor(AStmt.Container, self);
           inc(LLoops);
         end;
         inc(i);
@@ -513,7 +518,7 @@ var
       if (LOffset = -1) or (i >= LOffset) then
       begin
         exclude(FLoopOptions, coContinue);
-        acceptvisitor(AStmt.Container, self);
+        AcceptVisitor(AStmt.Container, self);
         inc(LLoops);
       end;
       inc(LIdx);
@@ -536,7 +541,7 @@ var
       if (LOffset = -1) or (i >= LOffset) then
       begin
         exclude(FLoopOptions, coContinue);
-        acceptvisitor(AStmt.Container, self);
+        AcceptVisitor(AStmt.Container, self);
         inc(LLoops);
       end;
       inc(LIdx);
@@ -551,7 +556,7 @@ var
     end
     else
     begin
-      acceptvisitor(AExpr, self);
+      AcceptVisitor(AExpr, self);
       exit(AsInt(FEvalStack.pop, FContext));
     end;
   end;
@@ -563,7 +568,7 @@ begin
   FStackFrames.push(FStackFrames.peek.Clone);
   LVariableName := AStmt.variable;
 
-  acceptvisitor(AStmt.Expr, self);
+  AcceptVisitor(AStmt.Expr, self);
   LLoopExpr := FEvalStack.pop;
   if LLoopExpr.IsType<TValue> then
     LLoopExpr := LLoopExpr.AsType<TValue>();
@@ -696,7 +701,7 @@ var
     end
     else
     begin
-      acceptvisitor(AExpr, self);
+      AcceptVisitor(AExpr, self);
       exit(AsInt(FEvalStack.pop, FContext));
     end;
   end;
@@ -706,9 +711,9 @@ begin
     exit;
   LVariable := AStmt.variable;
   LLoopOptions := Preserve.Value<TLoopOptions>(FLoopOptions, []);
-  acceptvisitor(AStmt.LowExpr, self);
+  AcceptVisitor(AStmt.LowExpr, self);
   LStartVal := AsInt(FEvalStack.pop, FContext);
-  acceptvisitor(AStmt.HighExpr, self);
+  AcceptVisitor(AStmt.HighExpr, self);
   LEndVal := AsInt(FEvalStack.pop, FContext);
 
   LStep := GetValue(AStmt.StepExpr);
@@ -746,7 +751,7 @@ begin
       break;
     exclude(FLoopOptions, coContinue);
     CheckRunTime(Position(AStmt));
-    acceptvisitor(AStmt.Container, self);
+    AcceptVisitor(AStmt.Container, self);
     inc(LIdx, LDelta);
     inc(i);
   end;
@@ -759,7 +764,7 @@ var
   LValue: TValue;
 begin
   LVariable := AStmt.variable;
-  acceptvisitor(AStmt.Expr, self);
+  AcceptVisitor(AStmt.Expr, self);
   LValue := FEvalStack.pop;
   if LValue.IsType<TValue> then
     LValue := LValue.AsType<TValue>;
@@ -770,11 +775,11 @@ procedure TEvaluationTemplateVisitor.Visit(AStmt: IIfStmt);
 begin
   if HasBreakOrContinue then
     exit;
-  acceptvisitor(AStmt.Condition, self);
+  AcceptVisitor(AStmt.Condition, self);
   if AsBoolean(FEvalStack.pop) then
-    acceptvisitor(AStmt.TrueContainer, self)
+    AcceptVisitor(AStmt.TrueContainer, self)
   else if AStmt.FalseContainer <> nil then
-    acceptvisitor(AStmt.FalseContainer, self);
+    AcceptVisitor(AStmt.FalseContainer, self);
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(AStmt: IEndStmt);
@@ -790,7 +795,7 @@ var
 begin
   if HasBreakOrContinue then
     exit;
-  acceptvisitor(AStmt.Expr, self);
+  AcceptVisitor(AStmt.Expr, self);
   LTemplateName := FEvalStack.pop.AsString;
 
   if FLocalTemplates.TryGetValue(LTemplateName, LTemplate) or FContext.TryGetTemplate(LTemplateName, LTemplate) then
@@ -810,7 +815,7 @@ procedure TEvaluationTemplateVisitor.Visit(AStmt: IPrintStmt);
 begin
   if HasBreakOrContinue then
     exit;
-  acceptvisitor(AStmt.Expr, self);
+  AcceptVisitor(AStmt.Expr, self);
   FStreamWriter.Write(AsString(FEvalStack.pop, FContext));
 end;
 
@@ -937,7 +942,7 @@ var
   LResult: TValue;
   LHasResult: boolean;
 begin
-  acceptvisitor(AExpr.ObjectExpr, self);
+  AcceptVisitor(AExpr.ObjectExpr, self);
   LObj := FEvalStack.pop;
   LArgs := ExprListArgs(AExpr.exprlist);
   try
@@ -953,7 +958,7 @@ end;
 
 procedure TEvaluationTemplateVisitor.Visit(AExpr: IEncodeExpr);
 begin
-  acceptvisitor(AExpr.Expr, self);
+  AcceptVisitor(AExpr.Expr, self);
   FEvalStack.push(EncodeVariable(FEvalStack.pop));
 end;
 
@@ -968,14 +973,14 @@ begin
     LPrevNewLineState := LSWriter.IgnoreNewLine;
     try
       LSWriter.IgnoreNewLine := not AStmt.AllowNewLine;
-      acceptvisitor(AStmt.Container, self);
+      AcceptVisitor(AStmt.Container, self);
     finally
       LSWriter.IgnoreNewLine := LPrevNewLineState;
     end;
   end
   else
   begin
-    acceptvisitor(AStmt.Container, self);
+    AcceptVisitor(AStmt.Container, self);
   end;
 end;
 
@@ -983,7 +988,7 @@ procedure TEvaluationTemplateVisitor.Visit(AStmt: IDefineTemplateStmt);
 var
   LTemplateName: TValue;
 begin
-  acceptvisitor(AStmt.Name, self);
+  AcceptVisitor(AStmt.Name, self);
   LTemplateName := FEvalStack.pop;
   AssertString(Position(AStmt), LTemplateName);
   FLocalTemplates.AddOrSetValue(AsString(LTemplateName, FContext), AStmt.Container);
@@ -1047,13 +1052,13 @@ procedure ScanRecord(const ARttiType: TRttiType; const ARecord: TValue); forward
 var
   LExpr: TValue;
 begin
-  acceptvisitor(AStmt.Expr, self);
+  AcceptVisitor(AStmt.Expr, self);
   LExpr := FEvalStack.pop;
   LStackFrame := FStackFrames.peek.Clone;
   FStackFrames.push(LStackFrame);
 
   ScanValue(LExpr);
-  acceptvisitor(AStmt.Container, self);
+  AcceptVisitor(AStmt.Container, self);
 
   FStackFrames.pop;
 end;
@@ -1083,11 +1088,11 @@ end;
 
 procedure TEvaluationTemplateVisitor.Visit(AExpr: ITernaryExpr);
 begin
-  acceptvisitor(AExpr.Condition, self);
+  AcceptVisitor(AExpr.Condition, self);
   if AsBoolean(FEvalStack.pop) then
-    acceptvisitor(AExpr.TrueExpr, self)
+    AcceptVisitor(AExpr.TrueExpr, self)
   else
-    acceptvisitor(AExpr.FalseExpr, self);
+    AcceptVisitor(AExpr.FalseExpr, self);
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(AStmt: ICycleStmt);
@@ -1103,8 +1108,20 @@ begin
     RaiseErrorRes(Position(AStmt), @SCycleStatementMustBeInALoop);
   end;
   LIdx := LValue.AsInt64;
-  acceptvisitor(AStmt.List[LIdx mod AStmt.List.Count], self);
+  AcceptVisitor(AStmt.List[LIdx mod AStmt.List.Count], self);
   FStreamWriter.Write(AsString(FEvalStack.pop, FContext));
+end;
+
+procedure TEvaluationTemplateVisitor.Visit(AStmt: IDebugStmt);
+begin
+  try
+    AcceptVisitor(AStmt.Stmt, self);
+  except
+    on e: exception do
+    begin
+      FStreamWriter.Write(Format(FContext.DebugErrorFormat, [e.Message]));
+    end;
+  end;
 end;
 
 { TNewLineStreamWriter }
@@ -1117,6 +1134,10 @@ begin
   FNL := ANL;
   FStartOfLine := true;
   FLastChar := #0;
+  FTrimLines := eoTrimLines in FOptions;
+  FRemoveEmpty := eoStripEmptyLines in FOptions;
+  FStripRecurringNL := eoStripRecurringNewlines in FOptions;
+  FLastNL := true;
 end;
 
 destructor TNewLineStreamWriter.Destroy;
@@ -1159,19 +1180,12 @@ end;
 procedure TNewLineStreamWriter.Write(const AString: string);
 var
   LChar: char;
-  LTrimLines: boolean;
-  LStripRecurringNL: boolean;
-  LIgnoreNewline: boolean;
   LIdx: integer;
-
 begin
-  LTrimLines := eoTrimLines in FOptions;
-  LStripRecurringNL := eoStripRecurringNewlines in FOptions;
-  LIgnoreNewline := FIgnoreNewline;
   for LIdx := 1 to length(AString) do
   begin
     LChar := AString[LIdx];
-    if IsWhitespace(LChar) and FStartOfLine and LTrimLines then
+    if IsWhitespace(LChar) and FStartOfLine and FTrimLines then
     begin
       FLastChar := LChar;
       continue;
@@ -1182,15 +1196,20 @@ begin
       begin
         TrimLast;
       end;
-      if LTrimLines then
+      if FTrimLines then
       begin
         TrimEndOfLine;
       end;
-      if not LIgnoreNewline then
+
+      if not FIgnoreNewline then
       begin
-        if not LStripRecurringNL or not IsNewline(FLastChar) then
+        if not FStripRecurringNL or not IsNewline(FLastChar) then
         begin
-          FBuffer.Append(FNL);
+          if not FRemoveEmpty or not FLastNL then
+          begin
+            FBuffer.Append(FNL);
+            FLastNL := true;
+          end;
           FStartOfLine := true;
         end;
       end;
@@ -1198,6 +1217,7 @@ begin
     else
     begin
       FBuffer.Append(LChar);
+      FLastNL := false;
       FStartOfLine := false;
     end;
     FLastChar := LChar;
