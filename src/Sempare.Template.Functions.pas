@@ -106,7 +106,7 @@ var
   LMethodName: string;
   LLength: integer;
 begin
-  result := AMethod.IsStatic and AMethod.IsClassMethod and (AMethod.ReturnType.TypeKind <> tkProcedure);
+  result := AMethod.IsStatic and AMethod.IsClassMethod;
   if not result then
     exit;
   LMethodName := AMethod.Name.ToLower;
@@ -453,7 +453,7 @@ begin
           end;
         end;
     else
-      raise ETemplateFunction.Create(STypeNotSupported);
+      raise ETemplateFunction.CreateRes(@STypeNotSupported);
     end;
 end;
 {$ENDIF}
@@ -648,7 +648,7 @@ end;
 function TValueCompare.Compare(const ALeft, ARight: TValue): integer;
 begin
   if ALeft.TypeInfo <> ARight.TypeInfo then
-    raise ETemplateFunction.Create(STypesAreNotOfTheSameType);
+    raise ETemplateFunction.CreateRes(@STypesAreNotOfTheSameType);
   case ALeft.Kind of
     tkInteger, tkInt64:
       exit(TComparer<int64>.Default.Compare(ALeft.AsInt64, ARight.AsInt64));
@@ -657,7 +657,7 @@ begin
     tkString, tkLString, tkWString, tkUString:
       exit(TComparer<string>.Default.Compare(ALeft.AsString, ARight.AsString));
   else
-    raise ETemplateFunction.Create(STypeNotSupported);
+    raise ETemplateFunction.CreateRes(@STypeNotSupported);
   end;
 end;
 

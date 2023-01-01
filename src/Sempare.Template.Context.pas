@@ -199,7 +199,8 @@ uses
   System.SyncObjs,
   Sempare.Template,
   Sempare.Template.Evaluate,
-  Sempare.Template.Functions;
+  Sempare.Template.Functions,
+  Sempare.Template.ResourceStrings;
 
 type
 
@@ -459,7 +460,7 @@ begin
   FFormatSettings.DecimalSeparator := ASeparator;
 {$WARN WIDECHAR_REDUCED OFF}
   if not(FFormatSettings.DecimalSeparator in ['.', ',']) then
-    raise ETemplate.Create('Decimal separator must be a comma or a full stop');
+    raise ETemplate.CreateRes(@SDecimalSeparatorMustBeACommaOrFullStop);
 {$WARN WIDECHAR_REDUCED ON}
   if FFormatSettings.DecimalSeparator = '.' then
     FValueSeparator := ','

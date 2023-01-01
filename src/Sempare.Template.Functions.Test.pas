@@ -91,6 +91,8 @@ type
     procedure AddFmtNumTest;
     [Test]
     procedure TestIsNil;
+    [Test]
+    procedure TestProcedure;
   end;
 
 type
@@ -140,6 +142,17 @@ type
   public
     class function dtnow: tdatetime; static;
   end;
+
+  TMyProc = class
+  public
+    class var myval: string;
+    class procedure myproc(const AValue: string); static;
+  end;
+
+class procedure TMyProc.myproc(const AValue: string);
+begin
+  myval := AValue;
+end;
 
 class function TDTNow.dtnow: tdatetime;
 begin
@@ -228,6 +241,22 @@ end;
 procedure TFunctionTest.TestPos;
 begin
   Assert.AreEqual('4', Template.Eval('<% pos(''3'',''0123456789'') %>'));
+end;
+
+procedure TFunctionTest.TestProcedure;
+var
+  ctx: ITemplateContext;
+  Functions: ITemplateFunctions;
+begin
+  Functions := CreateTemplateFunctions;
+  Functions.RegisterDefaults;
+  Functions.AddFunctions(TMyProc);
+
+  ctx := Template.Context([eoNoDefaultFunctions]);
+  ctx.Functions := Functions;
+  Assert.AreEqual('', TMyProc.myval);
+  Assert.AreEqual('', Template.Eval(ctx, '<% myproc(''test'') %>'));
+  Assert.AreEqual('test', TMyProc.myval);
 end;
 
 procedure TFunctionTest.TestReplace;

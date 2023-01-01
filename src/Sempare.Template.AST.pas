@@ -55,78 +55,82 @@ type
 
   TTemplateSymbol = ( //
     // general parsing
-    VsInvalid, //
-    VsEOF, //
-    VsStartScript, //
-    VsEndScript, //
-    VsOpenRoundBracket, //
-    VsCloseRoundBracket, //
-    VsComment, //
+    vsInvalid, //
+    vsEOF, //
+    vsStartScript, //
+    vsEndScript, //
+    vsOpenRoundBracket, //
+    vsCloseRoundBracket, //
+    vsComment, //
 
     // statements
-    VsText, // this is normally just written to stream
-    VsIF, //
-    VsELIF, //
+    vsText, // this is normally just written to stream
+    vsIF, //
+    vsELIF, //
     vsElse, //
     vsWhile, //
-    VsFOR, //
-    VsWith, //
-    VsTemplate, //
-    VsBREAK, //
-    VsCONTINUE, //
-    VsPRINT, //
-    VsINCLUDE, //
-    VSRequire, //
-    VSIgnoreNL, //
-    VsEND, //
+    vsFOR, //
+    vsWith, //
+    vsTemplate, //
+    vsBREAK, //
+    vsCONTINUE, //
+    vsPRINT, //
+    vsINCLUDE, //
+    vsRequire, //
+    vsIgnoreNL, //
+    vsOffset, //
+    vsStep, //
+    vsLimit, //
+    vsCycle, //
+    vsEND, //
 
     // for statements
-    VsIN, //
-    VsTo, //
+    vsIN, //
+    vsTo, //
     vsDownto, //
 
     // assignment statement
-    VsCOLONEQ, //
+    vsCOLONEQ, //
 
     // identifier
-    VsID, //
-    VsDOT, //
-    VsOpenSquareBracket, //
-    VsCloseSquareBracket, //
+    vsID, //
+    vsDOT, //
+    vsOpenSquareBracket, //
+    vsCloseSquareBracket, //
 
     // types
-    VsNumber, //
-    VsBoolean, //
-    VsString, //
+    vsNumber, //
+    vsBoolean, //
+    vsString, //
 
     // logical operations
-    VsAND, //
-    VsOR, //
-    VsNOT, //
+    vsAND, //
+    vsOR, //
+    vsNOT, //
 
     // ternary
-    VsQUESTION, //
-    VsCOLON, //
+    vsQUESTION, //
+    vsCOLON, //
 
     // comparison operations
-    VsEQ, //
-    VsNotEQ, //
-    VsLT, //
-    VsLTE, //
-    VsGT, //
-    VsGTE, //
+    vsEQ, //
+    vsNotEQ, //
+    vsLT, //
+    vsLTE, //
+    vsGT, //
+    vsGTE, //
 
     // numeric expressions
-    VsPLUS, //
-    VsMinus, //
-    VSSLASH, //
-    VsDIV, //
-    VsMULT, //
-    VsMOD, //
+    vsPLUS, //
+    vsMinus, //
+    vSSLASH, //
+    vsDIV, //
+    vsMULT, //
+    vsMOD, //
 
     // for expression list
-    VsComma, //
-    VsSemiColon //
+    vsComma, //
+    vsSemiColon //
     );
 
   IPosition = interface
@@ -306,9 +310,13 @@ type
 
     function GetCondition: IExpr;
     function GetContainer: ITemplate;
+    function GetOffsetExpr: IExpr;
+    function GetLimitExpr: IExpr;
 
     property Condition: IExpr read GetCondition;
     property Container: ITemplate read GetContainer;
+    property OffsetExpr: IExpr read GetOffsetExpr;
+    property LimitExpr: IExpr read GetLimitExpr;
   end;
 
   IForInStmt = interface(IStmt)
@@ -317,10 +325,14 @@ type
     function GetVariable: string;
     function GetExpr: IExpr;
     function GetContainer: ITemplate;
+    function GetOffsetExpr: IExpr;
+    function GetLimitExpr: IExpr;
 
     property Variable: string read GetVariable;
     property Expr: IExpr read GetExpr;
     property Container: ITemplate read GetContainer;
+    property OffsetExpr: IExpr read GetOffsetExpr;
+    property LimitExpr: IExpr read GetLimitExpr;
   end;
 
   IForRangeStmt = interface(IStmt)
@@ -331,12 +343,14 @@ type
     function GetLowExpr: IExpr;
     function GetHighExpr: IExpr;
     function GetContainer: ITemplate;
+    function GetStepExpr: IExpr;
 
     property Variable: string read GetVariable;
     property ForOp: TForOp read GetForOp;
     property LowExpr: IExpr read GetLowExpr;
     property HighExpr: IExpr read GetHighExpr;
     property Container: ITemplate read GetContainer;
+    property StepExpr: IExpr read GetStepExpr;
   end;
 
   IExprList = interface(ITemplateVisitorHost)
@@ -372,6 +386,12 @@ type
     function GetVariable: string;
 
     property Variable: string read GetVariable;
+  end;
+
+  ICycleStmt = interface(IStmt)
+    ['{EDABBF0D-8118-49F8-BE20-01143C11B377}']
+    function GetList: IExprList;
+    property List: IExprList read GetList;
   end;
 
   ITernaryExpr = interface(IExpr)
@@ -494,7 +514,7 @@ type
     procedure Visit(AStmt: IProcessTemplateStmt); overload;
     procedure Visit(AStmt: IDefineTemplateStmt); overload;
     procedure Visit(AStmt: IWithStmt); overload;
-
+    procedure Visit(AStmt: ICycleStmt); overload;
   end;
 
 implementation

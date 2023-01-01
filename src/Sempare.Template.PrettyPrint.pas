@@ -83,6 +83,7 @@ type
     procedure Visit(AStmt: IProcessTemplateStmt); overload; override;
     procedure Visit(AStmt: IDefineTemplateStmt); overload; override;
     procedure Visit(AStmt: IWithStmt); overload; override;
+    procedure Visit(AStmt: ICycleStmt); overload; override;
 
   end;
 
@@ -403,6 +404,21 @@ begin
   AcceptVisitor(AExpr.TrueExpr, self);
   write(':');
   AcceptVisitor(AExpr.FalseExpr, self);
+end;
+
+procedure TPrettyPrintTemplateVisitor.Visit(AStmt: ICycleStmt);
+var
+  LIdx: integer;
+begin
+  tab();
+  write('<% cycle [');
+  for LIdx := 0 to AStmt.List.Count - 1 do
+  begin
+    if LIdx > 0 then
+      write(',');
+    AcceptVisitor(AStmt.List.Expr[LIdx], self);
+  end;
+  writeln('%>');
 end;
 
 initialization

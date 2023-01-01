@@ -64,15 +64,12 @@ type
     procedure Visit(AExpr: IUnaryExpr); overload; override;
     procedure Visit(AExpr: IVariableExpr); overload; override;
     procedure Visit(AExpr: IVariableDerefExpr); overload; override;
-    procedure Visit(AExpr: IValueExpr); overload; override;
     procedure Visit(AExprList: IExprList); overload; override;
     procedure Visit(AExpr: IEncodeExpr); overload; override;
     procedure Visit(AExpr: ITernaryExpr); overload; override;
     procedure Visit(AExpr: IArrayExpr); overload; override;
 
     procedure Visit(AStmt: IAssignStmt); overload; override;
-    procedure Visit(AStmt: IContinueStmt); overload; override;
-    procedure Visit(AStmt: IBreakStmt); overload; override;
     procedure Visit(AStmt: IIncludeStmt); overload; override;
     procedure Visit(AStmt: IRequireStmt); overload; override;
     procedure Visit(AStmt: IPrintStmt); overload; override;
@@ -86,6 +83,7 @@ type
     procedure Visit(AStmt: IProcessTemplateStmt); overload; override;
     procedure Visit(AStmt: IDefineTemplateStmt); overload; override;
     procedure Visit(AStmt: IWithStmt); overload; override;
+
     property Variables: TArray<string> read GetVariables;
     property Functions: TArray<string> read GetFunctions;
   end;
@@ -143,16 +141,6 @@ begin
   AcceptVisitor(AStmt.Expr, self);
 end;
 
-procedure TTemplateReferenceExtractionVisitor.Visit(AStmt: IContinueStmt);
-begin
-  //
-end;
-
-procedure TTemplateReferenceExtractionVisitor.Visit(AStmt: IBreakStmt);
-begin
-  //
-end;
-
 procedure TTemplateReferenceExtractionVisitor.Visit(AExpr: IEncodeExpr);
 begin
   AcceptVisitor(AExpr.Expr, self);
@@ -173,11 +161,6 @@ procedure TTemplateReferenceExtractionVisitor.Visit(AExpr: IVariableDerefExpr);
 begin
   AcceptVisitor(AExpr.Variable, self);
   AcceptVisitor(AExpr.DerefExpr, self);
-end;
-
-procedure TTemplateReferenceExtractionVisitor.Visit(AExpr: IValueExpr);
-begin
-  //
 end;
 
 procedure TTemplateReferenceExtractionVisitor.Visit(AExprList: IExprList);

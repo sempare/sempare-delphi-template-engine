@@ -431,12 +431,12 @@ var
 begin
   LTemplate := Template.parse('<% v1 %> <% for i in _ %> <% x := substr("abc",1,2) %> <% end %> <% firstname %> <% lastname %>');
   Template.ExtractReferences(LTemplate, LVariables, LFunctions);
-  Assert.AreEqual(4, length(LVariables));
+  Assert.AreEqual(4, integer(length(LVariables)));
   Assert.AreEqual('v1', LVariables[0]);
   Assert.AreEqual('_', LVariables[1]);
   Assert.AreEqual('firstname', LVariables[2]);
   Assert.AreEqual('lastname', LVariables[3]);
-  Assert.AreEqual(1, length(LFunctions));
+  Assert.AreEqual(1, integer(length(LFunctions)));
   Assert.AreEqual('SubStr', LFunctions[0]);
 end;
 

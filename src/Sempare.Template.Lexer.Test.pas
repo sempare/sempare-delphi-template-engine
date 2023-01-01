@@ -1,4 +1,4 @@
-(*%*************************************************************************************************
+﻿(*%*************************************************************************************************
  *                 ___                                                                              *
  *                / __|  ___   _ __    _ __   __ _   _ _   ___                                      *
  *                \__ \ / -_) | '  \  | '_ \ / _` | | '_| / -_)                                     *
@@ -59,6 +59,11 @@ type
     procedure TestEscapedString;
     [Test]
     procedure TestDoubleQuotedString;
+    [Test]
+    procedure TestUnicodeQuotedString;
+    [Test]
+    procedure TestInvalidChar;
+
   end;
 
 implementation
@@ -120,6 +125,15 @@ begin
   Assert.AreEqual('that''s mine', Template.Eval('<% "that''s mine" %>'));
 end;
 
+procedure TTestTemplateLexer.TestInvalidChar;
+begin
+  Assert.WillRaise(
+    procedure
+    begin
+      Assert.AreEqual('this is a test', Template.Eval('<% ¬this is a test¬ %>'));
+    end);
+end;
+
 procedure TTestTemplateLexer.TestLexer;
 
 var
@@ -148,6 +162,13 @@ end;
 procedure TTestTemplateLexer.TestString;
 begin
   Assert.AreEqual('hello world', Template.Eval('<% ''hello'' + '' '' + ''world'' %>'));
+end;
+
+procedure TTestTemplateLexer.TestUnicodeQuotedString;
+begin
+  Assert.AreEqual('this is a test', Template.Eval('<% ‘this is a test’ %>'));
+  Assert.AreEqual('this is a test', Template.Eval('<% “this is a test” %>'));
+  Assert.AreEqual('this is a test', Template.Eval('<% `this is a test` %>'));
 end;
 
 initialization

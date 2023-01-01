@@ -204,21 +204,29 @@ type
   TWhileStmt = class(TAbstractStmtWithContainer, IWhileStmt)
   private
     FCondition: IExpr;
+    FOffsetExpr: IExpr;
+    FLimitExpr: IExpr;
     function GetCondition: IExpr;
     procedure Accept(AVisitor: ITemplateVisitor); override;
+    function GetOffsetExpr: IExpr;
+    function GetLimitExpr: IExpr;
   public
-    constructor Create(APosition: IPosition; ACondition: IExpr; AContainer: ITemplate);
+    constructor Create(APosition: IPosition; ACondition: IExpr; AOffsetExpr: IExpr; ALimitExpr: IExpr; AContainer: ITemplate);
   end;
 
   TForInStmt = class(TAbstractStmtWithContainer, IForInStmt)
   private
     FVariable: string;
     FExpr: IExpr;
+    FOffsetExpr: IExpr;
+    FLimitExpr: IExpr;
     function GetVariable: string;
     function GetExpr: IExpr;
+    function GetOffsetExpr: IExpr;
+    function GetLimitExpr: IExpr;
     procedure Accept(AVisitor: ITemplateVisitor); override;
   public
-    constructor Create(APosition: IPosition; const AVariable: string; AExpr: IExpr; AContainer: ITemplate);
+    constructor Create(APosition: IPosition; const AVariable: string; AExpr: IExpr; AOffsetExpr: IExpr; ALimitExpr: IExpr; AContainer: ITemplate);
   end;
 
   TForRangeStmt = class(TAbstractStmtWithContainer, IForRangeStmt)
@@ -227,13 +235,16 @@ type
     FForIp: TForOp;
     FLowExpr: IExpr;
     FHighExpr: IExpr;
+    FStepExpr: IExpr;
     function GetVariable: string;
     function GetForOp: TForOp;
     function GetLowExpr: IExpr;
     function GetHighExpr: IExpr;
+    function GetStepExpr: IExpr;
+
     procedure Accept(AVisitor: ITemplateVisitor); override;
   public
-    constructor Create(APosition: IPosition; const AVariable: string; const AForIp: TForOp; ALowExpr: IExpr; AHighExpr: IExpr; AContainer: ITemplate);
+    constructor Create(APosition: IPosition; const AVariable: string; const AForIp: TForOp; ALowExpr: IExpr; AHighExpr: IExpr; AStep: IExpr; AContainer: ITemplate);
   end;
 
   TAssignStmt = class(TAbstractStmtWithExpr, IAssignStmt)
@@ -243,6 +254,15 @@ type
     procedure Accept(AVisitor: ITemplateVisitor); override;
   public
     constructor Create(APosition: IPosition; const AVariable: string; AExpr: IExpr);
+  end;
+
+  TCycleStmt = class(TAbstractStmt, ICycleStmt)
+  private
+    FExprList: IExprList;
+    procedure Accept(AVisitor: ITemplateVisitor); override;
+  public
+    constructor Create(APosition: IPosition; const AList: IExprList);
+    function GetList: IExprList;
   end;
 
   TExprList = class(TAbstractBase, IExprList)
@@ -410,12 +430,13 @@ type
     function ruleBreakStmt: IStmt;
     function ruleIfStmt: IStmt;
     function ruleElIfStmt: IStmt;
-    function ruleExprList(const AEndToken: TTemplateSymbol = VsCloseRoundBracket): IExprList;
+    function ruleExprList(const AEndToken: TTemplateSymbol = vsCloseRoundBracket): IExprList;
     function ruleAssignStmt(ASymbol: IExpr): IStmt;
     function rulePrintStmtVariable(AExpr: IExpr): IStmt; overload;
     function ruleForStmt: IStmt;
     function ruleWhileStmt: IStmt;
     function ruleWithStmt: IStmt;
+    function ruleCycleStmt: IStmt;
     function ruleTemplateStmt: IStmt;
 
     function ruleExpression: IExpr;
@@ -464,23 +485,20 @@ begin
   exit(supports(AStmt, IEndStmt));
 end;
 
-function TemplateForop(const ASymbol: TTemplateSymbol): TForOp;
-
+function TemplateForop(const APosition: IPosition; const ASymbol: TTemplateSymbol): TForOp;
 begin
+  result := foTo;
   case ASymbol of
     vsTo:
-      exit(foTo);
+      exit;
     vsDownto:
       exit(foDownto);
-    vsin:
+    vsIn:
       exit(foIn);
   else
-    raise ETemplateParser.Createfmt(SForOpNotSupported, [TemplateSymbolToString(ASymbol)]);
+    RaiseErrorRes(APosition, @SForOpNotSupported, [TemplateSymbolToString(ASymbol)]);
   end;
 end;
-
-// const
-// pInvalid: byte = 255;
 
 var
   GTemplateBinOps: array [TTemplateSymbol] of TBinOp;
@@ -507,8 +525,7 @@ begin
 end;
 
 const
-  IF_ELIF_END: TTemplateSymbolSet = [VsELIF, vsElse, vsEND];
-  // IF_END: TTemplateSymbolSet = [vsElse, vsEND];
+  IF_ELIF_END: TTemplateSymbolSet = [vsELIF, vsElse, vsEND];
 
 function TTemplateParser.ruleIfStmt: IStmt;
 var
@@ -521,10 +538,10 @@ var
 begin
   LOptions := Preserve.Value<TParserOptions>(FOptions, FOptions + [poAllowElse, poAllowEnd, poAllowElIf]);
   LSymbol := FLookahead;
-  match(VsIF);
+  match(vsIF);
   LConditionalExpr := ruleExpression;
 
-  match(VsEndScript);
+  match(vsEndScript);
   // create new container for true condition
   PushContainer;
   LTrueContainer := self.CurrentContainer;
@@ -536,9 +553,9 @@ begin
   LFalseContainer := self.CurrentContainer;
   LFalseContainer.QueryInterface(ITemplateAdd, LContainerAdd);
 
-  if FLookahead.Token = VsELIF then
+  if FLookahead.Token = vsELIF then
   begin
-    while (FLookahead.Token = VsELIF) do
+    while (FLookahead.Token = vsELIF) do
     begin
       LContainerAdd.Add(AsVisitorHost(ruleElIfStmt()));
     end;
@@ -546,12 +563,12 @@ begin
   else if FLookahead.Token = vsElse then
   begin
     match(vsElse);
-    match(VsEndScript);
+    match(vsEndScript);
     ruleStmts(LFalseContainer, [vsEND]);
   end;
   PopContainer;
   match(vsEND);
-  match(VsEndScript);
+  match(vsEndScript);
 
   if (eoEvalEarly in FContext.Options) and IsValue(LConditionalExpr) then
   begin
@@ -573,14 +590,14 @@ begin
 
   LSymbol := FLookahead;
   match(vsIgnoreNL);
-  match(VsEndScript);
+  match(vsEndScript);
   PushContainer;
   LContainerTemplate := CurrentContainer;
 
   ruleStmts(LContainerTemplate, [vsEND]);
 
   match(vsEND);
-  match(VsEndScript);
+  match(vsEndScript);
   PopContainer;
 
   exit(TProcessTemplateStmt.Create(LSymbol.Position, LContainerTemplate, false));
@@ -595,7 +612,7 @@ var
 begin
   LSymbol := FLookahead;
   match(vsInclude);
-  match(VsOpenRoundBracket);
+  match(vsOpenRoundBracket);
   LIncludeExpr := ruleExpression;
 
   if FLookahead.Token = vsComma then
@@ -604,8 +621,8 @@ begin
     LScopeExpr := ruleExpression;
   end;
 
-  match(VsCloseRoundBracket);
-  match(VsEndScript);
+  match(vsCloseRoundBracket);
+  match(vsEndScript);
 
   if LScopeExpr <> nil then
   begin
@@ -625,10 +642,10 @@ var
 begin
   LSymbol := FLookahead;
   match(vsRequire);
-  match(VsOpenRoundBracket);
+  match(vsOpenRoundBracket);
   result := TRequireStmt.Create(LSymbol.Position, self.ruleExprList());
-  match(VsCloseRoundBracket);
-  match(VsEndScript);
+  match(vsCloseRoundBracket);
+  match(vsEndScript);
 end;
 
 function TTemplateParser.ruleMethodExpr(AExpr: IExpr; AMethodExpr: IExpr): IExpr;
@@ -636,9 +653,9 @@ var
   LSymbol: ITemplateSymbol;
 begin
   LSymbol := FLookahead;
-  match(VsOpenRoundBracket);
+  match(vsOpenRoundBracket);
   result := TMethodCallExpr.Create(LSymbol.Position, AExpr, AsVarString(AMethodExpr), ruleExprList);
-  match(VsCloseRoundBracket);
+  match(vsCloseRoundBracket);
 end;
 
 procedure TTemplateParser.ruleStmts(Container: ITemplate; const AEndToken: TTemplateSymbolSet);
@@ -653,7 +670,7 @@ var
   var
     LText: string;
   begin
-    LText := matchValue(VsText);
+    LText := matchValue(vsText);
     if LText = '' then
       exit(nil);
     exit(rulePrintStmtVariable(TValueExpr.Create(LSymbol.Position, LText)));
@@ -661,7 +678,7 @@ var
 
   procedure SkipStmt;
   begin
-    matchValue(VsText)
+    matchValue(vsText)
   end;
 
 begin
@@ -670,18 +687,18 @@ begin
   while LLoop do
   begin
     LSymbol := FLookahead;
-    if (LSymbol.Token = VsEOF) or (LSymbol.Token in AEndToken) then
+    if (LSymbol.Token = vsEOF) or (LSymbol.Token in AEndToken) then
       break;
     LStmt := nil;
     case LSymbol.Token of
-      VsText:
+      vsText:
         begin
           if poStripWS in FOptions then
             SkipStmt
           else
             LStmt := AddPrintStmt;
         end;
-      VsStartScript:
+      vsStartScript:
         begin
           if LSymbol.StripWS then
             exclude(FOptions, poStripWS);
@@ -707,16 +724,16 @@ begin
   LOptions := Preserve.Value<TParserOptions>(FOptions, FOptions + [poAllowEnd]);
   LSymbol := FLookahead;
 
-  match(vstemplate);
+  match(vsTemplate);
   LExpr := ruleExpression;
-  match(VsEndScript);
+  match(vsEndScript);
   PushContainer;
   LContainer := CurrentContainer;
 
   ruleStmts(CurrentContainer, [vsEND]);
 
   match(vsEND);
-  match(VsEndScript);
+  match(vsEndScript);
   PopContainer;
 
   exit(TDefineTemplateStmt.Create(LSymbol.Position, LExpr, LContainer));
@@ -728,12 +745,12 @@ var
 begin
   LSymbol := FLookahead;
 
-  if LSymbol.Token in [VsMinus, VsPLUS] then
+  if LSymbol.Token in [vsMinus, vsPLUS] then
     match(LSymbol.Token);
 
   result := ruleFactor;
 
-  if LSymbol.Token = VsMinus then
+  if LSymbol.Token = vsMinus then
   begin
     result := ruleFactor;
     if (eoEvalEarly in FContext.Options) and IsValue(result) then
@@ -751,7 +768,7 @@ var
 begin
   result := ruleTerm();
   LSymbol := FLookahead;
-  if LSymbol.Token in [VsPLUS, VsMinus, VsOR] then
+  if LSymbol.Token in [vsPLUS, vsMinus, vsOR] then
   begin
     TemplateBinop(LSymbol.Token, LBinOp);
     match(LSymbol.Token);
@@ -786,7 +803,7 @@ var
 begin
   result := ruleSignedFactor;
   LSymbol := FLookahead;
-  if LSymbol.Token in [VsMULT, VsDIV, vsSLASH, VsMOD, VsAND] then
+  if LSymbol.Token in [vsMULT, vsDIV, vsSLASH, vsMOD, vsAND] then
   begin
     TemplateBinop(LSymbol.Token, LBinOp);
     match(LSymbol.Token);
@@ -818,9 +835,9 @@ var
   LSymbol: ITemplateSymbol;
 begin
   LSymbol := FLookahead;
-  match(VsStartScript);
+  match(vsStartScript);
   case FLookahead.Token of
-    VsEndScript: // we don't do anything
+    vsEndScript: // we don't do anything
       ;
     vsBreak:
       exit(ruleBreakStmt);
@@ -836,12 +853,14 @@ begin
       exit(ruleEndStmt);
     vsElse: // we don't do anything
       ;
-    VsIF:
+    vsIF:
       exit(ruleIfStmt);
-    VsELIF: // we don't do anything
+    vsELIF: // we don't do anything
       ;
-    VsFor:
+    vsFor:
       exit(ruleForStmt);
+    vsCycle:
+      exit(ruleCycleStmt);
     vsPrint:
       exit(rulePrintStmt);
     vsWhile:
@@ -850,9 +869,9 @@ begin
       exit(ruleWithStmt);
     vsRequire:
       exit(ruleRequireStmt);
-    vstemplate:
+    vsTemplate:
       exit(ruleTemplateStmt);
-    VsID:
+    vsID:
       exit(ruleIdStmt);
   else
     exit(ruleExprStmt);
@@ -870,7 +889,7 @@ var
 begin
   LDone := false;
   LSymbol := FLookahead;
-  LId := matchValue(VsID);
+  LId := matchValue(vsID);
   if (eoEvalVarsEarly in FContext.Options) and FContext.TryGetVariable(LId, LIdVal) then
     result := TValueExpr.Create(LSymbol.Position, LIdVal)
   else
@@ -879,25 +898,25 @@ begin
   begin
     LSymbol := FLookahead;
     case LSymbol.Token of
-      VsOpenRoundBracket:
+      vsOpenRoundBracket:
         begin
           result := self.ruleFunctionExpr(LId);
         end;
-      VsOpenSquareBracket:
+      vsOpenSquareBracket:
         begin
-          match(VsOpenSquareBracket);
+          match(vsOpenSquareBracket);
           LExpr := self.ruleExpression;
           if (eoEvalVarsEarly in FContext.Options) and IsValue(result) and IsValue(LExpr) then
             result := TValueExpr.Create(LSymbol.Position, deref(LSymbol.Position, AsValue(result), AsValue(LExpr), eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext))
           else
             result := TVariableDerefExpr.Create(LSymbol.Position, dtArray, result, LExpr);
-          match(VsCloseSquareBracket);
+          match(vsCloseSquareBracket);
         end;
-      VsDOT:
+      vsDOT:
         begin
-          match(VsDOT);
-          LExpr := TVariableExpr.Create(LSymbol.Position, matchValue(VsID));
-          if FLookahead.Token = VsOpenRoundBracket then
+          match(vsDOT);
+          LExpr := TVariableExpr.Create(LSymbol.Position, matchValue(vsID));
+          if FLookahead.Token = vsOpenRoundBracket then
             result := ruleMethodExpr(result, LExpr)
           else
           begin
@@ -920,7 +939,7 @@ var
   LSymbol: ITemplateSymbol;
 begin
   LSymbol := FLookahead;
-  match(VsCOLONEQ);
+  match(vsCOLONEQ);
   exit(TAssignStmt.Create(LSymbol.Position, (ASymbol as IVariableExpr).Variable, ruleExpression));
 end;
 
@@ -930,7 +949,7 @@ var
 begin
   LSymbol := FLookahead;
   match(vsBreak);
-  match(VsEndScript);
+  match(vsEndScript);
   if not(poInLoop in FOptions) then
     RaiseError(LSymbol.Position, SContinueShouldBeInALoop);
   exit(TBreakStmt.Create(LSymbol.Position));
@@ -942,7 +961,7 @@ var
 begin
   LSymbol := FLookahead;
   match(vsComment);
-  match(VsEndScript);
+  match(vsEndScript);
   exit(TCommentStmt.Create(LSymbol.Position));
 end;
 
@@ -952,10 +971,27 @@ var
 begin
   LSymbol := FLookahead;
   match(vsContinue);
-  match(VsEndScript);
+  match(vsEndScript);
   if not(poInLoop in FOptions) then
     RaiseError(LSymbol.Position, SContinueShouldBeInALoop);
   exit(TContinueStmt.Create(LSymbol.Position));
+end;
+
+function TTemplateParser.ruleCycleStmt: IStmt;
+var
+  LSymbol: ITemplateSymbol;
+  LListExpr: IExprList;
+begin
+  LSymbol := FLookahead;
+  match(vsCycle);
+  match(vsOpenRoundBracket);
+
+  LListExpr := ruleExprList();
+
+  match(vsCloseRoundBracket);
+  match(vsEndScript);
+
+  exit(TCycleStmt.Create(LSymbol.Position, LListExpr));
 end;
 
 function TTemplateParser.ruleElIfStmt: IStmt;
@@ -972,11 +1008,11 @@ begin
 
   LOptions := Preserve.Value<TParserOptions>(FOptions, FOptions + [poAllowElse, poHasElse, poAllowEnd]);
 
-  match(VsELIF);
+  match(vsELIF);
 
   LConditionExpr := ruleExpression;
 
-  match(VsEndScript);
+  match(vsEndScript);
   // create new container for true condition
   PushContainer;
   LTrueContainer := self.CurrentContainer;
@@ -988,12 +1024,12 @@ begin
   begin
 
     match(vsElse);
-    match(VsEndScript);
+    match(vsEndScript);
 
     PushContainer;
     LFalseContainer := self.CurrentContainer;
 
-    ruleStmts(LFalseContainer, [vsEND, VsELIF]);
+    ruleStmts(LFalseContainer, [vsEND, vsELIF]);
 
     PopContainer;
   end;
@@ -1029,7 +1065,7 @@ var
 begin
   result := ruleSimpleExpression();
   LSymbol := FLookahead;
-  if LSymbol.Token in [VsEQ, VsNotEQ, VsLT, VsLTE, VsGT, VsGTE, vsin] then
+  if LSymbol.Token in [vsEQ, vsNotEQ, vsLT, vsLTE, vsGT, vsGTE, vsIn] then
   begin
     TemplateBinop(LSymbol.Token, LBinOp);
     match(LSymbol);
@@ -1078,31 +1114,31 @@ var
 begin
   LSymbol := FLookahead;
   case LSymbol.Token of
-    VsOpenSquareBracket:
+    vsOpenSquareBracket:
       begin
-        match(VsOpenSquareBracket);
-        result := TArrayExpr.Create(LSymbol.Position, ruleExprList(VsCloseSquareBracket));
-        match(VsCloseSquareBracket);
+        match(vsOpenSquareBracket);
+        result := TArrayExpr.Create(LSymbol.Position, ruleExprList(vsCloseSquareBracket));
+        match(vsCloseSquareBracket);
         exit;
       end;
-    VsOpenRoundBracket:
+    vsOpenRoundBracket:
       begin
-        match(VsOpenRoundBracket);
+        match(vsOpenRoundBracket);
         result := ruleExpression;
-        match(VsCloseRoundBracket);
+        match(vsCloseRoundBracket);
         exit;
       end;
     vsString:
       exit(TValueExpr.Create(LSymbol.Position, matchValue(vsString)));
     vsNumber:
       exit(TValueExpr.Create(LSymbol.Position, matchNumber(vsNumber)));
-    VsBoolean:
-      exit(TValueExpr.Create(LSymbol.Position, matchValue(VsBoolean) = 'true'));
-    VsID:
+    vsBoolean:
+      exit(TValueExpr.Create(LSymbol.Position, matchValue(vsBoolean) = 'true'));
+    vsID:
       exit(self.ruleVariable());
-    VsNOT:
+    vsNOT:
       begin
-        match(VsNOT);
+        match(vsNOT);
         result := ruleExpression;
         if (eoEvalEarly in FContext.Options) and IsValue(result) then
           exit(TValueExpr.Create(LSymbol.Position, not AsBoolean(AsValue(result))))
@@ -1117,6 +1153,7 @@ var
   LId: string;
   LRangeExpr: IExpr;
   LLowValueExpr, LHighValueExpr: IExpr;
+  LOffsetExpr, LLimitExpr, LStep: IExpr;
   LForOp: TForOp;
   LOptions: IPreserveValue<TParserOptions>;
   LContainerTemplate: ITemplate;
@@ -1124,21 +1161,21 @@ var
 begin
   LSymbol := FLookahead;
   LOptions := Preserve.Value<TParserOptions>(FOptions, FOptions + [poInLoop, poAllowEnd]);
-  match(VsFor);
+  match(vsFor);
   PushContainer;
   LContainerTemplate := CurrentContainer;
-  LId := matchValue(VsID);
-  if FLookahead.Token = vsin then
+  LId := matchValue(vsID);
+  if FLookahead.Token = vsIn then
   begin
-    LForOp := TemplateForop(FLookahead.Token);
-    match(vsin);
+    LForOp := TemplateForop(LSymbol.Position, FLookahead.Token);
+    match(vsIn);
     LRangeExpr := ruleExpression;
   end
   else
   begin
-    match(VsCOLONEQ);
+    match(vsCOLONEQ);
     LLowValueExpr := ruleExpression();
-    LForOp := TemplateForop(FLookahead.Token);
+    LForOp := TemplateForop(LSymbol.Position, FLookahead.Token);
     if FLookahead.Token in [vsDownto, vsTo] then
       match(FLookahead.Token)
     else
@@ -1146,17 +1183,35 @@ begin
     LHighValueExpr := ruleExpression();
   end;
 
-  match(VsEndScript);
+  if FLookahead.Token = vsOffset then
+  begin
+    match(vsOffset);
+    LOffsetExpr := ruleExpression();
+  end;
+
+  if FLookahead.Token = vsLimit then
+  begin
+    match(vsLimit);
+    LLimitExpr := ruleExpression();
+  end;
+
+  if FLookahead.Token = vsStep then
+  begin
+    match(vsStep);
+    LStep := ruleExpression();
+  end;
+
+  match(vsEndScript);
 
   ruleStmts(LContainerTemplate, [vsEND]);
 
   match(vsEND);
-  match(VsEndScript);
+  match(vsEndScript);
 
   if LForOp = TForOp.foIn then
-    result := TForInStmt.Create(LSymbol.Position, LId, LRangeExpr, LContainerTemplate)
+    result := TForInStmt.Create(LSymbol.Position, LId, LRangeExpr, LOffsetExpr, LLimitExpr, LContainerTemplate)
   else
-    result := TForRangeStmt.Create(LSymbol.Position, LId, LForOp, LLowValueExpr, LHighValueExpr, LContainerTemplate);
+    result := TForRangeStmt.Create(LSymbol.Position, LId, LForOp, LLowValueExpr, LHighValueExpr, LStep, LContainerTemplate);
   PopContainer;
 end;
 
@@ -1168,9 +1223,9 @@ begin
   LSymbol := FLookahead;
   if not FContext.TryGetFunction(ASymbol, LFunctions) then
     RaiseError(LSymbol.Position, SFunctionNotRegisteredInContext, [ASymbol]);
-  match(VsOpenRoundBracket);
+  match(vsOpenRoundBracket);
   result := TFunctionCallExpr.Create(LSymbol.Position, LFunctions, ruleExprList);
-  match(VsCloseRoundBracket);
+  match(vsCloseRoundBracket);
 end;
 
 function TTemplateParser.ruleIdStmt: IStmt;
@@ -1180,7 +1235,7 @@ var
 begin
   LSymbol := FLookahead;
   LExpr := ruleVariable;
-  if FLookahead.Token = VsCOLONEQ then
+  if FLookahead.Token = vsCOLONEQ then
   begin
     result := ruleAssignStmt(LExpr);
   end
@@ -1189,7 +1244,7 @@ begin
     LExpr := TEncodeExpr.Create(LSymbol.Position, LExpr);
     result := rulePrintStmtVariable(LExpr);
   end;
-  match(VsEndScript);
+  match(vsEndScript);
 end;
 
 function TTemplateParser.ruleWhileStmt: IStmt;
@@ -1197,6 +1252,7 @@ var
   LCondition: IExpr;
   LOptions: IPreserveValue<TParserOptions>;
   LSymbol: ITemplateSymbol;
+  LOffsetExpr, LLimitExpr: IExpr;
 begin
   LSymbol := FLookahead;
   LOptions := Preserve.Value<TParserOptions>(FOptions, FOptions + [poInLoop, poAllowEnd]);
@@ -1204,17 +1260,30 @@ begin
 
   match(vsWhile);
   LCondition := ruleExpression;
-  match(VsEndScript);
+
+  if FLookahead.Token = vsOffset then
+  begin
+    match(vsOffset);
+    LOffsetExpr := ruleExpression();
+  end;
+
+  if FLookahead.Token = vsLimit then
+  begin
+    match(vsLimit);
+    LLimitExpr := ruleExpression();
+  end;
+
+  match(vsEndScript);
 
   ruleStmts(CurrentContainer, [vsEND]);
 
   match(vsEND);
-  match(VsEndScript);
+  match(vsEndScript);
 
   if (eoEvalEarly in FContext.Options) and IsValue(LCondition) and not AsBoolean(AsValue(LCondition)) then
     result := nil
   else
-    result := TWhileStmt.Create(LSymbol.Position, LCondition, CurrentContainer);
+    result := TWhileStmt.Create(LSymbol.Position, LCondition, LOffsetExpr, LLimitExpr, CurrentContainer);
   PopContainer;
 
 end;
@@ -1232,7 +1301,7 @@ begin
 
   match(vswith);
   LExpr := ruleExpression;
-  match(VsEndScript);
+  match(vsEndScript);
 
   PushContainer;
   LContainer := CurrentContainer;
@@ -1240,7 +1309,7 @@ begin
   ruleStmts(LContainer, [vsEND]);
 
   match(vsEND);
-  match(VsEndScript);
+  match(vsEndScript);
 
   PopContainer;
   exit(TWithStmt.Create(LSymbol.Position, LExpr, LContainer));
@@ -1254,10 +1323,10 @@ var
 begin
   LSymbol := FLookahead;
   match(vsPrint);
-  match(VsOpenRoundBracket);
+  match(vsOpenRoundBracket);
   LExpr := ruleExpression;
-  match(VsCloseRoundBracket);
-  match(VsEndScript);
+  match(vsCloseRoundBracket);
+  match(vsEndScript);
   exit(TPrintStmt.Create(LSymbol.Position, LExpr));
 end;
 
@@ -1282,7 +1351,7 @@ begin
   if FLookahead.Token <> AEndToken then
     result.AddExpr(ruleExpression);
   if FContext.ValueSeparator = ';' then
-    LValueSeparator := VsSemiColon
+    LValueSeparator := vsSemiColon
   else
     LValueSeparator := vsComma;
   while FLookahead.Token = LValueSeparator do
@@ -1298,7 +1367,7 @@ var
 begin
   LSymbol := FLookahead;
   result := rulePrintStmtVariable(TEncodeExpr.Create(LSymbol.Position, ruleExpression));
-  match(VsEndScript);
+  match(vsEndScript);
 end;
 
 function TTemplateParser.CurrentContainer: ITemplate;
@@ -1335,9 +1404,9 @@ begin
     if LSymbol.StripWS then
     begin
       case ASymbol of
-        VsStartScript:
+        vsStartScript:
           exclude(FOptions, poStripWS);
-        VsEndScript:
+        vsEndScript:
           include(FOptions, poStripWS);
       end;
     end;
@@ -1379,7 +1448,7 @@ begin
   FLexer := CreateTemplateLexer(FContext, AStream, '', AManagedStream);
   FLookahead := FLexer.GetToken;
   ruleStmts(CurrentContainer, []);
-  match(VsEOF);
+  match(vsEOF);
   result := CurrentContainer;
   if eoPrettyPrint in FContext.Options then
     writeln(Template.PrettyPrint(result));
@@ -1577,16 +1646,28 @@ begin
   AVisitor.Visit(self);
 end;
 
-constructor TForInStmt.Create(APosition: IPosition; const AVariable: string; AExpr: IExpr; AContainer: ITemplate);
+constructor TForInStmt.Create(APosition: IPosition; const AVariable: string; AExpr: IExpr; AOffsetExpr: IExpr; ALimitExpr: IExpr; AContainer: ITemplate);
 begin
   inherited Create(APosition, AContainer);
   FVariable := AVariable;
   FExpr := AExpr;
+  FOffsetExpr := AOffsetExpr;
+  FLimitExpr := ALimitExpr;
 end;
 
 function TForInStmt.GetExpr: IExpr;
 begin
   exit(FExpr);
+end;
+
+function TForInStmt.GetLimitExpr: IExpr;
+begin
+  exit(FLimitExpr);
+end;
+
+function TForInStmt.GetOffsetExpr: IExpr;
+begin
+  exit(FOffsetExpr);
 end;
 
 function TForInStmt.GetVariable: string;
@@ -1601,13 +1682,14 @@ begin
   AVisitor.Visit(self);
 end;
 
-constructor TForRangeStmt.Create(APosition: IPosition; const AVariable: string; const AForIp: TForOp; ALowExpr, AHighExpr: IExpr; AContainer: ITemplate);
+constructor TForRangeStmt.Create(APosition: IPosition; const AVariable: string; const AForIp: TForOp; ALowExpr: IExpr; AHighExpr: IExpr; AStep: IExpr; AContainer: ITemplate);
 begin
   inherited Create(APosition, AContainer);
   FVariable := AVariable;
   FForIp := AForIp;
   FLowExpr := ALowExpr;
   FHighExpr := AHighExpr;
+  FStepExpr := AStep;
 end;
 
 function TForRangeStmt.GetForOp: TForOp;
@@ -1623,6 +1705,11 @@ end;
 function TForRangeStmt.GetLowExpr: IExpr;
 begin
   exit(FLowExpr);
+end;
+
+function TForRangeStmt.GetStepExpr: IExpr;
+begin
+  exit(FStepExpr);
 end;
 
 function TForRangeStmt.GetVariable: string;
@@ -1655,7 +1742,9 @@ var
   i: ITemplateVisitorHost;
 begin
   for i in FArray do
+  begin
     i.Accept(AVisitor);
+  end;
 end;
 
 procedure TTemplate.Add(AItem: ITemplateVisitorHost);
@@ -1692,15 +1781,27 @@ begin
   AVisitor.Visit(self);
 end;
 
-constructor TWhileStmt.Create(APosition: IPosition; ACondition: IExpr; AContainer: ITemplate);
+constructor TWhileStmt.Create(APosition: IPosition; ACondition: IExpr; AOffsetExpr: IExpr; ALimitExpr: IExpr; AContainer: ITemplate);
 begin
   inherited Create(APosition, AContainer);
   FCondition := ACondition;
+  FOffsetExpr := AOffsetExpr;
+  FLimitExpr := ALimitExpr;
 end;
 
 function TWhileStmt.GetCondition: IExpr;
 begin
   exit(FCondition);
+end;
+
+function TWhileStmt.GetLimitExpr: IExpr;
+begin
+  exit(FLimitExpr);
+end;
+
+function TWhileStmt.GetOffsetExpr: IExpr;
+begin
+  exit(FOffsetExpr);
 end;
 
 { TContinueStmt }
@@ -1931,21 +2032,21 @@ var
 begin
   for LSymbol := low(TTemplateSymbol) to high(TTemplateSymbol) do
     GTemplateBinOps[LSymbol] := boInvalid;
-  GTemplateBinOps[vsin] := boIN;
-  GTemplateBinOps[VsAND] := boAND;
-  GTemplateBinOps[VsOR] := boOR;
-  GTemplateBinOps[VsPLUS] := boPlus;
-  GTemplateBinOps[VsMinus] := boMinus;
-  GTemplateBinOps[VsMULT] := boMult;
+  GTemplateBinOps[vsIn] := boIN;
+  GTemplateBinOps[vsAND] := boAND;
+  GTemplateBinOps[vsOR] := boOR;
+  GTemplateBinOps[vsPLUS] := boPlus;
+  GTemplateBinOps[vsMinus] := boMinus;
+  GTemplateBinOps[vsMULT] := boMult;
   GTemplateBinOps[vsSLASH] := boSlash;
-  GTemplateBinOps[VsDIV] := boDiv;
-  GTemplateBinOps[VsMOD] := boMod;
-  GTemplateBinOps[VsLT] := boLT;
-  GTemplateBinOps[VsLTE] := boLTE;
-  GTemplateBinOps[VsGT] := boGT;
-  GTemplateBinOps[VsGTE] := boGTE;
-  GTemplateBinOps[VsEQ] := boEQ;
-  GTemplateBinOps[VsNotEQ] := boNotEQ;
+  GTemplateBinOps[vsDIV] := boDiv;
+  GTemplateBinOps[vsMOD] := boMod;
+  GTemplateBinOps[vsLT] := boLT;
+  GTemplateBinOps[vsLTE] := boLTE;
+  GTemplateBinOps[vsGT] := boGT;
+  GTemplateBinOps[vsGTE] := boGTE;
+  GTemplateBinOps[vsEQ] := boEQ;
+  GTemplateBinOps[vsNotEQ] := boNotEQ;
 end;
 
 { TRequireStmt }
@@ -2016,6 +2117,24 @@ end;
 function TAbstractExprWithExpr.GetExpr: IExpr;
 begin
   exit(FExpr);
+end;
+
+{ TCycleStmt }
+
+procedure TCycleStmt.Accept(AVisitor: ITemplateVisitor);
+begin
+  AVisitor.Visit(self);
+end;
+
+constructor TCycleStmt.Create(APosition: IPosition; const AList: IExprList);
+begin
+  inherited Create(APosition);
+  FExprList := AList;
+end;
+
+function TCycleStmt.GetList: IExprList;
+begin
+  exit(FExprList);
 end;
 
 initialization
