@@ -47,6 +47,12 @@ type
     [Test]
     procedure TestForIn;
     [Test]
+    procedure TestWhileWithEvent;
+    [Test]
+    procedure TestForRangeWithEvent;
+    [Test]
+    procedure TestForInEnumWithEvent;
+    [Test]
     procedure TestForInWithOffset;
     [Test]
     procedure TestForInWithOffsetAndLimit;
@@ -75,11 +81,15 @@ type
     [Test]
     procedure TestWithEmptyInlineArray;
     [Test{$IFNDEF SEMPARE_TEMPLATE_FIREDAC}, Ignore{$ENDIF}]
+    procedure TestDataSetWithEvent;
+    [Test{$IFNDEF SEMPARE_TEMPLATE_FIREDAC}, Ignore{$ENDIF}]
     procedure TestDataSet;
     [Test{$IFNDEF SEMPARE_TEMPLATE_FIREDAC}, Ignore{$ENDIF}]
     procedure TestDataSetCount;
     [Test]
     procedure TestCycle;
+    [Test]
+    procedure TestForOnEvent;
   end;
 
 implementation
@@ -140,6 +150,27 @@ begin
   end;
 end;
 
+procedure TTestTemplateFor.TestDataSetWithEvent;
+var
+  ds: TDataSet;
+begin
+  ds := CreateMockUsersTable();
+  try
+    Assert.AreEqual('<ul><li>joe</li><li>pete</li><li>jane</li></ul>', //
+      Template.Eval('<% for i in _ %><li><% _[''name''] %></li><% onbegin%><ul><%onend%></ul><%end%>', ds));
+
+    ds.Delete();
+    ds.Delete();
+    ds.Delete();
+
+    Assert.AreEqual('<h1>No values</h1>', //
+      Template.Eval('<% for i in _ %><li><% _[''name''] %></li><% onbegin%><ul><%onend%></ul><% onempty%><h1>No values</h1><%end%>', ds));
+
+  finally
+    ds.Free;
+  end;
+end;
+
 procedure TTestTemplateFor.TestDataSetCount;
 var
   ds: TDataSet;
@@ -153,6 +184,10 @@ begin
   end;
 end;
 {$ELSE}
+
+procedure TTestTemplateFor.TestDataSetWithEvent;
+begin
+end;
 
 procedure TTestTemplateFor.TestDataSet;
 begin
@@ -193,6 +228,25 @@ begin
   end;
 end;
 
+procedure TTestTemplateFor.TestForInEnumWithEvent;
+type
+  TForIn = record
+    range: TList<integer>;
+  end;
+var
+  c: ITemplate;
+  x: TForIn;
+begin
+  x.range := TList<integer>.Create;
+  try
+    x.range.AddRange([3, 5, 7, 9]);
+    c := Template.parse('<% for i in range %><li><%i%></li><%onbegin%><ul><%onend%></ul><%onempty%>empty<% end %>');
+    Assert.AreEqual('<ul><li>3</li><li>5</li><li>7</li><li>9</li></ul>', Template.Eval(c, x));
+  finally
+    x.range.Free;
+  end;
+end;
+
 type
   TForRange = record
     count: integer;
@@ -214,6 +268,17 @@ var
 begin
   x.count := 10;
   Assert.AreEqual('0 2 4 6 8 10 ', Template.Eval('<% for i := 0 to count %><% if i mod 2 = 1 %><% continue %><% end %><% i %> <% end %>', x));
+end;
+
+procedure TTestTemplateFor.TestForRangeWithEvent;
+var
+  c: ITemplate;
+begin
+  c := Template.parse('<% for i := 7 to 12 step 2 %><li><%i%></li><%onbegin%><ul><%onend%></ul><%onempty%>empty<% end %>');
+  Assert.AreEqual('<ul><li>7</li><li>9</li><li>11</li></ul>', Template.Eval(c));
+
+  c := Template.parse('<% for i := 7 to 6 %><li><%i%></li><%onbegin%><ul><%onend%></ul><%onempty%>empty<% end %>');
+  Assert.AreEqual('empty', Template.Eval(c));
 end;
 
 procedure TTestTemplateFor.TestForRangeWithStep;
@@ -262,6 +327,12 @@ begin
   end;
 end;
 
+procedure TTestTemplateFor.TestForOnEvent;
+begin
+  Assert.AreEqual('empty', Template.Eval('<% for i in [] %><% i %><% onbegin%>start<% onend %>end<% onempty %>empty<%end%>'));
+  Assert.AreEqual('start4321end', Template.Eval('<% v := [4,3,2,1] %><% for i in v %><% v[i] %><% onbegin%>start<% onend %>end<% onempty %>empty<%end%>'));
+end;
+
 procedure TTestTemplateFor.TestNested;
 begin
   Assert.AreEqual('1:5,6,;2:5,6,;3:5,6,;', Template.Eval('<% for i := 1 to 3 %><% i %>:<% for j := 5 to 6 %><% j %>,<% end %>;<% end%>'));
@@ -281,6 +352,17 @@ end;
 begin
   x.count := 9;
   Assert.AreEqual('0123456789', Template.Eval('<% i := 0 %><% while i <= count %><% i %><% i := i + 1 %><% end %>', x));
+end;
+
+procedure TTestTemplateFor.TestWhileWithEvent;
+var
+  c: ITemplate;
+begin
+  c := Template.parse('<% i := 0%><% while i < 3 %><li><%i%><% i := i + 1%></li><%onbegin%><ul><%onend%></ul><%onempty%>empty<% end %>');
+  Assert.AreEqual('<ul><li>0</li><li>1</li><li>2</li></ul>', Template.Eval(c));
+
+  c := Template.parse('<% i := 0%><% while i < 0 %><li><%i%><% i := i + 1%></li><%onbegin%><ul><%onend%></ul><%onempty%>empty<% end %>');
+  Assert.AreEqual('empty', Template.Eval(c));
 end;
 
 procedure TTestTemplateFor.TestWithEmptyInlineArray;

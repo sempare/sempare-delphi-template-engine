@@ -363,6 +363,7 @@ var
   LOffset: int64;
   LLimit: int64;
   i, LLoops: int64;
+  LFirst: boolean;
   function GetValue(const AExpr: IExpr): int64;
   begin
     if AExpr = nil then
@@ -387,6 +388,7 @@ begin
 
   i := 0;
   LLoops := 0;
+  LFirst := true;
 
   while ((LLimit = -1) or (LLoops < LLimit)) do
   begin
@@ -396,6 +398,12 @@ begin
     CheckRunTime(Position(AStmt));
     if (LOffset = -1) or (i >= LOffset) then
     begin
+      if LFirst then
+      begin
+        LFirst := false;
+        if AStmt.OnFirstContainer <> nil then
+          AcceptVisitor(AStmt.OnFirstContainer, self);
+      end;
       exclude(FLoopOptions, coContinue);
       AcceptVisitor(AStmt.Container, self);
       inc(LLoops);
@@ -403,6 +411,16 @@ begin
     inc(i);
   end;
   FStackFrames.pop;
+  if LLoops = 0 then
+  begin
+    if AStmt.OnEmptyContainer <> nil then
+      AcceptVisitor(AStmt.OnEmptyContainer, self);
+  end
+  else
+  begin
+    if AStmt.OnEndContainer <> nil then
+      AcceptVisitor(AStmt.OnEndContainer, self);
+  end;
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(AStmt: IForInStmt);
@@ -414,6 +432,29 @@ var
   LOffset: int64;
   LLimit: int64;
   i, LLoops: int64;
+  LFirst: boolean;
+
+  function HandleLoop: boolean;
+  begin
+    if coBreak in FLoopOptions then
+      exit(true);
+    FStackFrames.peek[LOOP_IDX_NAME] := i;
+    exclude(FLoopOptions, coContinue);
+    CheckRunTime(Position(AStmt));
+    if (LOffset = -1) or (i >= LOffset) then
+    begin
+      if LFirst then
+      begin
+        LFirst := false;
+        if AStmt.OnFirstContainer <> nil then
+          AcceptVisitor(AStmt.OnFirstContainer, self);
+      end;
+      AcceptVisitor(AStmt.Container, self);
+      inc(LLoops);
+    end;
+    inc(i);
+    exit(false);
+  end;
 
   procedure VisitDataSet;
   var
@@ -422,6 +463,7 @@ var
     LDataSetNextMethod: TRttiMethod;
     LDataSetEOFProperty: TRttiProperty;
     LObj: TObject;
+
   begin
     LIdx := 1;
     LDataSetFirstMethod := LLoopExprType.GetMethod('First');
@@ -429,26 +471,18 @@ var
     LDataSetFirstMethod.Invoke(LObj, []);
     LDataSetEOFProperty := LLoopExprType.getProperty('EOF');
     LDataSetNextMethod := LLoopExprType.GetMethod('Next');
+
     while not LDataSetEOFProperty.GetValue(LObj).AsBoolean and ((LLimit = -1) or (LLoops < LLimit)) do
     begin
-      if coBreak in FLoopOptions then
-        break;
       FStackFrames.peek[LVariableName] := LIdx;
-      FStackFrames.peek[LOOP_IDX_NAME] := i;
-      exclude(FLoopOptions, coContinue);
-      CheckRunTime(Position(AStmt));
-      if (LOffset = -1) or (i >= LOffset) then
-      begin
-        AcceptVisitor(AStmt.Container, self);
-        inc(LLoops);
-      end;
+      if HandleLoop then
+        break;
       LDataSetNextMethod.Invoke(LObj, []);
       inc(LIdx);
-      inc(i);
     end;
   end;
 
-  procedure visitobject;
+  procedure VisitObject;
   var
     LEnumGetEnumeratorMethod: TRttiMethod;
     LEnumObj: TObject;
@@ -474,25 +508,16 @@ var
       LEnumCurrentProperty := LLoopExprType.getProperty('Current');
       while LEnumMoveNextMethod.Invoke(LEnumObj, []).AsBoolean and ((LLimit = -1) or (LLoops < LLimit)) do
       begin
-        if coBreak in FLoopOptions then
-          break;
         FStackFrames.peek[LVariableName] := LEnumCurrentProperty.GetValue(LEnumObj);
-        FStackFrames.peek[LOOP_IDX_NAME] := i;
-        CheckRunTime(Position(AStmt));
-        if (LOffset = -1) or (i >= LOffset) then
-        begin
-          exclude(FLoopOptions, coContinue);
-          AcceptVisitor(AStmt.Container, self);
-          inc(LLoops);
-        end;
-        inc(i);
+        if HandleLoop then
+          break;
       end;
     finally
       LEnumObj.Free;
     end;
   end;
 
-  procedure visitarray;
+  procedure VisitArray;
   var
     LArrayType: TRttiArrayType;
     LDimOrdType: TRttiOrdinalType;
@@ -510,42 +535,24 @@ var
     LIdx := 0;
     while (LIdx <= LLoopExpr.GetArrayLength - 1) and ((LLimit = -1) or (LLoops < LLimit)) do
     begin
-      if coBreak in FLoopOptions then
-        break;
       FStackFrames.peek[LVariableName] := LIdx + LMin;
-      FStackFrames.peek[LOOP_IDX_NAME] := i;
-      CheckRunTime(Position(AStmt));
-      if (LOffset = -1) or (i >= LOffset) then
-      begin
-        exclude(FLoopOptions, coContinue);
-        AcceptVisitor(AStmt.Container, self);
-        inc(LLoops);
-      end;
+      if HandleLoop then
+        break;
       inc(LIdx);
-      inc(i);
     end;
   end;
 
-  procedure visitdynarray;
+  procedure VisitDynArray;
   var
     LIdx: integer;
   begin
     LIdx := 0;
     while (LIdx <= LLoopExpr.GetArrayLength - 1) and ((LLimit = -1) or (LLoops < LLimit)) do
     begin
-      if coBreak in FLoopOptions then
-        break;
       FStackFrames.peek[LVariableName] := LIdx;
-      FStackFrames.peek[LOOP_IDX_NAME] := i;
-      CheckRunTime(Position(AStmt));
-      if (LOffset = -1) or (i >= LOffset) then
-      begin
-        exclude(FLoopOptions, coContinue);
-        AcceptVisitor(AStmt.Container, self);
-        inc(LLoops);
-      end;
+      if HandleLoop then
+        break;
       inc(LIdx);
-      inc(i);
     end;
   end;
   function GetValue(const AExpr: IExpr): int64;
@@ -578,23 +585,33 @@ begin
 
   i := 0;
   LLoops := 0;
-
+  LFirst := true;
   if not LLoopExpr.IsEmpty then
   begin
     LLoopExprType := GRttiContext.GetType(LLoopExpr.typeinfo);
 
     case LLoopExprType.TypeKind of
       tkClass, tkClassRef:
-        visitobject;
+        VisitObject;
       tkArray:
-        visitarray;
+        VisitArray;
       tkDynArray:
-        visitdynarray;
+        VisitDynArray;
     else
       RaiseError(Position(AStmt), SGetEnumeratorNotFoundOnObject);
     end;
   end;
   FStackFrames.pop;
+  if LLoops = 0 then
+  begin
+    if AStmt.OnEmptyContainer <> nil then
+      AcceptVisitor(AStmt.OnEmptyContainer, self);
+  end
+  else
+  begin
+    if AStmt.OnEndContainer <> nil then
+      AcceptVisitor(AStmt.OnEndContainer, self);
+  end;
 end;
 
 procedure TEvaluationTemplateVisitor.CheckRunTime(APosition: IPosition);
@@ -692,7 +709,7 @@ var
   LDirectionTestFunc: TCompare;
   i: int64;
   LStep: int64;
-
+  LFirst: boolean;
   function GetValue(const AExpr: IExpr): int64;
   begin
     if AExpr = nil then
@@ -717,7 +734,7 @@ begin
   LEndVal := AsInt(FEvalStack.pop, FContext);
 
   LStep := GetValue(AStmt.StepExpr);
-
+  LFirst := true;
   LDelta := 0;
   LDirectionTestFunc := nil;
   case AStmt.ForOp of
@@ -749,6 +766,14 @@ begin
     FStackFrames.peek[LOOP_IDX_NAME] := i;
     if coBreak in FLoopOptions then
       break;
+
+    if LFirst then
+    begin
+      LFirst := false;
+      if AStmt.OnFirstContainer <> nil then
+        AcceptVisitor(AStmt.OnFirstContainer, self);
+    end;
+
     exclude(FLoopOptions, coContinue);
     CheckRunTime(Position(AStmt));
     AcceptVisitor(AStmt.Container, self);
@@ -756,6 +781,16 @@ begin
     inc(i);
   end;
   FStackFrames.pop;
+  if i = 0 then
+  begin
+    if AStmt.OnEmptyContainer <> nil then
+      AcceptVisitor(AStmt.OnEmptyContainer, self);
+  end
+  else
+  begin
+    if AStmt.OnEndContainer <> nil then
+      AcceptVisitor(AStmt.OnEndContainer, self);
+  end;
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(AStmt: IAssignStmt);

@@ -210,7 +210,18 @@ type
     constructor Create(APosition: IPosition; AExpr: IExpr; AContainer: ITemplate);
   end;
 
-  TWhileStmt = class(TAbstractStmtWithContainer, IWhileStmt)
+  TLoopStmt = class(TAbstractStmtWithContainer, ILoopStmt)
+  protected
+    FOnFirst, FOnLast, FOnEmpty: ITemplate;
+
+    function GetOnFirstContainer: ITemplate;
+    function GetOnEndContainer: ITemplate;
+    function GetOnEmptyContainer: ITemplate;
+  public
+    constructor Create(APosition: IPosition; AContainer: ITemplate; AOnFirst, AOnEnd, AOnEmpty: ITemplate);
+  end;
+
+  TWhileStmt = class(TLoopStmt, IWhileStmt)
   private
     FCondition: IExpr;
     FOffsetExpr: IExpr;
@@ -220,10 +231,10 @@ type
     function GetOffsetExpr: IExpr;
     function GetLimitExpr: IExpr;
   public
-    constructor Create(APosition: IPosition; ACondition: IExpr; AOffsetExpr: IExpr; ALimitExpr: IExpr; AContainer: ITemplate);
+    constructor Create(APosition: IPosition; ACondition: IExpr; AOffsetExpr: IExpr; ALimitExpr: IExpr; AContainer: ITemplate; AOnFirst, AOnEnd, AOnEmpty: ITemplate);
   end;
 
-  TForInStmt = class(TAbstractStmtWithContainer, IForInStmt)
+  TForInStmt = class(TLoopStmt, IForInStmt)
   private
     FVariable: string;
     FExpr: IExpr;
@@ -235,10 +246,10 @@ type
     function GetLimitExpr: IExpr;
     procedure Accept(AVisitor: ITemplateVisitor); override;
   public
-    constructor Create(APosition: IPosition; const AVariable: string; AExpr: IExpr; AOffsetExpr: IExpr; ALimitExpr: IExpr; AContainer: ITemplate);
+    constructor Create(APosition: IPosition; const AVariable: string; AExpr: IExpr; AOffsetExpr: IExpr; ALimitExpr: IExpr; AContainer: ITemplate; AOnFirst, AOnEnd, AOnEmpty: ITemplate);
   end;
 
-  TForRangeStmt = class(TAbstractStmtWithContainer, IForRangeStmt)
+  TForRangeStmt = class(TLoopStmt, IForRangeStmt)
   private
     FVariable: string;
     FForIp: TForOp;
@@ -250,10 +261,9 @@ type
     function GetLowExpr: IExpr;
     function GetHighExpr: IExpr;
     function GetStepExpr: IExpr;
-
     procedure Accept(AVisitor: ITemplateVisitor); override;
   public
-    constructor Create(APosition: IPosition; const AVariable: string; const AForIp: TForOp; ALowExpr: IExpr; AHighExpr: IExpr; AStep: IExpr; AContainer: ITemplate);
+    constructor Create(APosition: IPosition; const AVariable: string; const AForIp: TForOp; ALowExpr: IExpr; AHighExpr: IExpr; AStep: IExpr; AContainer: ITemplate; AOnFirst, AOnEnd, AOnEmpty: ITemplate);
   end;
 
   TAssignStmt = class(TAbstractStmtWithExpr, IAssignStmt)
@@ -426,7 +436,7 @@ type
     function matchNumber(const ASymbol: TTemplateSymbol): extended;
 
   private
-    procedure ruleStmts(Container: ITemplate; const AEndToken: TTemplateSymbolSet);
+    function ruleStmts(Container: ITemplate; const AEndToken: TTemplateSymbolSet): TTemplateSymbol;
     function ruleStmt: IStmt;
     function ruleIgnoreNewline: IStmt;
     function ruleCommentStmt: IStmt;
@@ -667,13 +677,13 @@ begin
   match(vsCloseRoundBracket);
 end;
 
-procedure TTemplateParser.ruleStmts(Container: ITemplate; const AEndToken: TTemplateSymbolSet);
-
+function TTemplateParser.ruleStmts(Container: ITemplate; const AEndToken: TTemplateSymbolSet): TTemplateSymbol;
 var
   LStmt: IStmt;
   LParentContainer: ITemplateAdd;
   LSymbol: ITemplateSymbol;
   LLoop: boolean;
+  LEndToken: TTemplateSymbolSet;
 
   function AddPrintStmt: IStmt;
   var
@@ -691,13 +701,17 @@ var
   end;
 
 begin
+  result := vsInvalid;
+  LEndToken := AEndToken + [vsEOF];
   Container.QueryInterface(ITemplateAdd, LParentContainer);
   LLoop := true;
   while LLoop do
   begin
     LSymbol := FLookahead;
-    if (LSymbol.Token = vsEOF) or (LSymbol.Token in AEndToken) then
-      break;
+    if LSymbol.Token in LEndToken then
+    begin
+      exit(LSymbol.Token);
+    end;
     LStmt := nil;
     case LSymbol.Token of
       vsText:
@@ -847,8 +861,6 @@ begin
   LSymbol := FLookahead;
   match(vsStartScript);
   case FLookahead.Token of
-    vsEndScript: // we don't do anything
-      ;
     vsBreak:
       result := ruleBreakStmt;
     vsContinue:
@@ -861,12 +873,10 @@ begin
       result := ruleIncludeStmt;
     vsEND:
       result := ruleEndStmt;
-    vsElse: // we don't do anything
+    vsEndScript, vsElse, vsELIF, vsOnBegin, vsOnEnd, vsOnEmpty:
       ;
     vsIF:
       result := ruleIfStmt;
-    vsELIF: // we don't do anything
-      ;
     vsFor:
       result := ruleForStmt;
     vsCycle:
@@ -1035,7 +1045,6 @@ begin
 
   if FLookahead.Token = vsElse then
   begin
-
     match(vsElse);
     match(vsEndScript);
 
@@ -1161,6 +1170,9 @@ begin
   end;
 end;
 
+const
+  ONFIRST_ONEND_ONLOOP_ELSE: TTemplateSymbolSet = [vsOnBegin, vsOnEnd, vsOnEmpty, vsEND];
+
 function TTemplateParser.ruleForStmt: IStmt;
 var
   LId: string;
@@ -1171,12 +1183,35 @@ var
   LOptions: IPreserveValue<TParserOptions>;
   LContainerTemplate: ITemplate;
   LSymbol: ITemplateSymbol;
+  LOnFirst, LOnEnd, LOnLoop, LOnEmpty: ITemplate;
+  LPrevSymbol, LBlockSymbol: TTemplateSymbol;
+  i: integer;
+  procedure ResolveTemplate(const ASymbol: TTemplateSymbol);
+  begin
+    case ASymbol of
+      vsInvalid:
+        begin
+          LOnLoop := LContainerTemplate;
+        end;
+      vsOnBegin:
+        begin
+          LOnFirst := LContainerTemplate;
+        end;
+      vsOnEnd:
+        begin
+          LOnEnd := LContainerTemplate;
+        end;
+      vsOnEmpty:
+        begin
+          LOnEmpty := LContainerTemplate;
+        end;
+    end;
+  end;
+
 begin
   LSymbol := FLookahead;
   LOptions := Preserve.Value<TParserOptions>(FOptions, FOptions + [poInLoop, poAllowEnd]);
   match(vsFor);
-  PushContainer;
-  LContainerTemplate := CurrentContainer;
   LId := matchValue(vsID);
   if FLookahead.Token = vsIn then
   begin
@@ -1215,17 +1250,39 @@ begin
   end;
 
   match(vsEndScript);
-
-  ruleStmts(LContainerTemplate, [vsEND]);
-
+  LBlockSymbol := vsInvalid;
+  LPrevSymbol := vsInvalid;
+  i := 0;
+  repeat
+    if (i > 1) and (i mod 2 = 0) then
+    begin
+      match(LBlockSymbol);
+      match(vsEndScript);
+    end;
+    PushContainer;
+    LContainerTemplate := CurrentContainer;
+    LBlockSymbol := ruleStmts(LContainerTemplate, ONFIRST_ONEND_ONLOOP_ELSE);
+    PopContainer;
+    if (i mod 2 = 0) then
+    begin
+      ResolveTemplate(LPrevSymbol);
+    end;
+    LPrevSymbol := LBlockSymbol;
+    inc(i);
+  until LBlockSymbol = vsEND;
   match(vsEND);
+  if LOnLoop = nil then
+  begin
+    LOnLoop := LContainerTemplate;
+  end;
+
   match(vsEndScript);
 
   if LForOp = TForOp.foIn then
-    result := TForInStmt.Create(LSymbol.Position, LId, LRangeExpr, LOffsetExpr, LLimitExpr, LContainerTemplate)
+    result := TForInStmt.Create(LSymbol.Position, LId, LRangeExpr, LOffsetExpr, LLimitExpr, LOnLoop, LOnFirst, LOnEnd, LOnEmpty)
   else
-    result := TForRangeStmt.Create(LSymbol.Position, LId, LForOp, LLowValueExpr, LHighValueExpr, LStep, LContainerTemplate);
-  PopContainer;
+    result := TForRangeStmt.Create(LSymbol.Position, LId, LForOp, LLowValueExpr, LHighValueExpr, LStep, LOnLoop, LOnFirst, LOnEnd, LOnEmpty);
+
 end;
 
 function TTemplateParser.ruleFunctionExpr(const ASymbol: string): IExpr;
@@ -1266,10 +1323,35 @@ var
   LOptions: IPreserveValue<TParserOptions>;
   LSymbol: ITemplateSymbol;
   LOffsetExpr, LLimitExpr: IExpr;
+  LContainerTemplate: ITemplate;
+  LOnFirst, LOnEnd, LOnLoop, LOnEmpty: ITemplate;
+  LPrevSymbol, LBlockSymbol: TTemplateSymbol;
+  i: integer;
+  procedure ResolveTemplate(const ASymbol: TTemplateSymbol);
+  begin
+    case ASymbol of
+      vsInvalid:
+        begin
+          LOnLoop := LContainerTemplate;
+        end;
+      vsOnBegin:
+        begin
+          LOnFirst := LContainerTemplate;
+        end;
+      vsOnEnd:
+        begin
+          LOnEnd := LContainerTemplate;
+        end;
+      vsOnEmpty:
+        begin
+          LOnEmpty := LContainerTemplate;
+        end;
+    end;
+  end;
+
 begin
   LSymbol := FLookahead;
   LOptions := Preserve.Value<TParserOptions>(FOptions, FOptions + [poInLoop, poAllowEnd]);
-  PushContainer;
 
   match(vsWhile);
   LCondition := ruleExpression;
@@ -1287,18 +1369,37 @@ begin
   end;
 
   match(vsEndScript);
-
-  ruleStmts(CurrentContainer, [vsEND]);
-
+  LBlockSymbol := vsInvalid;
+  LPrevSymbol := vsInvalid;
+  i := 0;
+  repeat
+    if (i > 1) and (i mod 2 = 0) then
+    begin
+      match(LBlockSymbol);
+      match(vsEndScript);
+    end;
+    PushContainer;
+    LContainerTemplate := CurrentContainer;
+    LBlockSymbol := ruleStmts(LContainerTemplate, ONFIRST_ONEND_ONLOOP_ELSE);
+    PopContainer;
+    if (i mod 2 = 0) then
+    begin
+      ResolveTemplate(LPrevSymbol);
+    end;
+    LPrevSymbol := LBlockSymbol;
+    inc(i);
+  until LBlockSymbol = vsEND;
   match(vsEND);
+  if LOnLoop = nil then
+  begin
+    LOnLoop := LContainerTemplate;
+  end;
   match(vsEndScript);
 
   if (eoEvalEarly in FContext.Options) and IsValue(LCondition) and not AsBoolean(AsValue(LCondition)) then
     result := nil
   else
-    result := TWhileStmt.Create(LSymbol.Position, LCondition, LOffsetExpr, LLimitExpr, CurrentContainer);
-  PopContainer;
-
+    result := TWhileStmt.Create(LSymbol.Position, LCondition, LOffsetExpr, LLimitExpr, LOnLoop, LOnFirst, LOnEnd, LOnEmpty);
 end;
 
 function TTemplateParser.ruleWithStmt: IStmt;
@@ -1659,9 +1760,9 @@ begin
   AVisitor.Visit(self);
 end;
 
-constructor TForInStmt.Create(APosition: IPosition; const AVariable: string; AExpr: IExpr; AOffsetExpr: IExpr; ALimitExpr: IExpr; AContainer: ITemplate);
+constructor TForInStmt.Create(APosition: IPosition; const AVariable: string; AExpr: IExpr; AOffsetExpr: IExpr; ALimitExpr: IExpr; AContainer: ITemplate; AOnFirst, AOnEnd, AOnEmpty: ITemplate);
 begin
-  inherited Create(APosition, AContainer);
+  inherited Create(APosition, AContainer, AOnFirst, AOnEnd, AOnEmpty);
   FVariable := AVariable;
   FExpr := AExpr;
   FOffsetExpr := AOffsetExpr;
@@ -1695,9 +1796,9 @@ begin
   AVisitor.Visit(self);
 end;
 
-constructor TForRangeStmt.Create(APosition: IPosition; const AVariable: string; const AForIp: TForOp; ALowExpr: IExpr; AHighExpr: IExpr; AStep: IExpr; AContainer: ITemplate);
+constructor TForRangeStmt.Create(APosition: IPosition; const AVariable: string; const AForIp: TForOp; ALowExpr: IExpr; AHighExpr: IExpr; AStep: IExpr; AContainer: ITemplate; AOnFirst, AOnEnd, AOnEmpty: ITemplate);
 begin
-  inherited Create(APosition, AContainer);
+  inherited Create(APosition, AContainer, AOnFirst, AOnEnd, AOnEmpty);
   FVariable := AVariable;
   FForIp := AForIp;
   FLowExpr := ALowExpr;
@@ -1794,9 +1895,9 @@ begin
   AVisitor.Visit(self);
 end;
 
-constructor TWhileStmt.Create(APosition: IPosition; ACondition: IExpr; AOffsetExpr: IExpr; ALimitExpr: IExpr; AContainer: ITemplate);
+constructor TWhileStmt.Create(APosition: IPosition; ACondition: IExpr; AOffsetExpr: IExpr; ALimitExpr: IExpr; AContainer: ITemplate; AOnFirst, AOnEnd, AOnEmpty: ITemplate);
 begin
-  inherited Create(APosition, AContainer);
+  inherited Create(APosition, AContainer, AOnFirst, AOnEnd, AOnEmpty);
   FCondition := ACondition;
   FOffsetExpr := AOffsetExpr;
   FLimitExpr := ALimitExpr;
@@ -2165,6 +2266,31 @@ end;
 function TDebugStmt.GetStmt: IStmt;
 begin
   exit(FStmt);
+end;
+
+{ TLoopStmt }
+
+constructor TLoopStmt.Create(APosition: IPosition; AContainer, AOnFirst, AOnEnd, AOnEmpty: ITemplate);
+begin
+  inherited Create(APosition, AContainer);
+  FOnFirst := AOnFirst;
+  FOnLast := AOnEnd;
+  FOnEmpty := AOnEmpty;
+end;
+
+function TLoopStmt.GetOnEmptyContainer: ITemplate;
+begin
+  exit(FOnEmpty);
+end;
+
+function TLoopStmt.GetOnEndContainer: ITemplate;
+begin
+  exit(FOnLast);
+end;
+
+function TLoopStmt.GetOnFirstContainer: ITemplate;
+begin
+  exit(FOnFirst);
 end;
 
 initialization
