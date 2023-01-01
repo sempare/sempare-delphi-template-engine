@@ -83,6 +83,9 @@ type
     vsLimit, //
     vsCycle, //
     vsEND, //
+    vsOnBegin, //
+    vsOnEnd, //
+    vsOnEmpty, //
 
     // for statements
     vsIN, //
@@ -190,7 +193,7 @@ type
   IDebugStmt = interface(IStmt)
     ['{1052F5A0-00BC-4BBB-A3BF-C214B1FB2166}']
     function GetStmt: IStmt;
-    property Stmt : IStmt read GetStmt;
+    property Stmt: IStmt read GetStmt;
   end;
 
   ITemplate = interface
@@ -311,7 +314,19 @@ type
     property Container: ITemplate read GetContainer;
   end;
 
-  IWhileStmt = interface(IStmt)
+  ILoopStmt = interface(IStmt)
+    ['{D6C26A41-3250-4EB9-A776-8952DE3931BD}']
+
+    function GetOnFirstContainer: ITemplate;
+    function GetOnEndContainer: ITemplate;
+    function GetOnEmptyContainer: ITemplate;
+
+    property OnFirstContainer: ITemplate read GetOnFirstContainer;
+    property OnEndContainer: ITemplate read GetOnEndContainer;
+    property OnEmptyContainer: ITemplate read GetOnEmptyContainer;
+  end;
+
+  IWhileStmt = interface(ILoopStmt)
     ['{A353861E-BFEB-4630-9DC4-19A19A896613}']
 
     function GetCondition: IExpr;
@@ -325,7 +340,7 @@ type
     property LimitExpr: IExpr read GetLimitExpr;
   end;
 
-  IForInStmt = interface(IStmt)
+  IForInStmt = interface(ILoopStmt)
     ['{DE078CDD-B50A-4036-987E-E2FD241950F6}']
 
     function GetVariable: string;
@@ -341,7 +356,7 @@ type
     property LimitExpr: IExpr read GetLimitExpr;
   end;
 
-  IForRangeStmt = interface(IStmt)
+  IForRangeStmt = interface(ILoopStmt)
     ['{16645615-2E4E-4F1C-85BA-0EA3F1012F47}']
 
     function GetVariable: string;

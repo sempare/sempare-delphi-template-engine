@@ -673,6 +673,9 @@ AddHashedKeyword('or', vsOr);
 AddHashedKeyword('not', vsNot);
 AddHashedKeyword('mod', vsMod);
 AddHashedKeyword('div', vsDiv);
+AddHashedKeyword('onbegin', vsOnBegin);
+AddHashedKeyword('onend', vsOnEnd);
+AddHashedKeyword('onempty', vsOnEmpty);
 
 AddSymKeyword('ScriptStartToken', VsStartScript);
 AddSymKeyword('ScriptEndToken', VsEndScript);
