@@ -88,8 +88,8 @@ type
     function EncodeVariable(const AValue: TValue): TValue;
     procedure CheckRunTime(APosition: IPosition);
     function ExprListArgs(AExprList: IExprList): TArray<TValue>;
-    function Invoke(AFuncCall: IFunctionCallExpr; const AArgs: TArray<TValue>): TValue; overload;
-    function Invoke(AExpr: IMethodCallExpr; const AObject: TValue; const AArgs: TArray<TValue>): TValue; overload;
+    function Invoke(AFuncCall: IFunctionCallExpr; const AArgs: TArray<TValue>; out AHasResult: boolean): TValue; overload;
+    function Invoke(AExpr: IMethodCallExpr; const AObject: TValue; const AArgs: TArray<TValue>; out AHasResult: boolean): TValue; overload;
 
   public
     constructor Create(AContext: ITemplateContext; const AValue: TValue; const AStream: TStream); overload;
@@ -124,7 +124,7 @@ type
     procedure Visit(AStmt: IProcessTemplateStmt); overload; override;
     procedure Visit(AStmt: IDefineTemplateStmt); overload; override;
     procedure Visit(AStmt: IWithStmt); overload; override;
-
+    procedure Visit(AStmt: ICycleStmt); overload; override;
   end;
 
 implementation
@@ -135,6 +135,9 @@ uses
   Sempare.Template.ResourceStrings,
   Sempare.Template.Rtti,
   Sempare.Template.Util;
+
+const
+  LOOP_IDX_NAME: string = '_loop_idx_';
 
 {$WARN WIDECHAR_REDUCED OFF}
 
@@ -352,19 +355,47 @@ end;
 procedure TEvaluationTemplateVisitor.Visit(AStmt: IWhileStmt);
 var
   LLoopOptions: IPreserveValue<TLoopOptions>;
+  LOffset: int64;
+  LLimit: int64;
+  i, LLoops: int64;
+  function GetValue(const AExpr: IExpr): int64;
+  begin
+    if AExpr = nil then
+    begin
+      exit(-1);
+    end
+    else
+    begin
+      acceptvisitor(AExpr, self);
+      exit(AsInt(FEvalStack.pop, FContext));
+    end;
+  end;
+
 begin
   if HasBreakOrContinue then
     exit;
   LLoopOptions := Preserve.Value<TLoopOptions>(FLoopOptions, []);
   FStackFrames.push(FStackFrames.peek.Clone);
-  while true do
+
+  LOffset := GetValue(AStmt.OffsetExpr);
+  LLimit := GetValue(AStmt.LimitExpr);
+
+  i := 0;
+  LLoops := 0;
+
+  while ((LLimit = -1) or (LLoops < LLimit)) do
   begin
     acceptvisitor(AStmt.Condition, self);
     if not AsBoolean(FEvalStack.pop) or (coBreak in FLoopOptions) then
       break;
     CheckRunTime(Position(AStmt));
-    exclude(FLoopOptions, coContinue);
-    acceptvisitor(AStmt.Container, self);
+    if (LOffset = -1) or (i >= LOffset) then
+    begin
+      exclude(FLoopOptions, coContinue);
+      acceptvisitor(AStmt.Container, self);
+      inc(LLoops);
+    end;
+    inc(i);
   end;
   FStackFrames.pop;
 end;
@@ -375,6 +406,9 @@ var
   LVariableName: string;
   LLoopExpr: TValue;
   LLoopExprType: TRttiType;
+  LOffset: int64;
+  LLimit: int64;
+  i, LLoops: int64;
 
   procedure VisitDataSet;
   var
@@ -390,16 +424,22 @@ var
     LDataSetFirstMethod.Invoke(LObj, []);
     LDataSetEOFProperty := LLoopExprType.getProperty('EOF');
     LDataSetNextMethod := LLoopExprType.GetMethod('Next');
-    while not LDataSetEOFProperty.GetValue(LObj).AsBoolean do
+    while not LDataSetEOFProperty.GetValue(LObj).AsBoolean and ((LLimit = -1) or (LLoops < LLimit)) do
     begin
       if coBreak in FLoopOptions then
         break;
       FStackFrames.peek[LVariableName] := LIdx;
+      FStackFrames.peek[LOOP_IDX_NAME] := i;
       exclude(FLoopOptions, coContinue);
       CheckRunTime(Position(AStmt));
-      acceptvisitor(AStmt.Container, self);
+      if (LOffset = -1) or (i >= LOffset) then
+      begin
+        acceptvisitor(AStmt.Container, self);
+        inc(LLoops);
+      end;
       LDataSetNextMethod.Invoke(LObj, []);
       inc(LIdx);
+      inc(i);
     end;
   end;
 
@@ -421,21 +461,26 @@ var
       RaiseError(Position(AStmt), SGetEnumeratorNotFoundOnObject);
     LEnumValue := LEnumGetEnumeratorMethod.Invoke(LLoopExpr.AsObject, []);
     if LEnumValue.IsEmpty then
-      raise ETemplateEval.Create(SValueIsNotEnumerable);
+      RaiseErrorRes(Position(AStmt), @SValueIsNotEnumerable);
     LEnumObj := LEnumValue.AsObject;
     try
       LLoopExprType := GRttiContext.GetType(LEnumObj.ClassType);
       LEnumMoveNextMethod := LLoopExprType.GetMethod('MoveNext');
       LEnumCurrentProperty := LLoopExprType.getProperty('Current');
-
-      while LEnumMoveNextMethod.Invoke(LEnumObj, []).AsBoolean do
+      while LEnumMoveNextMethod.Invoke(LEnumObj, []).AsBoolean and ((LLimit = -1) or (LLoops < LLimit)) do
       begin
         if coBreak in FLoopOptions then
           break;
         FStackFrames.peek[LVariableName] := LEnumCurrentProperty.GetValue(LEnumObj);
-        exclude(FLoopOptions, coContinue);
+        FStackFrames.peek[LOOP_IDX_NAME] := i;
         CheckRunTime(Position(AStmt));
-        acceptvisitor(AStmt.Container, self);
+        if (LOffset = -1) or (i >= LOffset) then
+        begin
+          exclude(FLoopOptions, coContinue);
+          acceptvisitor(AStmt.Container, self);
+          inc(LLoops);
+        end;
+        inc(i);
       end;
     finally
       LEnumObj.Free;
@@ -457,14 +502,22 @@ var
       LMin := 0
     else
       LMin := LDimOrdType.MinValue;
-    for LIdx := 0 to LLoopExpr.GetArrayLength - 1 do
+    LIdx := 0;
+    while (LIdx <= LLoopExpr.GetArrayLength - 1) and ((LLimit = -1) or (LLoops < LLimit)) do
     begin
       if coBreak in FLoopOptions then
         break;
       FStackFrames.peek[LVariableName] := LIdx + LMin;
-      exclude(FLoopOptions, coContinue);
+      FStackFrames.peek[LOOP_IDX_NAME] := i;
       CheckRunTime(Position(AStmt));
-      acceptvisitor(AStmt.Container, self);
+      if (LOffset = -1) or (i >= LOffset) then
+      begin
+        exclude(FLoopOptions, coContinue);
+        acceptvisitor(AStmt.Container, self);
+        inc(LLoops);
+      end;
+      inc(LIdx);
+      inc(i);
     end;
   end;
 
@@ -472,14 +525,34 @@ var
   var
     LIdx: integer;
   begin
-    for LIdx := 0 to LLoopExpr.GetArrayLength - 1 do
+    LIdx := 0;
+    while (LIdx <= LLoopExpr.GetArrayLength - 1) and ((LLimit = -1) or (LLoops < LLimit)) do
     begin
       if coBreak in FLoopOptions then
         break;
       FStackFrames.peek[LVariableName] := LIdx;
-      exclude(FLoopOptions, coContinue);
+      FStackFrames.peek[LOOP_IDX_NAME] := i;
       CheckRunTime(Position(AStmt));
-      acceptvisitor(AStmt.Container, self);
+      if (LOffset = -1) or (i >= LOffset) then
+      begin
+        exclude(FLoopOptions, coContinue);
+        acceptvisitor(AStmt.Container, self);
+        inc(LLoops);
+      end;
+      inc(LIdx);
+      inc(i);
+    end;
+  end;
+  function GetValue(const AExpr: IExpr): int64;
+  begin
+    if AExpr = nil then
+    begin
+      exit(-1);
+    end
+    else
+    begin
+      acceptvisitor(AExpr, self);
+      exit(AsInt(FEvalStack.pop, FContext));
     end;
   end;
 
@@ -494,6 +567,13 @@ begin
   LLoopExpr := FEvalStack.pop;
   if LLoopExpr.IsType<TValue> then
     LLoopExpr := LLoopExpr.AsType<TValue>();
+
+  LOffset := GetValue(AStmt.OffsetExpr);
+  LLimit := GetValue(AStmt.LimitExpr);
+
+  i := 0;
+  LLoops := 0;
+
   if not LLoopExpr.IsEmpty then
   begin
     LLoopExprType := GRttiContext.GetType(LLoopExpr.typeinfo);
@@ -597,7 +677,6 @@ end;
 procedure TEvaluationTemplateVisitor.Visit(AStmt: IForRangeStmt);
 type
   TCompare = function(const ALow: integer; const AHigh: integer): boolean;
-
 var
   LLoopOptions: IPreserveValue<TLoopOptions>;
   LIdx: int64;
@@ -606,19 +685,36 @@ var
   LDelta: integer;
   LVariable: string;
   LDirectionTestFunc: TCompare;
+  i: int64;
+  LStep: int64;
+
+  function GetValue(const AExpr: IExpr): int64;
+  begin
+    if AExpr = nil then
+    begin
+      exit(-1);
+    end
+    else
+    begin
+      acceptvisitor(AExpr, self);
+      exit(AsInt(FEvalStack.pop, FContext));
+    end;
+  end;
 
 begin
   if HasBreakOrContinue then
     exit;
   LVariable := AStmt.variable;
   LLoopOptions := Preserve.Value<TLoopOptions>(FLoopOptions, []);
-
   acceptvisitor(AStmt.LowExpr, self);
   LStartVal := AsInt(FEvalStack.pop, FContext);
-
   acceptvisitor(AStmt.HighExpr, self);
   LEndVal := AsInt(FEvalStack.pop, FContext);
 
+  LStep := GetValue(AStmt.StepExpr);
+
+  LDelta := 0;
+  LDirectionTestFunc := nil;
   case AStmt.ForOp of
     foTo:
       begin
@@ -631,19 +727,28 @@ begin
         LDirectionTestFunc := ForDownToCond;
       end
   else
-    raise ETemplateEval.Create(STypeNotSupported);
+    begin
+      RaiseErrorRes(Position(AStmt), @STypeNotSupported);
+    end;
+  end;
+  if LStep <> -1 then
+  begin
+    LDelta := LDelta * abs(LStep);
   end;
   FStackFrames.push(FStackFrames.peek.Clone);
   LIdx := LStartVal;
+  i := 0;
   while LDirectionTestFunc(LIdx, LEndVal) do
   begin
     FStackFrames.peek[LVariable] := LIdx;
+    FStackFrames.peek[LOOP_IDX_NAME] := i;
     if coBreak in FLoopOptions then
       break;
     exclude(FLoopOptions, coContinue);
     CheckRunTime(Position(AStmt));
     acceptvisitor(AStmt.Container, self);
     inc(LIdx, LDelta);
+    inc(i);
   end;
   FStackFrames.pop;
 end;
@@ -698,7 +803,7 @@ begin
     end;
   end
   else
-    raise ETemplateEval.Createfmt(STemplateNotFound, [LTemplateName]);
+    RaiseErrorRes(Position(AStmt), @STemplateNotFound, [LTemplateName]);
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(AStmt: IPrintStmt);
@@ -728,7 +833,7 @@ begin
   exit(AValue);
 end;
 
-function GetArgs(const AMethod: TRttiMethod; const AArgs: TArray<TValue>; const AContext: ITemplateContext): TArray<TValue>;
+function GetArgs(const APosition: IPosition; const AMethod: TRttiMethod; const AArgs: TArray<TValue>; const AContext: ITemplateContext): TArray<TValue>;
 var
   LParameter: TRttiParameter;
   LParamIdx: integer;
@@ -749,7 +854,7 @@ begin
   if (LNumParams > 0) and (LParams[LNumParams - 1].ParamType.TypeKind = tkDynArray) then
   begin
     if LNumParams > 2 then
-      raise ETemplateEval.Create('Too many parameters');
+      RaiseErrorRes(APosition, @STooManyParameters);
     result[LOffset] := TValue.From(AArgs);
     exit;
   end;
@@ -763,7 +868,7 @@ begin
   end;
 end;
 
-function TEvaluationTemplateVisitor.Invoke(AFuncCall: IFunctionCallExpr; const AArgs: TArray<TValue>): TValue;
+function TEvaluationTemplateVisitor.Invoke(AFuncCall: IFunctionCallExpr; const AArgs: TArray<TValue>; out AHasResult: boolean): TValue;
 var
   LMethod: TRttiMethod;
 
@@ -786,25 +891,32 @@ begin
       if GetParamCount = length(AArgs) then
         break;
   end;
+  AHasResult := LMethod.ReturnType <> nil;
   if length(LMethod.GetParameters) = 0 then
     result := LMethod.Invoke(nil, [])
   else
-    result := LMethod.Invoke(nil, GetArgs(LMethod, AArgs, FContext));
+    result := LMethod.Invoke(nil, GetArgs(Position(AFuncCall), LMethod, AArgs, FContext));
   if result.IsType<TValue> then
     result := result.AsType<TValue>();
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(AExpr: IFunctionCallExpr);
+var
+  LResult: TValue;
+  LHasResult: boolean;
 begin
   try
-    FEvalStack.push(Invoke(AExpr, ExprListArgs(AExpr.exprlist)));
+    LResult := Invoke(AExpr, ExprListArgs(AExpr.exprlist), LHasResult);
+    if not LHasResult then
+      LResult := '';
+    FEvalStack.push(LResult);
   except
     on e: exception do
       RaiseError(Position(AExpr), e.Message);
   end;
 end;
 
-function TEvaluationTemplateVisitor.Invoke(AExpr: IMethodCallExpr; const AObject: TValue; const AArgs: TArray<TValue>): TValue;
+function TEvaluationTemplateVisitor.Invoke(AExpr: IMethodCallExpr; const AObject: TValue; const AArgs: TArray<TValue>; out AHasResult: boolean): TValue;
 var
   LObjType: TRttiType;
 begin
@@ -813,6 +925,8 @@ begin
     LObjType := GRttiContext.GetType(AObject.typeinfo);
     AExpr.RttiMethod := LObjType.GetMethod(AExpr.Method);
   end;
+
+  AHasResult := AExpr.RttiMethod.ReturnType <> nil;
   exit(AExpr.RttiMethod.Invoke(AObject, AArgs));
 end;
 
@@ -820,12 +934,17 @@ procedure TEvaluationTemplateVisitor.Visit(AExpr: IMethodCallExpr);
 var
   LObj: TValue;
   LArgs: TArray<TValue>;
+  LResult: TValue;
+  LHasResult: boolean;
 begin
   acceptvisitor(AExpr.ObjectExpr, self);
   LObj := FEvalStack.pop;
   LArgs := ExprListArgs(AExpr.exprlist);
   try
-    FEvalStack.push(Invoke(AExpr, LObj, LArgs));
+    LResult := Invoke(AExpr, LObj, LArgs, LHasResult);
+    if not LHasResult then
+      LResult := '';
+    FEvalStack.push(LResult);
   except
     on e: exception do
       RaiseError(Position(AExpr), AExpr.Method + ':' + e.Message);
@@ -883,13 +1002,17 @@ procedure ScanRecord(const ARttiType: TRttiType; const ARecord: TValue); forward
     LRttiType: TRttiType;
   begin
     LRttiType := GRttiContext.GetType(ARecord.typeinfo);
+    if LRttiType = nil then
+    begin
+      RaiseErrorRes(Position(AStmt), @SCannotDereferenceValiable);
+    end;
     case LRttiType.TypeKind of
       tkClass, tkClassRef:
         ScanClass(LRttiType, ARecord);
       tkrecord:
         ScanRecord(LRttiType, ARecord);
     else
-      raise ETemplateEval.Create(SStackFrameCanOnlyBeDefinedOnAClassOrRecord);
+      RaiseErrorRes(Position(AStmt), @SStackFrameCanOnlyBeDefinedOnAClassOrRecord);
     end;
   end;
 
@@ -965,6 +1088,23 @@ begin
     acceptvisitor(AExpr.TrueExpr, self)
   else
     acceptvisitor(AExpr.FalseExpr, self);
+end;
+
+procedure TEvaluationTemplateVisitor.Visit(AStmt: ICycleStmt);
+var
+  LStackFrame: TStackFrame;
+  LValue: TValue;
+  LIdx: int64;
+begin
+  try
+    LStackFrame := FStackFrames.peek;
+    LValue := LStackFrame[LOOP_IDX_NAME];
+  except
+    RaiseErrorRes(Position(AStmt), @SCycleStatementMustBeInALoop);
+  end;
+  LIdx := LValue.AsInt64;
+  acceptvisitor(AStmt.List[LIdx mod AStmt.List.Count], self);
+  FStreamWriter.Write(AsString(FEvalStack.pop, FContext));
 end;
 
 { TNewLineStreamWriter }

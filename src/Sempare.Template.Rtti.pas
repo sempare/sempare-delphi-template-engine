@@ -664,7 +664,7 @@ function Deref(APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfM
       LMin := LArrayOrdType.MinValue;
       LMax := LArrayOrdType.MaxValue;
       if (LIndex < LMin) or (LIndex > LMax) then
-        raise ETemplateRTTI.Create(SIndexOutOfBounds);
+        RaiseErrorRes(APosition, @SIndexOutOfBounds);
     end;
     AFound := true;
     exit(AObj.GetArrayElement(LIndex - LMin));

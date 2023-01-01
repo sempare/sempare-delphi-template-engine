@@ -110,6 +110,8 @@ function Position(APositional: IPosition): string; inline; overload;
 
 procedure RaiseError(APositional: IPosition; const AFormat: string; const AArgs: array of const); overload;
 procedure RaiseError(APositional: IPosition; const AFormat: string); overload;
+procedure RaiseErrorRes(APositional: IPosition; const ResStringRec: PResStringRec; const AArgs: array of const); overload;
+procedure RaiseErrorRes(APositional: IPosition; const ResStringRec: PResStringRec); overload;
 
 implementation
 
@@ -180,6 +182,16 @@ end;
 procedure RaiseError(APositional: IPosition; const AFormat: string); overload;
 begin
   RaiseError(APositional, AFormat, []);
+end;
+
+procedure RaiseErrorRes(APositional: IPosition; const ResStringRec: PResStringRec; const AArgs: array of const);
+begin
+  raise ETemplateEvaluationError.Create(APositional, Position(APositional) + format(LoadResString(ResStringRec), AArgs));
+end;
+
+procedure RaiseErrorRes(APositional: IPosition; const ResStringRec: PResStringRec);
+begin
+  RaiseErrorRes(APositional, ResStringRec, []);
 end;
 
 { ETemplateEvaluationError }

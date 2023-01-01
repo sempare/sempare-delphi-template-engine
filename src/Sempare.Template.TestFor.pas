@@ -47,6 +47,12 @@ type
     [Test]
     procedure TestForIn;
     [Test]
+    procedure TestForInWithOffset;
+    [Test]
+    procedure TestForInWithOffsetAndLimit;
+    [Test]
+    procedure TestForRangeWithStep;
+    [Test]
     procedure TestForRangeWithBreak;
     [Test]
     procedure TestForRangeWithContinue;
@@ -72,7 +78,8 @@ type
     procedure TestDataSet;
     [Test{$IFNDEF SEMPARE_TEMPLATE_FIREDAC}, Ignore{$ENDIF}]
     procedure TestDataSetCount;
-
+    [Test]
+    procedure TestCycle;
   end;
 
 implementation
@@ -158,6 +165,15 @@ end;
 
 {$ENDIF}
 
+procedure TTestTemplateFor.TestCycle;
+begin
+  Assert.AreEqual('odd even odd even ', //
+    Template.Eval('<% for i in [ 1, 2, 3, 4] %><% cycle(''odd'',''even'') %> <% end %>'));
+
+  Assert.AreEqual('1 2 1 ', //
+    Template.Eval('<% for i in [ 1, 2, 3] %><% cycle(''1'',''2'') %> <% end %>'));
+end;
+
 procedure TTestTemplateFor.TestForIn;
 type
   TForIn = record
@@ -198,6 +214,52 @@ var
 begin
   x.count := 10;
   Assert.AreEqual('0 2 4 6 8 10 ', Template.Eval('<% for i := 0 to count %><% if i mod 2 = 1 %><% continue %><% end %><% i %> <% end %>', x));
+end;
+
+procedure TTestTemplateFor.TestForRangeWithStep;
+var
+  c: ITemplate;
+begin
+  c := Template.parse('<% for i := 0 to 10 step 2 %> <% i %> <% end %>');
+  Assert.AreEqual(' 0  2  4  6  8  10 ', Template.Eval(c));
+end;
+
+procedure TTestTemplateFor.TestForInWithOffset;
+type
+  TForIn = record
+    range: TList<integer>;
+  end;
+var
+  c: ITemplate;
+  x: TForIn;
+begin
+  x.range := TList<integer>.Create;
+  try
+    x.range.AddRange([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    c := Template.parse('<% for i in range offset 5 %> <% i %> <% end %>');
+    Assert.AreEqual(' 6  7  8  9  10 ', Template.Eval(c, x));
+  finally
+    x.range.Free;
+  end;
+end;
+
+procedure TTestTemplateFor.TestForInWithOffsetAndLimit;
+type
+  TForIn = record
+    range: TList<integer>;
+  end;
+var
+  c: ITemplate;
+  x: TForIn;
+begin
+  x.range := TList<integer>.Create;
+  try
+    x.range.AddRange([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    c := Template.parse('<% for i in range offset 5 limit 2 %> <% i %> <% end %>');
+    Assert.AreEqual(' 6  7 ', Template.Eval(c, x));
+  finally
+    x.range.Free;
+  end;
 end;
 
 procedure TTestTemplateFor.TestNested;
