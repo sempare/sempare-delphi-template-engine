@@ -69,14 +69,14 @@ type
     eoStripRecurringNewlines, //
     eoTrimLines, //
     eoReplaceNewline, //
-    // eoDebug, // TODO
+    eoEmbedException, //
     eoPrettyPrint, //
     eoStripRecurringSpaces, //
     eoConvertTabsToSpaces, //
     eoNoDefaultFunctions, //
     eoRaiseErrorWhenVariableNotFound, //
     eoAllowIgnoreNL, //
-
+    eoStripEmptyLines, //
     eoInternalUseNewLine //
     );
 
@@ -139,6 +139,9 @@ type
     procedure SetDecimalSeparator(const ASeparator: char);
     function GetFormatSettings: TFormatSettings;
 
+    function GetDebugErrorFormat: string;
+    procedure SetDebugErrorFormat(const AFormat: string);
+
     property Functions: ITemplateFunctions read GetFunctions write SetFunctions;
     property NewLine: string read GetNewLine write SetNewLine;
     property TemplateResolver: TTemplateResolver read GetTemplateResolver write SetTemplateResolver;
@@ -158,7 +161,7 @@ type
     property ValueSeparator: char read GetValueSeparator;
     property DecimalSeparator: char read GetDecimalSeparator write SetDecimalSeparator;
     property FormatSettings: TFormatSettings read GetFormatSettings;
-
+    property DebugErrorFormat: string read GetDebugErrorFormat write SetDebugErrorFormat;
     property StreamWriterProvider: TStreamWriterProvider read GetStreamWriterProvider write SetStreamWriterProvider;
   end;
 
@@ -224,6 +227,7 @@ type
     FNewLine: string;
     FValueSeparator: char;
     FFormatSettings: TFormatSettings;
+    FDebugFormat: string;
   public
     constructor Create(const AOptions: TTemplateEvaluationOptions);
     destructor Destroy; override;
@@ -284,6 +288,8 @@ type
 
     procedure SetDecimalSeparator(const ASeparator: char);
 
+    function GetDebugErrorFormat: string;
+    procedure SetDebugErrorFormat(const AFormat: string);
   end;
 
 function CreateTemplateContext(const AOptions: TTemplateEvaluationOptions): ITemplateContext;
@@ -332,6 +338,7 @@ begin
   FVariables.Items['TAB'] := #9;
   FFormatSettings := TFormatSettings.Create;
   SetDecimalSeparator(FFormatSettings.DecimalSeparator);
+  FDebugFormat := FNewLine + FNewLine + 'ERROR: %s' + FNewLine + FNewLine;
 end;
 
 destructor TTemplateContext.Destroy;
@@ -357,6 +364,11 @@ begin
   finally
     FLock.Leave;
   end;
+end;
+
+function TTemplateContext.GetDebugErrorFormat: string;
+begin
+  exit(FDebugFormat);
 end;
 
 function TTemplateContext.GetDecimalSeparator: char;
@@ -453,6 +465,11 @@ end;
 function TTemplateContext.GetValueSeparator: char;
 begin
   exit(FValueSeparator);
+end;
+
+procedure TTemplateContext.SetDebugErrorFormat(const AFormat: string);
+begin
+  FDebugFormat := AFormat;
 end;
 
 procedure TTemplateContext.SetDecimalSeparator(const ASeparator: char);

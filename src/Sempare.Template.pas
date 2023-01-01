@@ -51,10 +51,11 @@ const
   eoEvalVarsEarly = TTemplateEvaluationOption.eoEvalVarsEarly;
   eoStripRecurringNewlines = TTemplateEvaluationOption.eoStripRecurringNewlines;
   eoTrimLines = TTemplateEvaluationOption.eoTrimLines;
-  // eoDebug = TTemplateEvaluationOption.eoDebug;
+  eoEmbedException = TTemplateEvaluationOption.eoEmbedException;
   eoPrettyPrint = TTemplateEvaluationOption.eoPrettyPrint;
   eoRaiseErrorWhenVariableNotFound = TTemplateEvaluationOption.eoRaiseErrorWhenVariableNotFound;
   eoReplaceNewline = TTemplateEvaluationOption.eoReplaceNewline;
+  eoStripEmptyLines = TTemplateEvaluationOption.eoStripEmptyLines;
 
 type
   TTemplateEvaluationOptions = Sempare.Template.Context.TTemplateEvaluationOptions;
@@ -105,8 +106,8 @@ type
     class function Parse(AContext: ITemplateContext; const AString: string): ITemplate; overload; static;
 
     // stream operations
-    class function Parse(const AStream: TStream; const AManagedStream:boolean=true): ITemplate; overload; static;
-    class function Parse(AContext: ITemplateContext; const AStream: TStream; const AManagedStream:boolean=true): ITemplate; overload; static;
+    class function Parse(const AStream: TStream; const AManagedStream: boolean = true): ITemplate; overload; static;
+    class function Parse(AContext: ITemplateContext; const AStream: TStream; const AManagedStream: boolean = true): ITemplate; overload; static;
 
     // file operations
     class function ParseFile(const AFile: string): ITemplate; overload; static;
@@ -173,7 +174,7 @@ begin
   Eval(Template.Parse(ATemplate), AValue, AStream, AOptions);
 end;
 
-class function Template.Parse(const AStream: TStream; const AManagedStream:boolean): ITemplate;
+class function Template.Parse(const AStream: TStream; const AManagedStream: boolean): ITemplate;
 begin
   exit(Parser.Parse(AStream, AManagedStream));
 end;
@@ -212,7 +213,7 @@ begin
   Eval(AContext, Parse(ATemplate), AValue, AStream);
 end;
 
-class function Template.Parse(AContext: ITemplateContext; const AStream: TStream; const AManagedStream:boolean): ITemplate;
+class function Template.Parse(AContext: ITemplateContext; const AStream: TStream; const AManagedStream: boolean): ITemplate;
 begin
   exit(Parser(AContext).Parse(AStream, AManagedStream));
 end;
