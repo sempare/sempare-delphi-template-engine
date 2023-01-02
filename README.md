@@ -57,13 +57,13 @@ type
 begin
     var tpl := Template.Parse(
 	       'My name is <% name %>.'#13#10 + 
-		   'My favourite sport is <% favourite_sport %>.'#13#10 + 
-		   'Counting... <% for i := 1 to count %><% if i > 1 %>, <% end %><% i %><% end %>'
-		);
+	       'My favourite sport is <% favourite_sport %>.'#13#10 + 
+	       'Counting... <% for i := 1 to count %><% if i > 1 %>, <% end %><% i %><% end %>'
+	);
     var information : TInformation;
     information.name := 'conrad';
     information.favourite_sport := 'ultimate';
-	information.count := 3;
+    information.count := 3;
     writeln(Template.eval(tpl, information));	
 end.
 ```
