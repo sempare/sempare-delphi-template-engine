@@ -45,7 +45,7 @@ type
     ['{930E9892-38AA-4030-83CC-4069667B2E6E}']
 
     function GetValue: string;
-    procedure SetValue(const Avalue: string);
+    procedure SetValue(const AValue: string);
     property Value: string read GetValue write SetValue;
   end;
 
@@ -58,7 +58,7 @@ type
   end;
 
 function TemplateSymbolToString(const ASymbol: TTemplateSymbol): string;
-function CreateTemplateLexer(AContext: ITemplateContext; const AStream: TStream; const AFilename: string = ''; const AManageStream: Boolean = True): ITemplateLexer;
+function CreateTemplateLexer(const AContext: ITemplateContext; const AStream: TStream; const AFilename: string = ''; const AManageStream: Boolean = True): ITemplateLexer;
 
 implementation
 
@@ -84,7 +84,7 @@ type
     TPair = record
       Input: char;
       Eof: Boolean;
-      constructor Create(const Ainput: char; const Aeof: Boolean);
+      constructor Create(const AInput: char; const AEof: Boolean);
     end;
   private
     class var FIDRegex: TRegEx;
@@ -116,7 +116,7 @@ type
     function GetTextToken: ITemplateSymbol;
     function GetScriptToken: ITemplateSymbol;
   public
-    constructor Create(AContext: ITemplateContext; const AStream: TStream; const AFilename: string; const AManageStream: Boolean = True); overload;
+    constructor Create(const AContext: ITemplateContext; const AStream: TStream; const AFilename: string; const AManageStream: Boolean = True); overload;
     destructor Destroy; override;
     function GetToken: ITemplateSymbol;
   end;
@@ -129,7 +129,7 @@ type
     FStripWS: Boolean;
     function GetPosition: IPosition;
   public
-    constructor Create(APosition: IPosition; const AToken: TTemplateSymbol; const AStripWS: Boolean = false);
+    constructor Create(const APosition: IPosition; const AToken: TTemplateSymbol; const AStripWS: Boolean = false);
     procedure SetToken(const AToken: TTemplateSymbol);
     function GetToken: TTemplateSymbol;
     function StripWS: Boolean;
@@ -139,12 +139,12 @@ type
   private
     FValue: string;
   public
-    constructor Create(APosition: IPosition; const AToken: TTemplateSymbol; const AString: string);
-    procedure SetValue(const Avalue: string);
+    constructor Create(const APosition: IPosition; const AToken: TTemplateSymbol; const AString: string);
+    procedure SetValue(const AValue: string);
     function GetValue: string;
   end;
 
-function CreateTemplateLexer(AContext: ITemplateContext; const AStream: TStream; const AFilename: string; const AManageStream: Boolean): ITemplateLexer;
+function CreateTemplateLexer(const AContext: ITemplateContext; const AStream: TStream; const AFilename: string; const AManageStream: Boolean): ITemplateLexer;
 begin
   exit(TTemplateLexer.Create(AContext, AStream, AFilename, AManageStream));
 end;
@@ -157,7 +157,7 @@ end;
 
 { TTemplateLexer }
 
-constructor TTemplateLexer.Create(AContext: ITemplateContext; const AStream: TStream; const AFilename: string; const AManageStream: Boolean);
+constructor TTemplateLexer.Create(const AContext: ITemplateContext; const AStream: TStream; const AFilename: string; const AManageStream: Boolean);
 begin
   FContext := AContext;
   FReader := TStreamReader.Create(AStream, AContext.Encoding, false, 4096);
@@ -257,8 +257,11 @@ var
   end;
 
   function SimpleToken(const ASymbol: TTemplateSymbol; const AStripWS: Boolean = false): ITemplateSymbol;
+  var
+    LPosition: IPosition;
   begin
-    Result := TSimpleTemplateSymbol.Create(MakePosition, ASymbol, AStripWS);
+    LPosition := MakePosition;
+    Result := TSimpleTemplateSymbol.Create(LPosition, ASymbol, AStripWS);
     GetInput;
   end;
 
@@ -485,14 +488,20 @@ var
   end;
 
   function SimpleToken(const ASymbol: TTemplateSymbol; const AStripWS: Boolean = false): ITemplateSymbol;
+  var
+    LPosition: IPosition;
   begin
-    Result := TSimpleTemplateSymbol.Create(MakePosition, ASymbol, AStripWS);
+    LPosition := MakePosition;
+    Result := TSimpleTemplateSymbol.Create(LPosition, ASymbol, AStripWS);
     GetInput;
   end;
 
   function ValueToken(const ASymbol: TTemplateSymbol): ITemplateSymbol;
+  var
+    LPosition: IPosition;
   begin
-    Result := TTemplateValueSymbol.Create(MakePosition, ASymbol, FAccumulator.ToString);
+    LPosition := MakePosition;
+    Result := TTemplateValueSymbol.Create(LPosition, ASymbol, FAccumulator.ToString);
     FAccumulator.Clear;
     GetInput;
   end;
@@ -564,7 +573,7 @@ end;
 
 { TSimpleMustacheToken }
 
-constructor TSimpleTemplateSymbol.Create(APosition: IPosition; const AToken: TTemplateSymbol; const AStripWS: Boolean);
+constructor TSimpleTemplateSymbol.Create(const APosition: IPosition; const AToken: TTemplateSymbol; const AStripWS: Boolean);
 begin
   FToken := AToken;
   FPosition := APosition;
@@ -593,7 +602,7 @@ end;
 
 { TStringMustacheToken }
 
-constructor TTemplateValueSymbol.Create(APosition: IPosition; const AToken: TTemplateSymbol; const AString: string);
+constructor TTemplateValueSymbol.Create(const APosition: IPosition; const AToken: TTemplateSymbol; const AString: string);
 begin
   inherited Create(APosition, AToken, false);
   SetValue(AString);
@@ -604,14 +613,14 @@ begin
   exit(FValue);
 end;
 
-procedure TTemplateValueSymbol.SetValue(const Avalue: string);
+procedure TTemplateValueSymbol.SetValue(const AValue: string);
 var
   LSymbol: TTemplateSymbol;
 begin
-  FValue := Avalue;
+  FValue := AValue;
   if GetToken <> vsID then
     exit;
-  if GKeywords.TryGetValue(Avalue, LSymbol) then
+  if GKeywords.TryGetValue(AValue, LSymbol) then
   begin
     SetToken(LSymbol);
     exit;
@@ -620,10 +629,10 @@ end;
 
 { TTemplateLexer.TPair }
 
-constructor TTemplateLexer.TPair.Create(const Ainput: char; const Aeof: Boolean);
+constructor TTemplateLexer.TPair.Create(const AInput: char; const AEof: Boolean);
 begin
-  Input := Ainput;
-  Eof := Aeof;
+  Input := AInput;
+  Eof := AEof;
 end;
 
 procedure AddHashedKeyword(const akeyword: string; const ASymbol: TTemplateSymbol);

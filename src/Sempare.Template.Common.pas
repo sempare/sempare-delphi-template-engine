@@ -96,56 +96,56 @@ type
     property Variables[const AKey: string]: TTemplateValue read GetItem write SetItem; default;
   end;
 
-function AsVisitorHost(ATemplate: ITemplate): ITemplateVisitorHost; inline; overload;
-function AsVisitorHost(AExpr: IExpr): ITemplateVisitorHost; inline; overload;
-function AsVisitorHost(AStmt: IStmt): ITemplateVisitorHost; inline; overload;
+function AsVisitorHost(const ATemplate: ITemplate): ITemplateVisitorHost; inline; overload;
+function AsVisitorHost(const AExpr: IExpr): ITemplateVisitorHost; inline; overload;
+function AsVisitorHost(const AStmt: IStmt): ITemplateVisitorHost; inline; overload;
 
-procedure AcceptVisitor(ATemplate: ITemplate; AVisitor: ITemplateVisitor); overload;
-procedure AcceptVisitor(AExpr: IExpr; AVisitor: ITemplateVisitor); overload;
-procedure AcceptVisitor(AStmt: IStmt; AVisitor: ITemplateVisitor); overload;
+procedure AcceptVisitor(const ATemplate: ITemplate; const AVisitor: ITemplateVisitor); overload;
+procedure AcceptVisitor(const AExpr: IExpr; const AVisitor: ITemplateVisitor); overload;
+procedure AcceptVisitor(const AStmt: IStmt; const AVisitor: ITemplateVisitor); overload;
 
-function Position(AStmt: IStmt): IPosition; inline; overload;
-function Position(AExpr: IExpr): IPosition; inline; overload;
-function Position(APositional: IPosition): string; inline; overload;
+function Position(const AStmt: IStmt): IPosition; inline; overload;
+function Position(const AExpr: IExpr): IPosition; inline; overload;
+function Position(const APositional: IPosition): string; inline; overload;
 
-procedure RaiseError(APositional: IPosition; const AFormat: string; const AArgs: array of const); overload;
-procedure RaiseError(APositional: IPosition; const AFormat: string); overload;
-procedure RaiseErrorRes(APositional: IPosition; const ResStringRec: PResStringRec; const AArgs: array of const); overload;
-procedure RaiseErrorRes(APositional: IPosition; const ResStringRec: PResStringRec); overload;
+procedure RaiseError(const APositional: IPosition; const AFormat: string; const AArgs: array of const); overload;
+procedure RaiseError(const APositional: IPosition; const AFormat: string); overload;
+procedure RaiseErrorRes(const APositional: IPosition; const ResStringRec: PResStringRec; const AArgs: array of const); overload;
+procedure RaiseErrorRes(const APositional: IPosition; const ResStringRec: PResStringRec); overload;
 
 implementation
 
-function AsVisitorHost(ATemplate: ITemplate): ITemplateVisitorHost; overload;
+function AsVisitorHost(const ATemplate: ITemplate): ITemplateVisitorHost; overload;
 begin
   ATemplate.QueryInterface(ITemplateVisitorHost, result);
 end;
 
-function AsVisitorHost(AExpr: IExpr): ITemplateVisitorHost;
+function AsVisitorHost(const AExpr: IExpr): ITemplateVisitorHost;
 begin
   AExpr.QueryInterface(ITemplateVisitorHost, result);
 end;
 
-function AsVisitorHost(AStmt: IStmt): ITemplateVisitorHost;
+function AsVisitorHost(const AStmt: IStmt): ITemplateVisitorHost;
 begin
   AStmt.QueryInterface(ITemplateVisitorHost, result);
 end;
 
-procedure AcceptVisitor(ATemplate: ITemplate; AVisitor: ITemplateVisitor); overload;
+procedure AcceptVisitor(const ATemplate: ITemplate; const AVisitor: ITemplateVisitor); overload;
 begin
   AsVisitorHost(ATemplate).Accept(AVisitor);
 end;
 
-procedure AcceptVisitor(AExpr: IExpr; AVisitor: ITemplateVisitor);
+procedure AcceptVisitor(const AExpr: IExpr; const AVisitor: ITemplateVisitor);
 begin
   AsVisitorHost(AExpr).Accept(AVisitor);
 end;
 
-procedure AcceptVisitor(AStmt: IStmt; AVisitor: ITemplateVisitor);
+procedure AcceptVisitor(const AStmt: IStmt; const AVisitor: ITemplateVisitor);
 begin
   AsVisitorHost(AStmt).Accept(AVisitor);
 end;
 
-function Position(AStmt: IStmt): IPosition; overload;
+function Position(const AStmt: IStmt): IPosition; overload;
 var
   LSymbol: IPositional;
 begin
@@ -153,7 +153,7 @@ begin
   exit(LSymbol.Position);
 end;
 
-function Position(AExpr: IExpr): IPosition; overload;
+function Position(const AExpr: IExpr): IPosition; overload;
 var
   LSymbol: IPositional;
 begin
@@ -161,7 +161,7 @@ begin
   exit(LSymbol.Position);
 end;
 
-function Position(APositional: IPosition): string; overload;
+function Position(const APositional: IPosition): string; overload;
 var
   LName: string;
 begin
@@ -174,22 +174,22 @@ begin
   exit(format('%s (Line %d, Column %d) ', [LName, APositional.Line, APositional.Pos]));
 end;
 
-procedure RaiseError(APositional: IPosition; const AFormat: string; const AArgs: array of const); overload;
+procedure RaiseError(const APositional: IPosition; const AFormat: string; const AArgs: array of const); overload;
 begin
   raise ETemplateEvaluationError.Create(APositional, Position(APositional) + format(AFormat, AArgs));
 end;
 
-procedure RaiseError(APositional: IPosition; const AFormat: string); overload;
+procedure RaiseError(const APositional: IPosition; const AFormat: string); overload;
 begin
   RaiseError(APositional, AFormat, []);
 end;
 
-procedure RaiseErrorRes(APositional: IPosition; const ResStringRec: PResStringRec; const AArgs: array of const);
+procedure RaiseErrorRes(const APositional: IPosition; const ResStringRec: PResStringRec; const AArgs: array of const);
 begin
   raise ETemplateEvaluationError.Create(APositional, Position(APositional) + format(LoadResString(ResStringRec), AArgs));
 end;
 
-procedure RaiseErrorRes(APositional: IPosition; const ResStringRec: PResStringRec);
+procedure RaiseErrorRes(const APositional: IPosition; const ResStringRec: PResStringRec);
 begin
   RaiseErrorRes(APositional, ResStringRec, []);
 end;
