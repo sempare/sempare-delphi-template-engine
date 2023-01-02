@@ -1,6 +1,6 @@
 # ![](../images/sempare-logo-45px.png) Sempare Template Engine
 
-Copyright (c) 2019-2021 [Sempare Limited](http://www.sempare.ltd)
+Copyright (c) 2019-2023 [Sempare Limited](http://www.sempare.ltd)
 
 ## Builtin functions
 
@@ -18,6 +18,7 @@ Copyright (c) 2019-2021 [Sempare Limited](http://www.sempare.ltd)
 - [isint](#isint)
 - [num](#num)
 - [isnum](#isnum)
+- [isnull](#isnull)
 - [split](#split)
 - [rev](#rev)
 - [ucfirst](#ucfirst)
@@ -37,6 +38,7 @@ Copyright (c) 2019-2021 [Sempare Limited](http://www.sempare.ltd)
 - [spaces](#spaces)
 - [crnl](#crnl)
 - [nl](#nl)
+- [recordcount](#recordcount)
 
 
 ## trim(string)
@@ -83,7 +85,10 @@ str() casts a variable to a string. isstr() checks if a variable is a string.
 int() casts a number to an integer. isint() checks if a variable is an integer.
 
 ## num(any) / isnum(any)
-num() casts the variable to a number. isnum() checks if a variable is an interfer or vloat.
+num() casts the variable to a number. isnum() checks if a variable is an integer or a float.
+
+## isnull(any)
+isnull() checks if an object is null or not.
 
 ## split(string, sep)
 
@@ -208,4 +213,10 @@ return a string with len #13#10
 return a string with len #10
 ```
 <% nl(2) %>
+```
+
+## recordcount(dataset)
+return the length of a dataset
+```
+<% RecordCount(ds) %>
 ```

@@ -1,6 +1,6 @@
 # ![](../images/sempare-logo-45px.png) Sempare Template Engine
 
-Copyright (c) 2019-2021 [Sempare Limited](http://www.sempare.ltd)
+Copyright (c) 2019-2023 [Sempare Limited](http://www.sempare.ltd)
 
 ## Components
 
@@ -118,6 +118,10 @@ The Template context object is a container for configuration used when parsing o
 
     ctx.StartToken := '<%';
     ctx.EndToken := '%>';
+	
+	ctx.Options := ctx.Options + [eoEmbedException];
+	ctx.DebugErrorFormat := '%s';
+	
 ```
 
 Defining variables in a context allows them to be used in made available to multiple templates easily.

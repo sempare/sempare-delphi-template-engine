@@ -1,6 +1,6 @@
 # ![](../images/sempare-logo-45px.png) Sempare Template Engine
 
-Copyright (c) 2019-2021 [Sempare Limited](http://www.sempare.ltd)
+Copyright (c) 2019-2023 [Sempare Limited](http://www.sempare.ltd)
 
 ## Statements
 
@@ -79,8 +79,15 @@ decreasing integers from 10 down to 1
     number <% i %>
 <% end %>
 ```
+
 **NOTE** Loop variables can be updated within the scope of the block without the loop integrity being compromised. 
 
+You can change the <b>step></b> interval as follows:
+```
+<% for i := 1 to 10 step 2%>
+    number <% i %>
+<% end %>
+```
 
 The other 'for in' variation is as follows:
 ```
@@ -89,6 +96,20 @@ Attendees:
    <% i.name %> <% i.age %>
 <%end%>'
 ```
+Further, there are 'onbegin', 'onend' and 'onempty' events that can be used.
+```
+Attendees:
+<%for i in _ %> 
+		<li><% i.name %> <% i.age %></li>
+   <% onbegin %>
+		<ul>
+   <% onend %>
+		</ul>
+   <% onempty %>
+		<i>There are no entries</i>   
+<%end%>'
+```
+
 With the following Delphi:
 ```
 type
@@ -133,6 +154,30 @@ This produces the following:
    3
 ```
 **NOTE** you must ensure the terminating condition is eventually true so that the template can be rendered.
+
+While loops may also have *offset* and *limits* defined:
+
+```
+<% i := 1 %>
+<% while i <= 10 offset 5 limit 5 %>
+   <% i %>
+   <% i := i + 1%>
+<% end %>
+```
+While loops may also have 'onbegin', 'onend' and 'onempty' events defined:
+```
+<% i := 1 %>
+<% while i <= 10 offset 5 limit 5 %>
+			<% i %>
+			<% i := i + 1%>
+		<% onbegin %>
+			<ul>
+		<% onend %>
+			</ul>
+		<% onempty %>
+			<i>no values</i>
+<% end %>
+```
 
 ## break / continue
 

@@ -1,6 +1,6 @@
 # ![](../images/sempare-logo-45px.png) Sempare Template Engine
 
-Copyright (c) 2019-2021 [Sempare Limited](http://www.sempare.ltd)
+Copyright (c) 2019-2023 [Sempare Limited](http://www.sempare.ltd)
 
 ## Tricks
 
@@ -50,4 +50,32 @@ e.g. This is illustrative:
       LStream := TFileStream.Create(ATemplate + '.tpl', fmOpenRead);
       exit(Template.Parse(AContext, LStream));
     end;
+```
+
+### Including values when variables are defined
+
+When a variable has a non default value, it can be used in condition statements:
+```
+<% a := false %>
+<% if a %>
+	value is set 
+<% end %>
+
+
+<% a := 'some value' %>
+<% if a %>
+	value is set 
+<% end %>
+```
+
+If you have passed an object, the boolean check will essentially check that the value is not null:
+```
+var x := TPerson.Create;
+```
+The template could check as follows:
+```
+<% if x %>
+	<% x.name %>
+<% end %>
+
 ```
