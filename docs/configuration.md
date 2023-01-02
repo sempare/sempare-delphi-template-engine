@@ -1,6 +1,6 @@
 # ![](../images/sempare-logo-45px.png) Sempare Template Engine
 
-Copyright (c) 2019-2021 [Sempare Limited](http://www.sempare.ltd)
+Copyright (c) 2019-2023 [Sempare Limited](http://www.sempare.ltd)
 
 ## Configuration
 
@@ -124,9 +124,19 @@ begin
 end;
 ```
 
+### Embed exceptions in output
+
+Exceptions are normally raised. However, they can be logged in the output with the following configuration.
+```
+var ctx := Template.Context([eoEmbedException]);
+ctx.DebugErrorFormat := '<b>Error:</b> <i>%s</i>';
+```
+
 ### Options
 
 The template engine allows for the following options:
+- eoEmbedException
+  - use this option to get exceptions logged into the output. DebugErrorFormat defines the output format.
 - eoStripRecurringSpaces
   - The lexer will ommit only one space when multiple spaces are detected in a sequence. 
 - eoConvertTabsToSpaces
@@ -145,5 +155,7 @@ The template engine allows for the following options:
   - strip newlines that recurr
 - eoTrimLines
   - trim whitespace from start and end of lines
+- eoStripEmptyLines
+  - strip any empty lines
 - eoPrettyPrint
   - use to review the parsed structure. output is to the console.

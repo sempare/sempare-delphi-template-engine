@@ -1,6 +1,6 @@
 # ![](../images/sempare-logo-45px.png) Sempare Template Engine
 
-Copyright (c) 2019-2021 [Sempare Limited](http://www.sempare.ltd)
+Copyright (c) 2019-2023 [Sempare Limited](http://www.sempare.ltd)
 
 ## Custom functions
 
@@ -25,6 +25,15 @@ type
 ```
 
 A requirement is that the methods must be _class_ and _static_. 
+
+Best practice is that functions should be defined. However, we allow you to define procedures in a similar way. e.g.
+```
+	TMyUtilities = class
+	public
+		class var SomeOption : boolean;
+		class procedure SetSomeOption(const AOption : boolean); static;
+	end;
+```
 
 ### Overloading methods
 
@@ -56,3 +65,10 @@ To accomodate this, rather define a function such as:
 class function Fmt(const AArgs: TArray<TValue>): string; static;
 ```
 You need to manually extract the format and args required for the format function as done by the built-in function.
+
+### Accessing context configuration
+
+The function invocation mechansim can detect ITemplateContext parameter as the first parameter:
+``` 
+class function Fmt(const AContext: ITemplateContext; const AArgs: TArray<TValue>): string; static;
+```
