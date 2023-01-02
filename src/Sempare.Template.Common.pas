@@ -100,9 +100,9 @@ function AsVisitorHost(const ATemplate: ITemplate): ITemplateVisitorHost; inline
 function AsVisitorHost(const AExpr: IExpr): ITemplateVisitorHost; inline; overload;
 function AsVisitorHost(const AStmt: IStmt): ITemplateVisitorHost; inline; overload;
 
-procedure AcceptVisitor(const ATemplate: ITemplate; const AVisitor: ITemplateVisitor); overload;
-procedure AcceptVisitor(const AExpr: IExpr; const AVisitor: ITemplateVisitor); overload;
-procedure AcceptVisitor(const AStmt: IStmt; const AVisitor: ITemplateVisitor); overload;
+procedure AcceptVisitor(const ATemplate: ITemplate; const AVisitor: ITemplateVisitor); inline; overload;
+procedure AcceptVisitor(const AExpr: IExpr; const AVisitor: ITemplateVisitor); inline; overload;
+procedure AcceptVisitor(const AStmt: IStmt; const AVisitor: ITemplateVisitor); inline; overload;
 
 function Position(const AStmt: IStmt): IPosition; inline; overload;
 function Position(const AExpr: IExpr): IPosition; inline; overload;
@@ -131,18 +131,27 @@ begin
 end;
 
 procedure AcceptVisitor(const ATemplate: ITemplate; const AVisitor: ITemplateVisitor); overload;
+var
+  LHost: ITemplateVisitorHost;
 begin
-  AsVisitorHost(ATemplate).Accept(AVisitor);
+  LHost := AsVisitorHost(ATemplate);
+  LHost.Accept(AVisitor);
 end;
 
 procedure AcceptVisitor(const AExpr: IExpr; const AVisitor: ITemplateVisitor);
+var
+  LHost: ITemplateVisitorHost;
 begin
-  AsVisitorHost(AExpr).Accept(AVisitor);
+  LHost := AsVisitorHost(AExpr);
+  LHost.Accept(AVisitor);
 end;
 
 procedure AcceptVisitor(const AStmt: IStmt; const AVisitor: ITemplateVisitor);
+var
+  LHost: ITemplateVisitorHost;
 begin
-  AsVisitorHost(AStmt).Accept(AVisitor);
+  LHost := AsVisitorHost(AStmt);
+  LHost.Accept(AVisitor);
 end;
 
 function Position(const AStmt: IStmt): IPosition; overload;
