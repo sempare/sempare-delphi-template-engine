@@ -65,27 +65,28 @@ type
 
     // statements
     vsText, // this is normally just written to stream
-    vsIF, //
-    vsELIF, //
+    vsIf, //
+    vsElIf, //
     vsElse, //
     vsWhile, //
-    vsFOR, //
+    vsFor, //
     vsWith, //
     vsTemplate, //
-    vsBREAK, //
-    vsCONTINUE, //
-    vsPRINT, //
-    vsINCLUDE, //
+    vsBreak, //
+    vsContinue, //
+    vsPrint, //
+    vsInclude, //
     vsRequire, //
     vsIgnoreNL, //
     vsOffset, //
     vsStep, //
     vsLimit, //
     vsCycle, //
-    vsEND, //
+    vsEnd, //
     vsOnBegin, //
     vsOnEnd, //
     vsOnEmpty, //
+    vsBetweenItem, //
 
     // for statements
     vsIN, //
@@ -126,7 +127,7 @@ type
     // numeric expressions
     vsPLUS, //
     vsMinus, //
-    vSSLASH, //
+    vsSLASH, //
     vsDIV, //
     vsMULT, //
     vsMOD, //
@@ -320,10 +321,12 @@ type
     function GetOnFirstContainer: ITemplate;
     function GetOnEndContainer: ITemplate;
     function GetOnEmptyContainer: ITemplate;
+    function GetBetweenItemContainer: ITemplate;
 
     property OnFirstContainer: ITemplate read GetOnFirstContainer;
     property OnEndContainer: ITemplate read GetOnEndContainer;
     property OnEmptyContainer: ITemplate read GetOnEmptyContainer;
+    property BetweenItemsContainer: ITemplate read GetBetweenItemContainer;
   end;
 
   IWhileStmt = interface(ILoopStmt)

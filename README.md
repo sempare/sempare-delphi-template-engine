@@ -58,17 +58,17 @@ begin
     var tpl := Template.Parse(
 	       'My name is <% name %>.'#13#10 + 
 	       'My favourite sport is <% favourite_sport %>.'#13#10 + 
-	       'Counting... <% for i := 1 to count %><% if i > 1 %>, <% end %><% i %><% end %>'
+	       'Counting... <% for i := 1 to count %><% i %><% betweenitems %>, <% end %>'
 	);
-    var information : TInformation;
-    information.name := 'conrad';
-    information.favourite_sport := 'ultimate';
-    information.count := 3;
-    writeln(Template.eval(tpl, information));	
+    var info : TInformation;
+    info.name := 'conrad';
+    info.favourite_sport := 'ultimate';
+    info.count := 3;
+    writeln(Template.Eval(tpl, info));	
 end.
 ```
 
-The project uses RTTI to allow for almost any type to be derefrenced.
+The project uses RTTI to allow for almost any type to be dereferenced.
 
 In the example above, you can see that the '<%' start and '%>' end the scripting statement respectively. Within a scripting statement, you can reference variables, assign variables, use conditions, for and while loops, and include other templates.
 

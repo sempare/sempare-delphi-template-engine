@@ -403,6 +403,11 @@ begin
         LFirst := false;
         if AStmt.OnFirstContainer <> nil then
           AcceptVisitor(AStmt.OnFirstContainer, self);
+      end
+      else
+      begin
+        if AStmt.BetweenItemsContainer <> nil then
+          AcceptVisitor(AStmt.BetweenItemsContainer, self);
       end;
       exclude(FLoopOptions, coContinue);
       AcceptVisitor(AStmt.Container, self);
@@ -448,6 +453,11 @@ var
         LFirst := false;
         if AStmt.OnFirstContainer <> nil then
           AcceptVisitor(AStmt.OnFirstContainer, self);
+      end
+      else
+      begin
+        if AStmt.BetweenItemsContainer <> nil then
+          AcceptVisitor(AStmt.BetweenItemsContainer, self);
       end;
       AcceptVisitor(AStmt.Container, self);
       inc(LLoops);
@@ -766,14 +776,17 @@ begin
     FStackFrames.peek[LOOP_IDX_NAME] := i;
     if coBreak in FLoopOptions then
       break;
-
     if LFirst then
     begin
       LFirst := false;
       if AStmt.OnFirstContainer <> nil then
         AcceptVisitor(AStmt.OnFirstContainer, self);
+    end
+    else
+    begin
+      if AStmt.BetweenItemsContainer <> nil then
+        AcceptVisitor(AStmt.BetweenItemsContainer, self);
     end;
-
     exclude(FLoopOptions, coContinue);
     CheckRunTime(Position(AStmt));
     AcceptVisitor(AStmt.Container, self);
@@ -826,7 +839,6 @@ procedure TEvaluationTemplateVisitor.Visit(AStmt: IIncludeStmt);
 var
   LTemplateName: string;
   LTemplate: ITemplate;
-
 begin
   if HasBreakOrContinue then
     exit;
