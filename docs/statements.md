@@ -17,13 +17,13 @@ Copyright (c) 2019-2023 [Sempare Limited](http://www.sempare.ltd)
 
 ### print
 
-Within a script, all text outside of the script '<%' start and '%>' end tokens is output.
+Within a script, all text outside of the script _'<%'_ start and _'%>'_ end tokens is output.
 
 ```
 hello world
 ```
 
-This outputs 'hello world' as expected.
+This outputs _'hello world'_ as expected.
 
 ```
 <% stmt := 'is a' %>
@@ -48,9 +48,9 @@ some conditional text
 <% end %>
 Some more text
 ```
-In the above scenario, you can conditionally include some text by referencing the 'condition'. This could be a variable or a complex expression. If the condition expression is a non boolean value, such as a string or a number, the expression evaluates to true for a non empty string and a non zero number.
+In the above scenario, you can conditionally include some text by referencing the _condition_. This could be a variable or a complex expression. If the condition expression is a non boolean value, such as a string or a number, the expression evaluates to true for a non empty string and a non zero number.
 
-More complicated condition blocks can be created using 'elif' and 'else' statements.
+More complicated condition blocks can be created using _elif_ and _else_ statements.
 ```
 some text
 <% if condition %>
@@ -67,7 +67,7 @@ some text
 
 ### for
 
-The 'for to/downto' loop comes in two forms as it does in Object Pascal:
+The _for to/downto_ loop comes in two forms as it does in Object Pascal:
 ```
 increasing integers from 1 to 10
 <% for i := 1 to 10 %>
@@ -82,21 +82,30 @@ decreasing integers from 10 down to 1
 
 **NOTE** Loop variables can be updated within the scope of the block without the loop integrity being compromised. 
 
-You can change the <b>step></b> interval as follows:
+You can change the _step>_ interval as follows:
 ```
 <% for i := 1 to 10 step 2%>
     number <% i %>
 <% end %>
 ```
 
-The other 'for in' variation is as follows:
+The other _for in_ variation is as follows:
 ```
 Attendees:
 <%for i in _ %> 
    <% i.name %> <% i.age %>
-<%end%>'
+<%end%> 
 ```
-Further, there are 'onbegin', 'onend' and 'onempty' events that can be used.
+
+You may also use _offset_ and _limit_ on _for in_ statements:
+```
+Attendees:
+<%for i in _ offset 20 limit 10 %> 
+   <% i.name %> <% i.age %>
+<%end%> 
+```
+
+Further, there are _onbegin_, _onend_, _betweenitems_ and _onempty_ events that can be used.
 ```
 Attendees:
 <%for i in _ %> 
@@ -107,7 +116,7 @@ Attendees:
 		</ul>
    <% onempty %>
 		<i>There are no entries</i>   
-<%end%>'
+<%end%>
 ```
 
 With the following Delphi:
@@ -155,7 +164,7 @@ This produces the following:
 ```
 **NOTE** you must ensure the terminating condition is eventually true so that the template can be rendered.
 
-While loops may also have *offset* and *limits* defined:
+While loops may also have _offset_ and _limits_ defined:
 
 ```
 <% i := 1 %>
@@ -164,7 +173,7 @@ While loops may also have *offset* and *limits* defined:
    <% i := i + 1%>
 <% end %>
 ```
-While loops may also have 'onbegin', 'onend' and 'onempty' events defined:
+While loops may also have _onbegin_, _onend_, _betweenitems_ and _onempty_ events defined:
 ```
 <% i := 1 %>
 <% while i <= 10 offset 5 limit 5 %>
@@ -181,9 +190,9 @@ While loops may also have 'onbegin', 'onend' and 'onempty' events defined:
 
 ## break / continue
 
-The 'for' and 'while' loops can include the following 'break' and 'continue' statements to assist with flow control.
+The _for_ and _while_ loops can include the following _break_ and _continue_ statements to assist with flow control.
 
-An example using 'continue':
+An example using _continue_:
 ```
 <% for i := 0 to 10 %>
  <% if i mod 2 = 1 %><% continue %><% end %><% i %>
@@ -195,7 +204,7 @@ This will produce:
 0 2 4 6 8 10 
 ```
 
-An example using 'break':
+An example using _break_:
 ```
 <% i := 0 %>
 <% while true %>
