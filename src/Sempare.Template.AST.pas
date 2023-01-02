@@ -12,7 +12,7 @@
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
  ****************************************************************************************************
  *                                                                                                  *
- * Copyright (c) 2020 Sempare Limited                                                               *
+ * Copyright (c) 2019-2023 Sempare Limited                                                          *
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
@@ -55,92 +55,96 @@ type
 
   TTemplateSymbol = ( //
     // general parsing
-    VsInvalid, //
-    VsEOF, //
-    VsStartScript, //
-    VsEndScript, //
-    VsOpenRoundBracket, //
-    VsCloseRoundBracket, //
-    VsComment, //
+    vsInvalid, //
+    vsEOF, //
+    vsStartScript, //
+    vsEndScript, //
+    vsOpenRoundBracket, //
+    vsCloseRoundBracket, //
+    vsComment, //
 
     // statements
-    VsText, // this is normally just written to stream
-    VsIF, //
-    VsELIF, //
+    vsText, // this is normally just written to stream
+    vsIf, //
+    vsElIf, //
     vsElse, //
     vsWhile, //
-    VsFOR, //
-    VsWith, //
-    VsTemplate, //
-    VsBREAK, //
-    VsCONTINUE, //
-    VsPRINT, //
-    VsINCLUDE, //
-    VSRequire, //
-    VSIgnoreNL, //
-    VsEND, //
+    vsFor, //
+    vsWith, //
+    vsTemplate, //
+    vsBreak, //
+    vsContinue, //
+    vsPrint, //
+    vsInclude, //
+    vsRequire, //
+    vsIgnoreNL, //
+    vsOffset, //
+    vsStep, //
+    vsLimit, //
+    vsCycle, //
+    vsEnd, //
+    vsOnBegin, //
+    vsOnEnd, //
+    vsOnEmpty, //
+    vsBetweenItem, //
 
     // for statements
-    VsIN, //
-    VsTo, //
+    vsIN, //
+    vsTo, //
     vsDownto, //
 
     // assignment statement
-    VsCOLONEQ, //
+    vsCOLONEQ, //
 
     // identifier
-    VsID, //
-    VsDOT, //
-    VsOpenSquareBracket, //
-    VsCloseSquareBracket, //
+    vsID, //
+    vsDOT, //
+    vsOpenSquareBracket, //
+    vsCloseSquareBracket, //
 
     // types
-    VsNumber, //
-    VsBoolean, //
-    VsString, //
+    vsNumber, //
+    vsBoolean, //
+    vsString, //
 
     // logical operations
-    VsAND, //
-    VsOR, //
-    VsNOT, //
+    vsAND, //
+    vsOR, //
+    vsNOT, //
 
     // ternary
-    VsQUESTION, //
-    VsCOLON, //
+    vsQUESTION, //
+    vsCOLON, //
 
     // comparison operations
-    VsEQ, //
-    VsNotEQ, //
-    VsLT, //
-    VsLTE, //
-    VsGT, //
-    VsGTE, //
+    vsEQ, //
+    vsNotEQ, //
+    vsLT, //
+    vsLTE, //
+    vsGT, //
+    vsGTE, //
 
     // numeric expressions
-    VsPLUS, //
-    VsMinus, //
-    VSSLASH, //
-    VsDIV, //
-    VsMULT, //
-    VsMOD, //
+    vsPLUS, //
+    vsMinus, //
+    vsSLASH, //
+    vsDIV, //
+    vsMULT, //
+    vsMOD, //
 
     // for expression list
-    VsComma, //
-    VsSemiColon //
+    vsComma, //
+    vsSemiColon //
     );
 
   IPosition = interface
     ['{2F087E1F-42EE-44D4-B928-047AA1788F50}']
-
     function GetFilename: string;
     procedure SetFilename(const AFilename: string);
-
     function GetLine: integer;
     procedure SetLine(const Aline: integer);
-
     function GetPos: integer;
     procedure SetPos(const Apos: integer);
-
     property FileName: string read GetFilename write SetFilename;
     property Line: integer read GetLine write SetLine;
     property Pos: integer read GetPos write SetPos;
@@ -148,13 +152,10 @@ type
 
   ITemplateSymbol = interface
     ['{3EC6C60C-164F-4BF5-AF2E-8F3CFC30C594}']
-
     function GetPosition: IPosition;
     function GetToken: TTemplateSymbol;
     procedure SetToken(const AToken: TTemplateSymbol);
-
     function StripWS: boolean;
-
     property Token: TTemplateSymbol read GetToken write SetToken;
     property Position: IPosition read GetPosition;
   end;
@@ -163,16 +164,13 @@ type
 
   IPositional = interface
     ['{DFA45EC1-7F39-4FB2-9894-8BD8D4ABA975}']
-
     function GetPosition: IPosition;
-
     property Position: IPosition read GetPosition;
   end;
 
   ITemplateVisitorHost = interface
     ['{BB5F2BF7-390D-4E20-8FD2-DB7609519143}']
-
-    procedure Accept(AVisitor: ITemplateVisitor);
+    procedure Accept(const AVisitor: ITemplateVisitor);
   end;
 
   IExpr = interface
@@ -183,13 +181,17 @@ type
     ['{6D37028E-A0C0-41F1-8A59-EDC0C9ADD9C7}']
   end;
 
+  IDebugStmt = interface(IStmt)
+    ['{1052F5A0-00BC-4BBB-A3BF-C214B1FB2166}']
+    function GetStmt: IStmt;
+    property Stmt: IStmt read GetStmt;
+  end;
+
   ITemplate = interface
     ['{93AAB971-5B4B-4959-93F2-6C7DAE15C91B}']
-
     function GetItem(const AOffset: integer): ITemplateVisitorHost;
     function GetCount: integer;
     function GetLastItem: ITemplateVisitorHost;
-
     property Items[const AOffset: integer]: ITemplateVisitorHost read GetItem;
     property Count: integer read GetCount;
     property LastItem: ITemplateVisitorHost read GetLastItem;
@@ -197,8 +199,7 @@ type
 
   ITemplateAdd = interface(ITemplate)
     ['{64465D68-0E9D-479F-9EF3-A30E75967809}']
-
-    procedure Add(AItem: ITemplateVisitorHost);
+    procedure Add(const AItem: ITemplateVisitorHost);
   end;
 
   IContinueStmt = interface(IStmt)
@@ -223,17 +224,13 @@ type
 
   IPrintStmt = interface(IStmt)
     ['{56430198-758A-412A-9A11-18399BBC3AD4}']
-
     function GetExpr: IExpr;
-
     property Expr: IExpr read GetExpr;
   end;
 
   IIncludeStmt = interface(IStmt)
     ['{017F5D58-320A-46A3-B128-4134C6E3440A}']
-
     function GetExpr: IExpr;
-
     property Expr: IExpr read GetExpr;
   end;
 
@@ -242,25 +239,20 @@ type
   IRequireStmt = interface(IStmt)
     ['{DCFF1F48-C9E7-45A9-BD59-C9767FDAB0D2}']
     function GetExprList: IExprList;
-
     property ExprList: IExprList read GetExprList;
   end;
 
   IEncodeExpr = interface(IExpr)
     ['{F192426F-5D83-4DF7-84C4-182CF90AFFA8}']
-
     function GetExpr: IExpr;
-
     property Expr: IExpr read GetExpr;
   end;
 
   IIfStmt = interface(IStmt)
     ['{A4FE6DA9-95A4-4DF7-8FD7-40529CC83D58}']
-
     function GetCondition: IExpr;
     function GetTrueContainer: ITemplate;
     function GetFalseContainer: ITemplate;
-
     property Condition: IExpr read GetCondition;
     property TrueContainer: ITemplate read GetTrueContainer;
     property FalseContainer: ITemplate read GetFalseContainer;
@@ -272,115 +264,121 @@ type
 
   IProcessTemplateStmt = interface(IStmt)
     ['{01CB121F-41D3-46DB-971E-032CF5853662}']
-
     function GetContainer: ITemplate;
     function GetAllowNewLine: boolean;
     procedure SetAllowNewLine(const AAllow: boolean);
-
     property Container: ITemplate read GetContainer;
     property AllowNewLine: boolean read GetAllowNewLine write SetAllowNewLine;
   end;
 
   IDefineTemplateStmt = interface(IStmt)
     ['{F07047CF-BA4E-43C9-B994-A2A942DE3936}']
-
     function GetName: IExpr;
     function GetContainer: ITemplate;
-
     property Name: IExpr read GetName;
     property Container: ITemplate read GetContainer;
   end;
 
   IWithStmt = interface(IStmt)
     ['{235E83C8-B4B2-4593-889A-F9CD8AE5E77B}']
-
     function GetExpr: IExpr;
     function GetContainer: ITemplate;
-
     property Expr: IExpr read GetExpr;
     property Container: ITemplate read GetContainer;
   end;
 
-  IWhileStmt = interface(IStmt)
-    ['{A353861E-BFEB-4630-9DC4-19A19A896613}']
-
-    function GetCondition: IExpr;
-    function GetContainer: ITemplate;
-
-    property Condition: IExpr read GetCondition;
-    property Container: ITemplate read GetContainer;
+  ILoopStmt = interface(IStmt)
+    ['{D6C26A41-3250-4EB9-A776-8952DE3931BD}']
+    function GetOnFirstContainer: ITemplate;
+    function GetOnEndContainer: ITemplate;
+    function GetOnEmptyContainer: ITemplate;
+    function GetBetweenItemContainer: ITemplate;
+    property OnFirstContainer: ITemplate read GetOnFirstContainer;
+    property OnEndContainer: ITemplate read GetOnEndContainer;
+    property OnEmptyContainer: ITemplate read GetOnEmptyContainer;
+    property BetweenItemsContainer: ITemplate read GetBetweenItemContainer;
   end;
 
-  IForInStmt = interface(IStmt)
-    ['{DE078CDD-B50A-4036-987E-E2FD241950F6}']
+  IWhileStmt = interface(ILoopStmt)
+    ['{A353861E-BFEB-4630-9DC4-19A19A896613}']
+    function GetCondition: IExpr;
+    function GetContainer: ITemplate;
+    function GetOffsetExpr: IExpr;
+    function GetLimitExpr: IExpr;
+    property Condition: IExpr read GetCondition;
+    property Container: ITemplate read GetContainer;
+    property OffsetExpr: IExpr read GetOffsetExpr;
+    property LimitExpr: IExpr read GetLimitExpr;
+  end;
 
+  IForInStmt = interface(ILoopStmt)
+    ['{DE078CDD-B50A-4036-987E-E2FD241950F6}']
     function GetVariable: string;
     function GetExpr: IExpr;
     function GetContainer: ITemplate;
-
+    function GetOffsetExpr: IExpr;
+    function GetLimitExpr: IExpr;
     property Variable: string read GetVariable;
     property Expr: IExpr read GetExpr;
     property Container: ITemplate read GetContainer;
+    property OffsetExpr: IExpr read GetOffsetExpr;
+    property LimitExpr: IExpr read GetLimitExpr;
   end;
 
-  IForRangeStmt = interface(IStmt)
+  IForRangeStmt = interface(ILoopStmt)
     ['{16645615-2E4E-4F1C-85BA-0EA3F1012F47}']
-
     function GetVariable: string;
     function GetForOp: TForOp;
     function GetLowExpr: IExpr;
     function GetHighExpr: IExpr;
     function GetContainer: ITemplate;
-
+    function GetStepExpr: IExpr;
     property Variable: string read GetVariable;
     property ForOp: TForOp read GetForOp;
     property LowExpr: IExpr read GetLowExpr;
     property HighExpr: IExpr read GetHighExpr;
     property Container: ITemplate read GetContainer;
+    property StepExpr: IExpr read GetStepExpr;
   end;
 
   IExprList = interface(ITemplateVisitorHost)
     ['{DAA177EA-B3CB-434C-A8C1-9E7571F6441B}']
-
     function GetExpr(const AOffset: integer): IExpr;
-    procedure AddExpr(AExpr: IExpr);
+    procedure AddExpr(const AExpr: IExpr);
     function GetExprCount: integer;
-
     property Expr[const AOffset: integer]: IExpr read GetExpr; default;
     property Count: integer read GetExprCount;
   end;
 
   IArrayExpr = interface(IExpr)
     ['{3EB3BEBF-9BB0-4E8E-8919-CFE913394427}']
-
     function GetExprList: IExprList;
-
     property ExprList: IExprList read GetExprList;
   end;
 
   IValueExpr = interface(IExpr)
     ['{69D51BDD-C007-4ECE-926D-146CD1CD26D0}']
-
     function GetValue: TValue;
-
     property Value: TValue read GetValue;
   end;
 
   IVariableExpr = interface(IExpr)
     ['{AE35E829-A756-4A1C-9F41-01CF3DD34096}']
-
     function GetVariable: string;
-
     property Variable: string read GetVariable;
+  end;
+
+  ICycleStmt = interface(IStmt)
+    ['{EDABBF0D-8118-49F8-BE20-01143C11B377}']
+    function GetList: IExprList;
+    property List: IExprList read GetList;
   end;
 
   ITernaryExpr = interface(IExpr)
     ['{112A2FAA-B411-4F31-B873-B85EFC26AC5B}']
-
     function GetExpr: IExpr;
     function GetTrueExpr: IExpr;
     function GetFalseExpr: IExpr;
-
     property Condition: IExpr read GetExpr;
     property TrueExpr: IExpr read GetTrueExpr;
     property FalseExpr: IExpr read GetFalseExpr;
@@ -390,11 +388,9 @@ type
 
   IVariableDerefExpr = interface(IExpr)
     ['{9EB744DC-B8FE-4923-B9B1-C07D95C5314F}']
-
     function GetExpr: IExpr;
     function GetDerefExpr: IExpr;
     function GetDerefType: TDerefType;
-
     property DerefType: TDerefType read GetDerefType;
     property Variable: IExpr read GetExpr;
     property DerefExpr: IExpr read GetDerefExpr;
@@ -404,23 +400,19 @@ type
 
   IFunctionCallExpr = interface(IExpr)
     ['{9F83BF0D-DFA2-47A6-BEEB-5A1D0C829BD4}']
-
     function GetFunctionInfo: TArray<TRttiMethod>;
     function GetExprList: IExprList;
-
     property FunctionInfo: TArray<TRttiMethod> read GetFunctionInfo;
     property ExprList: IExprList read GetExprList;
   end;
 
   IMethodCallExpr = interface(IExpr)
     ['{E1CCD143-58E9-4A37-AD0D-5DBC941E3D95}']
-
     function GetMethod: string;
     function GetObject: IExpr;
     function GetExprList: IExprList;
     function GetRttiMethod: TRttiMethod;
     procedure SetRttiMethod(const ARttiMethod: TRttiMethod);
-
     property Method: string read GetMethod;
     property ObjectExpr: IExpr read GetObject;
     property ExprList: IExprList read GetExprList;
@@ -429,21 +421,17 @@ type
 
   IAssignStmt = interface(IStmt)
     ['{77812845-8978-428E-B714-9B8047F03DDC}']
-
     function GetVariable: string;
     function GetExpr: IExpr;
-
     property Variable: string read GetVariable;
     property Expr: IExpr read GetExpr;
   end;
 
   IBinopExpr = interface(IExpr)
     ['{362A6CE1-D93E-4830-A176-3A4740883ECF}']
-
     function GetBinOp: TBinOp;
     function GetLeftExpr: IExpr;
     function GetRightExpr: IExpr;
-
     property BinOp: TBinOp read GetBinOp;
     property LeftExpr: IExpr read GetLeftExpr;
     property RightExpr: IExpr read GetRightExpr;
@@ -453,48 +441,45 @@ type
 
   IUnaryExpr = interface(IExpr)
     ['{CE9AAC1A-F8BF-481C-81A7-BEC923356DCC}']
-
     function GetUnaryOp: TUnaryOp;
     function GetExpr: IExpr;
-
     property UnaryOp: TUnaryOp read GetUnaryOp;
     property Condition: IExpr read GetExpr;
   end;
 
   ITemplateVisitor = interface
     ['{3AF4EFB5-2E01-4FCF-B609-DC2D322CE150}']
-
-    procedure Visit(AContainer: ITemplate); overload;
-    procedure Visit(AExpr: IExpr); overload;
-    procedure Visit(AExpr: IBinopExpr); overload;
-    procedure Visit(AExpr: IUnaryExpr); overload;
-    procedure Visit(AExpr: IVariableExpr); overload;
-    procedure Visit(AExpr: IValueExpr); overload;
-    procedure Visit(AExpr: ITernaryExpr); overload;
-    procedure Visit(AExpr: IArrayExpr); overload;
-    procedure Visit(AExpr: IFunctionCallExpr); overload;
-    procedure Visit(AExpr: IMethodCallExpr); overload;
-
-    procedure Visit(AExpr: IVariableDerefExpr); overload;
-    procedure Visit(AExprList: IExprList); overload;
-    procedure Visit(AStmt: IStmt); overload;
-    procedure Visit(AStmt: IElseStmt); overload;
-    procedure Visit(AStmt: IAssignStmt); overload;
-    procedure Visit(AStmt: IContinueStmt); overload;
-    procedure Visit(AStmt: IBreakStmt); overload;
-    procedure Visit(AStmt: IEndStmt); overload;
-    procedure Visit(AStmt: IIncludeStmt); overload;
-    procedure Visit(AStmt: IRequireStmt); overload;
-    procedure Visit(AStmt: IEncodeExpr); overload;
-    procedure Visit(AStmt: IPrintStmt); overload;
-    procedure Visit(AStmt: IIfStmt); overload;
-    procedure Visit(AStmt: IWhileStmt); overload;
-    procedure Visit(AStmt: IForInStmt); overload;
-    procedure Visit(AStmt: IForRangeStmt); overload;
-    procedure Visit(AStmt: IProcessTemplateStmt); overload;
-    procedure Visit(AStmt: IDefineTemplateStmt); overload;
-    procedure Visit(AStmt: IWithStmt); overload;
-
+    procedure Visit(const AContainer: ITemplate); overload;
+    procedure Visit(const AExpr: IExpr); overload;
+    procedure Visit(const AExpr: IBinopExpr); overload;
+    procedure Visit(const AExpr: IUnaryExpr); overload;
+    procedure Visit(const AExpr: IVariableExpr); overload;
+    procedure Visit(const AExpr: IValueExpr); overload;
+    procedure Visit(const AExpr: ITernaryExpr); overload;
+    procedure Visit(const AExpr: IArrayExpr); overload;
+    procedure Visit(const AExpr: IFunctionCallExpr); overload;
+    procedure Visit(const AExpr: IMethodCallExpr); overload;
+    procedure Visit(const AExpr: IVariableDerefExpr); overload;
+    procedure Visit(const AExprList: IExprList); overload;
+    procedure Visit(const AStmt: IStmt); overload;
+    procedure Visit(const AStmt: IElseStmt); overload;
+    procedure Visit(const AStmt: IAssignStmt); overload;
+    procedure Visit(const AStmt: IContinueStmt); overload;
+    procedure Visit(const AStmt: IBreakStmt); overload;
+    procedure Visit(const AStmt: IEndStmt); overload;
+    procedure Visit(const AStmt: IIncludeStmt); overload;
+    procedure Visit(const AStmt: IRequireStmt); overload;
+    procedure Visit(const AStmt: IEncodeExpr); overload;
+    procedure Visit(const AStmt: IPrintStmt); overload;
+    procedure Visit(const AStmt: IIfStmt); overload;
+    procedure Visit(const AStmt: IWhileStmt); overload;
+    procedure Visit(const AStmt: IForInStmt); overload;
+    procedure Visit(const AStmt: IForRangeStmt); overload;
+    procedure Visit(const AStmt: IProcessTemplateStmt); overload;
+    procedure Visit(const AStmt: IDefineTemplateStmt); overload;
+    procedure Visit(const AStmt: IWithStmt); overload;
+    procedure Visit(const AStmt: ICycleStmt); overload;
+    procedure Visit(const AStmt: IDebugStmt); overload;
   end;
 
 implementation

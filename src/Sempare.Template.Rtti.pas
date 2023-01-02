@@ -12,7 +12,7 @@
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
  ****************************************************************************************************
  *                                                                                                  *
- * Copyright (c) 2020 Sempare Limited                                                               *
+ * Copyright (c) 2019-2023 Sempare Limited                                                          *
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
@@ -41,43 +41,44 @@ uses
   System.TypInfo,
   System.SysUtils,
   Sempare.Template.StackFrame,
+  Sempare.Template.Context,
   Sempare.Template.AST;
 
 type
   ETemplateRTTI = class(ETemplate);
 
 function AsBoolean(const AValue: TValue): boolean;
-function AsString(const AValue: TValue): string;
-function AsNum(const AValue: TValue): extended;
+function AsString(const AValue: TValue; const AContext: ITemplateContext): string;
+function AsNum(const AValue: TValue; const AContext: ITemplateContext): extended;
 function AsDateTime(const AValue: TValue): TDateTime;
-function AsInt(const AValue: TValue): int64;
+function AsInt(const AValue: TValue; const AContext: ITemplateContext): int64;
 
-function isBool(const AValue: TValue): boolean;
-function isStrLike(const AValue: TValue): boolean;
-function isIntLike(const AValue: TValue): boolean;
-function isNumLike(const AValue: TValue): boolean;
-function isNull(const AValue: TValue): boolean;
-function isEnumerable(const AValue: TValue): boolean;
-function Contains(APosition: IPosition; const ALeft, ARight: TValue): boolean;
+function IsBool(const AValue: TValue): boolean;
+function IsStrLike(const AValue: TValue): boolean;
+function IsIntLike(const AValue: TValue): boolean;
+function IsNumLike(const AValue: TValue): boolean;
+function IsNull(const AValue: TValue): boolean;
+function IsEnumerable(const AValue: TValue): boolean;
+function Contains(const APosition: IPosition; const ALeft, ARight: TValue; const AContext: ITemplateContext): boolean;
 
-function isEqual(const ALeft: TValue; const ARight: TValue): boolean;
-function isLessThan(const ALeft: TValue; const ARight: TValue): boolean;
-function isGreaterThan(const ALeft: TValue; const ARight: TValue): boolean;
+function isEqual(const ALeft: TValue; const ARight: TValue; const AContext: ITemplateContext): boolean;
+function isLessThan(const ALeft: TValue; const ARight: TValue; const AContext: ITemplateContext): boolean;
+function isGreaterThan(const ALeft: TValue; const ARight: TValue; const AContext: ITemplateContext): boolean;
 
-procedure AssertBoolean(APositional: IPosition; const ALeft: TValue); overload;
-procedure AssertBoolean(APositional: IPosition; const ALeft: TValue; const ARight: TValue); overload;
+procedure AssertBoolean(const APositional: IPosition; const ALeft: TValue); overload;
+procedure AssertBoolean(const APositional: IPosition; const ALeft: TValue; const ARight: TValue); overload;
 
-procedure AssertNumeric(APositional: IPosition; const ALeft: TValue); overload;
-procedure AssertNumeric(APositional: IPosition; const ALeft: TValue; const ARight: TValue); overload;
-procedure AssertString(APositional: IPosition; const AValue: TValue);
-procedure AssertArray(APositional: IPosition; const AValue: TValue);
+procedure AssertNumeric(const APositional: IPosition; const ALeft: TValue); overload;
+procedure AssertNumeric(const APositional: IPosition; const ALeft: TValue; const ARight: TValue); overload;
+procedure AssertString(const APositional: IPosition; const AValue: TValue);
+procedure AssertArray(const APositional: IPosition; const AValue: TValue);
 
-function Deref(APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
+function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext): TValue;
 
 type
   TDerefMatchFunction = function(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
-  TDerefMatchInterfaceFunction = function(AInterface: IInterface): boolean;
-  TDerefFunction = function(APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; out AFound: boolean): TValue;
+  TDerefMatchInterfaceFunction = function(const AInterface: IInterface): boolean;
+  TDerefFunction = function(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
   TPopulateStackFrame = procedure(const StackFrame: TStackFrame; const ARttiType: TRttiType; const AClass: TValue);
   TPopulateMatchFunction = function(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
 
@@ -145,12 +146,12 @@ begin
   exit(false);
 end;
 
-function isNull(const AValue: TValue): boolean;
+function IsNull(const AValue: TValue): boolean;
 begin
   exit(AValue.IsEmpty);
 end;
 
-function Contains(APosition: IPosition; const ALeft, ARight: TValue): boolean;
+function Contains(const APosition: IPosition; const ALeft, ARight: TValue; const AContext: ITemplateContext): boolean;
 var
   TRightType: TRttiType;
 
@@ -178,7 +179,7 @@ var
         LValue := LEnumCurrentProperty.GetValue(LEnumObject);
         if LValue.TypeInfo = TypeInfo(TValue) then
           LValue := LValue.Astype<TValue>();
-        if isEqual(ALeft, LValue) then
+        if isEqual(ALeft, LValue, AContext) then
         begin
           result := true;
           exit;
@@ -204,7 +205,7 @@ var
       LElementValue := ARight.GetArrayElement(LIndex);
       if LElementValue.TypeInfo = TypeInfo(TValue) then
         LElementValue := LElementValue.Astype<TValue>();
-      if isEqual(ALeft, LElementValue) then
+      if isEqual(ALeft, LElementValue, AContext) then
       begin
         result := true;
         exit;
@@ -222,7 +223,7 @@ var
       LElementValue := ARight.GetArrayElement(LIndex);
       if LElementValue.TypeInfo = TypeInfo(TValue) then
         LElementValue := LElementValue.Astype<TValue>();
-      if isEqual(ALeft, LElementValue) then
+      if isEqual(ALeft, LElementValue, AContext) then
       begin
         result := true;
         exit;
@@ -232,11 +233,9 @@ var
 
 begin
   result := false;
-  if not isEnumerable(ARight) then
+  if not IsEnumerable(ARight) then
     RaiseError(APosition, SValueIsNotEnumerable);
-
   TRightType := GRttiContext.GetType(ARight.TypeInfo);
-
   case TRightType.TypeKind of
     tkClass, tkClassRef:
       VisitObject;
@@ -249,8 +248,7 @@ begin
   end;
 end;
 
-function isEnumerable(const AValue: TValue): boolean;
-
+function IsEnumerable(const AValue: TValue): boolean;
 begin
   case AValue.Kind of
     tkDynArray, tkArray:
@@ -262,28 +260,28 @@ begin
   end;
 end;
 
-function isStrLike(const AValue: TValue): boolean;
+function IsStrLike(const AValue: TValue): boolean;
 begin
   exit(AValue.Kind in STR_LIKE);
 end;
 
-function isIntLike(const AValue: TValue): boolean;
+function IsIntLike(const AValue: TValue): boolean;
 begin
   exit(AValue.Kind in INT_LIKE);
 end;
 
-function isNumLike(const AValue: TValue): boolean;
+function IsNumLike(const AValue: TValue): boolean;
 begin
   exit(AValue.Kind in NUMBER_LIKE);
 end;
 
-function AsNum(const AValue: TValue): extended;
+function AsNum(const AValue: TValue; const AContext: ITemplateContext): extended;
 begin
   case AValue.Kind of
     tkFloat:
       exit(AValue.AsExtended);
     tkString, tkWString, tkUString, tkLString:
-      exit(strtofloat(AValue.AsString));
+      exit(StrToFloat(AValue.AsString, AContext.FormatSettings));
     tkInteger, tkInt64:
       exit(AValue.AsInt64);
   else
@@ -291,45 +289,45 @@ begin
   end;
 end;
 
-function AsInt(const AValue: TValue): int64;
+function AsInt(const AValue: TValue; const AContext: ITemplateContext): int64;
 begin
-  exit(floor(AsNum(AValue)));
+  exit(floor(AsNum(AValue, AContext)));
 end;
 
-function isBool(const AValue: TValue): boolean;
+function IsBool(const AValue: TValue): boolean;
 begin
   exit(AValue.TypeInfo = TypeInfo(boolean));
 end;
 
-function isEqual(const ALeft: TValue; const ARight: TValue): boolean;
+function isEqual(const ALeft: TValue; const ARight: TValue; const AContext: ITemplateContext): boolean;
 begin
-  if isNumLike(ALeft) and isNumLike(ARight) then
-    exit(abs(AsNum(ALeft) - AsNum(ARight)) < EQUALITY_PRECISION);
-  if isStrLike(ALeft) and isStrLike(ARight) then
+  if IsNumLike(ALeft) and IsNumLike(ARight) then
+    exit(abs(AsNum(ALeft, AContext) - AsNum(ARight, AContext)) < EQUALITY_PRECISION);
+  if IsStrLike(ALeft) and IsStrLike(ARight) then
     exit(ALeft.AsString = ARight.AsString);
-  if isBool(ALeft) and isBool(ARight) then
+  if IsBool(ALeft) and IsBool(ARight) then
     exit(ALeft.AsBoolean = ARight.AsBoolean);
   exit(false);
 end;
 
-function isLessThan(const ALeft: TValue; const ARight: TValue): boolean;
+function isLessThan(const ALeft: TValue; const ARight: TValue; const AContext: ITemplateContext): boolean;
 begin
-  if isNumLike(ALeft) and isNumLike(ARight) then
-    exit(AsNum(ALeft) < AsNum(ARight));
-  if isStrLike(ALeft) and isStrLike(ARight) then
+  if IsNumLike(ALeft) and IsNumLike(ARight) then
+    exit(AsNum(ALeft, AContext) < AsNum(ARight, AContext));
+  if IsStrLike(ALeft) and IsStrLike(ARight) then
     exit(ALeft.AsString < ARight.AsString);
-  if isBool(ALeft) and isBool(ARight) then
+  if IsBool(ALeft) and IsBool(ARight) then
     exit(ALeft.AsBoolean < ARight.AsBoolean);
   exit(false);
 end;
 
-function isGreaterThan(const ALeft: TValue; const ARight: TValue): boolean;
+function isGreaterThan(const ALeft: TValue; const ARight: TValue; const AContext: ITemplateContext): boolean;
 begin
-  if isNumLike(ALeft) and isNumLike(ARight) then
-    exit(AsNum(ALeft) > AsNum(ARight));
-  if isStrLike(ALeft) and isStrLike(ARight) then
+  if IsNumLike(ALeft) and IsNumLike(ARight) then
+    exit(AsNum(ALeft, AContext) > AsNum(ARight, AContext));
+  if IsStrLike(ALeft) and IsStrLike(ARight) then
     exit(ALeft.AsString > ARight.AsString);
-  if isBool(ALeft) and isBool(ARight) then
+  if IsBool(ALeft) and IsBool(ARight) then
     exit(ALeft.AsBoolean > ARight.AsBoolean);
   exit(false);
 end;
@@ -341,6 +339,10 @@ begin
   if AValue.IsEmpty then
     exit(false);
   case AValue.Kind of
+    tkEnumeration:
+      exit(AValue.AsOrdinal <> 0);
+    tkClass:
+      exit(AValue.AsObject <> nil);
     tkInteger, tkInt64:
       exit(AValue.AsInt64 <> 0);
     tkFloat:
@@ -354,19 +356,19 @@ begin
   end;
 end;
 
-function ArrayAsString(const AValue: TValue): string;
+function ArrayAsString(const AValue: TValue; const AContext: ITemplateContext): string;
 var
-  LStringBuilder: tstringbuilder;
+  LStringBuilder: TStringBuilder;
   LIndex: integer;
 begin
-  LStringBuilder := tstringbuilder.Create;
+  LStringBuilder := TStringBuilder.Create;
   LStringBuilder.append('[');
   try
     for LIndex := 0 to AValue.GetArrayLength - 1 do
     begin
       if LIndex > 0 then
         LStringBuilder.append(',');
-      LStringBuilder.append(AsString(AValue.GetArrayElement(LIndex)));
+      LStringBuilder.append(AsString(AValue.GetArrayElement(LIndex), AContext));
     end;
     LStringBuilder.append(']');
     exit(LStringBuilder.ToString);
@@ -375,7 +377,7 @@ begin
   end;
 end;
 
-function AsString(const AValue: TValue): string;
+function AsString(const AValue: TValue; const AContext: ITemplateContext): string;
 
 // Using this is a workaround for backward compatability casting
   function DoubleToDT(const AValue: double): TDateTime; inline;
@@ -396,16 +398,16 @@ begin
       exit(inttostr(AValue.AsInt64));
     tkFloat:
       if AValue.TypeInfo = TypeInfo(TDateTime) then
-        exit(datetimetostr(DoubleToDT(AValue.AsExtended)))
+        exit(DateTimeToStr(DoubleToDT(AValue.AsExtended), AContext.FormatSettings))
       else
-        exit(floattostr(AValue.AsExtended));
+        exit(FloatToStr(AValue.AsExtended, AContext.FormatSettings));
     tkString, tkWString, tkUString, tkLString:
       exit(AValue.AsString);
     tkDynArray, tkArray:
-      exit(ArrayAsString(AValue));
-    tkRecord:
+      exit(ArrayAsString(AValue, AContext));
+    tkRecord, tkMRecord:
       if AValue.TypeInfo = TypeInfo(TValue) then
-        exit(AsString(AValue.Astype<TValue>()))
+        exit(AsString(AValue.Astype<TValue>(), AContext))
       else
         exit(GRttiContext.GetType(AValue.TypeInfo).Name);
   else
@@ -434,7 +436,7 @@ begin
   end;
 end;
 
-function processTemplateVariables(APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; out AFound: boolean): TValue;
+function processTemplateVariables(const APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
 var
   LObjectType: TRttiType;
   LGetItemMethod: TRttiMethod;
@@ -459,14 +461,14 @@ begin
   end;
 end;
 
-function GetFieldOrProperty(const APtr: pointer; ADerefType: TRttiType; const ADeref: TValue; out AFound: boolean): TValue;
+function GetFieldOrProperty(const APtr: pointer; ADerefType: TRttiType; const ADeref: TValue; const AContext: ITemplateContext; out AFound: boolean): TValue;
 var
   LDerefField: TRttiField;
   LDerefProp: TRttiProperty;
   LDerefFieldName: string;
 begin
   AFound := true;
-  LDerefFieldName := AsString(ADeref);
+  LDerefFieldName := AsString(ADeref, AContext);
   // first try check if there is a field
   LDerefField := ADerefType.GetField(LDerefFieldName);
   if LDerefField <> nil then
@@ -479,7 +481,7 @@ begin
   exit(TValue.Empty);
 end;
 
-function ProcessClass(APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AOwnObject: boolean; out AFound: boolean): TValue;
+function ProcessClass(APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AOwnObject: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
 var
   ClassType: TClass;
   LClassInfo: PTypeInfo;
@@ -494,16 +496,16 @@ begin
     begin
       if LFuncPair.Key(LClassInfo, ClassType) then
       begin
-        result := LFuncPair.Value(APosition, obj, ADeref, ARaiseIfMissing, AFound);
+        result := LFuncPair.Value(APosition, obj, ADeref, ARaiseIfMissing, AContext, AFound);
         if AFound then
           exit;
       end;
     end;
   end;
-  exit(GetFieldOrProperty(obj.AsObject, GRttiContext.GetType(obj.TypeInfo), ADeref, AFound));
+  exit(GetFieldOrProperty(obj.AsObject, GRttiContext.GetType(obj.TypeInfo), ADeref, AContext, AFound));
 end;
 
-function processDictionary(APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; out AFound: boolean): TValue;
+function processDictionary(const APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
 var
   LDictionaryType: TRttiType;
   LDictGetItemMethod: TRttiMethod;
@@ -516,7 +518,7 @@ begin
   // values are sometime floats, so cast explicitly
   LDerefValue := ADeref;
   if LDictGetItemMethod.GetParameters[0].ParamType.TypeKind in [tkInteger, tkInt64] then
-    LDerefValue := AsInt(LDerefValue);
+    LDerefValue := AsInt(LDerefValue, AContext);
 
   try
     result := LDictGetItemMethod.Invoke(AObj, [LDerefValue]);
@@ -524,11 +526,11 @@ begin
   except
     on e: Exception do
     begin
-      result := ProcessClass(APosition, AObj, ADeref, ARaiseIfMissing, true, AFound);
+      result := ProcessClass(APosition, AObj, ADeref, ARaiseIfMissing, true, AContext, AFound);
       if not AFound then
       begin
         if ARaiseIfMissing then
-          RaiseError(APosition, SCannotDereferenceValueOnObject, [AsString(LDerefValue), LDictionaryType.QualifiedName]);
+          RaiseError(APosition, SCannotDereferenceValueOnObject, [AsString(LDerefValue, AContext), LDictionaryType.QualifiedName]);
         exit('');
       end;
     end;
@@ -592,7 +594,7 @@ begin
   end;
 end;
 
-function processJson(APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; out AFound: boolean): TValue;
+function processJson(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
 var
   LJsonObject: TJsonObject;
   LJsonKey: string;
@@ -600,7 +602,7 @@ var
 begin
   AFound := true;
   LJsonObject := obj.AsObject as TJsonObject;
-  LJsonKey := AsString(ADeref);
+  LJsonKey := AsString(ADeref, AContext);
   LJsonKeyVal := LJsonObject.Get(LJsonKey).JsonValue;
   if not JsonValueToTValue(LJsonKeyVal, result) then
   begin
@@ -616,14 +618,14 @@ begin
   exit(AClass = TJsonObject);
 end;
 
-function processDataSet(APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; out AFound: boolean): TValue;
+function processDataSet(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
 var
   LDataSet: TDataSet;
   LKey: string;
 begin
   AFound := true;
   LDataSet := obj.AsObject as TDataSet;
-  LKey := AsString(ADeref);
+  LKey := AsString(ADeref, AContext);
   try
     exit(TValue.FromVariant(LDataSet.FieldByName(LKey).AsVariant));
   except
@@ -637,7 +639,7 @@ begin
   end;
 end;
 
-function Deref(APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfMissing: boolean): TValue;
+function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext): TValue;
 
   function ProcessArray(AObj: TValue; const ADeref: TValue; out AFound: boolean): TValue;
   var
@@ -648,7 +650,7 @@ function Deref(APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfM
     LMin: int64;
     LMax: int64;
   begin
-    LIndex := AsInt(ADeref);
+    LIndex := AsInt(ADeref, AContext);
     AFound := false;
     LElementType := GRttiContext.GetType(AObj.TypeInfo) as TRttiArrayType;
     LArrayDimType := LElementType.Dimensions[0];
@@ -659,7 +661,7 @@ function Deref(APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfM
       LMin := LArrayOrdType.MinValue;
       LMax := LArrayOrdType.MaxValue;
       if (LIndex < LMin) or (LIndex > LMax) then
-        raise ETemplateRTTI.Create(SIndexOutOfBounds);
+        RaiseErrorRes(APosition, @SIndexOutOfBounds);
     end;
     AFound := true;
     exit(AObj.GetArrayElement(LIndex - LMin));
@@ -670,7 +672,7 @@ function Deref(APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfM
     LIndex: integer;
   begin
     AFound := false;
-    LIndex := AsInt(ADeref);
+    LIndex := AsInt(ADeref, AContext);
     if (LIndex < 0) or (LIndex >= AObj.GetArrayLength) then
       exit(TValue.Empty);
     exit(AObj.GetArrayElement(LIndex));
@@ -678,7 +680,7 @@ function Deref(APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfM
 
   function ProcessRecord(const AObj: TValue; const ADeref: TValue; var AFound: boolean): TValue;
   begin
-    exit(GetFieldOrProperty(AObj.GetReferenceToRawData, GRttiContext.GetType(AObj.TypeInfo), ADeref, AFound));
+    exit(GetFieldOrProperty(AObj.GetReferenceToRawData, GRttiContext.GetType(AObj.TypeInfo), ADeref, AContext, AFound));
   end;
 
   function ProcessInterface(const AObj: TValue; const ADeref: TValue; out AFound: boolean): TValue;
@@ -691,7 +693,7 @@ function Deref(APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfM
     begin
       if LFunctionPair.Key(LIntf) then
       begin
-        result := LFunctionPair.Value(APosition, AObj, ADeref, ARaiseIfMissing, AFound);
+        result := LFunctionPair.Value(APosition, AObj, ADeref, ARaiseIfMissing, AContext, AFound);
         if AFound then
           exit(true);
       end;
@@ -709,8 +711,8 @@ begin
     tkInterface:
       result := ProcessInterface(AVar, ADeref, LVarFound);
     tkClass:
-      result := ProcessClass(APosition, AVar, ADeref, ARaiseIfMissing, false, LVarFound);
-    tkRecord:
+      result := ProcessClass(APosition, AVar, ADeref, ARaiseIfMissing, false, AContext, LVarFound);
+    tkRecord, tkMRecord:
       result := ProcessRecord(AVar, ADeref, LVarFound);
     tkArray:
       result := ProcessArray(AVar, ADeref, LVarFound);
@@ -727,44 +729,44 @@ begin
     RaiseError(APosition, SCannotDereferenceValiable);
 end;
 
-procedure AssertBoolean(APositional: IPosition; const ALeft: TValue); overload;
+procedure AssertBoolean(const APositional: IPosition; const ALeft: TValue); overload;
 begin
-  if isBool(ALeft) then
+  if IsBool(ALeft) then
     exit;
   RaiseError(APositional, SBooleanTypeExpected);
 end;
 
-procedure AssertBoolean(APositional: IPosition; const ALeft: TValue; const ARight: TValue); overload;
+procedure AssertBoolean(const APositional: IPosition; const ALeft: TValue; const ARight: TValue); overload;
 begin
-  if isBool(ALeft) and isBool(ARight) then
+  if IsBool(ALeft) and IsBool(ARight) then
     exit;
   RaiseError(APositional, SBooleanTypeExpected);
 end;
 
-procedure AssertNumeric(APositional: IPosition; const ALeft: TValue); overload;
+procedure AssertNumeric(const APositional: IPosition; const ALeft: TValue); overload;
 begin
-  if isNumLike(ALeft) then
+  if IsNumLike(ALeft) then
     exit;
   RaiseError(APositional, SNumericTypeExpected);
 end;
 
-procedure AssertNumeric(APositional: IPosition; const ALeft: TValue; const ARight: TValue); overload;
+procedure AssertNumeric(const APositional: IPosition; const ALeft: TValue; const ARight: TValue); overload;
 begin
-  if isNumLike(ALeft) and isNumLike(ARight) then
+  if IsNumLike(ALeft) and IsNumLike(ARight) then
     exit;
   RaiseError(APositional, SNumericTypeExpected);
 end;
 
-procedure AssertString(APositional: IPosition; const AValue: TValue);
+procedure AssertString(const APositional: IPosition; const AValue: TValue);
 begin
-  if isStrLike(AValue) then
+  if IsStrLike(AValue) then
     exit;
   RaiseError(APositional, SStringTypeExpected);
 end;
 
-procedure AssertArray(APositional: IPosition; const AValue: TValue);
+procedure AssertArray(const APositional: IPosition; const AValue: TValue);
 begin
-  if isEnumerable(AValue) then
+  if IsEnumerable(AValue) then
     exit;
   RaiseError(APositional, SEnumerableTypeExpected);
 end;
@@ -829,7 +831,7 @@ begin
   end;
 end;
 
-function MatchTemplateVariables(AInterface: IInterface): boolean;
+function MatchTemplateVariables(const AInterface: IInterface): boolean;
 begin
   exit(supports(AInterface, ITemplateVariables));
 end;

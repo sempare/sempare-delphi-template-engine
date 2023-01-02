@@ -5,12 +5,12 @@ program HelloWorld;
 
 uses
   System.SysUtils,
-  Sempare.Boot.Template.Velocity;
+  Sempare.Template;
 
 procedure Demo1;
 
 begin
-  writeln(Velocity.Eval('hello <% _ %>', 'uk dev group'));
+  writeln(Template.Eval('hello <% _ %>', 'uk dev group'));
 end;
 
 procedure Demo2;
@@ -20,7 +20,7 @@ end;
 
 begin
   data.Name := 'uk dev group';
-  writeln(Velocity.Eval('hello <% uppercase(_.name) %>.', data));
+  writeln(Template.Eval('hello <% uppercase(_.name) %>.', data));
 end;
 
 begin

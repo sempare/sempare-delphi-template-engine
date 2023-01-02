@@ -2,7 +2,7 @@
 
 # ![](./images/sempare-logo-45px.png) Sempare Template Engine
 
-Copyright (c) 2019-2021 [Sempare Limited](http://www.sempare.ltd)
+Copyright (c) 2019-2023 [Sempare Limited](http://www.sempare.ltd)
 
 Contact: <info@sempare.ltd>
 
@@ -52,19 +52,33 @@ type
     TInformation = record
         name: string;
         favourite_sport : string;
+        count : integer;
     end;
 begin
-    var tpl := Template.parse('My name is <% name %>. My favourite sport is <% favourite_sport %>.');
-    var information : TInformation;
-    information.name := 'conrad';
-    information.favourite_sport := 'ultimate';
-    writeln(Template.eval(tpl, information));	
+    var tpl := Template.Parse(
+	       'My name is <% name %>.'#13#10 + 
+	       'My favourite sport is <% favourite_sport %>.'#13#10 + 
+	       'Counting... <% for i := 1 to count %><% i %><% betweenitems %>, <% end %>'
+	);
+    var info : TInformation;
+    info.name := 'conrad';
+    info.favourite_sport := 'ultimate';
+    info.count := 3;
+    writeln(Template.Eval(tpl, info));	
 end.
 ```
+
+The project uses RTTI to allow for almost any type to be dereferenced.
 
 In the example above, you can see that the '<%' start and '%>' end the scripting statement respectively. Within a scripting statement, you can reference variables, assign variables, use conditions, for and while loops, and include other templates.
 
 **NOTE** In examples in this documentation I may use the latest Delphi syntax, e.g. inline variable declarations. This is not backward compatible as they were introduced in Delphi 10.2 and are used to shorten the code/examples being illustrated in the documentation. The codebase will attempt to be as backward compatible as possible.
+
+## Call to action
+
+Please 'star' the project on github.
+
+![](./images/sempare-template-engine-start-cta.png)
 
 ## Quickstart
 
@@ -85,7 +99,7 @@ The playlist has a few videos that are very short (most less than a minute - bli
   - simple expression evaluation (logical, numerical and string)
   - variable definition
   - functions and methods calls
-  - dereference records, classes, arrays, JSON objects, TDataSet descendants and dynamic arrays
+  - dereference records, custom managed records, classes, arrays, JSON objects, TDataSet descendants and dynamic arrays
   - ternary operator
 - safety
   - max run-time protection
@@ -106,12 +120,12 @@ Sempare Template Engine aims to provide just enough functionality to allow you t
 
 ## Requirements
 
-This should work with most modern versions of [Delphi](https://www.embarcadero.com/products/delphi). 
+The template engine works with modern versions of [Delphi](https://www.embarcadero.com/products/delphi). 
 
 Tests currently run using the DUnitX TestFramework.
 
-An attempt has been made not to use the latest features to ease backward compatability.
-Although the development was done on Delphi 10.3.3, build and tests have been run on the following versions:
+An attempt has been made not to use the latest features to ease backward compatability. The following versions have been tested:
+
 - Delphi XE 4
 - Delphi XE 8
 - Delphi 10.0 Seatle
@@ -119,7 +133,7 @@ Although the development was done on Delphi 10.3.3, build and tests have been ru
 - Delphi 10.2 Tokyo
 - Delphi 10.3.3 Rio
 - Delphi 10.4 Sydney
-- Delphi 10.4.1 Sydney
+- Delphi 11.0-11.2 Alexandria
 
 There should be no platform specific restrictions.
 
@@ -127,6 +141,7 @@ Have a look at Sempare.Template.Compiler.inc. The following defines can be defin
 
 - SEMPARE_TEMPLATE_FIREDAC - to support tests for TDataSet
 - SEMPARE_TEMPLATE_NO_INDY - if Indy is not present. This is used to access an html encoder if TNetEncoding is not available.
+- SEMPARE_TEMPLATE_CONFIRM_LICENSE - if present, you confirm you understand the conditions.
 
 ## Installation: GetIt
 
@@ -159,10 +174,6 @@ Open __Sempare.Template.Engine.Group.groupproj__ which will include:
    The velocity real-time demo.   
    
    
-## Help needed
-
-I have not been able to test on XE5-XE7 as I don't have access to those compilers. If anyone in the community can help check the output of the tests, that will be extremely helpful.
-
 ## Feedback
 
 You can raise issues on [GitHub](https://github.com/sempare/sempare.template) and they will be addressed based on priority.
@@ -171,17 +182,17 @@ Most features have some basic tests in place. If a bug is been discovered, pleas
 
 # Contributions
 
-Please see the [contibution terms and conditions](./docs/CONTRIBUTION.pdf)
+Review [contibution terms and conditions](./docs/CONTRIBUTION.pdf) to contribute to the project.
 
 # License
 
-The Sempare Template Engien is dual-licensed. You may choose to use it under the restrictions of the [GPL v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html) at
+The Sempare Template Engine is dual-licensed. You may choose to use it under the restrictions of the [GPL v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html) at
 no cost to you, or you may purchase for user under the [Sempare Limited Commercial License](./docs/commercial.license.md)
 
 The dual-licensing scheme allows you to test the library with no restrictions, but subject to the terms of the GPL. A nominal fee is requested to support the maintenance of the library if the product is to be used in commercial products. This support fee binds you to the commercial license, removing any of the GPL restrictions, and allowing you to use the library in your products as you will.
 
-A commercial licence grants you the right to use Sempare Template in your own applications, royalty free, and without any requirement to disclose your source code nor any modifications to
-Sempare Templte to any other party. A commercial licence lasts into perpetuity, and entitles you to all future updates - free of charge.
+A commercial licence grants you the right to use Sempare Template Engine in your own applications, royalty free, and without any requirement to disclose your source code nor any modifications to
+Sempare Templte Engine to any other party. A commercial licence lasts into perpetuity, and entitles you to all future updates - free of charge.
 
 A commercial licence is provided per developer developing applications that use the Sempare Template Engine. The initial cost is $70 per developer and includes first year of support.
 For support thereafter, at your discretion, a support fee of $30 per developer per year would be appreciated (the cost of a few cups of coffee). Please contact us for site license pricing.

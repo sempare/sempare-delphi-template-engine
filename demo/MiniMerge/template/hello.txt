@@ -1,7 +1,0 @@
-Dear <% _.firstname %> <% _.lastname %>
-
-Have a nice day.
-
-Regards,
-
-Sempare Limited

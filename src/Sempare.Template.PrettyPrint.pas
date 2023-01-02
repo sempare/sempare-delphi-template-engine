@@ -12,7 +12,7 @@
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
  ****************************************************************************************************
  *                                                                                                  *
- * Copyright (c) 2020 Sempare Limited                                                               *
+ * Copyright (c) 2019-2023 Sempare Limited                                                          *
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
@@ -57,32 +57,33 @@ type
     constructor Create();
     destructor Destroy; override;
     function ToString: string; override;
-    procedure Visit(AExpr: IBinopExpr); overload; override;
-    procedure Visit(AExpr: IUnaryExpr); overload; override;
-    procedure Visit(AExpr: IVariableExpr); overload; override;
-    procedure Visit(AExpr: IVariableDerefExpr); overload; override;
-    procedure Visit(AExpr: IValueExpr); overload; override;
-    procedure Visit(AExprList: IExprList); overload; override;
-    procedure Visit(AExpr: IEncodeExpr); overload; override;
-    procedure Visit(AExpr: ITernaryExpr); overload; override;
-    procedure Visit(AExpr: IArrayExpr); overload; override;
+    procedure Visit(const AExpr: IBinopExpr); overload; override;
+    procedure Visit(const AExpr: IUnaryExpr); overload; override;
+    procedure Visit(const AExpr: IVariableExpr); overload; override;
+    procedure Visit(const AExpr: IVariableDerefExpr); overload; override;
+    procedure Visit(const AExpr: IValueExpr); overload; override;
+    procedure Visit(const AExprList: IExprList); overload; override;
+    procedure Visit(const AExpr: IEncodeExpr); overload; override;
+    procedure Visit(const AExpr: ITernaryExpr); overload; override;
+    procedure Visit(const AExpr: IArrayExpr); overload; override;
 
-    procedure Visit(AStmt: IAssignStmt); overload; override;
-    procedure Visit(AStmt: IContinueStmt); overload; override;
-    procedure Visit(AStmt: IBreakStmt); overload; override;
-    procedure Visit(AStmt: IIncludeStmt); overload; override;
-    procedure Visit(AStmt: IRequireStmt); overload; override;
-    procedure Visit(AStmt: IPrintStmt); overload; override;
-    procedure Visit(AStmt: IIfStmt); overload; override;
-    procedure Visit(AStmt: IWhileStmt); overload; override;
-    procedure Visit(AStmt: IForInStmt); overload; override;
-    procedure Visit(AStmt: IForRangeStmt); overload; override;
-    procedure Visit(AStmt: IFunctionCallExpr); overload; override;
-    procedure Visit(AStmt: IMethodCallExpr); overload; override;
+    procedure Visit(const AStmt: IAssignStmt); overload; override;
+    procedure Visit(const AStmt: IContinueStmt); overload; override;
+    procedure Visit(const AStmt: IBreakStmt); overload; override;
+    procedure Visit(const AStmt: IIncludeStmt); overload; override;
+    procedure Visit(const AStmt: IRequireStmt); overload; override;
+    procedure Visit(const AStmt: IPrintStmt); overload; override;
+    procedure Visit(const AStmt: IIfStmt); overload; override;
+    procedure Visit(const AStmt: IWhileStmt); overload; override;
+    procedure Visit(const AStmt: IForInStmt); overload; override;
+    procedure Visit(const AStmt: IForRangeStmt); overload; override;
+    procedure Visit(const AStmt: IFunctionCallExpr); overload; override;
+    procedure Visit(const AStmt: IMethodCallExpr); overload; override;
 
-    procedure Visit(AStmt: IProcessTemplateStmt); overload; override;
-    procedure Visit(AStmt: IDefineTemplateStmt); overload; override;
-    procedure Visit(AStmt: IWithStmt); overload; override;
+    procedure Visit(const AStmt: IProcessTemplateStmt); overload; override;
+    procedure Visit(const AStmt: IDefineTemplateStmt); overload; override;
+    procedure Visit(const AStmt: IWithStmt); overload; override;
+    procedure Visit(const AStmt: ICycleStmt); overload; override;
 
   end;
 
@@ -147,13 +148,13 @@ begin
   exit(FStringBuilder.ToString);
 end;
 
-procedure TPrettyPrintTemplateVisitor.Visit(AStmt: IBreakStmt);
+procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IBreakStmt);
 begin
   tab();
   writeln('<%% break %%>');
 end;
 
-procedure TPrettyPrintTemplateVisitor.Visit(AStmt: IIfStmt);
+procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IIfStmt);
 begin
   tab();
   write('<%% if ');
@@ -174,13 +175,13 @@ begin
   writeln('<%% end %%>');
 end;
 
-procedure TPrettyPrintTemplateVisitor.Visit(AStmt: IContinueStmt);
+procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IContinueStmt);
 begin
   tab();
   writeln('<%% continue %%>');
 end;
 
-procedure TPrettyPrintTemplateVisitor.Visit(AStmt: IPrintStmt);
+procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IPrintStmt);
 begin
   tab();
   write('<%% print(');
@@ -209,48 +210,172 @@ begin
   write(#13#10, []);
 end;
 
-procedure TPrettyPrintTemplateVisitor.Visit(AStmt: IWhileStmt);
+procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IWhileStmt);
 begin
   tab();
   write('<%% while (');
   AcceptVisitor(AStmt.Condition, self);
-  writeln(') %%>');
+  write(')');
+  if AStmt.OffsetExpr <> nil then
+  begin
+    write(' offset ');
+    AcceptVisitor(AStmt.OffsetExpr, self);
+  end;
+  if AStmt.LimitExpr <> nil then
+  begin
+    write(' limit ');
+    AcceptVisitor(AStmt.LimitExpr, self);
+  end;
+  writeln(' %%>');
   delta(4);
   AcceptVisitor(AStmt.Container, self);
   delta(-4);
+  if AStmt.OnFirstContainer <> nil then
+  begin
+    tab();
+    writeln('<%% onbegin %%>');
+    delta(4);
+    AcceptVisitor(AStmt.OnFirstContainer, self);
+    delta(-4);
+  end;
+  if AStmt.OnEndContainer <> nil then
+  begin
+    tab();
+    writeln('<%% onend %%>');
+    delta(4);
+    AcceptVisitor(AStmt.OnEndContainer, self);
+    delta(-4);
+  end;
+  if AStmt.OnEmptyContainer <> nil then
+  begin
+    tab();
+    writeln('<%% onempty %%>');
+    delta(4);
+    AcceptVisitor(AStmt.OnEmptyContainer, self);
+    delta(-4);
+  end;
+  if AStmt.BetweenItemsContainer <> nil then
+  begin
+    tab();
+    writeln('<%% betweenitems %%>');
+    delta(4);
+    AcceptVisitor(AStmt.BetweenItemsContainer, self);
+    delta(-4);
+  end;
   tab();
   writeln('<%% end %%>');
 end;
 
-procedure TPrettyPrintTemplateVisitor.Visit(AStmt: IForInStmt);
+procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IForInStmt);
 begin
   tab();
   write('<%% for ' + AStmt.Variable + ' in (');
   AcceptVisitor(AStmt.Expr, self);
-  writeln(') %%>');
+  write(')');
+  if AStmt.OffsetExpr <> nil then
+  begin
+    write(' offset ');
+    AcceptVisitor(AStmt.OffsetExpr, self);
+  end;
+  if AStmt.LimitExpr <> nil then
+  begin
+    write(' limit ');
+    AcceptVisitor(AStmt.LimitExpr, self);
+  end;
+  writeln(' %%>');
   delta(4);
   AcceptVisitor(AStmt.Container, self);
   delta(-4);
+  if AStmt.OnFirstContainer <> nil then
+  begin
+    tab();
+    writeln('<%% onbegin %%>');
+    delta(4);
+    AcceptVisitor(AStmt.OnFirstContainer, self);
+    delta(-4);
+  end;
+  if AStmt.OnEndContainer <> nil then
+  begin
+    tab();
+    writeln('<%% onend %%>');
+    delta(4);
+    AcceptVisitor(AStmt.OnEndContainer, self);
+    delta(-4);
+  end;
+  if AStmt.OnEmptyContainer <> nil then
+  begin
+    tab();
+    writeln('<%% onempty %%>');
+    delta(4);
+    AcceptVisitor(AStmt.OnEmptyContainer, self);
+    delta(-4);
+  end;
+  if AStmt.BetweenItemsContainer <> nil then
+  begin
+    tab();
+    writeln('<%% betweenitems %%>');
+    delta(4);
+    AcceptVisitor(AStmt.BetweenItemsContainer, self);
+    delta(-4);
+  end;
   tab();
   writeln('<%% end %%>');
 end;
 
-procedure TPrettyPrintTemplateVisitor.Visit(AStmt: IForRangeStmt);
+procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IForRangeStmt);
 begin
   tab();
   write('<%% for %s := (', [AStmt.Variable]);
   AcceptVisitor(AStmt.LowExpr, self);
   write(') %s (', [ForopToStr(AStmt.ForOp)]);
   AcceptVisitor(AStmt.HighExpr, self);
-  writeln(') %%>');
+  write(') ');
+  if AStmt.StepExpr <> nil then
+  begin
+    write(' step ');
+    AcceptVisitor(AStmt.StepExpr, self);
+  end;
+  writeln(' %%>');
   delta(4);
   AcceptVisitor(AStmt.Container, self);
   delta(-4);
+  if AStmt.OnFirstContainer <> nil then
+  begin
+    tab();
+    writeln('<%% onbegin %%>');
+    delta(4);
+    AcceptVisitor(AStmt.OnFirstContainer, self);
+    delta(-4);
+  end;
+  if AStmt.OnEndContainer <> nil then
+  begin
+    tab();
+    writeln('<%% onend %%>');
+    delta(4);
+    AcceptVisitor(AStmt.OnEndContainer, self);
+    delta(-4);
+  end;
+  if AStmt.OnEmptyContainer <> nil then
+  begin
+    tab();
+    writeln('<%% onempty %%>');
+    delta(4);
+    AcceptVisitor(AStmt.OnEmptyContainer, self);
+    delta(-4);
+  end;
+  if AStmt.BetweenItemsContainer <> nil then
+  begin
+    tab();
+    writeln('<%% betweenitems %%>');
+    delta(4);
+    AcceptVisitor(AStmt.BetweenItemsContainer, self);
+    delta(-4);
+  end;
   tab();
   writeln('<%% end %%>');
 end;
 
-procedure TPrettyPrintTemplateVisitor.Visit(AStmt: IAssignStmt);
+procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IAssignStmt);
 begin
   tab();
   write('<%% %s := ', [AStmt.Variable]);
@@ -258,7 +383,7 @@ begin
   writeln(' %%>');
 end;
 
-procedure TPrettyPrintTemplateVisitor.Visit(AStmt: IIncludeStmt);
+procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IIncludeStmt);
 begin
   tab();
   write('<%% include(');
@@ -266,7 +391,7 @@ begin
   writeln(') %%>');
 end;
 
-procedure TPrettyPrintTemplateVisitor.Visit(AExpr: IVariableDerefExpr);
+procedure TPrettyPrintTemplateVisitor.Visit(const AExpr: IVariableDerefExpr);
 begin
   AcceptVisitor(AExpr.Variable, self);
   write('[');
@@ -274,7 +399,7 @@ begin
   write(']');
 end;
 
-procedure TPrettyPrintTemplateVisitor.Visit(AExpr: IBinopExpr);
+procedure TPrettyPrintTemplateVisitor.Visit(const AExpr: IBinopExpr);
 begin
   write('(');
   AcceptVisitor(AExpr.LeftExpr, self);
@@ -283,24 +408,24 @@ begin
   write(')');
 end;
 
-procedure TPrettyPrintTemplateVisitor.Visit(AExpr: IUnaryExpr);
+procedure TPrettyPrintTemplateVisitor.Visit(const AExpr: IUnaryExpr);
 begin
   write('%s (', [UnaryToStr(AExpr.UnaryOp)]);
   AcceptVisitor(AExpr.Condition, self);
   write(')');
 end;
 
-procedure TPrettyPrintTemplateVisitor.Visit(AExpr: IVariableExpr);
+procedure TPrettyPrintTemplateVisitor.Visit(const AExpr: IVariableExpr);
 begin
   write('%s', [AExpr.Variable]);
 end;
 
-procedure TPrettyPrintTemplateVisitor.Visit(AExpr: IValueExpr);
+procedure TPrettyPrintTemplateVisitor.Visit(const AExpr: IValueExpr);
 begin
   write('''%s''', [AExpr.Value.ToString.Replace(#9, '''#9''', [rfReplaceAll]).Replace(#13, '', [rfReplaceAll]).Replace(#10, '''#13#10''', [rfReplaceAll])]);
 end;
 
-procedure TPrettyPrintTemplateVisitor.Visit(AExprList: IExprList);
+procedure TPrettyPrintTemplateVisitor.Visit(const AExprList: IExprList);
 var
   i: integer;
 begin
@@ -314,34 +439,34 @@ begin
   write(')');
 end;
 
-procedure TPrettyPrintTemplateVisitor.Visit(AStmt: IFunctionCallExpr);
+procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IFunctionCallExpr);
 begin
   write('%s', [AStmt.FunctionInfo[0].Name]);
   Visit(AStmt.ExprList);
 end;
 
-procedure TPrettyPrintTemplateVisitor.Visit(AStmt: IMethodCallExpr);
+procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IMethodCallExpr);
 begin
   Visit(AStmt.ObjectExpr);
   Write('.%s', [AStmt.Method]);
   Visit(AStmt.ExprList);
 end;
 
-procedure TPrettyPrintTemplateVisitor.Visit(AExpr: IEncodeExpr);
+procedure TPrettyPrintTemplateVisitor.Visit(const AExpr: IEncodeExpr);
 begin
   write('Encode(');
   AcceptVisitor(AExpr.Expr, self);
   write(')');
 end;
 
-procedure TPrettyPrintTemplateVisitor.Visit(AStmt: IProcessTemplateStmt);
+procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IProcessTemplateStmt);
 begin
   delta(4);
   AcceptVisitor(AStmt.Container, self);
   delta(-4);
 end;
 
-procedure TPrettyPrintTemplateVisitor.Visit(AStmt: IDefineTemplateStmt);
+procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IDefineTemplateStmt);
 begin
   tab();
   write('<%% define (');
@@ -354,7 +479,7 @@ begin
   writeln('<%% end %%>');
 end;
 
-procedure TPrettyPrintTemplateVisitor.Visit(AStmt: IWithStmt);
+procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IWithStmt);
 begin
   tab();
   write('<% with ');
@@ -367,7 +492,7 @@ begin
   writeln('<% end %>');
 end;
 
-procedure TPrettyPrintTemplateVisitor.Visit(AStmt: IRequireStmt);
+procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IRequireStmt);
 var
   LIdx: integer;
 begin
@@ -382,7 +507,7 @@ begin
   writeln('%>');
 end;
 
-procedure TPrettyPrintTemplateVisitor.Visit(AExpr: IArrayExpr);
+procedure TPrettyPrintTemplateVisitor.Visit(const AExpr: IArrayExpr);
 var
   LIdx: integer;
 begin
@@ -396,13 +521,28 @@ begin
   write(']');
 end;
 
-procedure TPrettyPrintTemplateVisitor.Visit(AExpr: ITernaryExpr);
+procedure TPrettyPrintTemplateVisitor.Visit(const AExpr: ITernaryExpr);
 begin
   AcceptVisitor(AExpr.Condition, self);
   write('?');
   AcceptVisitor(AExpr.TrueExpr, self);
   write(':');
   AcceptVisitor(AExpr.FalseExpr, self);
+end;
+
+procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: ICycleStmt);
+var
+  LIdx: integer;
+begin
+  tab();
+  write('<% cycle [');
+  for LIdx := 0 to AStmt.List.Count - 1 do
+  begin
+    if LIdx > 0 then
+      write(',');
+    AcceptVisitor(AStmt.List.Expr[LIdx], self);
+  end;
+  writeln('%>');
 end;
 
 initialization

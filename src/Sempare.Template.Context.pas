@@ -12,7 +12,7 @@
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
  ****************************************************************************************************
  *                                                                                                  *
- * Copyright (c) 2020 Sempare Limited                                                               *
+ * Copyright (c) 2019-2023 Sempare Limited                                                          *
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
@@ -69,27 +69,27 @@ type
     eoStripRecurringNewlines, //
     eoTrimLines, //
     eoReplaceNewline, //
-    // eoDebug, // TODO
+    eoEmbedException, //
     eoPrettyPrint, //
     eoStripRecurringSpaces, //
     eoConvertTabsToSpaces, //
     eoNoDefaultFunctions, //
     eoRaiseErrorWhenVariableNotFound, //
     eoAllowIgnoreNL, //
-
+    eoStripEmptyLines, //
     eoInternalUseNewLine //
     );
 
   TTemplateEvaluationOptions = set of TTemplateEvaluationOption;
 
-  TTemplateResolver = reference to function(AContext: ITemplateContext; const AName: string): ITemplate;
+  TTemplateResolver = reference to function(const AContext: ITemplateContext; const AName: string): ITemplate;
 
   ITemplateContext = interface
     ['{979D955C-B4BD-46BB-9430-1E74CBB999D4}']
 
     function TryGetTemplate(const AName: string; out ATemplate: ITemplate): boolean;
     function GetTemplate(const AName: string): ITemplate;
-    procedure SetTemplate(const AName: string; ATemplate: ITemplate);
+    procedure SetTemplate(const AName: string; const ATemplate: ITemplate);
 
     function GetTemplateResolver: TTemplateResolver;
     procedure SetTemplateResolver(const AResolver: TTemplateResolver);
@@ -107,7 +107,7 @@ type
     procedure SetScriptEndToken(const AToken: string);
 
     function TryGetFunction(const AName: string; out AFunction: TArray<TRttiMethod>): boolean;
-    procedure SetFunctions(AFunctions: ITemplateFunctions);
+    procedure SetFunctions(const AFunctions: ITemplateFunctions);
     function GetFunctions(): ITemplateFunctions; overload;
 
     function GetMaxRunTimeMs: integer;
@@ -134,6 +134,14 @@ type
     procedure SetScriptEndStripToken(const Value: string);
     procedure SetScriptStartStripToken(const Value: string);
 
+    function GetValueSeparator: char;
+    function GetDecimalSeparator: char;
+    procedure SetDecimalSeparator(const ASeparator: char);
+    function GetFormatSettings: TFormatSettings;
+
+    function GetDebugErrorFormat: string;
+    procedure SetDebugErrorFormat(const AFormat: string);
+
     property Functions: ITemplateFunctions read GetFunctions write SetFunctions;
     property NewLine: string read GetNewLine write SetNewLine;
     property TemplateResolver: TTemplateResolver read GetTemplateResolver write SetTemplateResolver;
@@ -150,6 +158,10 @@ type
     property StartStripToken: string read GetScriptStartStripToken write SetScriptStartStripToken;
     property EndStripToken: string read GetScriptEndStripToken write SetScriptEndStripToken;
 
+    property ValueSeparator: char read GetValueSeparator;
+    property DecimalSeparator: char read GetDecimalSeparator write SetDecimalSeparator;
+    property FormatSettings: TFormatSettings read GetFormatSettings;
+    property DebugErrorFormat: string read GetDebugErrorFormat write SetDebugErrorFormat;
     property StreamWriterProvider: TStreamWriterProvider read GetStreamWriterProvider write SetStreamWriterProvider;
   end;
 
@@ -190,7 +202,8 @@ uses
   System.SyncObjs,
   Sempare.Template,
   Sempare.Template.Evaluate,
-  Sempare.Template.Functions;
+  Sempare.Template.Functions,
+  Sempare.Template.ResourceStrings;
 
 type
 
@@ -212,6 +225,9 @@ type
     FLock: TCriticalSection;
     FStreamWriterProvider: TStreamWriterProvider;
     FNewLine: string;
+    FValueSeparator: char;
+    FFormatSettings: TFormatSettings;
+    FDebugFormat: string;
   public
     constructor Create(const AOptions: TTemplateEvaluationOptions);
     destructor Destroy; override;
@@ -221,7 +237,7 @@ type
 
     function TryGetTemplate(const AName: string; out ATemplate: ITemplate): boolean;
     function GetTemplate(const AName: string): ITemplate;
-    procedure SetTemplate(const AName: string; ATemplate: ITemplate);
+    procedure SetTemplate(const AName: string; const ATemplate: ITemplate);
 
     function GetTemplateResolver: TTemplateResolver;
     procedure SetTemplateResolver(const AResolver: TTemplateResolver);
@@ -254,7 +270,7 @@ type
     procedure SetVariableEncoder(const AEncoder: TTemplateEncodeFunction);
 
     function TryGetFunction(const AName: string; out AFunction: TArray<TRttiMethod>): boolean;
-    procedure SetFunctions(AFunctions: ITemplateFunctions);
+    procedure SetFunctions(const AFunctions: ITemplateFunctions);
     function GetFunctions(): ITemplateFunctions; overload;
 
     function GetNewLine: string;
@@ -264,6 +280,16 @@ type
 
     function GetStreamWriterProvider: TStreamWriterProvider;
     procedure SetStreamWriterProvider(const AProvider: TStreamWriterProvider);
+
+    function GetValueSeparator: char;
+    function GetDecimalSeparator: char;
+
+    function GetFormatSettings: TFormatSettings;
+
+    procedure SetDecimalSeparator(const ASeparator: char);
+
+    function GetDebugErrorFormat: string;
+    procedure SetDebugErrorFormat(const AFormat: string);
   end;
 
 function CreateTemplateContext(const AOptions: TTemplateEvaluationOptions): ITemplateContext;
@@ -273,7 +299,7 @@ end;
 
 { TTemplateContext }
 
-procedure TTemplateContext.SetTemplate(const AName: string; ATemplate: ITemplate);
+procedure TTemplateContext.SetTemplate(const AName: string; const ATemplate: ITemplate);
 begin
   FLock.Enter;
   try
@@ -310,6 +336,9 @@ begin
   FVariables.Items['NL'] := #10;
   FVariables.Items['CRNL'] := #13#10;
   FVariables.Items['TAB'] := #9;
+  FFormatSettings := TFormatSettings.Create;
+  SetDecimalSeparator(FFormatSettings.DecimalSeparator);
+  FDebugFormat := FNewLine + FNewLine + 'ERROR: %s' + FNewLine + FNewLine;
 end;
 
 destructor TTemplateContext.Destroy;
@@ -337,9 +366,24 @@ begin
   end;
 end;
 
+function TTemplateContext.GetDebugErrorFormat: string;
+begin
+  exit(FDebugFormat);
+end;
+
+function TTemplateContext.GetDecimalSeparator: char;
+begin
+  exit(FFormatSettings.DecimalSeparator);
+end;
+
 function TTemplateContext.GetEncoding: TEncoding;
 begin
   exit(FEncoding);
+end;
+
+function TTemplateContext.GetFormatSettings: TFormatSettings;
+begin
+  exit(FFormatSettings);
 end;
 
 function TTemplateContext.GetFunctions: ITemplateFunctions;
@@ -418,12 +462,35 @@ begin
   result := FTemplateResolver;
 end;
 
+function TTemplateContext.GetValueSeparator: char;
+begin
+  exit(FValueSeparator);
+end;
+
+procedure TTemplateContext.SetDebugErrorFormat(const AFormat: string);
+begin
+  FDebugFormat := AFormat;
+end;
+
+procedure TTemplateContext.SetDecimalSeparator(const ASeparator: char);
+begin
+  FFormatSettings.DecimalSeparator := ASeparator;
+{$WARN WIDECHAR_REDUCED OFF}
+  if not(FFormatSettings.DecimalSeparator in ['.', ',']) then
+    raise ETemplate.CreateRes(@SDecimalSeparatorMustBeACommaOrFullStop);
+{$WARN WIDECHAR_REDUCED ON}
+  if FFormatSettings.DecimalSeparator = '.' then
+    FValueSeparator := ','
+  else
+    FValueSeparator := ';';
+end;
+
 procedure TTemplateContext.SetEncoding(const AEncoding: TEncoding);
 begin
   FEncoding := AEncoding;
 end;
 
-procedure TTemplateContext.SetFunctions(AFunctions: ITemplateFunctions);
+procedure TTemplateContext.SetFunctions(const AFunctions: ITemplateFunctions);
 begin
   FFunctions := AFunctions;
   FFunctionsSet := true;

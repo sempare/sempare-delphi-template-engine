@@ -12,7 +12,7 @@
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
  ****************************************************************************************************
  *                                                                                                  *
- * Copyright (c) 2020 Sempare Limited                                                               *
+ * Copyright (c) 2019-2023 Sempare Limited                                                          *
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
@@ -30,6 +30,12 @@
  * limitations under the License.                                                                   *
  *                                                                                                  *
  *************************************************************************************************%*)
+ 
+// -----------------------------------------------
+
+// Uncomment the following to confrim the license conditions
+// {$DEFINE SEMPARE_TEMPLATE_CONFIRM_LICENSE}
+ 
 // -----------------------------------------------
 {$IF CompilerVersion >= 25} // from XE4 onwards
 {$DEFINE SUPPORT_JSON_DBX true}

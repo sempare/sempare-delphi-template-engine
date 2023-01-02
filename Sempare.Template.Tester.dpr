@@ -12,7 +12,7 @@
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
  ****************************************************************************************************
  *                                                                                                  *
- * Copyright (c) 2020 Sempare Limited                                                               *
+ * Copyright (c) 2019-2023 Sempare Limited                                                          *
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
@@ -43,22 +43,22 @@ uses
   DUnitX.Loggers.Console,
   DUnitX.Loggers.Xml.NUnit,
   DUnitX.TestFramework,
-  Sempare.Template.TestIf in 'src\Sempare.Template.TestIf.pas',
-  Sempare.Template.Context.Test in 'src\Sempare.Template.Context.Test.pas',
-  Sempare.Template.NewLineOption.Test in 'src\Sempare.Template.NewLineOption.Test.pas',
-  Sempare.Template.TestCall in 'src\Sempare.Template.TestCall.pas',
-  Sempare.Template.Test.Arr in 'src\Sempare.Template.Test.Arr.pas',
-  Sempare.Template.TestDictionary in 'src\Sempare.Template.TestDictionary.pas',
-  Sempare.Template.TestJson in 'src\Sempare.Template.TestJson.pas',
-  Sempare.Template.TestAssign in 'src\Sempare.Template.TestAssign.pas',
-  Sempare.Template.TestExpr in 'src\Sempare.Template.TestExpr.pas',
-  Sempare.Template.TestInclude in 'src\Sempare.Template.TestInclude.pas',
-  Sempare.Template.TestDeref in 'src\Sempare.Template.TestDeref.pas',
-  Sempare.Template.TestFor in 'src\Sempare.Template.TestFor.pas',
-  Sempare.Template.Test in 'src\Sempare.Template.Test.pas',
-  Sempare.Template.StackFrame.Test in 'src\Sempare.Template.StackFrame.Test.pas',
-  Sempare.Template.Lexer.Test in 'src\Sempare.Template.Lexer.Test.pas',
-  Sempare.Template.Functions.Test in 'src\Sempare.Template.Functions.Test.pas';
+  Sempare.Template.TestIf in 'tests\Sempare.Template.TestIf.pas',
+  Sempare.Template.TestContext in 'tests\Sempare.Template.TestContext.pas',
+  Sempare.Template.TestNewLineOption in 'tests\Sempare.Template.TestNewLineOption.pas',
+  Sempare.Template.TestCall in 'tests\Sempare.Template.TestCall.pas',
+  Sempare.Template.TestArr in 'tests\Sempare.Template.TestArr.pas',
+  Sempare.Template.TestDictionary in 'tests\Sempare.Template.TestDictionary.pas',
+  Sempare.Template.TestJson in 'tests\Sempare.Template.TestJson.pas',
+  Sempare.Template.TestAssign in 'tests\Sempare.Template.TestAssign.pas',
+  Sempare.Template.TestExpr in 'tests\Sempare.Template.TestExpr.pas',
+  Sempare.Template.TestInclude in 'tests\Sempare.Template.TestInclude.pas',
+  Sempare.Template.TestDeref in 'tests\Sempare.Template.TestDeref.pas',
+  Sempare.Template.TestFor in 'tests\Sempare.Template.TestFor.pas',
+  Sempare.Template.Test in 'tests\Sempare.Template.Test.pas',
+  Sempare.Template.TestStackFrame in 'tests\Sempare.Template.TestStackFrame.pas',
+  Sempare.Template.TestLexer in 'tests\Sempare.Template.TestLexer.pas',
+  Sempare.Template.TestFunctions in 'tests\Sempare.Template.TestFunctions.pas';
 
 var
   runner : ITestRunner;

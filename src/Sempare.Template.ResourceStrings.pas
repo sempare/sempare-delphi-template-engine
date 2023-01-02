@@ -12,7 +12,7 @@
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
  ****************************************************************************************************
  *                                                                                                  *
- * Copyright (c) 2020 Sempare Limited                                                               *
+ * Copyright (c) 2019-2023 Sempare Limited                                                          *
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
@@ -70,6 +70,10 @@ resourcestring
   SMaxRuntimeOfMsHasBeenExceeded = 'Max runtime of %dms has been exceeded.';
   SNumberOfArgsMismatch = 'Number of arguments mismatch';
   SInputOfRequiredTypeNotFound = 'Input of required type not found';
+  SCycleStatementMustBeInALoop = 'Cycle statement must be in a loop';
+  SDecimalSeparatorMustBeACommaOrFullStop = 'Decimal separator must be a comma or a full stop';
+  STooManyParameters = 'Too many parameters';
+  SInvalidCharacterDetected = 'Invalid character detected';
 
 implementation
 
