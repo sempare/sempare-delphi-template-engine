@@ -52,15 +52,23 @@ type
     TInformation = record
         name: string;
         favourite_sport : string;
+		count : integer;
     end;
 begin
-    var tpl := Template.parse('My name is <% name %>. My favourite sport is <% favourite_sport %>.');
+    var tpl := Template.Parse(
+	       'My name is <% name %>.'#13#10 + 
+		   'My favourite sport is <% favourite_sport %>.'#13#10 + 
+		   'Counting... <% for i := 1 to count %><% if i > 1 %>, <% end %><% i %><% end %>'
+		);
     var information : TInformation;
     information.name := 'conrad';
     information.favourite_sport := 'ultimate';
+	information.count := 3;
     writeln(Template.eval(tpl, information));	
 end.
 ```
+
+The project uses RTTI to allow for almost any type to be derefrenced.
 
 In the example above, you can see that the '<%' start and '%>' end the scripting statement respectively. Within a scripting statement, you can reference variables, assign variables, use conditions, for and while loops, and include other templates.
 
@@ -85,7 +93,7 @@ The playlist has a few videos that are very short (most less than a minute - bli
   - simple expression evaluation (logical, numerical and string)
   - variable definition
   - functions and methods calls
-  - dereference records, classes, arrays, JSON objects, TDataSet descendants and dynamic arrays
+  - dereference records, custom managed records, classes, arrays, JSON objects, TDataSet descendants and dynamic arrays
   - ternary operator
 - safety
   - max run-time protection
@@ -110,8 +118,8 @@ The template engine works with modern versions of [Delphi](https://www.embarcade
 
 Tests currently run using the DUnitX TestFramework.
 
-An attempt has been made not to use the latest features to ease backward compatability.
-Although the development was done on Delphi 10.3.3, build and tests have been run on the following versions:
+An attempt has been made not to use the latest features to ease backward compatability. The following versions have been tested:
+
 - Delphi XE 4
 - Delphi XE 8
 - Delphi 10.0 Seatle
@@ -119,7 +127,7 @@ Although the development was done on Delphi 10.3.3, build and tests have been ru
 - Delphi 10.2 Tokyo
 - Delphi 10.3.3 Rio
 - Delphi 10.4 Sydney
-- Delphi 11 Alexandria
+- Delphi 11.0-11.2 Alexandria
 
 There should be no platform specific restrictions.
 
@@ -127,6 +135,7 @@ Have a look at Sempare.Template.Compiler.inc. The following defines can be defin
 
 - SEMPARE_TEMPLATE_FIREDAC - to support tests for TDataSet
 - SEMPARE_TEMPLATE_NO_INDY - if Indy is not present. This is used to access an html encoder if TNetEncoding is not available.
+- SEMPARE_TEMPLATE_CONFIRM_LICENSE - if present, you confirm you understand the conditions.
 
 ## Installation: GetIt
 
@@ -167,7 +176,7 @@ Most features have some basic tests in place. If a bug is been discovered, pleas
 
 # Contributions
 
-Please see the [contibution terms and conditions](./docs/CONTRIBUTION.pdf)
+Review [contibution terms and conditions](./docs/CONTRIBUTION.pdf) to contribute to the project.
 
 # License
 
