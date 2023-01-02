@@ -73,10 +73,10 @@ type
     FArray: TArray<ITemplateVisitorHost>;
     function GetItem(const AOffset: integer): ITemplateVisitorHost;
     function GetCount: integer;
-    procedure Add(AItem: ITemplateVisitorHost);
+    procedure Add(const AItem: ITemplateVisitorHost);
     function GetLastItem: ITemplateVisitorHost;
 
-    procedure Accept(AVisitor: ITemplateVisitor);
+    procedure Accept(const AVisitor: ITemplateVisitor);
   public
 
   end;
@@ -86,9 +86,9 @@ type
     FPosition: IPosition;
     function GetPosition: IPosition;
   public
-    constructor Create(APosition: IPosition);
+    constructor Create(const APosition: IPosition);
     destructor Destroy; override;
-    procedure Accept(AVisitor: ITemplateVisitor); virtual; abstract;
+    procedure Accept(const AVisitor: ITemplateVisitor); virtual; abstract;
   end;
 
   TAbstractStmt = class abstract(TAbstractBase, IStmt)
@@ -97,7 +97,7 @@ type
   TDebugStmt = class(TAbstractStmt, IDebugStmt)
   private
     FStmt: IStmt;
-    procedure Accept(AVisitor: ITemplateVisitor); override;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
     function GetStmt: IStmt;
   public
     constructor Create(const AStmt: IStmt);
@@ -105,32 +105,32 @@ type
 
   TEndStmt = class(TAbstractStmt, IEndStmt)
   private
-    procedure Accept(AVisitor: ITemplateVisitor); override;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
   end;
 
   TElseStmt = class(TAbstractStmt, IElseStmt)
   private
-    procedure Accept(AVisitor: ITemplateVisitor); override;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
   end;
 
   TContinueStmt = class(TAbstractStmt, IContinueStmt)
   private
-    procedure Accept(AVisitor: ITemplateVisitor); override;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
   end;
 
   TBreakStmt = class(TAbstractStmt, IBreakStmt)
   private
-    procedure Accept(AVisitor: ITemplateVisitor); override;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
   end;
 
   TCommentStmt = class(TAbstractStmt, ICommentStmt)
   private
-    procedure Accept(AVisitor: ITemplateVisitor); override;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
   end;
 
   TElIfStmt = class(TAbstractStmt, IElIfStmt)
   private
-    procedure Accept(AVisitor: ITemplateVisitor); override;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
   end;
 
   TAbstractStmtWithExpr = class abstract(TAbstractStmt)
@@ -143,21 +143,21 @@ type
 
   TPrintStmt = class(TAbstractStmtWithExpr, IPrintStmt)
   private
-    procedure Accept(AVisitor: ITemplateVisitor); override;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
   end;
 
   TIncludeStmt = class(TAbstractStmtWithExpr, IIncludeStmt)
   private
-    procedure Accept(AVisitor: ITemplateVisitor); override;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
   end;
 
   TRequireStmt = class(TAbstractStmt, IRequireStmt)
   private
     FExprList: IExprList;
     function GetExprList: IExprList;
-    procedure Accept(AVisitor: ITemplateVisitor); override;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
   public
-    constructor Create(APosition: IPosition; AExprList: IExprList);
+    constructor Create(const APosition: IPosition; const AExprList: IExprList);
   end;
 
   TIfStmt = class(TAbstractStmt, IIfStmt)
@@ -169,9 +169,9 @@ type
     function GetTrueContainer: ITemplate;
     function GetFalseContainer: ITemplate;
 
-    procedure Accept(AVisitor: ITemplateVisitor); override;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
   public
-    constructor Create(APosition: IPosition; ACondition: IExpr; ATrueContainer: ITemplate; AFalseContainer: ITemplate);
+    constructor Create(APosition: IPosition; const ACondition: IExpr; const ATrueContainer: ITemplate; const AFalseContainer: ITemplate);
   end;
 
   TAbstractStmtWithContainer = class abstract(TAbstractStmt)
@@ -187,27 +187,27 @@ type
     FAllowNewline: boolean;
     function GetAllowNewLine: boolean;
     procedure SetAllowNewLine(const AAllow: boolean);
-    procedure Accept(AVisitor: ITemplateVisitor); override;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
   public
-    constructor Create(APosition: IPosition; AContainer: ITemplate; const AAllowNewLine: boolean = true);
+    constructor Create(const APosition: IPosition; const AContainer: ITemplate; const AAllowNewLine: boolean = true);
   end;
 
   TDefineTemplateStmt = class(TAbstractStmtWithContainer, IDefineTemplateStmt)
   private
     FName: IExpr;
     function GetName: IExpr;
-    procedure Accept(AVisitor: ITemplateVisitor); override;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
   public
-    constructor Create(APosition: IPosition; AName: IExpr; AContainer: ITemplate);
+    constructor Create(const APosition: IPosition; const AName: IExpr; const AContainer: ITemplate);
   end;
 
   TWithStmt = class(TAbstractStmtWithContainer, IWithStmt)
   private
     FExpr: IExpr;
     function GetExpr: IExpr;
-    procedure Accept(AVisitor: ITemplateVisitor); override;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
   public
-    constructor Create(APosition: IPosition; AExpr: IExpr; AContainer: ITemplate);
+    constructor Create(const APosition: IPosition; const AExpr: IExpr; const AContainer: ITemplate);
   end;
 
   TLoopStmt = class(TAbstractStmtWithContainer, ILoopStmt)
@@ -231,11 +231,11 @@ type
     FOffsetExpr: IExpr;
     FLimitExpr: IExpr;
     function GetCondition: IExpr;
-    procedure Accept(AVisitor: ITemplateVisitor); override;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
     function GetOffsetExpr: IExpr;
     function GetLimitExpr: IExpr;
   public
-    constructor Create(APosition: IPosition; ACondition: IExpr; AOffsetExpr: IExpr; ALimitExpr: IExpr; AContainer: ITemplate; AOnFirst, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
+    constructor Create(const APosition: IPosition; const ACondition: IExpr; const AOffsetExpr: IExpr; const ALimitExpr: IExpr; const AContainer: ITemplate; const AOnFirst, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
   end;
 
   TForInStmt = class(TLoopStmt, IForInStmt)
@@ -248,9 +248,9 @@ type
     function GetExpr: IExpr;
     function GetOffsetExpr: IExpr;
     function GetLimitExpr: IExpr;
-    procedure Accept(AVisitor: ITemplateVisitor); override;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
   public
-    constructor Create(APosition: IPosition; const AVariable: string; AExpr: IExpr; AOffsetExpr: IExpr; ALimitExpr: IExpr; AContainer: ITemplate; AOnFirst, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
+    constructor Create(const APosition: IPosition; const AVariable: string; const AExpr: IExpr; const AOffsetExpr: IExpr; const ALimitExpr: IExpr; const AContainer: ITemplate; const AOnFirst, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
   end;
 
   TForRangeStmt = class(TLoopStmt, IForRangeStmt)
@@ -265,26 +265,26 @@ type
     function GetLowExpr: IExpr;
     function GetHighExpr: IExpr;
     function GetStepExpr: IExpr;
-    procedure Accept(AVisitor: ITemplateVisitor); override;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
   public
-    constructor Create(APosition: IPosition; const AVariable: string; const AForIp: TForOp; ALowExpr: IExpr; AHighExpr: IExpr; AStep: IExpr; AContainer: ITemplate; AOnFirst, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
+    constructor Create(const APosition: IPosition; const AVariable: string; const AForIp: TForOp; const ALowExpr: IExpr; const AHighExpr: IExpr; const AStep: IExpr; const AContainer: ITemplate; const AOnFirst, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
   end;
 
   TAssignStmt = class(TAbstractStmtWithExpr, IAssignStmt)
   private
     FVariable: string;
     function GetVariable: string;
-    procedure Accept(AVisitor: ITemplateVisitor); override;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
   public
-    constructor Create(APosition: IPosition; const AVariable: string; AExpr: IExpr);
+    constructor Create(const APosition: IPosition; const AVariable: string; const AExpr: IExpr);
   end;
 
   TCycleStmt = class(TAbstractStmt, ICycleStmt)
   private
     FExprList: IExprList;
-    procedure Accept(AVisitor: ITemplateVisitor); override;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
   public
-    constructor Create(APosition: IPosition; const AList: IExprList);
+    constructor Create(const APosition: IPosition; const AList: IExprList);
     function GetList: IExprList;
   end;
 
@@ -292,9 +292,9 @@ type
   private
     FExprs: TArray<IExpr>;
     function GetExpr(const AOffset: integer): IExpr;
-    procedure AddExpr(AExpr: IExpr);
+    procedure AddExpr(const AExpr: IExpr);
     function GetExprCount: integer;
-    procedure Accept(AVisitor: ITemplateVisitor); override;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
   public
   end;
 
@@ -305,10 +305,10 @@ type
   private
     FValue: TValue;
     function GetValue: TValue;
-    procedure Accept(AVisitor: ITemplateVisitor); override;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
 
   public
-    constructor Create(APosition: IPosition; const AValue: TValue);
+    constructor Create(const APosition: IPosition; const AValue: TValue);
   end;
 
   TAbstractExprWithExprList = class abstract(TAbstractExpr)
@@ -329,21 +329,21 @@ type
 
   TArrayExpr = class(TAbstractExprWithExprList, IArrayExpr)
   private
-    procedure Accept(AVisitor: ITemplateVisitor); override;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
   end;
 
   TVariableExpr = class(TAbstractExpr, IVariableExpr)
   private
     FVariable: string;
     function GetVariable: string;
-    procedure Accept(AVisitor: ITemplateVisitor); override;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
   public
-    constructor Create(APosition: IPosition; const AVariable: string);
+    constructor Create(const APosition: IPosition; const AVariable: string);
   end;
 
   TEncodeExpr = class(TAbstractExprWithExpr, IEncodeExpr)
   private
-    procedure Accept(AVisitor: ITemplateVisitor); override;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
   end;
 
   TVariableDerefExpr = class(TAbstractExprWithExpr, IVariableDerefExpr)
@@ -352,7 +352,7 @@ type
     FDerefType: TDerefType;
     function GetDerefType: TDerefType;
     function GetDerefExpr: IExpr;
-    procedure Accept(AVisitor: ITemplateVisitor); override;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
   public
     constructor Create(APosition: IPosition; const ADerefType: TDerefType; AVariable: IExpr; ADeref: IExpr);
   end;
@@ -361,9 +361,9 @@ type
   private
     FFunctionInfo: TArray<TRttiMethod>;
     function GetFunctionInfo: TArray<TRttiMethod>;
-    procedure Accept(AVisitor: ITemplateVisitor); override;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
   public
-    constructor Create(APosition: IPosition; AFunction: TArray<TRttiMethod>; ExprList: IExprList);
+    constructor Create(const APosition: IPosition; const AFunction: TArray<TRttiMethod>; const ExprList: IExprList);
   end;
 
   TMethodCallExpr = class(TAbstractExprWithExprList, IMethodCallExpr)
@@ -375,9 +375,9 @@ type
     function GetObject: IExpr;
     function GetRttiMethod: TRttiMethod;
     procedure SetRttiMethod(const ARttiMethod: TRttiMethod);
-    procedure Accept(AVisitor: ITemplateVisitor); override;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
   public
-    constructor Create(APosition: IPosition; AObjectExpr: IExpr; const AMethod: string; AExprList: IExprList);
+    constructor Create(const APosition: IPosition; const AObjectExpr: IExpr; const AMethod: string; const AExprList: IExprList);
   end;
 
   TBinopExpr = class(TAbstractExpr, IBinopExpr)
@@ -388,9 +388,9 @@ type
     function GetBinOp: TBinOp;
     function GetLeftExpr: IExpr;
     function GetRightExpr: IExpr;
-    procedure Accept(AVisitor: ITemplateVisitor); override;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
   public
-    constructor Create(APosition: IPosition; ALeft: IExpr; const ABinop: TBinOp; ARight: IExpr);
+    constructor Create(const APosition: IPosition; const ALeft: IExpr; const ABinop: TBinOp; const ARight: IExpr);
     destructor Destroy; override;
   end;
 
@@ -400,18 +400,18 @@ type
     FFalseExpr: IExpr;
     function GetTrueExpr: IExpr;
     function GetFalseExpr: IExpr;
-    procedure Accept(AVisitor: ITemplateVisitor); override;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
   public
-    constructor Create(APosition: IPosition; ACondition: IExpr; ATrueExpr: IExpr; AFalseExpr: IExpr);
+    constructor Create(const APosition: IPosition; const ACondition: IExpr; const ATrueExpr: IExpr; const AFalseExpr: IExpr);
   end;
 
   TUnaryExpr = class(TAbstractExprWithExpr, IUnaryExpr)
   private
     FUnaryOp: TUnaryOp;
     function GetUnaryOp: TUnaryOp;
-    procedure Accept(AVisitor: ITemplateVisitor); override;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
   public
-    constructor Create(APosition: IPosition; const AUnaryOp: TUnaryOp; ACondition: IExpr);
+    constructor Create(const APosition: IPosition; const AUnaryOp: TUnaryOp; const ACondition: IExpr);
   end;
 
   EEndOfBlock = class(ETemplate);
@@ -1594,12 +1594,12 @@ end;
 
 { TValueExpr }
 
-procedure TValueExpr.Accept(AVisitor: ITemplateVisitor);
+procedure TValueExpr.Accept(const AVisitor: ITemplateVisitor);
 begin
   AVisitor.Visit(self);
 end;
 
-constructor TValueExpr.Create(APosition: IPosition; const AValue: TValue);
+constructor TValueExpr.Create(const APosition: IPosition; const AValue: TValue);
 begin
   inherited Create(APosition);
   FValue := AValue;
@@ -1612,12 +1612,12 @@ end;
 
 { TExprList }
 
-procedure TExprList.Accept(AVisitor: ITemplateVisitor);
+procedure TExprList.Accept(const AVisitor: ITemplateVisitor);
 begin
   AVisitor.Visit(self);
 end;
 
-procedure TExprList.AddExpr(AExpr: IExpr);
+procedure TExprList.AddExpr(const AExpr: IExpr);
 var
   LOffset: integer;
 begin
@@ -1638,12 +1638,12 @@ end;
 
 { TUnaryExpr }
 
-procedure TUnaryExpr.Accept(AVisitor: ITemplateVisitor);
+procedure TUnaryExpr.Accept(const AVisitor: ITemplateVisitor);
 begin
   AVisitor.Visit(self);
 end;
 
-constructor TUnaryExpr.Create(APosition: IPosition; const AUnaryOp: TUnaryOp; ACondition: IExpr);
+constructor TUnaryExpr.Create(const APosition: IPosition; const AUnaryOp: TUnaryOp; const ACondition: IExpr);
 begin
   inherited Create(APosition, ACondition);
   FUnaryOp := AUnaryOp;
@@ -1656,12 +1656,12 @@ end;
 
 { TVariableExpr }
 
-procedure TVariableExpr.Accept(AVisitor: ITemplateVisitor);
+procedure TVariableExpr.Accept(const AVisitor: ITemplateVisitor);
 begin
   AVisitor.Visit(self);
 end;
 
-constructor TVariableExpr.Create(APosition: IPosition; const AVariable: string);
+constructor TVariableExpr.Create(const APosition: IPosition; const AVariable: string);
 begin
   inherited Create(APosition);
   FVariable := AVariable;
@@ -1674,12 +1674,12 @@ end;
 
 { TFunctionCallExpr }
 
-procedure TFunctionCallExpr.Accept(AVisitor: ITemplateVisitor);
+procedure TFunctionCallExpr.Accept(const AVisitor: ITemplateVisitor);
 begin
   AVisitor.Visit(self);
 end;
 
-constructor TFunctionCallExpr.Create(APosition: IPosition; AFunction: TArray<TRttiMethod>; ExprList: IExprList);
+constructor TFunctionCallExpr.Create(const APosition: IPosition; const AFunction: TArray<TRttiMethod>; const ExprList: IExprList);
 
 begin
   inherited Create(APosition, ExprList);
@@ -1693,12 +1693,12 @@ end;
 
 { TIfStmt }
 
-procedure TIfStmt.Accept(AVisitor: ITemplateVisitor);
+procedure TIfStmt.Accept(const AVisitor: ITemplateVisitor);
 begin
   AVisitor.Visit(self);
 end;
 
-constructor TIfStmt.Create(APosition: IPosition; ACondition: IExpr; ATrueContainer, AFalseContainer: ITemplate);
+constructor TIfStmt.Create(const APosition: IPosition; const ACondition: IExpr; const ATrueContainer, AFalseContainer: ITemplate);
 begin
   inherited Create(APosition);
   FCondition := ACondition;
@@ -1723,12 +1723,12 @@ end;
 
 { TBinopExpr }
 
-procedure TBinopExpr.Accept(AVisitor: ITemplateVisitor);
+procedure TBinopExpr.Accept(const AVisitor: ITemplateVisitor);
 begin
   AVisitor.Visit(self);
 end;
 
-constructor TBinopExpr.Create(APosition: IPosition; ALeft: IExpr; const ABinop: TBinOp; ARight: IExpr);
+constructor TBinopExpr.Create(const APosition: IPosition; const ALeft: IExpr; const ABinop: TBinOp; const ARight: IExpr);
 begin
   inherited Create(APosition);
   FLeft := ALeft;
@@ -1760,19 +1760,19 @@ end;
 
 { TPrintStmt }
 
-procedure TPrintStmt.Accept(AVisitor: ITemplateVisitor);
+procedure TPrintStmt.Accept(const AVisitor: ITemplateVisitor);
 begin
   AVisitor.Visit(self);
 end;
 
 { TForInStmt }
 
-procedure TForInStmt.Accept(AVisitor: ITemplateVisitor);
+procedure TForInStmt.Accept(const AVisitor: ITemplateVisitor);
 begin
   AVisitor.Visit(self);
 end;
 
-constructor TForInStmt.Create(APosition: IPosition; const AVariable: string; AExpr: IExpr; AOffsetExpr: IExpr; ALimitExpr: IExpr; AContainer: ITemplate; AOnFirst, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
+constructor TForInStmt.Create(const APosition: IPosition; const AVariable: string; const AExpr: IExpr; const AOffsetExpr: IExpr; const ALimitExpr: IExpr; const AContainer: ITemplate; const AOnFirst, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
 begin
   inherited Create(APosition, AContainer, AOnFirst, AOnEnd, AOnEmpty, ABetweenItem);
   FVariable := AVariable;
@@ -1803,12 +1803,12 @@ end;
 
 { TForRangeStmt }
 
-procedure TForRangeStmt.Accept(AVisitor: ITemplateVisitor);
+procedure TForRangeStmt.Accept(const AVisitor: ITemplateVisitor);
 begin
   AVisitor.Visit(self);
 end;
 
-constructor TForRangeStmt.Create(APosition: IPosition; const AVariable: string; const AForIp: TForOp; ALowExpr: IExpr; AHighExpr: IExpr; AStep: IExpr; AContainer: ITemplate; AOnFirst, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
+constructor TForRangeStmt.Create(const APosition: IPosition; const AVariable: string; const AForIp: TForOp; const ALowExpr: IExpr; const AHighExpr: IExpr; const AStep: IExpr; const AContainer: ITemplate; const AOnFirst, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
 begin
   inherited Create(APosition, AContainer, AOnFirst, AOnEnd, AOnEmpty, ABetweenItem);
   FVariable := AVariable;
@@ -1845,12 +1845,12 @@ end;
 
 { TAssignStmt }
 
-procedure TAssignStmt.Accept(AVisitor: ITemplateVisitor);
+procedure TAssignStmt.Accept(const AVisitor: ITemplateVisitor);
 begin
   AVisitor.Visit(self);
 end;
 
-constructor TAssignStmt.Create(APosition: IPosition; const AVariable: string; AExpr: IExpr);
+constructor TAssignStmt.Create(const APosition: IPosition; const AVariable: string; const AExpr: IExpr);
 begin
   inherited Create(APosition, AExpr);
   FVariable := AVariable;
@@ -1863,7 +1863,7 @@ end;
 
 { TTemplateContainer }
 
-procedure TTemplate.Accept(AVisitor: ITemplateVisitor);
+procedure TTemplate.Accept(const AVisitor: ITemplateVisitor);
 var
   i: ITemplateVisitorHost;
 begin
@@ -1873,7 +1873,7 @@ begin
   end;
 end;
 
-procedure TTemplate.Add(AItem: ITemplateVisitorHost);
+procedure TTemplate.Add(const AItem: ITemplateVisitorHost);
 var
   LOffset: integer;
 begin
@@ -1902,12 +1902,12 @@ end;
 
 { TWhileStmt }
 
-procedure TWhileStmt.Accept(AVisitor: ITemplateVisitor);
+procedure TWhileStmt.Accept(const AVisitor: ITemplateVisitor);
 begin
   AVisitor.Visit(self);
 end;
 
-constructor TWhileStmt.Create(APosition: IPosition; ACondition: IExpr; AOffsetExpr: IExpr; ALimitExpr: IExpr; AContainer: ITemplate; AOnFirst, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
+constructor TWhileStmt.Create(const APosition: IPosition; const ACondition: IExpr; const AOffsetExpr: IExpr; const ALimitExpr: IExpr; const AContainer: ITemplate; const AOnFirst, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
 begin
   inherited Create(APosition, AContainer, AOnFirst, AOnEnd, AOnEmpty, ABetweenItem);
   FCondition := ACondition;
@@ -1932,28 +1932,28 @@ end;
 
 { TContinueStmt }
 
-procedure TContinueStmt.Accept(AVisitor: ITemplateVisitor);
+procedure TContinueStmt.Accept(const AVisitor: ITemplateVisitor);
 begin
   AVisitor.Visit(self);
 end;
 
 { TBreakStmt }
 
-procedure TBreakStmt.Accept(AVisitor: ITemplateVisitor);
+procedure TBreakStmt.Accept(const AVisitor: ITemplateVisitor);
 begin
   AVisitor.Visit(self);
 end;
 
 { TEndStmt }
 
-procedure TEndStmt.Accept(AVisitor: ITemplateVisitor);
+procedure TEndStmt.Accept(const AVisitor: ITemplateVisitor);
 begin
   AVisitor.Visit(self);
 end;
 
 { TVariableDerefExpr }
 
-procedure TVariableDerefExpr.Accept(AVisitor: ITemplateVisitor);
+procedure TVariableDerefExpr.Accept(const AVisitor: ITemplateVisitor);
 begin
   AVisitor.Visit(self);
 end;
@@ -1977,35 +1977,35 @@ end;
 
 { TIncludeStmt }
 
-procedure TIncludeStmt.Accept(AVisitor: ITemplateVisitor);
+procedure TIncludeStmt.Accept(const AVisitor: ITemplateVisitor);
 begin
   AVisitor.Visit(self);
 end;
 
 { TElseStmt }
 
-procedure TElseStmt.Accept(AVisitor: ITemplateVisitor);
+procedure TElseStmt.Accept(const AVisitor: ITemplateVisitor);
 begin
   AVisitor.Visit(self);
 end;
 
 { TElIfStmt }
 
-procedure TElIfStmt.Accept(AVisitor: ITemplateVisitor);
+procedure TElIfStmt.Accept(const AVisitor: ITemplateVisitor);
 begin
   // AVisitor.Visit(self);   // this is on purpose
 end;
 
 { TCommentStmt }
 
-procedure TCommentStmt.Accept(AVisitor: ITemplateVisitor);
+procedure TCommentStmt.Accept(const AVisitor: ITemplateVisitor);
 begin
   // AVisitor.Visit(self);     // this is on purpose
 end;
 
 { TAbstractBase }
 
-constructor TAbstractBase.Create(APosition: IPosition);
+constructor TAbstractBase.Create(const APosition: IPosition);
 begin
   FPosition := APosition;
 end;
@@ -2023,12 +2023,12 @@ end;
 
 { TMethodCallExpr }
 
-procedure TMethodCallExpr.Accept(AVisitor: ITemplateVisitor);
+procedure TMethodCallExpr.Accept(const AVisitor: ITemplateVisitor);
 begin
   AVisitor.Visit(self);
 end;
 
-constructor TMethodCallExpr.Create(APosition: IPosition; AObjectExpr: IExpr; const AMethod: string; AExprList: IExprList);
+constructor TMethodCallExpr.Create(const APosition: IPosition; const AObjectExpr: IExpr; const AMethod: string; const AExprList: IExprList);
 begin
   inherited Create(APosition, AExprList);
   FObjectExpr := AObjectExpr;
@@ -2057,19 +2057,19 @@ end;
 
 { TEncodeStmt }
 
-procedure TEncodeExpr.Accept(AVisitor: ITemplateVisitor);
+procedure TEncodeExpr.Accept(const AVisitor: ITemplateVisitor);
 begin
   AVisitor.Visit(self);
 end;
 
 { TProcessTemplateStmt }
 
-procedure TProcessTemplateStmt.Accept(AVisitor: ITemplateVisitor);
+procedure TProcessTemplateStmt.Accept(const AVisitor: ITemplateVisitor);
 begin
   AVisitor.Visit(self);
 end;
 
-constructor TProcessTemplateStmt.Create(APosition: IPosition; AContainer: ITemplate; const AAllowNewLine: boolean);
+constructor TProcessTemplateStmt.Create(const APosition: IPosition; const AContainer: ITemplate; const AAllowNewLine: boolean);
 begin
   inherited Create(APosition, AContainer);
   FAllowNewline := AAllowNewLine;
@@ -2087,12 +2087,12 @@ end;
 
 { TDefineTemplateStmt }
 
-procedure TDefineTemplateStmt.Accept(AVisitor: ITemplateVisitor);
+procedure TDefineTemplateStmt.Accept(const AVisitor: ITemplateVisitor);
 begin
   AVisitor.Visit(self);
 end;
 
-constructor TDefineTemplateStmt.Create(APosition: IPosition; AName: IExpr; AContainer: ITemplate);
+constructor TDefineTemplateStmt.Create(const APosition: IPosition; const AName: IExpr; const AContainer: ITemplate);
 begin
   inherited Create(APosition, AContainer);
   FName := AName;
@@ -2105,12 +2105,12 @@ end;
 
 { TWithStmt }
 
-procedure TWithStmt.Accept(AVisitor: ITemplateVisitor);
+procedure TWithStmt.Accept(const AVisitor: ITemplateVisitor);
 begin
   AVisitor.Visit(self);
 end;
 
-constructor TWithStmt.Create(APosition: IPosition; AExpr: IExpr; AContainer: ITemplate);
+constructor TWithStmt.Create(const APosition: IPosition; const AExpr: IExpr; const AContainer: ITemplate);
 begin
   inherited Create(APosition, AContainer);
   FExpr := AExpr;
@@ -2123,12 +2123,12 @@ end;
 
 { TIfExpr }
 
-procedure TTernaryExpr.Accept(AVisitor: ITemplateVisitor);
+procedure TTernaryExpr.Accept(const AVisitor: ITemplateVisitor);
 begin
   AVisitor.Visit(self);
 end;
 
-constructor TTernaryExpr.Create(APosition: IPosition; ACondition, ATrueExpr, AFalseExpr: IExpr);
+constructor TTernaryExpr.Create(const APosition: IPosition; const ACondition, ATrueExpr, AFalseExpr: IExpr);
 begin
   inherited Create(APosition, ACondition);
   FTrueExpr := ATrueExpr;
@@ -2147,7 +2147,7 @@ end;
 
 { TArrayExpr }
 
-procedure TArrayExpr.Accept(AVisitor: ITemplateVisitor);
+procedure TArrayExpr.Accept(const AVisitor: ITemplateVisitor);
 begin
   AVisitor.Visit(self);
 end;
@@ -2177,12 +2177,12 @@ end;
 
 { TRequireStmt }
 
-procedure TRequireStmt.Accept(AVisitor: ITemplateVisitor);
+procedure TRequireStmt.Accept(const AVisitor: ITemplateVisitor);
 begin
   AVisitor.Visit(self);
 end;
 
-constructor TRequireStmt.Create(APosition: IPosition; AExprList: IExprList);
+constructor TRequireStmt.Create(const APosition: IPosition; const AExprList: IExprList);
 begin
   inherited Create(APosition);
   FExprList := AExprList;
@@ -2247,12 +2247,12 @@ end;
 
 { TCycleStmt }
 
-procedure TCycleStmt.Accept(AVisitor: ITemplateVisitor);
+procedure TCycleStmt.Accept(const AVisitor: ITemplateVisitor);
 begin
   AVisitor.Visit(self);
 end;
 
-constructor TCycleStmt.Create(APosition: IPosition; const AList: IExprList);
+constructor TCycleStmt.Create(const APosition: IPosition; const AList: IExprList);
 begin
   inherited Create(APosition);
   FExprList := AList;
@@ -2265,7 +2265,7 @@ end;
 
 { TDebugStmt }
 
-procedure TDebugStmt.Accept(AVisitor: ITemplateVisitor);
+procedure TDebugStmt.Accept(const AVisitor: ITemplateVisitor);
 begin
   AVisitor.Visit(self);
 end;

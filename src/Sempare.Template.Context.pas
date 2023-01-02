@@ -82,14 +82,14 @@ type
 
   TTemplateEvaluationOptions = set of TTemplateEvaluationOption;
 
-  TTemplateResolver = reference to function(AContext: ITemplateContext; const AName: string): ITemplate;
+  TTemplateResolver = reference to function(const AContext: ITemplateContext; const AName: string): ITemplate;
 
   ITemplateContext = interface
     ['{979D955C-B4BD-46BB-9430-1E74CBB999D4}']
 
     function TryGetTemplate(const AName: string; out ATemplate: ITemplate): boolean;
     function GetTemplate(const AName: string): ITemplate;
-    procedure SetTemplate(const AName: string; ATemplate: ITemplate);
+    procedure SetTemplate(const AName: string; const ATemplate: ITemplate);
 
     function GetTemplateResolver: TTemplateResolver;
     procedure SetTemplateResolver(const AResolver: TTemplateResolver);
@@ -107,7 +107,7 @@ type
     procedure SetScriptEndToken(const AToken: string);
 
     function TryGetFunction(const AName: string; out AFunction: TArray<TRttiMethod>): boolean;
-    procedure SetFunctions(AFunctions: ITemplateFunctions);
+    procedure SetFunctions(const AFunctions: ITemplateFunctions);
     function GetFunctions(): ITemplateFunctions; overload;
 
     function GetMaxRunTimeMs: integer;
@@ -237,7 +237,7 @@ type
 
     function TryGetTemplate(const AName: string; out ATemplate: ITemplate): boolean;
     function GetTemplate(const AName: string): ITemplate;
-    procedure SetTemplate(const AName: string; ATemplate: ITemplate);
+    procedure SetTemplate(const AName: string; const ATemplate: ITemplate);
 
     function GetTemplateResolver: TTemplateResolver;
     procedure SetTemplateResolver(const AResolver: TTemplateResolver);
@@ -270,7 +270,7 @@ type
     procedure SetVariableEncoder(const AEncoder: TTemplateEncodeFunction);
 
     function TryGetFunction(const AName: string; out AFunction: TArray<TRttiMethod>): boolean;
-    procedure SetFunctions(AFunctions: ITemplateFunctions);
+    procedure SetFunctions(const AFunctions: ITemplateFunctions);
     function GetFunctions(): ITemplateFunctions; overload;
 
     function GetNewLine: string;
@@ -299,7 +299,7 @@ end;
 
 { TTemplateContext }
 
-procedure TTemplateContext.SetTemplate(const AName: string; ATemplate: ITemplate);
+procedure TTemplateContext.SetTemplate(const AName: string; const ATemplate: ITemplate);
 begin
   FLock.Enter;
   try
@@ -490,7 +490,7 @@ begin
   FEncoding := AEncoding;
 end;
 
-procedure TTemplateContext.SetFunctions(AFunctions: ITemplateFunctions);
+procedure TTemplateContext.SetFunctions(const AFunctions: ITemplateFunctions);
 begin
   FFunctions := AFunctions;
   FFunctionsSet := true;

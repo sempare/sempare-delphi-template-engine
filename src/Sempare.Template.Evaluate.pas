@@ -90,46 +90,46 @@ type
 
     function HasBreakOrContinue: boolean; inline;
     function EncodeVariable(const AValue: TValue): TValue;
-    procedure CheckRunTime(APosition: IPosition);
-    function ExprListArgs(AExprList: IExprList): TArray<TValue>;
-    function Invoke(AFuncCall: IFunctionCallExpr; const AArgs: TArray<TValue>; out AHasResult: boolean): TValue; overload;
-    function Invoke(AExpr: IMethodCallExpr; const AObject: TValue; const AArgs: TArray<TValue>; out AHasResult: boolean): TValue; overload;
+    procedure CheckRunTime(const APosition: IPosition);
+    function ExprListArgs(const AExprList: IExprList): TArray<TValue>;
+    function Invoke(const AFuncCall: IFunctionCallExpr; const AArgs: TArray<TValue>; out AHasResult: boolean): TValue; overload;
+    function Invoke(const AExpr: IMethodCallExpr; const AObject: TValue; const AArgs: TArray<TValue>; out AHasResult: boolean): TValue; overload;
 
   public
-    constructor Create(AContext: ITemplateContext; const AValue: TValue; const AStream: TStream); overload;
-    constructor Create(AContext: ITemplateContext; const AStackFrame: TStackFrame; const AStream: TStream); overload;
+    constructor Create(const AContext: ITemplateContext; const AValue: TValue; const AStream: TStream); overload;
+    constructor Create(const AContext: ITemplateContext; const AStackFrame: TStackFrame; const AStream: TStream); overload;
     destructor Destroy; override;
 
-    procedure Visit(AExpr: IBinopExpr); overload; override;
-    procedure Visit(AExpr: IUnaryExpr); overload; override;
-    procedure Visit(AExpr: IVariableExpr); overload; override;
-    procedure Visit(AExpr: IVariableDerefExpr); overload; override;
-    procedure Visit(AExpr: IValueExpr); overload; override;
-    procedure Visit(AExprList: IExprList); overload; override;
-    procedure Visit(AExpr: ITernaryExpr); overload; override;
-    procedure Visit(AExpr: IEncodeExpr); overload; override;
-    procedure Visit(AExpr: IFunctionCallExpr); overload; override;
-    procedure Visit(AExpr: IMethodCallExpr); overload; override;
-    procedure Visit(AExpr: IArrayExpr); overload; override;
+    procedure Visit(const AExpr: IBinopExpr); overload; override;
+    procedure Visit(const AExpr: IUnaryExpr); overload; override;
+    procedure Visit(const AExpr: IVariableExpr); overload; override;
+    procedure Visit(const AExpr: IVariableDerefExpr); overload; override;
+    procedure Visit(const AExpr: IValueExpr); overload; override;
+    procedure Visit(const AExprList: IExprList); overload; override;
+    procedure Visit(const AExpr: ITernaryExpr); overload; override;
+    procedure Visit(const AExpr: IEncodeExpr); overload; override;
+    procedure Visit(const AExpr: IFunctionCallExpr); overload; override;
+    procedure Visit(const AExpr: IMethodCallExpr); overload; override;
+    procedure Visit(const AExpr: IArrayExpr); overload; override;
 
-    procedure Visit(AStmt: IAssignStmt); overload; override;
-    procedure Visit(AStmt: IContinueStmt); overload; override;
-    procedure Visit(AStmt: IBreakStmt); overload; override;
-    procedure Visit(AStmt: IEndStmt); overload; override;
-    procedure Visit(AStmt: IIncludeStmt); overload; override;
-    procedure Visit(AStmt: IRequireStmt); overload; override;
+    procedure Visit(const AStmt: IAssignStmt); overload; override;
+    procedure Visit(const AStmt: IContinueStmt); overload; override;
+    procedure Visit(const AStmt: IBreakStmt); overload; override;
+    procedure Visit(const AStmt: IEndStmt); overload; override;
+    procedure Visit(const AStmt: IIncludeStmt); overload; override;
+    procedure Visit(const AStmt: IRequireStmt); overload; override;
 
-    procedure Visit(AStmt: IPrintStmt); overload; override;
-    procedure Visit(AStmt: IIfStmt); overload; override;
-    procedure Visit(AStmt: IWhileStmt); overload; override;
-    procedure Visit(AStmt: IForInStmt); overload; override;
-    procedure Visit(AStmt: IForRangeStmt); overload; override;
+    procedure Visit(const AStmt: IPrintStmt); overload; override;
+    procedure Visit(const AStmt: IIfStmt); overload; override;
+    procedure Visit(const AStmt: IWhileStmt); overload; override;
+    procedure Visit(const AStmt: IForInStmt); overload; override;
+    procedure Visit(const AStmt: IForRangeStmt); overload; override;
 
-    procedure Visit(AStmt: IProcessTemplateStmt); overload; override;
-    procedure Visit(AStmt: IDefineTemplateStmt); overload; override;
-    procedure Visit(AStmt: IWithStmt); overload; override;
-    procedure Visit(AStmt: ICycleStmt); overload; override;
-    procedure Visit(AStmt: IDebugStmt); overload; override;
+    procedure Visit(const AStmt: IProcessTemplateStmt); overload; override;
+    procedure Visit(const AStmt: IDefineTemplateStmt); overload; override;
+    procedure Visit(const AStmt: IWithStmt); overload; override;
+    procedure Visit(const AStmt: ICycleStmt); overload; override;
+    procedure Visit(const AStmt: IDebugStmt); overload; override;
   end;
 
 implementation
@@ -170,7 +170,7 @@ end;
 
 { TEvaluationTemplateVisitor }
 
-constructor TEvaluationTemplateVisitor.Create(AContext: ITemplateContext; const AValue: TValue; const AStream: TStream);
+constructor TEvaluationTemplateVisitor.Create(const AContext: ITemplateContext; const AValue: TValue; const AStream: TStream);
 begin
   Create(AContext, TStackFrame.Create(AValue, nil), AStream);
 end;
@@ -624,13 +624,13 @@ begin
   end;
 end;
 
-procedure TEvaluationTemplateVisitor.CheckRunTime(APosition: IPosition);
+procedure TEvaluationTemplateVisitor.CheckRunTime(const APosition: IPosition);
 begin
   if FStopWatch.ElapsedMilliseconds > FContext.MaxRunTimeMs then
     RaiseError(APosition, SMaxRuntimeOfMsHasBeenExceeded, [FContext.MaxRunTimeMs]);
 end;
 
-constructor TEvaluationTemplateVisitor.Create(AContext: ITemplateContext; const AStackFrame: TStackFrame; const AStream: TStream);
+constructor TEvaluationTemplateVisitor.Create(const AContext: ITemplateContext; const AStackFrame: TStackFrame; const AStream: TStream);
 var
   LApply: ITemplateContextForScope;
 begin
@@ -674,7 +674,7 @@ begin
   exit(FContext.VariableEncoder(AsString(AValue, FContext)));
 end;
 
-function TEvaluationTemplateVisitor.ExprListArgs(AExprList: IExprList): TArray<TValue>;
+function TEvaluationTemplateVisitor.ExprListArgs(const AExprList: IExprList): TArray<TValue>;
 var
   LIdx: integer;
   LCount: integer;
@@ -920,7 +920,7 @@ begin
   end;
 end;
 
-function TEvaluationTemplateVisitor.Invoke(AFuncCall: IFunctionCallExpr; const AArgs: TArray<TValue>; out AHasResult: boolean): TValue;
+function TEvaluationTemplateVisitor.Invoke(const AFuncCall: IFunctionCallExpr; const AArgs: TArray<TValue>; out AHasResult: boolean): TValue;
 var
   LMethod: TRttiMethod;
 
@@ -968,7 +968,7 @@ begin
   end;
 end;
 
-function TEvaluationTemplateVisitor.Invoke(AExpr: IMethodCallExpr; const AObject: TValue; const AArgs: TArray<TValue>; out AHasResult: boolean): TValue;
+function TEvaluationTemplateVisitor.Invoke(const AExpr: IMethodCallExpr; const AObject: TValue; const AArgs: TArray<TValue>; out AHasResult: boolean): TValue;
 var
   LObjType: TRttiType;
 begin

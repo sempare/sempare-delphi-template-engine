@@ -418,7 +418,7 @@ var
   ctx: ITemplateContext;
 begin
   ctx := Template.Context;
-  ctx.TemplateResolver := function(AContext: ITemplateContext; const ATemplate: string): ITemplate
+  ctx.TemplateResolver := function(const AContext: ITemplateContext; const ATemplate: string): ITemplate
     begin
       exit(Template.parse(AContext, '_' + ATemplate + '_'));
     end;

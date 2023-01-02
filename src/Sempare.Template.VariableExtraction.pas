@@ -60,29 +60,29 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    procedure Visit(AExpr: IBinopExpr); overload; override;
-    procedure Visit(AExpr: IUnaryExpr); overload; override;
-    procedure Visit(AExpr: IVariableExpr); overload; override;
-    procedure Visit(AExpr: IVariableDerefExpr); overload; override;
-    procedure Visit(AExprList: IExprList); overload; override;
-    procedure Visit(AExpr: IEncodeExpr); overload; override;
-    procedure Visit(AExpr: ITernaryExpr); overload; override;
-    procedure Visit(AExpr: IArrayExpr); overload; override;
+    procedure Visit(const AExpr: IBinopExpr); overload; override;
+    procedure Visit(const AExpr: IUnaryExpr); overload; override;
+    procedure Visit(const AExpr: IVariableExpr); overload; override;
+    procedure Visit(const AExpr: IVariableDerefExpr); overload; override;
+    procedure Visit(const AExprList: IExprList); overload; override;
+    procedure Visit(const AExpr: IEncodeExpr); overload; override;
+    procedure Visit(const AExpr: ITernaryExpr); overload; override;
+    procedure Visit(const AExpr: IArrayExpr); overload; override;
 
-    procedure Visit(AStmt: IAssignStmt); overload; override;
-    procedure Visit(AStmt: IIncludeStmt); overload; override;
-    procedure Visit(AStmt: IRequireStmt); overload; override;
-    procedure Visit(AStmt: IPrintStmt); overload; override;
-    procedure Visit(AStmt: IIfStmt); overload; override;
-    procedure Visit(AStmt: IWhileStmt); overload; override;
-    procedure Visit(AStmt: IForInStmt); overload; override;
-    procedure Visit(AStmt: IForRangeStmt); overload; override;
-    procedure Visit(AStmt: IFunctionCallExpr); overload; override;
-    procedure Visit(AStmt: IMethodCallExpr); overload; override;
+    procedure Visit(const AStmt: IAssignStmt); overload; override;
+    procedure Visit(const AStmt: IIncludeStmt); overload; override;
+    procedure Visit(const AStmt: IRequireStmt); overload; override;
+    procedure Visit(const AStmt: IPrintStmt); overload; override;
+    procedure Visit(const AStmt: IIfStmt); overload; override;
+    procedure Visit(const AStmt: IWhileStmt); overload; override;
+    procedure Visit(const AStmt: IForInStmt); overload; override;
+    procedure Visit(const AStmt: IForRangeStmt); overload; override;
+    procedure Visit(const AStmt: IFunctionCallExpr); overload; override;
+    procedure Visit(const AStmt: IMethodCallExpr); overload; override;
 
-    procedure Visit(AStmt: IProcessTemplateStmt); overload; override;
-    procedure Visit(AStmt: IDefineTemplateStmt); overload; override;
-    procedure Visit(AStmt: IWithStmt); overload; override;
+    procedure Visit(const AStmt: IProcessTemplateStmt); overload; override;
+    procedure Visit(const AStmt: IDefineTemplateStmt); overload; override;
+    procedure Visit(const AStmt: IWithStmt); overload; override;
 
     property Variables: TArray<string> read GetVariables;
     property Functions: TArray<string> read GetFunctions;
@@ -117,14 +117,14 @@ begin
   exit(FVariables.ToArray);
 end;
 
-procedure TTemplateReferenceExtractionVisitor.Visit(AExpr: ITernaryExpr);
+procedure TTemplateReferenceExtractionVisitor.Visit(const AExpr: ITernaryExpr);
 begin
   AcceptVisitor(AExpr.Condition, self);
   AcceptVisitor(AExpr.TrueExpr, self);
   AcceptVisitor(AExpr.FalseExpr, self);
 end;
 
-procedure TTemplateReferenceExtractionVisitor.Visit(AExpr: IArrayExpr);
+procedure TTemplateReferenceExtractionVisitor.Visit(const AExpr: IArrayExpr);
 var
   LIdx: integer;
 begin
@@ -134,36 +134,36 @@ begin
   end;
 end;
 
-procedure TTemplateReferenceExtractionVisitor.Visit(AStmt: IAssignStmt);
+procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: IAssignStmt);
 begin
   if not FLocalVariables.contains(AStmt.Variable) then
     FLocalVariables.Add(AStmt.Variable);
   AcceptVisitor(AStmt.Expr, self);
 end;
 
-procedure TTemplateReferenceExtractionVisitor.Visit(AExpr: IEncodeExpr);
+procedure TTemplateReferenceExtractionVisitor.Visit(const AExpr: IEncodeExpr);
 begin
   AcceptVisitor(AExpr.Expr, self);
 end;
 
-procedure TTemplateReferenceExtractionVisitor.Visit(AExpr: IBinopExpr);
+procedure TTemplateReferenceExtractionVisitor.Visit(const AExpr: IBinopExpr);
 begin
   AcceptVisitor(AExpr.LeftExpr, self);
   AcceptVisitor(AExpr.RightExpr, self);
 end;
 
-procedure TTemplateReferenceExtractionVisitor.Visit(AExpr: IUnaryExpr);
+procedure TTemplateReferenceExtractionVisitor.Visit(const AExpr: IUnaryExpr);
 begin
   AcceptVisitor(AExpr.Condition, self);
 end;
 
-procedure TTemplateReferenceExtractionVisitor.Visit(AExpr: IVariableDerefExpr);
+procedure TTemplateReferenceExtractionVisitor.Visit(const AExpr: IVariableDerefExpr);
 begin
   AcceptVisitor(AExpr.Variable, self);
   AcceptVisitor(AExpr.DerefExpr, self);
 end;
 
-procedure TTemplateReferenceExtractionVisitor.Visit(AExprList: IExprList);
+procedure TTemplateReferenceExtractionVisitor.Visit(const AExprList: IExprList);
 var
   i: integer;
 begin
@@ -173,7 +173,7 @@ begin
   end;
 end;
 
-procedure TTemplateReferenceExtractionVisitor.Visit(AStmt: IForRangeStmt);
+procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: IForRangeStmt);
 begin
   if not FLocalVariables.contains(AStmt.Variable) then
     FLocalVariables.Add(AStmt.Variable);
@@ -183,37 +183,37 @@ begin
   AcceptVisitor(AStmt.Container, self);
 end;
 
-procedure TTemplateReferenceExtractionVisitor.Visit(AStmt: IMethodCallExpr);
+procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: IMethodCallExpr);
 begin
   Visit(AStmt.ObjectExpr);
   Visit(AStmt.ExprList);
 end;
 
-procedure TTemplateReferenceExtractionVisitor.Visit(AStmt: IProcessTemplateStmt);
+procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: IProcessTemplateStmt);
 begin
   AcceptVisitor(AStmt.Container, self);
 end;
 
-procedure TTemplateReferenceExtractionVisitor.Visit(AStmt: IDefineTemplateStmt);
+procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: IDefineTemplateStmt);
 begin
   AcceptVisitor(AStmt.Name, self);
   AcceptVisitor(AStmt.Container, self);
 end;
 
-procedure TTemplateReferenceExtractionVisitor.Visit(AStmt: IWithStmt);
+procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: IWithStmt);
 begin
   AcceptVisitor(AStmt.Expr, self);
   AcceptVisitor(AStmt.Container, self);
 end;
 
-procedure TTemplateReferenceExtractionVisitor.Visit(AStmt: IFunctionCallExpr);
+procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: IFunctionCallExpr);
 begin
   if not FFunctions.contains(AStmt.FunctionInfo[0].Name) then
     FFunctions.Add(AStmt.FunctionInfo[0].Name);
   Visit(AStmt.ExprList);
 end;
 
-procedure TTemplateReferenceExtractionVisitor.Visit(AStmt: IForInStmt);
+procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: IForInStmt);
 begin
   if not FLocalVariables.contains(AStmt.Variable) then
     FLocalVariables.Add(AStmt.Variable);
@@ -222,12 +222,12 @@ begin
   AcceptVisitor(AStmt.Container, self);
 end;
 
-procedure TTemplateReferenceExtractionVisitor.Visit(AStmt: IIncludeStmt);
+procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: IIncludeStmt);
 begin
   AcceptVisitor(AStmt.Expr, self);
 end;
 
-procedure TTemplateReferenceExtractionVisitor.Visit(AStmt: IRequireStmt);
+procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: IRequireStmt);
 var
   LIdx: integer;
 begin
@@ -237,12 +237,12 @@ begin
   end;
 end;
 
-procedure TTemplateReferenceExtractionVisitor.Visit(AStmt: IPrintStmt);
+procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: IPrintStmt);
 begin
   AcceptVisitor(AStmt.Expr, self);
 end;
 
-procedure TTemplateReferenceExtractionVisitor.Visit(AStmt: IIfStmt);
+procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: IIfStmt);
 begin
   AcceptVisitor(AStmt.Condition, self);
   AcceptVisitor(AStmt.TrueContainer, self);
@@ -252,13 +252,13 @@ begin
   end;
 end;
 
-procedure TTemplateReferenceExtractionVisitor.Visit(AStmt: IWhileStmt);
+procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: IWhileStmt);
 begin
   AcceptVisitor(AStmt.Condition, self);
   AcceptVisitor(AStmt.Container, self);
 end;
 
-procedure TTemplateReferenceExtractionVisitor.Visit(AExpr: IVariableExpr);
+procedure TTemplateReferenceExtractionVisitor.Visit(const AExpr: IVariableExpr);
 begin
   if FLocalVariables.contains(AExpr.Variable) then
     exit;
