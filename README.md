@@ -74,6 +74,12 @@ In the example above, you can see that the '<%' start and '%>' end the scripting
 
 **NOTE** In examples in this documentation I may use the latest Delphi syntax, e.g. inline variable declarations. This is not backward compatible as they were introduced in Delphi 10.2 and are used to shorten the code/examples being illustrated in the documentation. The codebase will attempt to be as backward compatible as possible.
 
+## Call to action
+
+Please 'star' the project on github.
+
+![](./images/sempare-template-engine-start-cta.png)
+
 ## Quickstart
 
 [Try the demo](./demo/VelocityDemo/README.md) if you want to dive in quick and play with the template engine.
