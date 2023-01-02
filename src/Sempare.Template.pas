@@ -70,6 +70,13 @@ type
   TUTF8WithoutPreambleEncoding = Sempare.Template.Context.TUTF8WithoutPreambleEncoding;
 
   Template = class
+{$IFNDEF SEMPARE_TEMPLATE_CONFIRM_LICENSE}
+{$IFDEF MSWINDOWS}
+  private
+    class var FLicenseShown: boolean;
+    class constructor Create;
+{$ENDIF}
+{$ENDIF}
   public
     class function Context(AOptions: TTemplateEvaluationOptions = []): ITemplateContext; inline; static;
     class function Parser(AContext: ITemplateContext): ITemplateParser; overload; inline; static;
@@ -127,6 +134,11 @@ type
 implementation
 
 uses
+{$IFNDEF SEMPARE_TEMPLATE_CONFIRM_LICENSE}
+{$IFDEF MSWINDOWS}
+  VCL.Dialogs,
+{$ENDIF}
+{$ENDIF}
   Sempare.Template.Evaluate,
   Sempare.Template.VariableExtraction,
   Sempare.Template.PrettyPrint;
@@ -153,6 +165,20 @@ class procedure Template.Eval<T>(AContext: ITemplateContext; ATemplate: ITemplat
 var
   LValue: TTemplateValue;
 begin
+{$IFNDEF SEMPARE_TEMPLATE_CONFIRM_LICENSE}
+{$IFDEF MSWINDOWS}
+  if not FLicenseShown then
+  begin
+    ShowMessage( //
+      'Thank you for trying the Sempare Template Engine.'#13#10#13#10 + //
+      'To supress this message, set the conditional define SEMPARE_TEMPLATE_CONFIRM_LICENSE in the project options.'#13#10#13#10 + //
+      'Please remember the library is dual licensed. You are free to use it under the GPL or you can support the project to keep it alive as per:'#13#10#13#10 + //
+      'https://github.com/sempare/sempare-delphi-template-engine/blob/master/docs/commercial.license.md' //
+      );
+    FLicenseShown := true;
+  end;
+{$ENDIF}
+{$ENDIF}
   LValue := TTemplateValue.From<T>(AValue);
   if typeinfo(T) = typeinfo(TTemplateValue) then
     LValue := LValue.AsType<TTemplateValue>();
@@ -294,6 +320,16 @@ begin
   AVariables := TTemplateReferenceExtractionVisitor(LVisitor).Variables;
   AFunctions := TTemplateReferenceExtractionVisitor(LVisitor).Functions;
 end;
+
+{$IFNDEF SEMPARE_TEMPLATE_CONFIRM_LICENSE}
+{$IFDEF MSWINDOWS}
+
+class constructor Template.Create;
+begin
+  FLicenseShown := false;
+end;
+{$ENDIF}
+{$ENDIF}
 
 class function Template.Eval(AContext: ITemplateContext; ATemplate: ITemplate): string;
 begin
