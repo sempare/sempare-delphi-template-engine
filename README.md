@@ -52,7 +52,7 @@ type
     TInformation = record
         name: string;
         favourite_sport : string;
-		count : integer;
+        count : integer;
     end;
 begin
     var tpl := Template.Parse(
