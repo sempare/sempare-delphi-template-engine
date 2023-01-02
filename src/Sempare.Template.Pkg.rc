@@ -1,0 +1,3 @@
+TSEMPAREBOOTVELOCITYTEMPLATE BITMAP "..\\images\\sempare-velocity-tpl24.bmp"
+TSEMPAREBOOTVELOCITYENGINE BITMAP "..\\images\\sempare-velocity-eval24.bmp"
+TSEMPAREBOOTVELOCITYCONTEXT BITMAP "..\\images\\sempare-velocity-context24.bmp"
