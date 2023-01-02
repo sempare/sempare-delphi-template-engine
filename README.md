@@ -52,7 +52,7 @@ type
     TInformation = record
         name: string;
         favourite_sport : string;
-		count : integer;
+        count : integer;
     end;
 begin
     var tpl := Template.Parse(
@@ -191,8 +191,8 @@ no cost to you, or you may purchase for user under the [Sempare Limited Commerci
 
 The dual-licensing scheme allows you to test the library with no restrictions, but subject to the terms of the GPL. A nominal fee is requested to support the maintenance of the library if the product is to be used in commercial products. This support fee binds you to the commercial license, removing any of the GPL restrictions, and allowing you to use the library in your products as you will.
 
-A commercial licence grants you the right to use Sempare Template in your own applications, royalty free, and without any requirement to disclose your source code nor any modifications to
-Sempare Templte to any other party. A commercial licence lasts into perpetuity, and entitles you to all future updates - free of charge.
+A commercial licence grants you the right to use Sempare Template Engine in your own applications, royalty free, and without any requirement to disclose your source code nor any modifications to
+Sempare Templte Engine to any other party. A commercial licence lasts into perpetuity, and entitles you to all future updates - free of charge.
 
 A commercial licence is provided per developer developing applications that use the Sempare Template Engine. The initial cost is $70 per developer and includes first year of support.
 For support thereafter, at your discretion, a support fee of $30 per developer per year would be appreciated (the cost of a few cups of coffee). Please contact us for site license pricing.
