@@ -45,7 +45,7 @@ uses
   DUnitX.TestFramework,
   Sempare.Template.TestIf in 'tests\Sempare.Template.TestIf.pas',
   Sempare.Template.TestContext in 'tests\Sempare.Template.TestContext.pas',
-  Sempare.Template.TestNewLineOption.Test in 'tests\Sempare.Template.TestNewLineOption.pas',
+  Sempare.Template.TestNewLineOption in 'tests\Sempare.Template.TestNewLineOption.pas',
   Sempare.Template.TestCall in 'tests\Sempare.Template.TestCall.pas',
   Sempare.Template.TestArr in 'tests\Sempare.Template.TestArr.pas',
   Sempare.Template.TestDictionary in 'tests\Sempare.Template.TestDictionary.pas',

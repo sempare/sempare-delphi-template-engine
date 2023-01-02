@@ -49,10 +49,10 @@
         <SanitizedProjectName>Sempare_Template_Tester</SanitizedProjectName>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
-        <DCC_UsePackage>DBXSqliteDriver;RESTComponents;OmniThreadLibraryRuntime;VCLTMSFNCChartPkgDXE12;DBXInterBaseDriver;sgcWebSocketsD10_3;FlexCel_Pdf;vclactnband;FMX_FlexCel_Core;vclFireDAC;tethering;svnui;JvGlobus;FireDACADSDriver;JvPluginSystem;JvMM;Sempare.Boot.Template.Velocity.Pkg;TMSScripter;FMXTMSFNCUIPackPkgDXE12;vcltouch;JvBands;vcldb;bindcompfmx;svn;JvJans;JvNet;TMSWEBCorePkgLibDXE12;SKIA_FlexCel_Core;inetdb;JvAppFrm;FlexCel_Report;Sempare.Boot.Template.Velocity.Components.Pkg;FMXTMSFNCBloxPkgDXE12;FmxTeeUI;JvDotNetCtrls;TMSScripter_Memo;fmx;FireDACIBDriver;fmxdae;VCL_FlexCel_Components;vquery260;JvWizards;dacvcl260;dbexpress;IndyCore;vclx;JvPageComps;dsnap;TMSMQTTPkgDEDXE12;unidac260;FireDACCommon;FrameStandPackage_10_3;JvDB;VCLTMSFNCUIPackPkgDXE12;VCLTMSFNCCloudPackPkgDXE12;RESTBackendComponents;Sempare.Boot.VFS.Pkg;VCLRESTComponents;soapserver;Sempare.Boot.AWS.Common.Pkg;JclDeveloperTools;TMSScripter_Legacy;TMSScripter_VCL;vclie;bindengine;DBXMySQLDriver;CloudService;JvCmp;FireDACMySQLDriver;JvHMI;VCLTMSFNCBloxPkgDXE12;FireDACCommonODBC;FireDACCommonDriver;VCLTMSFNCCorePkgDXE12;inet;bindcompdbx;JvCustom;vcl;ADODataProvider;indy10sbridge260;JvXPCtrls;IndySystem;VCLTMSFNCMapsPkgDXE12;dsnapcon;FmxTrayIcon;Sempare.Boot.Json.Pkg;FireDACDataProvider;FireDACMSAccDriver;fmxFireDAC;FMXTMSFNCCorePkgDXE12;vclimg;TeeDB;FireDAC;Jcl;FlexCel_XlsAdapter;JvCore;TMSMQTTPkgDXE12;Sempare.Boot.Rtti.Pkg;FMXTMSFNCMapsPkgDXE12;DBXDataProvider;JvCrypt;FireDACSqliteDriver;FireDACPgDriver;unidacvcl260;FMXTee;crcontrols260;soaprtl;DbxCommonDriver;JvDlgs;JvRuntimeDesign;JvManagedThreads;Tee;FlexCel_Core;xmlrtl;soapmidas;JvTimeFramework;fmxobj;vclwinx;dac260;rtl;TMSScripter_IDE;DbxClientDriver;CustomIPTransport;vcldsnap;JvSystem;JvStdCtrls;DOSCommandDR;Sempare.Boot.Log.Pkg;bindcomp;appanalytics;FMXTMSFNCCloudPackPkgDXE12;TMSWEBCorePkgDXE12;bindcompvcl;TeeUI;FMX_FlexCel_Components;EntityDac;JvDocking;dbxcds;VclSmp;JvPascalInterpreter;adortl;VCL_FlexCel_Core;FixInsight_10_3;FlexCel_Render;JclVcl;UniDACDataProvider;unidacfmx260;TMSFMXPackPkgDXE12;sbridge260;dsnapxml;Sempare.Boot.Common.Pkg;dbrtl;inetdbxpress;IndyProtocols;JvControls;JvPrintPreview;FMXTMSFNCChartPkgDXE12;JclContainers;OnGuardFMXDR;fmxase;$(DCC_UsePackage)</DCC_UsePackage>
+        <DCC_UsePackage>DBXSqliteDriver;RESTComponents;vclFireDAC;tethering;FireDACADSDriver;vcltouch;vcldb;bindcompfmx;inetdb;fmx;FireDACIBDriver;fmxdae;vquery260;dacvcl260;dbexpress;vclx;dsnap;FireDACCommon;RESTBackendComponents;VCLRESTComponents;soapserver;vclie;bindengine;DBXMySQLDriver;CloudService;FireDACMySQLDriver;FireDACCommonDriver;inet;bindcompdbx;vcl;ADODataProvider;dsnapcon;FireDACDataProvider;FireDACMSAccDriver;vclimg;FireDAC;DBXDataProvider;FireDACSqliteDriver;FireDACPgDriver;crcontrols260;soaprtl;DbxCommonDriver;xmlrtl;soapmidas;fmxobj;vclwinx;dac260;rtl;DbxClientDriver;CustomIPTransport;vcldsnap;DOSCommandDR;bindcomp;appanalytics;bindcompvcl;dbxcds;adortl;dsnapxml;dbrtl;inetdbxpress;fmxase;$(DCC_UsePackage)</DCC_UsePackage>
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
         <BT_BuildType>Debug</BT_BuildType>
-        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
+        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.5.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=ltd.sempare.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.5.0.0;Comments=</VerInfo_Keys>
         <VerInfo_Locale>1033</VerInfo_Locale>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1)'!=''">
@@ -76,31 +76,31 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
-        <DCCReference Include="src\Sempare.Template.TestIf.pas"/>
-        <DCCReference Include="src\Sempare.Template.TestContext.pas"/>
-        <DCCReference Include="src\Sempare.Template.TestNewLineOption.pas"/>
-        <DCCReference Include="src\Sempare.Template.TestCall.pas"/>
-        <DCCReference Include="src\Sempare.Template.TestArr.pas"/>
-        <DCCReference Include="src\Sempare.Template.TestDictionary.pas"/>
-        <DCCReference Include="src\Sempare.Template.TestJson.pas"/>
-        <DCCReference Include="src\Sempare.Template.TestAssign.pas"/>
-        <DCCReference Include="src\Sempare.Template.TestExpr.pas"/>
-        <DCCReference Include="src\Sempare.Template.TestInclude.pas"/>
-        <DCCReference Include="src\Sempare.Template.TestDeref.pas"/>
-        <DCCReference Include="src\Sempare.Template.TestFor.pas"/>
-        <DCCReference Include="src\Sempare.Template.Test.pas"/>
-        <DCCReference Include="src\Sempare.Template.TestStackFrame.pas"/>
-        <DCCReference Include="src\Sempare.Template.TestLexer.pas"/>
-        <DCCReference Include="src\Sempare.Template.TestFunctions.pas"/>
-        <BuildConfiguration Include="Release">
-            <Key>Cfg_2</Key>
-            <CfgParent>Base</CfgParent>
-        </BuildConfiguration>
+        <DCCReference Include="tests\Sempare.Template.TestIf.pas"/>
+        <DCCReference Include="tests\Sempare.Template.TestContext.pas"/>
+        <DCCReference Include="tests\Sempare.Template.TestNewLineOption.pas"/>
+        <DCCReference Include="tests\Sempare.Template.TestCall.pas"/>
+        <DCCReference Include="tests\Sempare.Template.TestArr.pas"/>
+        <DCCReference Include="tests\Sempare.Template.TestDictionary.pas"/>
+        <DCCReference Include="tests\Sempare.Template.TestJson.pas"/>
+        <DCCReference Include="tests\Sempare.Template.TestAssign.pas"/>
+        <DCCReference Include="tests\Sempare.Template.TestExpr.pas"/>
+        <DCCReference Include="tests\Sempare.Template.TestInclude.pas"/>
+        <DCCReference Include="tests\Sempare.Template.TestDeref.pas"/>
+        <DCCReference Include="tests\Sempare.Template.TestFor.pas"/>
+        <DCCReference Include="tests\Sempare.Template.Test.pas"/>
+        <DCCReference Include="tests\Sempare.Template.TestStackFrame.pas"/>
+        <DCCReference Include="tests\Sempare.Template.TestLexer.pas"/>
+        <DCCReference Include="tests\Sempare.Template.TestFunctions.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
         <BuildConfiguration Include="Debug">
             <Key>Cfg_1</Key>
+            <CfgParent>Base</CfgParent>
+        </BuildConfiguration>
+        <BuildConfiguration Include="Release">
+            <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
         </BuildConfiguration>
     </ItemGroup>
@@ -160,16 +160,45 @@
                         <Operation>1</Operation>
                     </Platform>
                 </DeployClass>
+                <DeployClass Name="UWP_DelphiLogo150">
+                    <Platform Name="Win32">
+                        <RemoteDir>Assets</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="Win64">
+                        <RemoteDir>Assets</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="UWP_DelphiLogo44">
+                    <Platform Name="Win32">
+                        <RemoteDir>Assets</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="Win64">
+                        <RemoteDir>Assets</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <ProjectRoot Platform="OSX32" Name="$(PROJECTNAME)"/>
+                <ProjectRoot Platform="OSX64" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Win32" Name="$(PROJECTNAME)"/>
+                <ProjectRoot Platform="Android64" Name="$(PROJECTNAME)"/>
+                <ProjectRoot Platform="Android" Name="$(PROJECTNAME)"/>
+                <ProjectRoot Platform="OSXARM64" Name="$(PROJECTNAME)"/>
+                <ProjectRoot Platform="Win64" Name="$(PROJECTNAME)"/>
+                <ProjectRoot Platform="Linux64" Name="$(PROJECTNAME)"/>
+                <ProjectRoot Platform="iOSDevice32" Name="$(PROJECTNAME).app"/>
+                <ProjectRoot Platform="iOSDevice64" Name="$(PROJECTNAME).app"/>
+                <ProjectRoot Platform="iOSSimulator" Name="$(PROJECTNAME).app"/>
             </Deployment>
             <Platforms>
                 <Platform value="Android">False</Platform>
                 <Platform value="Android64">False</Platform>
-                <Platform value="iOSDevice32">False</Platform>
                 <Platform value="iOSDevice64">False</Platform>
-                <Platform value="iOSSimulator">False</Platform>
-                <Platform value="OSX32">False</Platform>
                 <Platform value="OSX64">False</Platform>
+                <Platform value="OSXARM64">False</Platform>
+                <Platform value="Linux64">False</Platform>
                 <Platform value="Win32">True</Platform>
                 <Platform value="Win64">False</Platform>
             </Platforms>
