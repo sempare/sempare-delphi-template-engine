@@ -30,7 +30,7 @@
  * limitations under the License.                                                                   *
  *                                                                                                  *
  *************************************************************************************************%*)
-unit Sempare.Template.Context.Test;
+unit Sempare.Template.TestContext;
 
 interface
 

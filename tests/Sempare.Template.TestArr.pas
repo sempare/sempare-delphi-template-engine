@@ -30,7 +30,7 @@
  * limitations under the License.                                                                   *
  *                                                                                                  *
  *************************************************************************************************%*)
-unit Sempare.Template.Test.Arr;
+unit Sempare.Template.TestArr;
 
 interface
 

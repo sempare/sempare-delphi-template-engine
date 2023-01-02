@@ -30,7 +30,7 @@
  * limitations under the License.                                                                   *
  *                                                                                                  *
  *************************************************************************************************%*)
-unit Sempare.Template.Functions.Test;
+unit Sempare.Template.TestFunctions;
 
 interface
 
@@ -317,7 +317,7 @@ begin
   try
     Assert.AreEqual('System.String', Template.Eval('<% typeof(''HELLO'') %>'));
     Assert.AreEqual('System.Extended', Template.Eval('<% typeof(123) %>'));
-    Assert.AreEqual('Sempare.Template.Functions.Test.TMyType', Template.Eval('<% typeof(_) %>', MyData))
+    Assert.AreEqual('Sempare.Template.TestFunctions.TMyType', Template.Eval('<% typeof(_) %>', MyData))
   finally
     MyData.Free;
   end;
@@ -336,6 +336,6 @@ end;
 
 initialization
 
-// TDUnitX.RegisterTestFixture(TFunctionTest);
+TDUnitX.RegisterTestFixture(TFunctionTest);
 
 end.

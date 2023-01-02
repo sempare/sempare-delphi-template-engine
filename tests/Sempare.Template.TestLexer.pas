@@ -30,7 +30,7 @@
  * limitations under the License.                                                                   *
  *                                                                                                  *
  *************************************************************************************************%*)
-unit Sempare.Template.Lexer.Test;
+unit Sempare.Template.TestLexer;
 
 interface
 

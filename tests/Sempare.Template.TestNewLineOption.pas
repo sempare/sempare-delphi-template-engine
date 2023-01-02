@@ -30,7 +30,7 @@
  * limitations under the License.                                                                   *
  *                                                                                                  *
  *************************************************************************************************%*)
-unit Sempare.Template.NewLineOption.Test;
+unit Sempare.Template.TestNewLineOption;
 
 interface
 
@@ -258,5 +258,9 @@ begin
   s := Template.Eval(#$D#$A'Value: <% value %>'#$D#$A#$D#$A'Description: <% description %>'#$D#$A, r);
   Assert.AreEqual(#$D#$A'Value: a value'#$D#$A#$D#$A'Description: some desc'#$D#$A, s);
 end;
+
+initialization
+
+TDUnitX.RegisterTestFixture(TTestNewLineOption);
 
 end.

@@ -30,7 +30,7 @@
  * limitations under the License.                                                                   *
  *                                                                                                  *
  *************************************************************************************************%*)
-unit Sempare.Template.StackFrame.Test;
+unit Sempare.Template.TestStackFrame;
 
 interface
 
