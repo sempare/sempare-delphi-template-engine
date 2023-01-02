@@ -240,8 +240,16 @@ begin
   x.range := TList<integer>.Create;
   try
     x.range.AddRange([3, 5, 7, 9]);
-    c := Template.parse('<% for i in range %><li><%i%></li><%onbegin%><ul><%onend%></ul><%onempty%>empty<% end %>');
+    c := Template.parse('<% for i in range %><li><%i%></li><%onbegin%><ul><%onend%></ul><%onempty%>empty<%end%>');
     Assert.AreEqual('<ul><li>3</li><li>5</li><li>7</li><li>9</li></ul>', Template.Eval(c, x));
+
+    c := Template.parse('<% for i in range %><%i%><%betweenitems%>|<%onbegin%>begin<%onend%>end<%onempty%>empty<%end%>');
+    Assert.AreEqual('begin3|5|7|9end', Template.Eval(c, x));
+
+    x.range.Clear;
+    c := Template.parse('<% for i in range %><li><%i%></li><%onbegin%><ul><%onend%></ul><%onempty%>empty<% end %>');
+    Assert.AreEqual('empty', Template.Eval(c, x));
+
   finally
     x.range.Free;
   end;
@@ -279,6 +287,9 @@ begin
 
   c := Template.parse('<% for i := 7 to 6 %><li><%i%></li><%onbegin%><ul><%onend%></ul><%onempty%>empty<% end %>');
   Assert.AreEqual('empty', Template.Eval(c));
+
+  c := Template.parse('<% for i := 7 to 12 step 2 %><%i%><%betweenitems%>|<%onbegin%>begin<%onend%>end<%onempty%>empty<% end %>');
+  Assert.AreEqual('begin7|9|11end', Template.Eval(c));
 end;
 
 procedure TTestTemplateFor.TestForRangeWithStep;
@@ -363,6 +374,9 @@ begin
 
   c := Template.parse('<% i := 0%><% while i < 0 %><li><%i%><% i := i + 1%></li><%onbegin%><ul><%onend%></ul><%onempty%>empty<% end %>');
   Assert.AreEqual('empty', Template.Eval(c));
+
+  c := Template.parse('<% i := 0%><% while i < 3 %><%i%><% i := i + 1%><%betweenitems%>,<%onbegin%>begin<%onend%>end<%onempty%>empty<% end %>');
+  Assert.AreEqual('begin0,1,2end', Template.Eval(c));
 end;
 
 procedure TTestTemplateFor.TestWithEmptyInlineArray;

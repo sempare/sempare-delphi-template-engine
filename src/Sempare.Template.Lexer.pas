@@ -676,6 +676,7 @@ AddHashedKeyword('div', vsDiv);
 AddHashedKeyword('onbegin', vsOnBegin);
 AddHashedKeyword('onend', vsOnEnd);
 AddHashedKeyword('onempty', vsOnEmpty);
+AddHashedKeyword('betweenitems', vsBetweenItem);
 
 AddSymKeyword('ScriptStartToken', VsStartScript);
 AddSymKeyword('ScriptEndToken', VsEndScript);
