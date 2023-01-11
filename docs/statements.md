@@ -14,6 +14,7 @@ Copyright (c) 2019-2023 [Sempare Limited](http://www.sempare.ltd)
 8. [template](#template)
 9. [require](#require)
 10. [ignorenl](#ignorenl)
+11. [cycle](#cycle)
 
 ### print
 
@@ -82,9 +83,9 @@ decreasing integers from 10 down to 1
 
 **NOTE** Loop variables can be updated within the scope of the block without the loop integrity being compromised. 
 
-You can change the _step>_ interval as follows:
+You can change the _step_ interval as follows:
 ```
-<% for i := 1 to 10 step 2%>
+<% for i := 1 to 10 step 2 %>
     number <% i %>
 <% end %>
 ```
@@ -334,3 +335,67 @@ This would yield something like
 ```
 
 The _eoAllowIgnoreNL_ must be provided in the Context.Options or via Template.Eval() options.
+
+### cycle
+
+This allows for values to cycle when rendering content. e.g. 
+
+```
+<% for person in people %>
+          <tr class="<% cycle ('odd-row','even-row') %>">
+              <td><% person.firstname %></td>
+              <td><% person.lastname %></td>
+          </tr>
+    <% onbegin %>
+        <table>
+            <tr>
+                <th>First Name</th>
+                <th>Last Name</th>
+            </tr>
+    <% onend %>
+        </table>
+    <% onempty %>
+       There are no entries
+</% end%>
+```
+
+Given a 'people' structure:
+```
+type
+    TPerson = class
+    public:
+        firstname:string;
+        lastname: string;
+        constructor Create(const AFirstName, ALastName:string);
+    end;
+    
+var
+    LPeople := TObjectList<TPerson>.Create;
+    // ...
+    LPeople.Add(TPerson.Create('Mary', 'Smith'));
+    LPeople.Add(TPerson.Create('Peter', 'Pan'));
+    LPeople.Add(TPerson.Create('Joe', 'Bloggs'));
+    // ...
+```
+
+would yield something like:
+```
+    <table>
+        <tr>
+            <th>First Name</th>
+            <th>Last Name</th>
+        </tr>
+        <tr class="odd">
+            <td>Mary</td>
+            <td>Smith</td>
+        </tr>
+        <tr class="even">
+            <td>Peter</td>
+            <td>Pan</td>
+        </tr>
+        <tr class="odd">
+            <td>Joe</td>
+            <td>Bloggs</td>
+        </tr>
+    </table>
+```
