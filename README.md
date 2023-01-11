@@ -16,8 +16,8 @@ Open Source: https://github.com/sempare/sempare-delphi-template-engine
 3. [Features](#Features)
 4. [Objectives](#Objectives)
 5. [Requirements](#Requirements)
-6. [Installation: GetIt](#Installation:_GetIt)
-7. [Installation: Delphinus](#Installation:_Delphinus_Support)
+6. [Installation: GetIt](#Installation__GetIt)
+7. [Installation: Delphinus](#Installation__Delphinus_Support)
 8. [Feedback](#Feedback)
 9. [Statements](./docs/statements.md)
 10. [Expressions](./docs/expressions.md)
@@ -30,8 +30,7 @@ Open Source: https://github.com/sempare/sempare-delphi-template-engine
 17. [Template Patterns](./docs/template-patterns.md)
 18. [Internals](./docs/internals.md)
 19. [Restrictions/Limitations/Known Bugs](./docs/restrictions.md)
-20. [Todo](./docs/todo.md)
-21. [License](#License)
+20. [License](#License)
 
 ## Introduction
 
