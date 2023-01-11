@@ -380,22 +380,22 @@ var
 
 would yield something like:
 ```
-    <table>
+	<table>
         <tr>
             <th>First Name</th>
             <th>Last Name</th>
         </tr>
-        <tr class="odd">
+        <tr class="odd-row">
             <td>Mary</td>
             <td>Smith</td>
         </tr>
-        <tr class="even">
+        <tr class="even-row">
             <td>Peter</td>
             <td>Pan</td>
         </tr>
-        <tr class="odd">
+        <tr class="odd-row">
             <td>Joe</td>
             <td>Bloggs</td>
         </tr>
-    </table>
+	</table>
 ```
