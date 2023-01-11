@@ -16,8 +16,8 @@ Open Source: https://github.com/sempare/sempare-delphi-template-engine
 3. [Features](#Features)
 4. [Objectives](#Objectives)
 5. [Requirements](#Requirements)
-6. [Installation: GetIt](#Installation__GetIt)
-7. [Installation: Delphinus](#Installation__Delphinus_Support)
+6. [Installation: GetIt](#GetIt)
+7. [Installation: Delphinus](#DelphinusSupport)
 8. [Feedback](#Feedback)
 9. [Statements](./docs/statements.md)
 10. [Expressions](./docs/expressions.md)
@@ -142,13 +142,13 @@ Have a look at Sempare.Template.Compiler.inc. The following defines can be defin
 - SEMPARE_TEMPLATE_NO_INDY - if Indy is not present. This is used to access an html encoder if TNetEncoding is not available.
 - SEMPARE_TEMPLATE_CONFIRM_LICENSE - if present, you confirm you understand the conditions.
 
-## Installation: GetIt
+<a name="GetIt"><h2>Installation: GetIt</h2></a>
 
 The Sempare Template Engine for Delphi can be installed via the [Embarcadero GetIt manager](https://getitnow.embarcadero.com/?q=sempare&product=rad-studio)
 
 This will add the *src* folder to the search path so you can start working immediately.
 
-## Installation: Delphinus-Support
+<a name="DelphinusSupport"><h2>Installation: Delphinus Support</h2></a>
 
 The Sempare Template Engine for Delphi can be installed via the [Delphinus](https://github.com/Memnarch/Delphinus) package manager.
 
