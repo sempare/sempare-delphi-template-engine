@@ -34,6 +34,8 @@ unit Sempare.Template;
 
 interface
 
+{$I 'Sempare.Template.Compiler.inc'}
+
 uses
   System.Classes,
   System.SysUtils,

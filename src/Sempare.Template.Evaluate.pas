@@ -175,7 +175,7 @@ begin
   Create(AContext, TStackFrame.Create(AValue, nil), AStream);
 end;
 
-procedure TEvaluationTemplateVisitor.Visit(AExpr: IValueExpr);
+procedure TEvaluationTemplateVisitor.Visit(const AExpr: IValueExpr);
 var
   LValue: TValue;
 begin
@@ -185,7 +185,7 @@ begin
   FEvalStack.push(LValue);
 end;
 
-procedure TEvaluationTemplateVisitor.Visit(AExprList: IExprList);
+procedure TEvaluationTemplateVisitor.Visit(const AExprList: IExprList);
 var
   LIdx: integer;
 begin
@@ -197,12 +197,12 @@ begin
   FEvalStack.push(AExprList.Count);
 end;
 
-procedure TEvaluationTemplateVisitor.Visit(AStmt: IContinueStmt);
+procedure TEvaluationTemplateVisitor.Visit(const AStmt: IContinueStmt);
 begin
   include(FLoopOptions, TLoopOption.coContinue);
 end;
 
-procedure TEvaluationTemplateVisitor.Visit(AExpr: IVariableDerefExpr);
+procedure TEvaluationTemplateVisitor.Visit(const AExpr: IVariableDerefExpr);
 var
   LDerefKey: TValue;
   LDerefObj: TValue;
@@ -224,7 +224,7 @@ begin
   FEvalStack.push(LDerefedValue);
 end;
 
-procedure TEvaluationTemplateVisitor.Visit(AExpr: IBinopExpr);
+procedure TEvaluationTemplateVisitor.Visit(const AExpr: IBinopExpr);
 var
   LLeft: TValue;
   LRight: TValue;
@@ -299,7 +299,7 @@ begin
   FEvalStack.push(LResult);
 end;
 
-procedure TEvaluationTemplateVisitor.Visit(AExpr: IUnaryExpr);
+procedure TEvaluationTemplateVisitor.Visit(const AExpr: IUnaryExpr);
 var
   LValue: TValue;
 begin
@@ -319,7 +319,7 @@ begin
   end;
 end;
 
-procedure TEvaluationTemplateVisitor.Visit(AExpr: IVariableExpr);
+procedure TEvaluationTemplateVisitor.Visit(const AExpr: IVariableExpr);
 var
   LStackFrame: TStackFrame;
   LValue: TValue;
@@ -352,12 +352,12 @@ begin
   FEvalStack.push(LValue);
 end;
 
-procedure TEvaluationTemplateVisitor.Visit(AStmt: IBreakStmt);
+procedure TEvaluationTemplateVisitor.Visit(const AStmt: IBreakStmt);
 begin
   include(FLoopOptions, TLoopOption.coBreak);
 end;
 
-procedure TEvaluationTemplateVisitor.Visit(AStmt: IWhileStmt);
+procedure TEvaluationTemplateVisitor.Visit(const AStmt: IWhileStmt);
 var
   LLoopOptions: IPreserveValue<TLoopOptions>;
   LOffset: int64;
@@ -428,7 +428,7 @@ begin
   end;
 end;
 
-procedure TEvaluationTemplateVisitor.Visit(AStmt: IForInStmt);
+procedure TEvaluationTemplateVisitor.Visit(const AStmt: IForInStmt);
 var
   LLoopOptions: IPreserveValue<TLoopOptions>;
   LVariableName: string;
@@ -706,7 +706,7 @@ begin
   exit(ALow >= AHigh);
 end;
 
-procedure TEvaluationTemplateVisitor.Visit(AStmt: IForRangeStmt);
+procedure TEvaluationTemplateVisitor.Visit(const AStmt: IForRangeStmt);
 type
   TCompare = function(const ALow: integer; const AHigh: integer): boolean;
 var
@@ -806,7 +806,7 @@ begin
   end;
 end;
 
-procedure TEvaluationTemplateVisitor.Visit(AStmt: IAssignStmt);
+procedure TEvaluationTemplateVisitor.Visit(const AStmt: IAssignStmt);
 var
   LVariable: string;
   LValue: TValue;
@@ -819,7 +819,7 @@ begin
   FStackFrames.peek[LVariable] := LValue;
 end;
 
-procedure TEvaluationTemplateVisitor.Visit(AStmt: IIfStmt);
+procedure TEvaluationTemplateVisitor.Visit(const AStmt: IIfStmt);
 begin
   if HasBreakOrContinue then
     exit;
@@ -830,12 +830,12 @@ begin
     AcceptVisitor(AStmt.FalseContainer, self);
 end;
 
-procedure TEvaluationTemplateVisitor.Visit(AStmt: IEndStmt);
+procedure TEvaluationTemplateVisitor.Visit(const AStmt: IEndStmt);
 begin
   // nothing to do
 end;
 
-procedure TEvaluationTemplateVisitor.Visit(AStmt: IIncludeStmt);
+procedure TEvaluationTemplateVisitor.Visit(const AStmt: IIncludeStmt);
 var
   LTemplateName: string;
   LTemplate: ITemplate;
@@ -858,7 +858,7 @@ begin
     RaiseErrorRes(Position(AStmt), @STemplateNotFound, [LTemplateName]);
 end;
 
-procedure TEvaluationTemplateVisitor.Visit(AStmt: IPrintStmt);
+procedure TEvaluationTemplateVisitor.Visit(const AStmt: IPrintStmt);
 begin
   if HasBreakOrContinue then
     exit;
@@ -952,7 +952,7 @@ begin
     result := result.AsType<TValue>();
 end;
 
-procedure TEvaluationTemplateVisitor.Visit(AExpr: IFunctionCallExpr);
+procedure TEvaluationTemplateVisitor.Visit(const AExpr: IFunctionCallExpr);
 var
   LResult: TValue;
   LHasResult: boolean;
@@ -982,7 +982,7 @@ begin
   exit(AExpr.RttiMethod.Invoke(AObject, AArgs));
 end;
 
-procedure TEvaluationTemplateVisitor.Visit(AExpr: IMethodCallExpr);
+procedure TEvaluationTemplateVisitor.Visit(const AExpr: IMethodCallExpr);
 var
   LObj: TValue;
   LArgs: TArray<TValue>;
@@ -1003,13 +1003,13 @@ begin
   end;
 end;
 
-procedure TEvaluationTemplateVisitor.Visit(AExpr: IEncodeExpr);
+procedure TEvaluationTemplateVisitor.Visit(const AExpr: IEncodeExpr);
 begin
   AcceptVisitor(AExpr.Expr, self);
   FEvalStack.push(EncodeVariable(FEvalStack.pop));
 end;
 
-procedure TEvaluationTemplateVisitor.Visit(AStmt: IProcessTemplateStmt);
+procedure TEvaluationTemplateVisitor.Visit(const AStmt: IProcessTemplateStmt);
 var
   LPrevNewLineState: boolean;
   LSWriter: TNewLineStreamWriter;
@@ -1031,7 +1031,7 @@ begin
   end;
 end;
 
-procedure TEvaluationTemplateVisitor.Visit(AStmt: IDefineTemplateStmt);
+procedure TEvaluationTemplateVisitor.Visit(const AStmt: IDefineTemplateStmt);
 var
   LTemplateName: TValue;
 begin
@@ -1041,7 +1041,7 @@ begin
   FLocalTemplates.AddOrSetValue(AsString(LTemplateName, FContext), AStmt.Container);
 end;
 
-procedure TEvaluationTemplateVisitor.Visit(AStmt: IWithStmt);
+procedure TEvaluationTemplateVisitor.Visit(const AStmt: IWithStmt);
 
 var
   LStackFrame: TStackFrame;
@@ -1110,7 +1110,7 @@ begin
   FStackFrames.pop;
 end;
 
-procedure TEvaluationTemplateVisitor.Visit(AStmt: IRequireStmt);
+procedure TEvaluationTemplateVisitor.Visit(const AStmt: IRequireStmt);
 var
   LExprs: TArray<TValue>;
   LInputType: string;
@@ -1128,12 +1128,12 @@ begin
   RaiseError(Position(AStmt), SInputOfRequiredTypeNotFound);
 end;
 
-procedure TEvaluationTemplateVisitor.Visit(AExpr: IArrayExpr);
+procedure TEvaluationTemplateVisitor.Visit(const AExpr: IArrayExpr);
 begin
   FEvalStack.push(TValue.From < TArray < TValue >> (ExprListArgs(AExpr.exprlist)));
 end;
 
-procedure TEvaluationTemplateVisitor.Visit(AExpr: ITernaryExpr);
+procedure TEvaluationTemplateVisitor.Visit(const AExpr: ITernaryExpr);
 begin
   AcceptVisitor(AExpr.Condition, self);
   if AsBoolean(FEvalStack.pop) then
@@ -1142,7 +1142,7 @@ begin
     AcceptVisitor(AExpr.FalseExpr, self);
 end;
 
-procedure TEvaluationTemplateVisitor.Visit(AStmt: ICycleStmt);
+procedure TEvaluationTemplateVisitor.Visit(const AStmt: ICycleStmt);
 var
   LStackFrame: TStackFrame;
   LValue: TValue;
@@ -1159,7 +1159,7 @@ begin
   FStreamWriter.Write(AsString(FEvalStack.pop, FContext));
 end;
 
-procedure TEvaluationTemplateVisitor.Visit(AStmt: IDebugStmt);
+procedure TEvaluationTemplateVisitor.Visit(const AStmt: IDebugStmt);
 begin
   try
     AcceptVisitor(AStmt.Stmt, self);
