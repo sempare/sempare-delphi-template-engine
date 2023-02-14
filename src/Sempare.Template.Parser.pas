@@ -171,7 +171,7 @@ type
 
     procedure Accept(const AVisitor: ITemplateVisitor); override;
   public
-    constructor Create(APosition: IPosition; const ACondition: IExpr; const ATrueContainer: ITemplate; const AFalseContainer: ITemplate);
+    constructor Create(const APosition: IPosition; const ACondition: IExpr; const ATrueContainer: ITemplate; const AFalseContainer: ITemplate);
   end;
 
   TAbstractStmtWithContainer = class abstract(TAbstractStmt)
@@ -1698,7 +1698,7 @@ begin
   AVisitor.Visit(self);
 end;
 
-constructor TIfStmt.Create(const APosition: IPosition; const ACondition: IExpr; const ATrueContainer, AFalseContainer: ITemplate);
+constructor TIfStmt.Create(const APosition: IPosition; const ACondition: IExpr; const ATrueContainer: ITemplate; const AFalseContainer: ITemplate);
 begin
   inherited Create(APosition);
   FCondition := ACondition;
