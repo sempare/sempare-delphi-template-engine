@@ -405,7 +405,7 @@ begin
       exit(AValue.AsString);
     tkDynArray, tkArray:
       exit(ArrayAsString(AValue, AContext));
-    tkRecord, tkMRecord:
+    tkRecord {$IFDEF SUPPORT_CUSTOM_MANAGED_RECORDS}, tkMRecord{$ENDIF}:
       if AValue.TypeInfo = TypeInfo(TValue) then
         exit(AsString(AValue.Astype<TValue>(), AContext))
       else
@@ -712,7 +712,7 @@ begin
       result := ProcessInterface(AVar, ADeref, LVarFound);
     tkClass:
       result := ProcessClass(APosition, AVar, ADeref, ARaiseIfMissing, false, AContext, LVarFound);
-    tkRecord, tkMRecord:
+    tkRecord {$IFDEF SUPPORT_CUSTOM_MANAGED_RECORDS}, tkMRecord{$ENDIF}:
       result := ProcessRecord(AVar, ADeref, LVarFound);
     tkArray:
       result := ProcessArray(AVar, ADeref, LVarFound);

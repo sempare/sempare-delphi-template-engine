@@ -33,7 +33,7 @@
  
 // -----------------------------------------------
 
-// Uncomment the following to confrim the license conditions
+// Uncomment the following to confirm the license conditions
 // {$DEFINE SEMPARE_TEMPLATE_CONFIRM_LICENSE}
  
 // -----------------------------------------------
@@ -62,6 +62,10 @@
 // -----------------------------------------------
 {$IF CompilerVersion >= 31}  // from Delphi 10.1 Berlin onwards
 {$DEFINE SUPPORT_BUFFERED_STREAM true}
+{$ENDIF}
+// -----------------------------------------------
+{$IF CompilerVersion >= 33}  // from Delphi 10.3 Rio onwards
+{$DEFINE SUPPORT_CUSTOM_MANAGED_RECORDS true}
 {$ENDIF}
 // -----------------------------------------------
 
