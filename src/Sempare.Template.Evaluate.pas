@@ -545,7 +545,7 @@ var
     LIdx := 0;
     while (LIdx <= LLoopExpr.GetArrayLength - 1) and ((LLimit = -1) or (LLoops < LLimit)) do
     begin
-      FStackFrames.peek[LVariableName] := LIdx + LMin;
+      FStackFrames.peek[LVariableName] := lLoopExpr.GetArrayElement(LIdx + LMin);
       if HandleLoop then
         break;
       inc(LIdx);
@@ -559,7 +559,7 @@ var
     LIdx := 0;
     while (LIdx <= LLoopExpr.GetArrayLength - 1) and ((LLimit = -1) or (LLoops < LLimit)) do
     begin
-      FStackFrames.peek[LVariableName] := LIdx;
+      FStackFrames.peek[LVariableName] := lLoopExpr.GetArrayElement(LIdx);
       if HandleLoop then
         break;
       inc(LIdx);
