@@ -328,7 +328,7 @@ begin
   begin
     LStackFrame := FStackFrames.peek;
     LValue := LStackFrame[AExpr.variable];
-    if LValue.IsEmpty then
+    if LValue.TypeInfo = nil then
     begin
       try
         LValue := Deref(Position(AExpr), LStackFrame.Root, AExpr.variable, eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext);
@@ -340,7 +340,7 @@ begin
         end;
       end;
     end;
-    if LValue.IsEmpty and (eoRaiseErrorWhenVariableNotFound in FContext.Options) then
+    if (LValue.TypeInfo = nil) and (eoRaiseErrorWhenVariableNotFound in FContext.Options) then
       RaiseError(Position(AExpr), SCannotFindValiable, [AExpr.variable]);
   end
   else
