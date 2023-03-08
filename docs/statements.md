@@ -145,7 +145,7 @@ Attendees:
    christa 20
 ```
 
-When using for-in on arrays, the variable enumerates all the index values of the array.
+When using for-in on arrays, the loop variable enumerates all the index values of the array.
 ```
 var
   a : array[10..20] of integer;
@@ -162,7 +162,7 @@ end;
 
 ```
 
-When using for-of on arrays, the variable enumerates all the values of the array.
+When using for-of on arrays, the loop variable enumerates all the values of the array.
 ```
 var
   a : array[10..20] of integer;
@@ -180,6 +180,7 @@ end;
 
 ```  
 
+Using for-in on TDataSet, the loop variable enumerates rows. The loop variable can be dereferenced with the name of the field in the given row. 
 
 
 ### while
