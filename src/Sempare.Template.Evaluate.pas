@@ -428,6 +428,24 @@ begin
   end;
 end;
 
+type
+  TGetForInValueIndex = function(const ALoopExpr: TValue; const AIndex: integer; const AMin: integer): TValue;
+
+function GetForInValueIndex(const ALoopExpr: TValue; const AIndex: integer; const AMin: integer): TValue;
+begin
+  exit(AIndex);
+end;
+
+function GetForInValueMinPlusIndex(const ALoopExpr: TValue; const AIndex: integer; const AMin: integer): TValue;
+begin
+  exit(AIndex + AMin);
+end;
+
+function GetForInValueLoopExprIndex(const ALoopExpr: TValue; const AIndex: integer; const AMin: integer): TValue;
+begin
+  exit(ALoopExpr.GetArrayElement(AIndex));
+end;
+
 procedure TEvaluationTemplateVisitor.Visit(const AStmt: IForInStmt);
 var
   LLoopOptions: IPreserveValue<TLoopOptions>;
@@ -533,7 +551,7 @@ var
     LDimOrdType: TRttiOrdinalType;
     LIdx: integer;
     LMin: integer;
-    LValue: TValue;
+    LGetValue: TGetForInValueIndex;
   begin
     LArrayType := LLoopExprType as TRttiArrayType;
     if LArrayType.DimensionCount <> 1 then
@@ -543,14 +561,14 @@ var
       LMin := 0
     else
       LMin := LDimOrdType.MinValue;
+    if AStmt.ForOp = foIn then
+      LGetValue := GetForInValueMinPlusIndex
+    else
+      LGetValue := GetForInValueLoopExprIndex;
     LIdx := 0;
     while (LIdx <= LLoopExpr.GetArrayLength - 1) and ((LLimit = -1) or (LLoops < LLimit)) do
     begin
-      if AStmt.ForOp = foIn then
-        LValue := LIdx + LMin
-      else
-        LValue := LLoopExpr.GetArrayElement(LIdx);
-      FStackFrames.peek[LVariableName] := LValue;
+      FStackFrames.peek[LVariableName] := LGetValue(LLoopExpr, LIdx, LMin);
       if HandleLoop then
         break;
       inc(LIdx);
@@ -560,16 +578,16 @@ var
   procedure VisitDynArray;
   var
     LIdx: integer;
-    LValue: TValue;
+    LGetValue: TGetForInValueIndex;
   begin
+    if AStmt.ForOp = foIn then
+      LGetValue := GetForInValueIndex
+    else
+      LGetValue := GetForInValueLoopExprIndex;
     LIdx := 0;
     while (LIdx <= LLoopExpr.GetArrayLength - 1) and ((LLimit = -1) or (LLoops < LLimit)) do
     begin
-      if AStmt.ForOp = foIn then
-        LValue := LIdx
-      else
-        LValue := LLoopExpr.GetArrayElement(LIdx);
-      FStackFrames.peek[LVariableName] := LValue;
+      FStackFrames.peek[LVariableName] := LGetValue(LLoopExpr, LIdx, 0);
       if HandleLoop then
         break;
       inc(LIdx);
