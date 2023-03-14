@@ -84,34 +84,6 @@ end;
 
 constructor TStackFrame.Create(const ARecord: TValue; const AParent: TStackFrame);
 
-  procedure ScanClass(const ARttiType: TRttiType; const AClass: TValue);
-  var
-    LField: TRttiField;
-    LProperty: TRttiProperty;
-    LObj: TObject;
-  begin
-    LObj := AClass.AsObject;
-    if PopulateStackFrame(self, ARttiType, AClass) then
-      exit;
-    // we can't do anything on generic collections. we can loop using _ if we need to do anything.
-    if LObj.ClassType.QualifiedClassName.StartsWith('System.Generics.Collections') then
-      exit;
-    for LField in ARttiType.GetFields do
-      self[LField.Name] := LField.GetValue(LObj);
-    for LProperty in ARttiType.GetProperties do
-      self[LProperty.Name] := LProperty.GetValue(LObj);
-  end;
-
-  procedure ScanRecord(const ARttiType: TRttiType; const ARecord: TValue);
-  var
-    LField: TRttiField;
-    LRecordPtr: pointer;
-  begin
-    LRecordPtr := ARecord.GetReferenceToRawData;
-    for LField in ARttiType.GetFields do
-      self[LField.Name] := LField.GetValue(LRecordPtr);
-  end;
-
 begin
   Create(AParent);
   FVariables.Add('_', ARecord);
