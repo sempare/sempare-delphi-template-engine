@@ -52,16 +52,15 @@ type
     procedure TestWith;
     [Test]
     procedure TestDerefError;
-    [test]
+    [Test]
     procedure TestDerefNull;
   end;
 
   TNullable = class
   public
-    Data : string;
-    Other : TNullable;
+    Data: string;
+    Other: TNullable;
   end;
-
 
 implementation
 
@@ -106,7 +105,7 @@ end;
 
 procedure TTestTemplateDeref.TestDerefNull;
 var
-  nullable : TNullable;
+  nullable: TNullable;
 begin
   nullable := TNullable.Create;
   nullable.Other := TNullable.Create;

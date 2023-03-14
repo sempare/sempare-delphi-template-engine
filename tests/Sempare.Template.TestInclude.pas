@@ -51,6 +51,14 @@ type
     [Test]
     procedure TestIncludeData;
 
+    [Test]
+    procedure TestRecursiveIncludes;
+
+    [Test]
+    procedure TestRecursiveIncludes2;
+
+    [Test]
+    procedure TestSubTemplate;
   end;
 
 implementation
@@ -105,12 +113,79 @@ begin
       ctx: ITemplateContext;
       x: record value: string;
     end;
+
     begin
       ctx := Template.Context;
       ctx.Template['test'] := Template.parse('test <% value %>');
       x.value := '123';
       Assert.AreEqual('test 123', Template.Eval(ctx, '<%include (''test'', missingvar) %>', x));
     end);
+end;
+
+procedure TTestTemplateInclude.TestRecursiveIncludes;
+type
+  TMember = record
+    Name: String;
+
+    Members: TArray<TMember>;
+  end;
+
+var
+  LTpl: ITemplate;
+  LMember: TMember;
+
+begin
+  LTpl := Template.parse( //
+    '<% template ''showmember'' %>' + //
+    '<% name %>' + //
+    '<% if members %>' + //
+    '<% for member of members %>' + //
+    #13#10 + //
+    '<% include (''showmember'', member) %>' + //
+    '<% end %>' + //
+    '<% end %>' + //
+    '<% end %>' + //
+    '<% include (''showmember'', _) %>');
+
+  LMember.Name := 'Parent';
+
+  SetLength(LMember.Members, 1);
+  LMember.Members[0].Name := 'Child';
+
+  Assert.AreEqual('Parent'#13#10'Child', Template.Eval(LTpl, LMember));
+end;
+
+procedure TTestTemplateInclude.TestRecursiveIncludes2;
+type
+  TMember = record
+    Name: String;
+
+    Members: TArray<TMember>;
+  end;
+
+var
+  LTpl: ITemplate;
+  LMember: TMember;
+
+begin
+  LTpl := Template.parse( //
+    '<% template ''showmember'' %>' + //
+    '<% name %>' + //
+    '<% if members %>' + //
+    '<% for member in members %>' + //
+    #13#10 + //
+    '<% include (''showmember'', members[member]) %>' + //
+    '<% end %>' + //
+    '<% end %>' + //
+    '<% end %>' + //
+    '<% include (''showmember'', _) %>');
+
+  LMember.Name := 'Parent';
+
+  SetLength(LMember.Members, 1);
+  LMember.Members[0].Name := 'Child';
+
+  Assert.AreEqual('Parent'#13#10'Child', Template.Eval(LTpl, LMember));
 end;
 
 procedure TTestTemplateInclude.TestInclude;
@@ -125,7 +200,11 @@ begin
   ctx.Template['header'] := Template.parse('header <% header.name %> <% footer.year %>');
   ctx.Template['footer'] := Template.parse('footer Copyright <% footer.year %>');
 
-  c := Template.parse('<% suffix := ''er''%><% include (''head'' + suffix) %>' + '<%for v in content %>' + '<% v %>' + '<% end %>' + '<% include (''foot'' + suffix) %>');
+  c := Template.parse( //
+    '<% suffix := ''er''%><% include (''head'' + suffix) %>' + //
+    '<%for v in content %>' + '<% v %>' + //
+    '<% end %>' + //
+    '<% include (''foot'' + suffix) %>');
 
   x.content := TList<string>.create;
   x.content.Add('conrad');
@@ -137,6 +216,54 @@ begin
   finally
     x.content.Free;
   end;
+end;
+
+procedure TTestTemplateInclude.TestSubTemplate;
+type
+  TTemplate = record
+    header: record
+      company: string;
+    end;
+
+    footer: record
+      copyright: integer;
+    end;
+  end;
+var
+  info: TTemplate;
+begin
+  info.header.company := 'sempare limited';
+  info.footer.copyright := 2023;
+  Assert.AreEqual('sempare limited'#13#10'Copyright (c) 2023'#13#10, Template.Eval( //
+    '<% template ''prefix'' %><% Company %>'#13#10'<% end %>' + //
+    '<% template ''suffix'' %>Copyright (c) <% Copyright %>'#13#10'<% end %>' + //
+    '<% header.company %>'#13#10 + //
+    'Copyright (c) <% footer.copyright %>'#13#10 //
+    , info));
+
+  Assert.AreEqual('sempare limited'#13#10, Template.Eval( //
+    '<% template ''prefix'' %><% Company %>'#13#10'<% end %>' + //
+    '<% include(''prefix'', header) %>' //
+    , info));
+
+  Assert.AreEqual('Copyright (c) 2023'#13#10, Template.Eval( //
+    '<% template ''suffix'' %>Copyright (c) <% Copyright %>'#13#10'<% end %>' + //
+    '<% include(''suffix'', footer) %>', info));
+
+  Assert.AreEqual( //
+    'sempare limited'#13#10 + //
+    'sempare limited'#13#10 + //
+    'Copyright (c) 2023'#13#10 + //
+    'Copyright (c) 2023'#13#10, //
+    Template.Eval( //
+    '<% template ''prefix'' %><% Company %>'#13#10'<% end %>' + //
+    '<% template ''suffix'' %>Copyright (c) <% Copyright %>'#13#10'<% end %>' + //
+    '<% include(''prefix'', header) %>' + //
+    '<% header.company %>'#13#10 + //
+    'Copyright (c) <% footer.copyright %>'#13#10 + //
+    '<% include(''suffix'', footer) %>' //
+    , info));
+
 end;
 
 initialization

@@ -61,8 +61,6 @@ type
     [Test]
     procedure TestUnderscoreIn;
     [Test]
-    procedure TestSubTemplate;
-    [Test]
     procedure TestDynamicLoader;
     [Test]
     procedure TestVariableNotFound;
@@ -367,32 +365,10 @@ begin
   Assert.AreEqual('12345', Template.Eval('<% for i:=1 to 5 |> <%i%>     '#13#10'<| end %>'));
 end;
 
-type
-  TTemplate = record
-    header: record
-      company: string;
-    end;
-
-    footer: record
-      copyright: integer;
-
-    end;
-
-  end;
-
-  { TTestClass }
+{ TTestClass }
 constructor TTestClass.Create(const AData: string);
 begin
   data := AData;
-end;
-
-procedure TTestTemplate.TestSubTemplate;
-var
-  info: TTemplate;
-begin
-  info.header.company := 'sempare ltd';
-  info.footer.copyright := 2019;
-  Assert.AreEqual('sempare ltd  Copyright (c) 2019', Template.Eval('<% template ''prefix'' %><%company%><% end %>' + '<% template ''suffix'' %> Copyright (c) <%copyright%><% end %>' + '<%include(''prefix'', _.header)%> <%include(''suffix'', _.footer)%>', info));
 end;
 
 procedure TTestTemplate.TestTabToSpace;

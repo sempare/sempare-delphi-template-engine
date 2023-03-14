@@ -34,6 +34,8 @@ unit Sempare.Template.Evaluate;
 
 interface
 
+{$I 'Sempare.Template.Compiler.inc'}
+
 uses
   System.Rtti,
   System.Classes,
@@ -428,6 +430,24 @@ begin
   end;
 end;
 
+type
+  TGetForInValueIndex = function(const ALoopExpr: TValue; const AIndex: integer; const AMin: integer): TValue;
+
+function GetForInValueIndex(const ALoopExpr: TValue; const AIndex: integer; const AMin: integer): TValue;
+begin
+  exit(AIndex);
+end;
+
+function GetForInValueMinPlusIndex(const ALoopExpr: TValue; const AIndex: integer; const AMin: integer): TValue;
+begin
+  exit(AIndex + AMin);
+end;
+
+function GetForInValueLoopExprIndex(const ALoopExpr: TValue; const AIndex: integer; const AMin: integer): TValue;
+begin
+  exit(ALoopExpr.GetArrayElement(AIndex));
+end;
+
 procedure TEvaluationTemplateVisitor.Visit(const AStmt: IForInStmt);
 var
   LLoopOptions: IPreserveValue<TLoopOptions>;
@@ -533,7 +553,7 @@ var
     LDimOrdType: TRttiOrdinalType;
     LIdx: integer;
     LMin: integer;
-    LValue: TValue;
+    LGetValue: TGetForInValueIndex;
   begin
     LArrayType := LLoopExprType as TRttiArrayType;
     if LArrayType.DimensionCount <> 1 then
@@ -543,14 +563,14 @@ var
       LMin := 0
     else
       LMin := LDimOrdType.MinValue;
+    if AStmt.ForOp = foIn then
+      LGetValue := GetForInValueMinPlusIndex
+    else
+      LGetValue := GetForInValueLoopExprIndex;
     LIdx := 0;
     while (LIdx <= LLoopExpr.GetArrayLength - 1) and ((LLimit = -1) or (LLoops < LLimit)) do
     begin
-      if AStmt.ForOp = foIn then
-        LValue := LIdx + LMin
-      else
-        LValue := LLoopExpr.GetArrayElement(LIdx);
-      FStackFrames.peek[LVariableName] := LValue;
+      FStackFrames.peek[LVariableName] := LGetValue(LLoopExpr, LIdx, LMin);
       if HandleLoop then
         break;
       inc(LIdx);
@@ -560,16 +580,16 @@ var
   procedure VisitDynArray;
   var
     LIdx: integer;
-    LValue: TValue;
+    LGetValue: TGetForInValueIndex;
   begin
+    if AStmt.ForOp = foIn then
+      LGetValue := GetForInValueIndex
+    else
+      LGetValue := GetForInValueLoopExprIndex;
     LIdx := 0;
     while (LIdx <= LLoopExpr.GetArrayLength - 1) and ((LLimit = -1) or (LLoops < LLimit)) do
     begin
-      if AStmt.ForOp = foIn then
-        LValue := LIdx
-      else
-        LValue := LLoopExpr.GetArrayElement(LIdx);
-      FStackFrames.peek[LVariableName] := LValue;
+      FStackFrames.peek[LVariableName] := LGetValue(LLoopExpr, LIdx, 0);
       if HandleLoop then
         break;
       inc(LIdx);
@@ -609,7 +629,7 @@ begin
   LFirst := true;
   if not LLoopExpr.IsEmpty then
   begin
-    LLoopExprType := GRttiContext.GetType(LLoopExpr.typeinfo);
+    LLoopExprType := GRttiContext.GetType(LLoopExpr.TypeInfo);
 
     case LLoopExprType.TypeKind of
       tkClass, tkClassRef:
@@ -890,7 +910,7 @@ begin
       if not(AValue.Kind in [tkString, tkWString, tkLString, tkUString]) then
         exit(AsString(AValue, AContext));
     tkEnumeration:
-      if AType.Handle = typeinfo(boolean) then
+      if AType.Handle = TypeInfo(boolean) then
         exit(AsBoolean(AValue));
   end;
   exit(AValue);
@@ -909,7 +929,7 @@ begin
   LNumParams := length(LParams);
   LOffset := 0;
   setlength(result, LNumParams);
-  if (LNumParams > 0) and (LParams[0].ParamType.Handle = typeinfo(ITemplateContext)) then
+  if (LNumParams > 0) and (LParams[0].ParamType.Handle = TypeInfo(ITemplateContext)) then
   begin
     result[0] := TValue.From<ITemplateContext>(AContext);
     LOffset := 1;
@@ -940,7 +960,7 @@ var
     result := length(LMethod.GetParameters);
     if result > 0 then
     begin
-      if LMethod.GetParameters[0].ParamType.Handle = typeinfo(ITemplateContext) then
+      if LMethod.GetParameters[0].ParamType.Handle = TypeInfo(ITemplateContext) then
         dec(result);
     end;
   end;
@@ -985,7 +1005,7 @@ var
 begin
   if AExpr.RttiMethod = nil then
   begin
-    LObjType := GRttiContext.GetType(AObject.typeinfo);
+    LObjType := GRttiContext.GetType(AObject.TypeInfo);
     AExpr.RttiMethod := LObjType.GetMethod(AExpr.Method);
   end;
 
@@ -1047,75 +1067,24 @@ var
   LTemplateName: TValue;
 begin
   AcceptVisitor(AStmt.Name, self);
+
   LTemplateName := FEvalStack.pop;
   AssertString(Position(AStmt), LTemplateName);
+
   FLocalTemplates.AddOrSetValue(AsString(LTemplateName, FContext), AStmt.Container);
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AStmt: IWithStmt);
-
 var
   LStackFrame: TStackFrame;
-
-procedure ScanClass(const ARttiType: TRttiType; const AClass: TValue); forward;
-procedure ScanRecord(const ARttiType: TRttiType; const ARecord: TValue); forward;
-
-  procedure ScanValue(const ARecord: TValue);
-  var
-    LRttiType: TRttiType;
-  begin
-    LRttiType := GRttiContext.GetType(ARecord.typeinfo);
-    if LRttiType = nil then
-    begin
-      RaiseErrorRes(Position(AStmt), @SCannotDereferenceValiable);
-    end;
-    case LRttiType.TypeKind of
-      tkClass, tkClassRef:
-        ScanClass(LRttiType, ARecord);
-      tkrecord:
-        ScanRecord(LRttiType, ARecord);
-    else
-      RaiseErrorRes(Position(AStmt), @SStackFrameCanOnlyBeDefinedOnAClassOrRecord);
-    end;
-  end;
-
-  procedure ScanClass(const ARttiType: TRttiType; const AClass: TValue);
-  var
-    LField: TRttiField;
-    LProperty: TRttiProperty;
-    LObj: TObject;
-  begin
-    LObj := AClass.AsObject;
-    if PopulateStackFrame(LStackFrame, ARttiType, AClass) then
-      exit;
-    // we can't do anything on generic collections. we can loop using _ if we need to do anything.
-    if LObj.ClassType.QualifiedClassName.StartsWith('System.Generics.Collections') then
-      exit;
-    for LField in ARttiType.GetFields do
-      LStackFrame[LField.Name] := LField.GetValue(LObj);
-    for LProperty in ARttiType.GetProperties do
-      LStackFrame[LProperty.Name] := LProperty.GetValue(LObj);
-  end;
-
-  procedure ScanRecord(const ARttiType: TRttiType; const ARecord: TValue);
-  var
-    LField: TRttiField;
-    LRecordPtr: pointer;
-  begin
-    LRecordPtr := ARecord.GetReferenceToRawData;
-    for LField in ARttiType.GetFields do
-      LStackFrame[LField.Name] := LField.GetValue(LRecordPtr);
-  end;
-
-var
   LExpr: TValue;
 begin
   AcceptVisitor(AStmt.Expr, self);
   LExpr := FEvalStack.pop;
-  LStackFrame := FStackFrames.peek.Clone;
+
+  LStackFrame := FStackFrames.peek.Clone(LExpr);
   FStackFrames.push(LStackFrame);
 
-  ScanValue(LExpr);
   AcceptVisitor(AStmt.Container, self);
 
   FStackFrames.pop;
@@ -1127,7 +1096,7 @@ var
   LInputType: string;
   LIndex: integer;
 begin
-  LInputType := GRttiContext.GetType(FStackFrames.peek['_'].typeinfo).Name.ToLower;
+  LInputType := GRttiContext.GetType(FStackFrames.peek['_'].TypeInfo).Name.ToLower;
   LExprs := ExprListArgs(AStmt.exprlist);
   if length(LExprs) = 0 then
     exit;

@@ -349,12 +349,9 @@ var
   LArray: array [6 .. 10] of integer;
   i: integer;
 begin
-  asm
-    int 3
-  end;
   for i := Low(LArray) to High(LArray) do
     LArray[i] := i - 5;
-  Assert.AreEqual('6 7 8 9 10 ', Template.Eval('<% for i in _ %><% i %> <%end%>', LArray));
+  Assert.AreEqual('6 7 8 9 10 | 1 2 3 4 5 ', Template.Eval('<% for i in _ %><% i %> <%end%>| <% for i in _ %><% _[i] %> <%end%>', LArray));
   Assert.AreEqual('1 2 3 4 5 ', Template.Eval('<% for i of _ %><% i %> <%end%>', LArray));
 end;
 
@@ -366,7 +363,7 @@ begin
   setlength(LArray, 5);
   for i := Low(LArray) to High(LArray) do
     LArray[i] := i * 5;
-  Assert.AreEqual('0 1 2 3 4 ', Template.Eval('<% for i in _ %><% i %> <%end%>', LArray));
+  Assert.AreEqual('0 1 2 3 4 | 0 5 10 15 20 ', Template.Eval('<% for i in _ %><% i %> <%end%>| <% for i in _ %><% _[i] %> <%end%>', LArray));
   Assert.AreEqual('0 5 10 15 20 ', Template.Eval('<% for i of _ %><% i %> <%end%>', LArray));
 end;
 

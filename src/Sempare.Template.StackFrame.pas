@@ -52,7 +52,8 @@ type
     constructor Create(const AParent: TStackFrame = nil); overload;
     constructor Create(const ARecord: TValue; const AParent: TStackFrame = nil); overload;
     destructor Destroy; override;
-    function Clone(): TStackFrame;
+    function Clone(): TStackFrame; overload;
+    function Clone(const ARecord: TValue): TStackFrame; overload;
     function Root: TValue;
     property Item[const AKey: string]: TValue read GetItem write SetItem; default;
   end;
@@ -60,6 +61,7 @@ type
 implementation
 
 uses
+  Sempare.Template.Rtti,
   System.SysUtils;
 
 { TStackFrame }
@@ -69,6 +71,11 @@ begin
   exit(TStackFrame.Create(self));
 end;
 
+function TStackFrame.Clone(const ARecord: TValue): TStackFrame;
+begin
+  exit(TStackFrame.Create(ARecord, self));
+end;
+
 constructor TStackFrame.Create(const AParent: TStackFrame);
 begin
   FParent := AParent;
@@ -76,6 +83,7 @@ begin
 end;
 
 constructor TStackFrame.Create(const ARecord: TValue; const AParent: TStackFrame);
+
 begin
   Create(AParent);
   FVariables.Add('_', ARecord);
