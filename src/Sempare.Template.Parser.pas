@@ -241,22 +241,24 @@ type
   TForInStmt = class(TLoopStmt, IForInStmt)
   private
     FVariable: string;
+    FForOp: TForOp;
     FExpr: IExpr;
     FOffsetExpr: IExpr;
     FLimitExpr: IExpr;
     function GetVariable: string;
+    function GetForOp: TForOp;
     function GetExpr: IExpr;
     function GetOffsetExpr: IExpr;
     function GetLimitExpr: IExpr;
     procedure Accept(const AVisitor: ITemplateVisitor); override;
   public
-    constructor Create(const APosition: IPosition; const AVariable: string; const AExpr: IExpr; const AOffsetExpr: IExpr; const ALimitExpr: IExpr; const AContainer: ITemplate; const AOnFirst, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
+    constructor Create(const APosition: IPosition; const AVariable: string; const AForOp: TForOp; const AExpr: IExpr; const AOffsetExpr: IExpr; const ALimitExpr: IExpr; const AContainer: ITemplate; const AOnFirst, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
   end;
 
   TForRangeStmt = class(TLoopStmt, IForRangeStmt)
   private
     FVariable: string;
-    FForIp: TForOp;
+    FForOp: TForOp;
     FLowExpr: IExpr;
     FHighExpr: IExpr;
     FStepExpr: IExpr;
@@ -267,7 +269,7 @@ type
     function GetStepExpr: IExpr;
     procedure Accept(const AVisitor: ITemplateVisitor); override;
   public
-    constructor Create(const APosition: IPosition; const AVariable: string; const AForIp: TForOp; const ALowExpr: IExpr; const AHighExpr: IExpr; const AStep: IExpr; const AContainer: ITemplate; const AOnFirst, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
+    constructor Create(const APosition: IPosition; const AVariable: string; const AForOp: TForOp; const ALowExpr: IExpr; const AHighExpr: IExpr; const AStep: IExpr; const AContainer: ITemplate; const AOnFirst, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
   end;
 
   TAssignStmt = class(TAbstractStmtWithExpr, IAssignStmt)
@@ -518,6 +520,8 @@ begin
       exit(foDownto);
     vsIn:
       exit(foIn);
+    vsOf:
+      exit(foOf);
   else
     RaiseErrorRes(APosition, @SForOpNotSupported, [TemplateSymbolToString(ASymbol)]);
   end;
@@ -1221,10 +1225,10 @@ begin
   LOptions := Preserve.Value<TParserOptions>(FOptions, FOptions + [poInLoop, poAllowEnd]);
   match(vsFor);
   LId := matchValue(vsID);
-  if FLookahead.Token = vsIn then
+  if FLookahead.Token in [vsIn, vsOf] then
   begin
     LForOp := TemplateForop(LSymbol.Position, FLookahead.Token);
-    match(vsIn);
+    match(FLookahead.Token);
     LRangeExpr := ruleExpression;
   end
   else
@@ -1286,8 +1290,8 @@ begin
 
   match(vsEndScript);
 
-  if LForOp = TForOp.foIn then
-    result := TForInStmt.Create(LSymbol.Position, LId, LRangeExpr, LOffsetExpr, LLimitExpr, LOnLoop, LOnFirst, LOnEnd, LOnEmpty, LBetweenItem)
+  if LForOp in [TForOp.foIn, TForOp.foOf] then
+    result := TForInStmt.Create(LSymbol.Position, LId, LForOp, LRangeExpr, LOffsetExpr, LLimitExpr, LOnLoop, LOnFirst, LOnEnd, LOnEmpty, LBetweenItem)
   else
     result := TForRangeStmt.Create(LSymbol.Position, LId, LForOp, LLowValueExpr, LHighValueExpr, LStep, LOnLoop, LOnFirst, LOnEnd, LOnEmpty, LBetweenItem);
 
@@ -1772,13 +1776,19 @@ begin
   AVisitor.Visit(self);
 end;
 
-constructor TForInStmt.Create(const APosition: IPosition; const AVariable: string; const AExpr: IExpr; const AOffsetExpr: IExpr; const ALimitExpr: IExpr; const AContainer: ITemplate; const AOnFirst, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
+constructor TForInStmt.Create(const APosition: IPosition; const AVariable: string; const AForOp: TForOp; const AExpr: IExpr; const AOffsetExpr: IExpr; const ALimitExpr: IExpr; const AContainer: ITemplate; const AOnFirst, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
 begin
   inherited Create(APosition, AContainer, AOnFirst, AOnEnd, AOnEmpty, ABetweenItem);
   FVariable := AVariable;
+  FForOp := AForOp;
   FExpr := AExpr;
   FOffsetExpr := AOffsetExpr;
   FLimitExpr := ALimitExpr;
+end;
+
+function TForInStmt.GetForOp: TForOp;
+begin
+  exit(FForOp);
 end;
 
 function TForInStmt.GetExpr: IExpr;
@@ -1808,11 +1818,11 @@ begin
   AVisitor.Visit(self);
 end;
 
-constructor TForRangeStmt.Create(const APosition: IPosition; const AVariable: string; const AForIp: TForOp; const ALowExpr: IExpr; const AHighExpr: IExpr; const AStep: IExpr; const AContainer: ITemplate; const AOnFirst, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
+constructor TForRangeStmt.Create(const APosition: IPosition; const AVariable: string; const AForOp: TForOp; const ALowExpr: IExpr; const AHighExpr: IExpr; const AStep: IExpr; const AContainer: ITemplate; const AOnFirst, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
 begin
   inherited Create(APosition, AContainer, AOnFirst, AOnEnd, AOnEmpty, ABetweenItem);
   FVariable := AVariable;
-  FForIp := AForIp;
+  FForOp := AForOp;
   FLowExpr := ALowExpr;
   FHighExpr := AHighExpr;
   FStepExpr := AStep;
@@ -1820,7 +1830,7 @@ end;
 
 function TForRangeStmt.GetForOp: TForOp;
 begin
-  exit(FForIp);
+  exit(FForOp);
 end;
 
 function TForRangeStmt.GetHighExpr: IExpr;

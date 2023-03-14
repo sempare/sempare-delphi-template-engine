@@ -145,6 +145,44 @@ Attendees:
    christa 20
 ```
 
+When using for-in on arrays, the loop variable enumerates all the index values of the array.
+```
+var
+  a : array[10..20] of integer;
+  b: TArray<integer>;
+  
+
+begin
+   setlength(b, 10);
+   // ...
+   writeln(Template.Eval('<% for idx in _ %> <% idx %> <% end %>', a)); // 10..20
+   writeln(Template.Eval('<% for idx in _ %> <% idx %> <% end %>', b)); //  0..9
+   // ...
+end;
+
+```
+
+When using for-of on arrays, the loop variable enumerates all the values of the array.
+```
+var
+  a : array[10..20] of integer;
+  b: TArray<integer>;
+  i : integer;
+begin
+   for i := low(a) to high(a) do a[i] := i-9;
+   setlength(b, 10);
+   for i := low(b) to high(b) do b[i] := i * 5;
+   // ...
+   writeln(Template.Eval('<% for val of _ %> <% val %> <% end %>', a)); // 1..11
+   writeln(Template.Eval('<% for val of _ %> <% val %> <% end %>', b)); // 0, 5, 10, 15 .. 45
+   // ...
+end;
+
+```  
+
+Using for-in on TDataSet, the loop variable enumerates rows. The loop variable can be dereferenced with the name of the field in the given row. 
+
+
 ### while
 
 While blocks are very flexibe looping constructs based on a boolean condition being true.

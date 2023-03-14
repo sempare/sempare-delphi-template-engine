@@ -42,8 +42,8 @@ type
   ETemplate = class(Exception);
 
   TForOp = ( //
-    foTo, foDownto, // for var := low to high
-    foIn // for var in enumerable
+    foTo, foDownto, // for var := low to/downto high
+    foIn, foOf // for var in/of enumerable
     );
 
   TBinOp = ( //
@@ -89,7 +89,8 @@ type
     vsBetweenItem, //
 
     // for statements
-    vsIN, //
+    vsIn, //
+    vsOf, //
     vsTo, //
     vsDownto, //
 
@@ -314,11 +315,13 @@ type
   IForInStmt = interface(ILoopStmt)
     ['{DE078CDD-B50A-4036-987E-E2FD241950F6}']
     function GetVariable: string;
+    function GetForOp: TForOp;
     function GetExpr: IExpr;
     function GetContainer: ITemplate;
     function GetOffsetExpr: IExpr;
     function GetLimitExpr: IExpr;
     property Variable: string read GetVariable;
+    property ForOp: TForOp read GetForOp;
     property Expr: IExpr read GetExpr;
     property Container: ITemplate read GetContainer;
     property OffsetExpr: IExpr read GetOffsetExpr;

@@ -533,6 +533,7 @@ var
     LDimOrdType: TRttiOrdinalType;
     LIdx: integer;
     LMin: integer;
+    LValue: TValue;
   begin
     LArrayType := LLoopExprType as TRttiArrayType;
     if LArrayType.DimensionCount <> 1 then
@@ -545,7 +546,11 @@ var
     LIdx := 0;
     while (LIdx <= LLoopExpr.GetArrayLength - 1) and ((LLimit = -1) or (LLoops < LLimit)) do
     begin
-      FStackFrames.peek[LVariableName] := LIdx + LMin;
+      if AStmt.ForOp = foIn then
+        LValue := LIdx + LMin
+      else
+        LValue := LLoopExpr.GetArrayElement(LIdx);
+      FStackFrames.peek[LVariableName] := LValue;
       if HandleLoop then
         break;
       inc(LIdx);
@@ -555,16 +560,22 @@ var
   procedure VisitDynArray;
   var
     LIdx: integer;
+    LValue: TValue;
   begin
     LIdx := 0;
     while (LIdx <= LLoopExpr.GetArrayLength - 1) and ((LLimit = -1) or (LLoops < LLimit)) do
     begin
-      FStackFrames.peek[LVariableName] := LIdx;
+      if AStmt.ForOp = foIn then
+        LValue := LIdx
+      else
+        LValue := LLoopExpr.GetArrayElement(LIdx);
+      FStackFrames.peek[LVariableName] := LValue;
       if HandleLoop then
         break;
       inc(LIdx);
     end;
   end;
+
   function GetValue(const AExpr: IExpr): int64;
   begin
     if AExpr = nil then
