@@ -1,38 +1,40 @@
-(*%*************************************************************************************************
- *                 ___                                                                              *
- *                / __|  ___   _ __    _ __   __ _   _ _   ___                                      *
- *                \__ \ / -_) | '  \  | '_ \ / _` | | '_| / -_)                                     *
- *                |___/ \___| |_|_|_| | .__/ \__,_| |_|   \___|                                     *
- *                                    |_|                                                           *
- ****************************************************************************************************
- *                                                                                                  *
- *                          Sempare Template Engine                                                 *
- *                                                                                                  *
- *                                                                                                  *
- *         https://github.com/sempare/sempare-delphi-template-engine                                *
- ****************************************************************************************************
- *                                                                                                  *
- * Copyright (c) 2019-2023 Sempare Limited                                                          *
- *                                                                                                  *
- * Contact: info@sempare.ltd                                                                        *
- *                                                                                                  *
- * Licensed under the GPL Version 3.0 or the Sempare Commercial License                             *
- * You may not use this file except in compliance with one of these Licenses.                       *
- * You may obtain a copy of the Licenses at                                                         *
- *                                                                                                  *
- * https://www.gnu.org/licenses/gpl-3.0.en.html                                                     *
- * https://github.com/sempare/sempare-delphi-template-engine/blob/master/docs/commercial.license.md *
- *                                                                                                  *
- * Unless required by applicable law or agreed to in writing, software                              *
- * distributed under the Licenses is distributed on an "AS IS" BASIS,                               *
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.                         *
- * See the License for the specific language governing permissions and                              *
- * limitations under the License.                                                                   *
- *                                                                                                  *
- *************************************************************************************************%*)
+(* %*************************************************************************************************
+  *                 ___                                                                              *
+  *                / __|  ___   _ __    _ __   __ _   _ _   ___                                      *
+  *                \__ \ / -_) | '  \  | '_ \ / _` | | '_| / -_)                                     *
+  *                |___/ \___| |_|_|_| | .__/ \__,_| |_|   \___|                                     *
+  *                                    |_|                                                           *
+  ****************************************************************************************************
+  *                                                                                                  *
+  *                          Sempare Template Engine                                                 *
+  *                                                                                                  *
+  *                                                                                                  *
+  *         https://github.com/sempare/sempare-delphi-template-engine                                *
+  ****************************************************************************************************
+  *                                                                                                  *
+  * Copyright (c) 2019-2023 Sempare Limited                                                          *
+  *                                                                                                  *
+  * Contact: info@sempare.ltd                                                                        *
+  *                                                                                                  *
+  * Licensed under the GPL Version 3.0 or the Sempare Commercial License                             *
+  * You may not use this file except in compliance with one of these Licenses.                       *
+  * You may obtain a copy of the Licenses at                                                         *
+  *                                                                                                  *
+  * https://www.gnu.org/licenses/gpl-3.0.en.html                                                     *
+  * https://github.com/sempare/sempare-delphi-template-engine/blob/master/docs/commercial.license.md *
+  *                                                                                                  *
+  * Unless required by applicable law or agreed to in writing, software                              *
+  * distributed under the Licenses is distributed on an "AS IS" BASIS,                               *
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.                         *
+  * See the License for the specific language governing permissions and                              *
+  * limitations under the License.                                                                   *
+  *                                                                                                  *
+  *************************************************************************************************% *)
 unit Sempare.Template.Functions;
 
 interface
+
+{$I 'Sempare.Template.Compiler.inc'}
 
 uses
   System.Rtti,
@@ -51,8 +53,16 @@ var
 implementation
 
 uses
+{$IFDEF SEMPARE_TEMPLATE_FIREDAC}
   Data.DB,
   FireDAC.Comp.Client,
+{$ENDIF}
+{$IFDEF SUPPORT_HASH}
+  System.Hash,
+{$ENDIF}
+{$IFDEF SUPPORT_ENCODING}
+  System.NetEncoding,
+{$ENDIF}
   System.TypInfo, // needed for XE6 and below to access the TTypeKind variables
   System.SysUtils,
   System.Math,
@@ -141,6 +151,8 @@ type
     class function Lowercase(const AString: string): string; static;
     class function Uppercase(const AString: string): string; static;
     class function Trim(const AString: string): string; static;
+    class function TrimLeft(const AString: string): string; static;
+    class function TrimRight(const AString: string): string; static;
     class function SubStr(const AString: string; AStartOffset: integer): string; overload; static;
     class function SubStr(const AString: string; AStartOffset, ALength: integer): string; overload; static;
     class function Substring(const AString: string; AStartOffset, AEndOffset: integer): string; overload; static;
@@ -181,7 +193,21 @@ type
     class function PadLeft(const AStr: string; const ANum: integer): string; overload; static;
     class function PadRight(const AStr: string; const ANum: integer): string; overload; static;
     class function PadRight(const AStr: string; const ANum: integer; const APadChar: char): string; overload; static;
+{$IFDEF SEMPARE_TEMPLATE_FIREDAC}
     class function RecordCount(const ADataset: TDataSet): integer; static;
+{$ENDIF}
+{$IFDEF SUPPORT_ENCODING}
+    class function Base64Encode(const AStr: string): string; static;
+    class function Base64Decode(const AStr: string): string; static;
+    class function HtmlUnescape(const AStr: string): string; static;
+    class function HtmlEscape(const AStr: string): string; static;
+{$ENDIF}
+{$IFDEF SUPPORT_HASH}
+    class function Md5(const AStr: string): string; static;
+    class function Sha1(const AStr: string): string; static;
+    class function Sha256(const AStr: string): string; static;
+{$ENDIF}
+    class function TemplateExists(const AContext: ITemplateContext; const AStr: string): boolean; static;
   end;
 
 class function TInternalFuntions.PadLeft(const AStr: string; const ANum: integer): string;
@@ -246,6 +272,27 @@ begin
   TArray.Sort<T>(LArray);
   exit(TValue.From < TArray < T >> (LArray));
 end;
+{$IFDEF SUPPORT_HASH}
+
+class function TInternalFuntions.Sha1(const AStr: string): string;
+begin
+  exit(THashSha1.GetHashString(AStr));
+end;
+
+class function TInternalFuntions.Sha256(const AStr: string): string;
+var
+  LHash: THashSha2;
+begin
+  LHash := THashSha2.Create(THashSha2.TSHA2Version.Sha256);
+  LHash.Update(AStr);
+  exit(LHash.HashAsString);
+end;
+
+class function TInternalFuntions.Md5(const AStr: string): string;
+begin
+  exit(THashMD5.GetHashString(AStr));
+end;
+{$ENDIF}
 
 class function TInternalFuntions.Sort(const AArray: TValue): TValue;
 
@@ -319,9 +366,26 @@ begin
   exit(AString.ToUpper());
 end;
 
+class function TInternalFuntions.TemplateExists(const AContext: ITemplateContext; const AStr: string): boolean;
+var
+  LTemplate: ITemplate;
+begin
+  exit(AContext.TryGetTemplate(AStr, LTemplate));
+end;
+
 class function TInternalFuntions.Trim(const AString: string): string;
 begin
   exit(AString.Trim());
+end;
+
+class function TInternalFuntions.TrimLeft(const AString: string): string;
+begin
+  exit(AString.TrimLeft);
+end;
+
+class function TInternalFuntions.TrimRight(const AString: string): string;
+begin
+  exit(AString.TrimRight);
 end;
 
 class function TInternalFuntions.TypeOf(const AValue: TValue): string;
@@ -486,6 +550,28 @@ class function TInternalFuntions.FmtDt(const AFormat: string; const ADateTime: T
 begin
   exit(FormatDateTime(AFormat, ADateTime));
 end;
+{$IFDEF SUPPORT_ENCODING}
+
+class function TInternalFuntions.HtmlEscape(const AStr: string): string;
+begin
+  exit(TNetEncoding.HTML.Encode(AStr));
+end;
+
+class function TInternalFuntions.HtmlUnescape(const AStr: string): string;
+begin
+  exit(TNetEncoding.HTML.Decode(AStr));
+end;
+
+class function TInternalFuntions.Base64Decode(const AStr: string): string;
+begin
+  exit(TNetEncoding.Base64.Decode(AStr));
+end;
+
+class function TInternalFuntions.Base64Encode(const AStr: string): string;
+begin
+  exit(TNetEncoding.Base64.Encode(AStr));
+end;
+{$ENDIF}
 
 class function TInternalFuntions.Bool(const AValue: TValue): boolean;
 begin
@@ -661,11 +747,13 @@ class function TInternalFuntions.PadLeft(const AStr: string; const ANum: integer
 begin
   exit(AStr.PadLeft(ANum, APadChar));
 end;
+{$IFDEF SEMPARE_TEMPLATE_FIREDAC}
 
 class function TInternalFuntions.RecordCount(const ADataset: TDataSet): integer;
 begin
   exit(ADataset.RecordCount);
 end;
+{$ENDIF}
 
 initialization
 

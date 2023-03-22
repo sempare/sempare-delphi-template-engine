@@ -93,6 +93,20 @@ type
     procedure TestIsNil;
     [Test]
     procedure TestProcedure;
+    [Test]
+    procedure TestMd5;
+    [Test]
+    procedure TestSha1;
+    [Test]
+    procedure TestSha256;
+    [Test]
+    procedure TestBase64Encode;
+    [Test]
+    procedure TestBase64Decode;
+    [Test]
+    procedure HtmlEscape;
+    [Test]
+    procedure HtmlUnescape;
   end;
 
 type
@@ -115,6 +129,26 @@ uses
 procedure TFunctionTest.AddFmtNumTest;
 begin
   Assert.AreEqual('123.457', Template.Eval('<% x := 123.456789 %><% fmt("%6.3f", x) %>'));
+end;
+
+procedure TFunctionTest.HtmlEscape;
+begin
+  Assert.AreEqual('&lt;script&gt;alert(&quot;hello&quot;);&lt;/script&gt;', Template.Eval('<% HtmlEscape(''<script>alert("hello");</script>'') %>'));
+end;
+
+procedure TFunctionTest.HtmlUnescape;
+begin
+  Assert.AreEqual('<script>alert("hello");</script>', Template.Eval('<% HtmlUnescape(''&lt;script&gt;alert(&quot;hello&quot;);&lt;/script&gt;'') %>'));
+end;
+
+procedure TFunctionTest.TestBase64Decode;
+begin
+  Assert.AreEqual('hello world', Template.Eval('<% Base64Decode(''aGVsbG8gd29ybGQ='') %>'));
+end;
+
+procedure TFunctionTest.TestBase64Encode;
+begin
+  Assert.AreEqual('aGVsbG8gd29ybGQ=', Template.Eval('<% Base64Encode(''hello world'') %>'));
 end;
 
 procedure TFunctionTest.TestChrOrd;
@@ -218,12 +252,16 @@ begin
   Assert.AreEqual('ok', Template.Eval('<% (match(''aaaaabbbbb'',''a+b*'')?''ok'':''fail'') %>'));
 end;
 
+procedure TFunctionTest.TestMd5;
+begin
+  Assert.AreEqual('5eb63bbbe01eeed093cb22bb8f5acdc3', Template.Eval('<% md5(''hello world'') %>'));
+end;
+
 procedure TFunctionTest.TestNum;
 begin
   Assert.AreEqual('123', Template.Eval('<% num(''123'') %>'));
   Assert.AreEqual('123', Template.Eval('<% num(123) %>'));
   Assert.AreEqual('123.45', Template.Eval('<% num(123.45) %>'));
-
 end;
 
 procedure TFunctionTest.TestPadding;
@@ -269,6 +307,16 @@ procedure TFunctionTest.TestRev;
 begin
   Assert.AreEqual('dlrow', Template.Eval('<% rev(''world'') %>'));
   Assert.AreEqual('ddccbbaa', Template.Eval('<% rev(''aabbccdd'') %>'));
+end;
+
+procedure TFunctionTest.TestSha1;
+begin
+  Assert.AreEqual('2aae6c35c94fcfb415dbe95f408b9ce91ee846ed', Template.Eval('<% sha1(''hello world'') %>'));
+end;
+
+procedure TFunctionTest.TestSha256;
+begin
+  Assert.AreEqual('b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9', Template.Eval('<% sha256(''hello world'') %>'));
 end;
 
 procedure TFunctionTest.TestSort;
