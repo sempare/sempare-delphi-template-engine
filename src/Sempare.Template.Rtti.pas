@@ -88,6 +88,7 @@ type
 procedure RegisterDeref(const AMatch: TDerefMatchFunction; const AFunction: TDerefFunction); overload;
 procedure RegisterDeref(const AMatch: TDerefMatchInterfaceFunction; const AFunction: TDerefFunction); overload;
 procedure RegisterPopulateStackFrame(const AMatch: TPopulateMatchFunction; const APopulator: TPopulateStackFrame); overload;
+procedure RegisterEmptyObjectCheck(const AMatch: TDerefMatchFunction; const AFunction: TCheckEmptyObjectFunction);
 
 function PopulateStackFrame(const StackFrame: TStackFrame; const ARttiType: TRttiType; const AClass: TValue): boolean;
 
@@ -100,6 +101,7 @@ implementation
 uses
 {$IFDEF SUPPORT_JSON_DBX}
   Data.DBXJSON,
+  Data.DBXPlatform,
 {$ELSE}
   System.JSON,
 {$ENDIF}
@@ -911,11 +913,19 @@ begin
     exit(true);
   if AObject is TJSONArray then
   begin
+{$IFDEF SUPPORT_JSON_DBX}
+    exit(LJsonArray.Size = 0);
+{$ELSE}
     exit(LJsonArray.Count = 0);
+{$ENDIF}
   end
   else if AObject is TJsonObject then
   begin
-    exit(LJsonObject.Count = 0);
+{$IFDEF SUPPORT_JSON_DBX}
+    exit(LJsonArray.Size = 0);
+{$ELSE}
+    exit(LJsonArray.Count = 0);
+{$ENDIF}
   end;
   exit(false);
 end;
