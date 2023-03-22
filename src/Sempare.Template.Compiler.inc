@@ -69,9 +69,6 @@
 {$ENDIF}
 // -----------------------------------------------
 
-// Uncomment the following to test TDataSet using FIREDAC TFDMemTable
-// {$DEFINE SEMPARE_TEMPLATE_FIREDAC}
-
 // Uncomment the following if Indy is not present
 // {$DEFINE SEMPARE_TEMPLATE_NO_INDY}
 
