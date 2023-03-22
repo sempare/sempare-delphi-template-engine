@@ -65,6 +65,8 @@ function isEqual(const ALeft: TValue; const ARight: TValue; const AContext: ITem
 function isLessThan(const ALeft: TValue; const ARight: TValue; const AContext: ITemplateContext): boolean;
 function isGreaterThan(const ALeft: TValue; const ARight: TValue; const AContext: ITemplateContext): boolean;
 
+function IsEmptyObject(const AObject: TObject): boolean;
+
 procedure AssertBoolean(const APositional: IPosition; const ALeft: TValue); overload;
 procedure AssertBoolean(const APositional: IPosition; const ALeft: TValue; const ARight: TValue); overload;
 
@@ -81,10 +83,12 @@ type
   TDerefFunction = function(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
   TPopulateStackFrame = procedure(const StackFrame: TStackFrame; const ARttiType: TRttiType; const AClass: TValue);
   TPopulateMatchFunction = function(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
+  TCheckEmptyObjectFunction = function(const AObject: TObject): boolean;
 
 procedure RegisterDeref(const AMatch: TDerefMatchFunction; const AFunction: TDerefFunction); overload;
 procedure RegisterDeref(const AMatch: TDerefMatchInterfaceFunction; const AFunction: TDerefFunction); overload;
 procedure RegisterPopulateStackFrame(const AMatch: TPopulateMatchFunction; const APopulator: TPopulateStackFrame); overload;
+procedure RegisterEmptyObjectCheck(const AMatch: TDerefMatchFunction; const AFunction: TCheckEmptyObjectFunction);
 
 function PopulateStackFrame(const StackFrame: TStackFrame; const ARttiType: TRttiType; const AClass: TValue): boolean;
 
@@ -97,6 +101,7 @@ implementation
 uses
 {$IFDEF SUPPORT_JSON_DBX}
   Data.DBXJSON,
+  Data.DBXPlatform,
 {$ELSE}
   System.JSON,
 {$ENDIF}
@@ -110,6 +115,7 @@ var
   GPopulateFunctions: TList<TPair<TPopulateMatchFunction, TPopulateStackFrame>>;
   GDerefFunctions: TList<TPair<TDerefMatchFunction, TDerefFunction>>;
   GDerefInterfaceFunctions: TList<TPair<TDerefMatchInterfaceFunction, TDerefFunction>>;
+  GEmptyObjectFunctions: TList<TPair<TDerefMatchFunction, TCheckEmptyObjectFunction>>;
 
 const
   INT_LIKE: set of TTypeKind = [tkInteger, tkInt64];
@@ -129,6 +135,11 @@ end;
 procedure RegisterPopulateStackFrame(const AMatch: TPopulateMatchFunction; const APopulator: TPopulateStackFrame); overload;
 begin
   GPopulateFunctions.add(TPair<TPopulateMatchFunction, TPopulateStackFrame>.Create(AMatch, APopulator));
+end;
+
+procedure RegisterEmptyObjectCheck(const AMatch: TDerefMatchFunction; const AFunction: TCheckEmptyObjectFunction);
+begin
+  GEmptyObjectFunctions.add(TPair<TDerefMatchFunction, TCheckEmptyObjectFunction>.Create(AMatch, AFunction));
 end;
 
 function PopulateStackFrame(const StackFrame: TStackFrame; const ARttiType: TRttiType; const AClass: TValue): boolean;
@@ -771,6 +782,30 @@ begin
   RaiseError(APositional, SEnumerableTypeExpected);
 end;
 
+function MatchQueue(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
+var
+  LClassName: string;
+begin
+  LClassName := AClass.QualifiedClassName;
+  exit(LClassName.StartsWith('System.Generics.Collections.TQueue') or LClassName.StartsWith('System.Generics.Collections.TObjectQueue'));
+end;
+
+function MatchStack(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
+var
+  LClassName: string;
+begin
+  LClassName := AClass.QualifiedClassName;
+  exit(LClassName.StartsWith('System.Generics.Collections.TStack') or LClassName.StartsWith('System.Generics.Collections.TObjectStack'));
+end;
+
+function MatchList(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
+var
+  LClassName: string;
+begin
+  LClassName := AClass.QualifiedClassName;
+  exit(LClassName.StartsWith('System.Generics.Collections.TList') or LClassName.StartsWith('System.Generics.Collections.TObjectList'));
+end;
+
 function MatchDictionary(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
 var
   LClassName: string;
@@ -841,6 +876,76 @@ begin
   exit(AClass = TTemplateVariables);
 end;
 
+function IsDataSetEmpty(const AObject: TObject): boolean;
+var
+  LType: TRttiType;
+  LCount: integer;
+  LCountProp: TRttiProperty;
+begin
+  if AObject = nil then
+    exit(true);
+  LType := GRttiContext.GetType(AObject.ClassType);
+  LCountProp := LType.GetProperty('RecordCount');
+  LCount := LCountProp.GetValue(AObject).AsInteger;
+  exit(LCount = 0);
+end;
+
+function IsGenericCollectionEmpty(const AObject: TObject): boolean;
+var
+  LType: TRttiType;
+  LCount: integer;
+  LCountProp: TRttiProperty;
+begin
+  if AObject = nil then
+    exit(true);
+  LType := GRttiContext.GetType(AObject.ClassType);
+  LCountProp := LType.GetProperty('Count');
+  LCount := LCountProp.GetValue(AObject).AsInteger;
+  exit(LCount = 0);
+end;
+
+function IsJsonObjectEmpty(const AObject: TObject): boolean;
+var
+  LJsonArray: TJSONArray absolute AObject;
+  LJsonObject: TJsonObject absolute AObject;
+begin
+  if AObject = nil then
+    exit(true);
+  if AObject is TJSONArray then
+  begin
+{$IFDEF SUPPORT_JSON_DBX}
+    exit(LJsonArray.Size = 0);
+{$ELSE}
+    exit(LJsonArray.Count = 0);
+{$ENDIF}
+  end
+  else if AObject is TJsonObject then
+  begin
+{$IFDEF SUPPORT_JSON_DBX}
+    exit(LJsonArray.Size = 0);
+{$ELSE}
+    exit(LJsonArray.Count = 0);
+{$ENDIF}
+  end;
+  exit(false);
+end;
+
+function IsEmptyObject(const AObject: TObject): boolean;
+var
+  LPair: TPair<TDerefMatchFunction, TCheckEmptyObjectFunction>;
+begin
+  if AObject = nil then
+    exit(true);
+  for LPair in GEmptyObjectFunctions do
+  begin
+    if LPair.Key(AObject.classinfo, AObject.ClassType) then
+    begin
+      exit(LPair.Value(AObject));
+    end;
+  end;
+  exit(false);
+end;
+
 initialization
 
 GRttiContext := TRttiContext.Create;
@@ -848,6 +953,7 @@ GRttiContext := TRttiContext.Create;
 GDerefInterfaceFunctions := TList < TPair < TDerefMatchInterfaceFunction, TDerefFunction >>.Create;
 GDerefFunctions := TList < TPair < TDerefMatchFunction, TDerefFunction >>.Create;
 GPopulateFunctions := TList < TPair < TPopulateMatchFunction, TPopulateStackFrame >>.Create;
+GEmptyObjectFunctions := TList < TPair < TDerefMatchFunction, TCheckEmptyObjectFunction >>.Create;
 
 RegisterDeref(MatchTemplateVariableObject, processTemplateVariables);
 RegisterDeref(MatchDictionary, processDictionary);
@@ -856,6 +962,12 @@ RegisterPopulateStackFrame(MatchJsonObject, PopulateStackFrameFromJsonObject);
 RegisterPopulateStackFrame(MatchStringDictionary, PopulateStackFrameFromDictionary);
 RegisterDeref(MatchTemplateVariables, processTemplateVariables);
 RegisterDeref(MatchDataSet, processDataSet);
+RegisterEmptyObjectCheck(MatchDictionary, IsGenericCollectionEmpty);
+RegisterEmptyObjectCheck(MatchList, IsGenericCollectionEmpty);
+RegisterEmptyObjectCheck(MatchQueue, IsGenericCollectionEmpty);
+RegisterEmptyObjectCheck(MatchStack, IsGenericCollectionEmpty);
+RegisterEmptyObjectCheck(MatchJsonObject, IsJsonObjectEmpty);
+RegisterEmptyObjectCheck(MatchDataSet, IsDataSetEmpty);
 
 finalization
 
@@ -864,5 +976,6 @@ GRttiContext.Free;
 GDerefFunctions.Free;
 GDerefInterfaceFunctions.Free;
 GPopulateFunctions.Free;
+GEmptyObjectFunctions.Free;
 
 end.

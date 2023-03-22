@@ -1,4 +1,7 @@
-[![](https://tokei.rs/b1/github/sempare/sempare-delphi-template-engine?category=lines)](https://github.com/sempare/sempare-delphi-template-engine) [![](https://tokei.rs/b1/github/sempare/sempare-delphi-template-engine?category=code)](https://github.com/sempare/sempare-delphi-template-engine) [![](https://tokei.rs/b1/github/sempare/sempare-delphi-template-engine?category=files)](https://github.com/sempare/sempare-delphi-template-engine)
+![delphi compatibility](https://img.shields.io/badge/delphi%20compatability-XE%204%20or%20newer-brightgreen)
+![platform compatibility](https://img.shields.io/badge/platform-Android32%20%7C%20Android64%20%7C%20Linux64%20%7C%20macOS64%20%7C%20Win32%20%7C%20Win64-lightgrey)
+![license](https://img.shields.io/github/license/sempare/sempare-delphi-template-engine) 
+
 
 # ![](./images/sempare-logo-45px.png) Sempare Template Engine
 
@@ -18,29 +21,30 @@ Open Source: https://github.com/sempare/sempare-delphi-template-engine
 5. [Requirements](#Requirements)
 6. [Installation: GetIt](#GetIt)
 7. [Installation: Delphinus](#DelphinusSupport)
-8. [Feedback](#Feedback)
-9. [Statements](./docs/statements.md)
-10. [Expressions](./docs/expressions.md)
-11. [Builtin functions](./docs/builtin-functions.md)
-12. [Builtin variables](./docs/builtin-variables.md)
-13. [Custom functions](./docs/custom-functions.md)
-14. [Configuration](./docs/configuration.md)
-15. [Components](./docs/components.md)
-16. [Tricks](./docs/tricks.md)
-17. [Template Patterns](./docs/template-patterns.md)
-18. [Internals](./docs/internals.md)
-19. [Restrictions/Limitations/Known Bugs](./docs/restrictions.md)
-20. [License](#License)
+8. [Installation: Manual Install](#ManualInstall)
+9. [Feedback](#Feedback)
+10. [Statements](./docs/statements.md)
+11. [Expressions](./docs/expressions.md)
+12. [Builtin functions](./docs/builtin-functions.md)
+13. [Builtin variables](./docs/builtin-variables.md)
+14. [Custom functions](./docs/custom-functions.md)
+15. [Configuration](./docs/configuration.md)
+16. [Components](./docs/components.md)
+17. [Tricks](./docs/tricks.md)
+18. [Template Patterns](./docs/template-patterns.md)
+19. [Internals](./docs/internals.md)
+20. [Restrictions/Limitations/Known Bugs](./docs/restrictions.md)
+21. [License](#License)
 
 ## Introduction
 
-Template engines are used often in in the technology where text needs to be customised by substituting variables with values from a data source. Examples where this may take place:
-- web sites using template engines (or languages)
+Template engines are used often in technology where text needs to be customised by substituting variables with values from a data source. Examples where this may take place:
+- web sites using template engines (for server side scripting)
 - code generation
 - mail merge 
 - notification messages 
 
-The Sempare Template Engine is a small templating engine for [Delphi](https://www.embarcadero.com/products/delphi) (Object Pascal) that allows for templates to be created easily and efficiently by providing a simple and easy to use interface.
+The Sempare Template Engine is a small templating engine for [Delphi](https://www.embarcadero.com/products/delphi) (Object Pascal) that allows for templates to be created easily and efficiently by providing a simple and easy to use API.
 
 Example usage:
 ```
@@ -67,7 +71,7 @@ begin
 end.
 ```
 
-The project uses RTTI to allow for almost any type to be dereferenced.
+The project uses Run-time Type Information (RTTI) to allow for almost any type to be dereferenced within the template script.
 
 In the example above, you can see that the '<%' start and '%>' end the scripting statement respectively. Within a scripting statement, you can reference variables, assign variables, use conditions, for and while loops, and include other templates.
 
@@ -115,7 +119,7 @@ The playlist has a few videos that are very short (most less than a minute - bli
 
 The Sempare Template Engine is not intended to be a fully featured general purpose programming language such as PHP where the script itself could be a self contained programming language (but it does have most of the features).
 
-Sempare Template Engine aims to provide just enough functionality to allow you to easily work with the 'view' aspects of a template. Any enhanced functionality required from the scripting environment should be provided by the custom functions written in Pascal.
+Sempare Template Engine aims to provide just enough functionality to allow you to easily work with the 'view' aspects of a template. Any enhanced functionality required from the scripting environment should be provided by the custom functions written in Object Pascal.
 
 ## Requirements
 
@@ -125,20 +129,18 @@ Tests currently run using the DUnitX TestFramework.
 
 An attempt has been made not to use the latest features to ease backward compatability. The following versions have been tested:
 
-- Delphi XE 4
-- Delphi XE 8
+- Delphi XE 4 to XE 9
 - Delphi 10.0 Seatle
 - Delphi 10.1 Berlin
 - Delphi 10.2 Tokyo
 - Delphi 10.3.3 Rio
 - Delphi 10.4 Sydney
-- Delphi 11.0-11.2 Alexandria
+- Delphi 11.0 to 11.3 Alexandria
 
 There should be no platform specific restrictions.
 
 Have a look at Sempare.Template.Compiler.inc. The following defines can be defined if appropriate:
 
-- SEMPARE_TEMPLATE_FIREDAC - to support tests for TDataSet
 - SEMPARE_TEMPLATE_NO_INDY - if Indy is not present. This is used to access an html encoder if TNetEncoding is not available.
 - SEMPARE_TEMPLATE_CONFIRM_LICENSE - if present, you confirm you understand the conditions.
 
@@ -154,7 +156,7 @@ The Sempare Template Engine for Delphi can be installed via the [Delphinus](http
 
 This will add the *src* folder to the search path so you can start working immediately.
 
-### Using the Sempare Template Engine in your Delphi project
+<a name="ManualInstall"><h2>Installation: Manual Install</h2></a>
 
 Start by adding the *src* folder to the Delphi search path. Otherwise, there are some projects you can use:
 

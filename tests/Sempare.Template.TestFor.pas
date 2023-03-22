@@ -90,6 +90,12 @@ type
     procedure TestCycle;
     [Test]
     procedure TestForOnEvent;
+    [Test]
+    procedure TestForInDict;
+    [Test]
+    procedure TestForOfArray;
+    [Test]
+    procedure TestForOfDynArray;
   end;
 
 implementation
@@ -338,6 +344,29 @@ begin
   end;
 end;
 
+procedure TTestTemplateFor.TestForOfArray;
+var
+  LArray: array [6 .. 10] of integer;
+  i: integer;
+begin
+  for i := Low(LArray) to High(LArray) do
+    LArray[i] := i - 5;
+  Assert.AreEqual('6 7 8 9 10 | 1 2 3 4 5 ', Template.Eval('<% for i in _ %><% i %> <%end%>| <% for i in _ %><% _[i] %> <%end%>', LArray));
+  Assert.AreEqual('1 2 3 4 5 ', Template.Eval('<% for i of _ %><% i %> <%end%>', LArray));
+end;
+
+procedure TTestTemplateFor.TestForOfDynArray;
+var
+  LArray: TArray<integer>;
+  i: integer;
+begin
+  setlength(LArray, 5);
+  for i := Low(LArray) to High(LArray) do
+    LArray[i] := i * 5;
+  Assert.AreEqual('0 1 2 3 4 | 0 5 10 15 20 ', Template.Eval('<% for i in _ %><% i %> <%end%>| <% for i in _ %><% _[i] %> <%end%>', LArray));
+  Assert.AreEqual('0 5 10 15 20 ', Template.Eval('<% for i of _ %><% i %> <%end%>', LArray));
+end;
+
 procedure TTestTemplateFor.TestForOnEvent;
 begin
   Assert.AreEqual('empty', Template.Eval('<% for i in [] %><% i %><% onbegin%>start<% onend %>end<% onempty %>empty<%end%>'));
@@ -434,6 +463,21 @@ begin
     Assert.AreEqual(' conrad 10 christa 20', Template.Eval('<%for i in _ %> <% i.name %> <% i.age %><%end%>', info));
   finally
     info.Free;
+  end;
+end;
+
+procedure TTestTemplateFor.TestForInDict;
+
+var
+  LDict: TDictionary<string, integer>;
+begin
+  LDict := TDictionary<string, integer>.Create();
+  try
+    LDict.Add('a', 1);
+    LDict.Add('b', 2);
+    Assert.AreEqual(' b 2 a 1', Template.Eval('<%for i in _ %> <% i.key %> <% i.value %><%end%>', LDict));
+  finally
+    LDict.Free;
   end;
 end;
 

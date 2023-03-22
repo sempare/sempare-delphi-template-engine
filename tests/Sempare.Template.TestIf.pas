@@ -59,12 +59,27 @@ type
     procedure TestIfWithBreak;
     [Test]
     procedure TestIfWithContinue;
+    [Test]
+    procedure TestIfArray;
+    [Test]
+    procedure TestIfDynArray;
+    [Test]
+    procedure TestIfList;
+    [Test]
+    procedure TestIfDict;
+    [Test{$IFDEF SEMPARE_TEMPLATE_FIREDAC}, Ignore {$ENDIF}]
+    procedure TestIfDataSet;
   end;
 
 implementation
 
 uses
+{$IFDEF SEMPARE_TEMPLATE_FIREDAC}
+  Data.DB,
+  FireDAC.Comp.Client,
+{$ENDIF}
   SysUtils,
+  System.Generics.Collections,
   Sempare.Template;
 
 type
@@ -72,13 +87,118 @@ type
     Val: string;
   end;
 
+{$IFDEF SEMPARE_TEMPLATE_FIREDAC}
+
+function CreateMockUsersTable(): TFDMemTable;
+var
+  ds: TFDMemTable;
+begin
+  ds := TFDMemTable.Create(nil);
+  with ds do
+  begin
+    FieldDefs.Add('name', ftWideString, 20);
+    FieldDefs.Add('age', ftInteger);
+    FieldDefs.Add('weight', ftFloat);
+    CreateDataSet;
+  end;
+  with ds do
+  begin
+    Append;
+    FieldByName('name').value := 'joe';
+    FieldByName('age').value := 5;
+    FieldByName('weight').value := 15;
+    Post;
+  end;
+  exit(ds);
+end;
+
+{$ENDIF}
+
 procedure TTestTemplateIf.TestEmptyStringAsIfCondition;
 var
-  data: TStrCond;
+  Data: TStrCond;
 begin
-  Assert.AreEqual('ok', Template.Eval('<% if not val %>ok<% end %>', data));
-  data.Val := 'something';
-  Assert.AreEqual('ok', Template.Eval('<% if val %>ok<% end %>', data));
+  Assert.AreEqual('ok', Template.Eval('<% if not val %>ok<% end %>', Data));
+  Data.Val := 'something';
+  Assert.AreEqual('ok', Template.Eval('<% if val %>ok<% end %>', Data));
+end;
+
+procedure TTestTemplateIf.TestIfArray;
+var
+  Data0: array [0 .. 0] of string;
+  DataB: array [boolean] of string;
+  Data: array [0 .. 1] of string;
+begin
+  Assert.AreEqual('there are values', Template.Eval('<% if _ %>there are values<% end %>', DataB));
+  Assert.AreEqual('there are values', Template.Eval('<% if _ %>there are values<% end %>', Data0));
+  Assert.AreEqual('there are values', Template.Eval('<% if _ %>there are values<% end %>', Data));
+end;
+
+{$IFDEF SEMPARE_TEMPLATE_FIREDAC}
+
+procedure TTestTemplateIf.TestIfDataSet;
+var
+  Data: TDataSet;
+begin
+  Data := nil;
+  Assert.AreEqual('', Template.Eval('<% if _ %>there are values<% end %>', Data));
+  try
+    Data := CreateMockUsersTable;
+    Assert.AreEqual('there are values', Template.Eval('<% if _ %>there are values<% end %>', Data));
+    Data.First;
+    Data.Delete;
+    Assert.AreEqual('', Template.Eval('<% if _ %>there are values<% end %>', Data));
+  finally
+    Data.free;
+  end;
+end;
+{$ELSE}
+
+procedure TTestTemplateIf.TestIfDataSet;
+begin
+end;
+{$ENDIF}
+
+procedure TTestTemplateIf.TestIfDict;
+var
+  Data: TDictionary<string, string>;
+begin
+  Data := nil;
+  Assert.AreEqual('', Template.Eval('<% if _ %>there are values<% end %>', Data));
+  try
+    Data := TDictionary<string, string>.Create;
+    Assert.AreEqual('', Template.Eval('<% if _ %>there are values<% end %>', Data));
+    Data.Add('test', 'test');
+    Assert.AreEqual('there are values', Template.Eval('<% if _ %>there are values<% end %>', Data));
+  finally
+    Data.free;
+  end;
+end;
+
+procedure TTestTemplateIf.TestIfDynArray;
+var
+  Data: TArray<string>;
+begin
+  setlength(Data, 0);
+  Assert.AreEqual('', Template.Eval('<% if _ %>there are values<% end %>', Data));
+  setlength(Data, 2);
+  Assert.AreEqual('there are values', Template.Eval('<% if _ %>there are values<% end %>', Data));
+end;
+
+procedure TTestTemplateIf.TestIfList;
+var
+  Data: TList<string>;
+begin
+  Data := nil;
+  Assert.AreEqual('', Template.Eval('<% if _ %>there are values<% end %>', Data));
+  try
+    Data := TList<string>.Create;
+    Assert.AreEqual('', Template.Eval('<% if _ %>there are values<% end %>', Data));
+    Data.Add('test');
+    Assert.AreEqual('there are values', Template.Eval('<% if _ %>there are values<% end %>', Data));
+  finally
+    Data.free;
+  end;
 end;
 
 procedure TTestTemplateIf.TestIfWithBreak;

@@ -670,6 +670,7 @@ AddHashedKeyword('limit', vsLimit);
 AddHashedKeyword('break', vsBreak);
 AddHashedKeyword('continue', vsContinue);
 AddHashedKeyword('in', vsIn);
+AddHashedKeyword('of', vsOf);
 AddHashedKeyword('end', vsEnd);
 AddHashedKeyword('include', vsInclude);
 AddHashedKeyword('to', vsTo);
