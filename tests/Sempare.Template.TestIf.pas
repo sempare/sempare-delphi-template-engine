@@ -67,15 +67,17 @@ type
     procedure TestIfList;
     [Test]
     procedure TestIfDict;
-    [Test]
+    [Test{$IFDEF SEMPARE_TEMPLATE_FIREDAC}, Ignore {$ENDIF}]
     procedure TestIfDataSet;
   end;
 
 implementation
 
 uses
+{$IFDEF SEMPARE_TEMPLATE_FIREDAC}
   Data.DB,
   FireDAC.Comp.Client,
+{$ENDIF}
   SysUtils,
   System.Generics.Collections,
   Sempare.Template;
@@ -84,6 +86,8 @@ type
   TStrCond = record
     Val: string;
   end;
+
+{$IFDEF SEMPARE_TEMPLATE_FIREDAC}
 
 function CreateMockUsersTable(): TFDMemTable;
 var
@@ -108,6 +112,8 @@ begin
   exit(ds);
 end;
 
+{$ENDIF}
+
 procedure TTestTemplateIf.TestEmptyStringAsIfCondition;
 var
   Data: TStrCond;
@@ -128,6 +134,8 @@ begin
   Assert.AreEqual('there are values', Template.Eval('<% if _ %>there are values<% end %>', Data));
 end;
 
+{$IFDEF SEMPARE_TEMPLATE_FIREDAC}
+
 procedure TTestTemplateIf.TestIfDataSet;
 var
   Data: TDataSet;
@@ -144,6 +152,12 @@ begin
     Data.free;
   end;
 end;
+{$ELSE}
+
+procedure TTestTemplateIf.TestIfDataSet;
+begin
+end;
+{$ENDIF}
 
 procedure TTestTemplateIf.TestIfDict;
 var
