@@ -141,7 +141,6 @@ There should be no platform specific restrictions.
 
 Have a look at Sempare.Template.Compiler.inc. The following defines can be defined if appropriate:
 
-- SEMPARE_TEMPLATE_FIREDAC - to support tests for TDataSet
 - SEMPARE_TEMPLATE_NO_INDY - if Indy is not present. This is used to access an html encoder if TNetEncoding is not available.
 - SEMPARE_TEMPLATE_CONFIRM_LICENSE - if present, you confirm you understand the conditions.
 

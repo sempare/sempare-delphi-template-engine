@@ -851,11 +851,14 @@ begin
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AStmt: IIfStmt);
+var
+  LExpr: TValue;
 begin
   if HasBreakOrContinue then
     exit;
   AcceptVisitor(AStmt.Condition, self);
-  if AsBoolean(FEvalStack.pop) then
+  LExpr := FEvalStack.pop;
+  if LExpr.IsObject and not IsEmptyObject(LExpr.AsObject) or not LExpr.IsObject and AsBoolean(LExpr) then
     AcceptVisitor(AStmt.TrueContainer, self)
   else if AStmt.FalseContainer <> nil then
     AcceptVisitor(AStmt.FalseContainer, self);
