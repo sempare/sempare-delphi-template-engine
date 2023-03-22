@@ -43,9 +43,13 @@
 {$ENDIF}
 // -----------------------------------------------
 {$IF CompilerVersion >= 26} // from XE5 onwards
-{$UNDEF SUPPORT_JSON_DBX}
 {$UNDEF BROKEN_ARRAY_BOUNDS}
 {$DEFINE SUPPORT_JSON true}
+{$DEFINE SEMPARE_TEMPLATE_FIREDAC}
+{$ENDIF}
+// -----------------------------------------------
+{$IF CompilerVersion >= 28}  // from XE7 onwards
+{$UNDEF SUPPORT_JSON_DBX}
 {$ENDIF}
 // -----------------------------------------------
 {$IF CompilerVersion >= 28}  // from XE7 onwards
@@ -58,6 +62,8 @@
 // -----------------------------------------------
 {$IF CompilerVersion >= 30} // from Delphi 10.0 Seatle onwards
 {$DEFINE SUPPORT_JSON_BOOL true}
+{$DEFINE SUPPORT_ENCODING true}
+{$DEFINE SUPPORT_HASH true}
 {$ENDIF}
 // -----------------------------------------------
 {$IF CompilerVersion >= 31}  // from Delphi 10.1 Berlin onwards

@@ -80,11 +80,11 @@ type
     procedure TestWithInlineArray;
     [Test]
     procedure TestWithEmptyInlineArray;
-    [Test]
+    [Test{$IFNDEF SEMPARE_TEMPLATE_FIREDAC}, Ignore{$ENDIF}]
     procedure TestDataSetWithEvent;
-    [Test]
+    [Test{$IFNDEF SEMPARE_TEMPLATE_FIREDAC}, Ignore{$ENDIF}]
     procedure TestDataSet;
-    [Test]
+    [Test{$IFNDEF SEMPARE_TEMPLATE_FIREDAC}, Ignore{$ENDIF}]
     procedure TestDataSetCount;
     [Test]
     procedure TestCycle;
@@ -101,10 +101,14 @@ type
 implementation
 
 uses
+{$IFDEF SEMPARE_TEMPLATE_FIREDAC}
   Data.DB,
   FireDAC.Comp.Client,
+{$ENDIF}
   System.Generics.Collections,
   Sempare.Template;
+
+{$IFDEF SEMPARE_TEMPLATE_FIREDAC}
 
 function CreateMockUsersTable(): TFDMemTable;
 var
@@ -185,6 +189,22 @@ begin
     ds.Free;
   end;
 end;
+{$ELSE}
+
+procedure TTestTemplateFor.TestDataSetWithEvent;
+begin
+end;
+
+procedure TTestTemplateFor.TestDataSet;
+begin
+end;
+
+procedure TTestTemplateFor.TestDataSetCount;
+begin
+
+end;
+
+{$ENDIF}
 
 procedure TTestTemplateFor.TestCycle;
 begin
