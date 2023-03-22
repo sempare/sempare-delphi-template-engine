@@ -66,6 +66,13 @@ some text
     the end
 ```
 
+When an expression references a collection (dataset, list, tarray, stack, queue), the expression evaluates to true only if the collection contains items. This means you can easily check for content:
+```
+<% if lst %>
+the list as at least one item
+<% end %>
+```
+
 ### for
 
 The _for to/downto_ loop comes in two forms as it does in Object Pascal:
