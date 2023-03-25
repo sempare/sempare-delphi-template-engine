@@ -127,12 +127,14 @@ type
     FToken: TTemplateSymbol;
     FPosition: IPosition;
     FStripWS: Boolean;
+    FStripAction: TStripAction;
     function GetPosition: IPosition;
   public
-    constructor Create(const APosition: IPosition; const AToken: TTemplateSymbol; const AStripWS: Boolean = false);
+    constructor Create(const APosition: IPosition; const AToken: TTemplateSymbol; const AStripWS: Boolean = false; const AStripAction: TStripAction = saNone);
     procedure SetToken(const AToken: TTemplateSymbol);
     function GetToken: TTemplateSymbol;
     function StripWS: Boolean;
+    function GetStripAction: TStripAction;
   end;
 
   TTemplateValueSymbol = class(TSimpleTemplateSymbol, ITemplateValueSymbol)
@@ -247,6 +249,7 @@ var
   LLast: char;
   LEndExpect: char;
   LEndStripWS: Boolean;
+  LStripAction: TStripAction;
 
   function MakePosition: IPosition;
   begin
@@ -256,13 +259,14 @@ var
       exit(TPosition.Create(FFilename, LLine, LPosition));
   end;
 
-  function SimpleToken(const ASymbol: TTemplateSymbol; const AStripWS: Boolean = false): ITemplateSymbol;
+  function SimpleToken(const ASymbol: TTemplateSymbol; const AStripWS: Boolean = false; const AStripAction: TStripAction = saNone; const AGetInput: Boolean = True): ITemplateSymbol;
   var
     LPosition: IPosition;
   begin
     LPosition := MakePosition;
-    Result := TSimpleTemplateSymbol.Create(LPosition, ASymbol, AStripWS);
-    GetInput;
+    Result := TSimpleTemplateSymbol.Create(LPosition, ASymbol, AStripWS, AStripAction);
+    if AGetInput then
+      GetInput;
   end;
 
   function IsValidId(const AId: string): Boolean;
@@ -303,6 +307,36 @@ var
     end;
     SwallowInput;
     exit(ValueToken(vsString));
+  end;
+
+  function isEndOfScript(out aResult: ITemplateSymbol; const AStripAction: TStripAction; const AGetInput: Boolean = false): Boolean;
+  begin
+    if AGetInput then
+      GetInput;
+    if CharInSet(FCurrent.Input, [FEndScript[1], FEndStripScript[1]]) then
+    begin
+      if FCurrent.Input = FEndScript[1] then
+        LEndExpect := FEndScript[2]
+      else
+        LEndExpect := FEndStripScript[2];
+      if Expecting(LEndExpect) then
+      begin
+        LEndStripWS := FCurrent.Input = FEndStripScript[1];
+        GetInput;
+        if FAccumulator.length > 0 then
+        begin
+          aResult := ValueToken(vsText);
+          FNextToken := SimpleToken(VsEndScript, LEndStripWS, AStripAction);
+        end
+        else
+        begin
+          aResult := SimpleToken(VsEndScript, LEndStripWS, AStripAction);
+        end;
+        FState := SText;
+        exit(True);
+      end;
+    end;
+    exit(false);
   end;
 
 begin
@@ -386,9 +420,19 @@ begin
         '+':
           exit(SimpleToken(vsPLUS));
         '-':
-          exit(SimpleToken(vsMinus));
+          begin
+            if isEndOfScript(Result, TStripAction.saWhitespace, True) then
+              exit
+            else
+              exit(SimpleToken(vsMinus, false, saNone, false));
+          end;
         '*':
-          exit(SimpleToken(vsMULT));
+          begin
+            if isEndOfScript(Result, TStripAction.saWhitespaceAndNL, True) then
+              exit
+            else
+              exit(SimpleToken(vsMULT, false, saNone, false));
+          end;
         '/':
           exit(SimpleToken(vsSLASH));
         '<':
@@ -434,29 +478,8 @@ begin
             exit(SimpleToken(vsCOLON));
       else
         begin
-          if CharInSet(FCurrent.Input, [FEndScript[1], FEndStripScript[1]]) then
-          begin
-            if FCurrent.Input = FEndScript[1] then
-              LEndExpect := FEndScript[2]
-            else
-              LEndExpect := FEndStripScript[2];
-            if Expecting(LEndExpect) then
-            begin
-              LEndStripWS := FCurrent.Input = FEndStripScript[1];
-              GetInput;
-              if FAccumulator.length > 0 then
-              begin
-                Result := ValueToken(vsText);
-                FNextToken := SimpleToken(VsEndScript, LEndStripWS);
-              end
-              else
-              begin
-                Result := SimpleToken(VsEndScript, LEndStripWS);
-              end;
-              FState := SText;
-              exit;
-            end;
-          end;
+          if isEndOfScript(Result, TStripAction.saNone) then
+            exit;
         end;
       end;
     FAccumulator.Append(FCurrent.Input);
@@ -478,6 +501,7 @@ var
   LPosition: integer;
   LLastChar, LCurChar: char;
   LIsStartStripWSToken: Boolean;
+  LState: TStripAction;
 
   function MakePosition: IPosition;
   begin
@@ -487,12 +511,12 @@ var
       exit(TPosition.Create(FFilename, LLine, LPosition));
   end;
 
-  function SimpleToken(const ASymbol: TTemplateSymbol; const AStripWS: Boolean = false): ITemplateSymbol;
+  function SimpleToken(const ASymbol: TTemplateSymbol; const AStripWS: Boolean = false; const AStripAction: TStripAction = saNone): ITemplateSymbol;
   var
     LPosition: IPosition;
   begin
     LPosition := MakePosition;
-    Result := TSimpleTemplateSymbol.Create(LPosition, ASymbol, AStripWS);
+    Result := TSimpleTemplateSymbol.Create(LPosition, ASymbol, AStripWS, AStripAction);
     GetInput;
   end;
 
@@ -519,8 +543,18 @@ begin
     if (FCurrent.Input = FStartScript[1]) and (FLookahead.Input = FStartScript[2]) or LIsStartStripWSToken then
     begin
       Result := ValueToken(vsText);
+      case FLookahead.Input of
+        '-':
+          LState := TStripAction.saWhitespace;
+        '*':
+          LState := TStripAction.saWhitespaceAndNL;
+      else
+        LState := TStripAction.saNone;
+      end;
+      if LState <> TStripAction.saNone then
+        GetInput;
       FState := SScript;
-      FNextToken := SimpleToken(VsStartScript, LIsStartStripWSToken);
+      FNextToken := SimpleToken(VsStartScript, LIsStartStripWSToken, LState);
       exit();
     end
     else
@@ -573,8 +607,9 @@ end;
 
 { TSimpleMustacheToken }
 
-constructor TSimpleTemplateSymbol.Create(const APosition: IPosition; const AToken: TTemplateSymbol; const AStripWS: Boolean);
+constructor TSimpleTemplateSymbol.Create(const APosition: IPosition; const AToken: TTemplateSymbol; const AStripWS: Boolean; const AStripAction: TStripAction);
 begin
+  FStripAction := AStripAction;
   FToken := AToken;
   FPosition := APosition;
   FStripWS := AStripWS;
@@ -583,6 +618,11 @@ end;
 function TSimpleTemplateSymbol.GetPosition: IPosition;
 begin
   exit(FPosition);
+end;
+
+function TSimpleTemplateSymbol.GetStripAction: TStripAction;
+begin
+  exit(FStripAction);
 end;
 
 function TSimpleTemplateSymbol.GetToken: TTemplateSymbol;

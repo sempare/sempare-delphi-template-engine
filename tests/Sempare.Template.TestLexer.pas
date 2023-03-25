@@ -63,7 +63,8 @@ type
     procedure TestUnicodeQuotedString;
     [Test]
     procedure TestInvalidChar;
-
+    [Test]
+    procedure TestStripCharLeftAndRight;
   end;
 
 implementation
@@ -162,6 +163,14 @@ end;
 procedure TTestTemplateLexer.TestString;
 begin
   Assert.AreEqual('hello world', Template.Eval('<% ''hello'' + '' '' + ''world'' %>'));
+end;
+
+procedure TTestTemplateLexer.TestStripCharLeftAndRight;
+begin
+  Assert.AreEqual('hello world', Template.Eval('<%- ''hello'' + '' '' + ''world'' -%>'));
+  Assert.AreEqual('hello world', Template.Eval('<%* ''hello'' + '' '' + ''world'' *%>'));
+  Assert.AreEqual('123', Template.Eval('<%- 123%>'));
+  Assert.AreEqual('-123', Template.Eval('<%- -123%>'));
 end;
 
 procedure TTestTemplateLexer.TestUnicodeQuotedString;

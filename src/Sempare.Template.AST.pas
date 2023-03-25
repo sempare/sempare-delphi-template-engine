@@ -53,6 +53,12 @@ type
     boEQ, boNotEQ, boLT, boLTE, boGT, boGTE, // comparison
     boIN);
 
+  TStripAction = ( //
+    saWhitespace, //
+    saWhitespaceAndNL, //
+    saNone //
+    );
+
   TTemplateSymbol = ( //
     // general parsing
     vsInvalid, //
@@ -155,10 +161,12 @@ type
     ['{3EC6C60C-164F-4BF5-AF2E-8F3CFC30C594}']
     function GetPosition: IPosition;
     function GetToken: TTemplateSymbol;
+    function GetStripAction: TStripAction;
     procedure SetToken(const AToken: TTemplateSymbol);
     function StripWS: boolean;
     property Token: TTemplateSymbol read GetToken write SetToken;
     property Position: IPosition read GetPosition;
+    property StripAction: TStripAction read GetStripAction;
   end;
 
   ITemplateVisitor = interface;
