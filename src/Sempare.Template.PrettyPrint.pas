@@ -84,6 +84,10 @@ type
     procedure Visit(const AStmt: IDefineTemplateStmt); overload; override;
     procedure Visit(const AStmt: IWithStmt); overload; override;
     procedure Visit(const AStmt: ICycleStmt); overload; override;
+    procedure Visit(const AStmt: IDebugStmt); overload; override;
+
+    procedure Visit(const AStmt: IBlockStmt); overload; override;
+    procedure Visit(const AStmt: IExtendsStmt); overload; override;
 
   end;
 
@@ -543,6 +547,34 @@ begin
     AcceptVisitor(AStmt.List.Expr[LIdx], self);
   end;
   writeln('%>');
+end;
+
+procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IDebugStmt);
+begin
+  // just proxy through
+  AcceptVisitor(AStmt.Stmt, self);
+end;
+
+procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IBlockStmt);
+begin
+  tab();
+  write('<% block ''' + AStmt.Name + '''%>');
+  delta(4);
+  AcceptVisitor(AStmt.Container, self);
+  delta(-4);
+  tab();
+  writeln('<% end %>');
+end;
+
+procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IExtendsStmt);
+begin
+  tab();
+  write('<% extends ''' + AStmt.Name + '''%>');
+  delta(4);
+  AcceptVisitor(AStmt.Container, self);
+  delta(-4);
+  tab();
+  writeln('<% end %>');
 end;
 
 initialization

@@ -77,6 +77,8 @@ type
     procedure Visit(const AStmt: IWithStmt); overload; virtual;
     procedure Visit(const AStmt: ICycleStmt); overload; virtual;
     procedure Visit(const AStmt: IDebugStmt); overload; virtual;
+    procedure Visit(const AStmt: IBlockStmt); overload; virtual;
+    procedure Visit(const AStmt: IExtendsStmt); overload; virtual;
   end;
 
 implementation
@@ -249,6 +251,16 @@ begin
 end;
 
 procedure TBaseTemplateVisitor.Visit(const AStmt: IDebugStmt);
+begin
+
+end;
+
+procedure TBaseTemplateVisitor.Visit(const AStmt: IBlockStmt);
+begin
+
+end;
+
+procedure TBaseTemplateVisitor.Visit(const AStmt: IExtendsStmt);
 begin
 
 end;

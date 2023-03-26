@@ -59,6 +59,12 @@ type
 
     [Test]
     procedure TestSubTemplate;
+
+    [Test]
+    procedure TestExtends;
+
+    [Test]
+    procedure TestExtendsBlock;
   end;
 
 implementation
@@ -264,6 +270,57 @@ begin
     '<% include(''suffix'', footer) %>' //
     , info));
 
+end;
+
+procedure TTestTemplateInclude.TestExtends;
+var
+  LTpl: ITemplate;
+  LCtx: ITemplateContext;
+begin
+  LCtx := Template.Context();
+  LCtx.TemplateResolver := function(const AContext: ITemplateContext; const AName: string): ITemplate
+    begin
+      if AName = 'showmember' then
+      begin
+        exit(Template.parse(AContext, '<% block ''content'' %>parent<% end %>'));
+      end
+      else
+        exit(nil);
+    end;
+
+  LTpl := Template.parse(LCtx, //
+    '<% extends (''showmember'') %>' + //
+    '<% end %> ' + //
+    '<% extends (''showmember'') %>' + //
+    '<% end %>' //
+    );
+  Assert.AreEqual('parent parent', Template.Eval(LTpl));
+end;
+
+procedure TTestTemplateInclude.TestExtendsBlock;
+var
+  LTpl: ITemplate;
+  LCtx: ITemplateContext;
+begin
+  LCtx := Template.Context();
+  LCtx.TemplateResolver := function(const AContext: ITemplateContext; const AName: string): ITemplate
+    begin
+      if AName = 'showmember' then
+      begin
+        exit(Template.parse(AContext, '<% block ''content'' %>parent<% end %>'));
+      end
+      else
+        exit(nil);
+    end;
+  LTpl := Template.parse(LCtx, //
+    '<% extends (''showmember'') %>' + //
+    '<% block ''content'' %>child<% end %>' + //
+    '<% end %> ' + //
+    '<% extends (''showmember'') %>' + //
+    '<% block ''content'' %>child2<% end %>' + //
+    '<% end %>' //
+    );
+  Assert.AreEqual('child child2', Template.Eval(LTpl));
 end;
 
 initialization

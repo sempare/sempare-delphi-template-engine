@@ -84,6 +84,12 @@ type
     procedure Visit(const AStmt: IDefineTemplateStmt); overload; override;
     procedure Visit(const AStmt: IWithStmt); overload; override;
 
+    procedure Visit(const AStmt: ICycleStmt); overload; override;
+    procedure Visit(const AStmt: IDebugStmt); overload; override;
+
+    procedure Visit(const AStmt: IBlockStmt); overload; override;
+    procedure Visit(const AStmt: IExtendsStmt); overload; override;
+
     property Variables: TArray<string> read GetVariables;
     property Functions: TArray<string> read GetFunctions;
   end;
@@ -265,6 +271,31 @@ begin
 
   if not FVariables.contains(AExpr.Variable) then
     FVariables.Add(AExpr.Variable);
+end;
+
+procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: ICycleStmt);
+var
+  LIdx: integer;
+begin
+  for LIdx := 0 to AStmt.List.Count - 1 do
+  begin
+    AcceptVisitor(AStmt.List.Expr[LIdx], self);
+  end;
+end;
+
+procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: IDebugStmt);
+begin
+  AcceptVisitor(AStmt.Stmt, self);
+end;
+
+procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: IBlockStmt);
+begin
+  AcceptVisitor(AStmt.Container, self);
+end;
+
+procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: IExtendsStmt);
+begin
+  AcceptVisitor(AStmt.Container, self);
 end;
 
 end.

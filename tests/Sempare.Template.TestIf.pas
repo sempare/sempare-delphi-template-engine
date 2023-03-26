@@ -34,6 +34,8 @@ unit Sempare.Template.TestIf;
 
 interface
 
+{$I 'Sempare.Template.Compiler.inc'}
+
 uses
   DUnitX.TestFramework;
 
