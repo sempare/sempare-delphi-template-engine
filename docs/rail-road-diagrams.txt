@@ -29,30 +29,33 @@ Diagram(
        NonTerminal('var'),
        Terminal(':='),
        NonTerminal('expr'),
-       Terminal('to'),
+        Choice(0,
+       Terminal('to'),Terminal('downto'),),
        NonTerminal('expr'),
      ),
-       Optional(
-         Sequence(Terminal('step'),  NonTerminal('expr'))
-       ),
-       Optional(
-         Sequence(Terminal('offset'),  NonTerminal('expr'))
-       ),
-       Sequence(
-       Optional(
-         Sequence(Terminal('limit'),  NonTerminal('expr'))
-       ), 
-       Terminal('%>'), ),
-  ), 
-        OneOrMore(
+    Sequence(
+     ZeroOrMore(
+          Sequence(
+           Choice(0,
+             Terminal('step'),
+             Terminal('offset'),
+             Terminal('limit')
+           ),
+         NonTerminal('expr')
+        )
+      ),
+         Terminal('%>'), OneOrMore(
          Choice(0,
            NonTerminal('block'),
            Terminal('<% continue %>'),
            Terminal('<% break %>'),
          )
        ),
-Sequence(Terminal('<%'),Terminal('end'),Terminal('%>'),
-)
+
+     )
+   ),
+        
+      Sequence(Terminal('<%'),Terminal('end'),Terminal('%>'))
     )
 )
 -------------------------
@@ -68,24 +71,28 @@ Diagram(
        Terminal('in'),
        NonTerminal('expr'),
      ),
-       Optional(
-         Sequence(Terminal('offset'),  NonTerminal('expr'))
-       ),
-       Sequence(
-       Optional(
-         Sequence(Terminal('limit'),  NonTerminal('expr'))
-       ), 
-       Terminal('%>'), ),
-  ), 
-        OneOrMore(
+    Sequence(
+     ZeroOrMore(
+          Sequence(
+           Choice(0,
+             Terminal('offset'),
+             Terminal('limit')
+           ),
+         NonTerminal('expr')
+        )
+      ),
+         Terminal('%>'), OneOrMore(
          Choice(0,
            NonTerminal('block'),
            Terminal('<% continue %>'),
            Terminal('<% break %>'),
          )
        ),
-Sequence(Terminal('<%'),Terminal('end'),Terminal('%>'),
-)
+
+     )
+   ),
+        
+      Sequence(Terminal('<%'),Terminal('end'),Terminal('%>'))
     )
 )
 
@@ -101,39 +108,24 @@ Diagram(
        NonTerminal('var'),
        Terminal('in'),
        NonTerminal('expr'),
+       Terminal('%>'),
+       NonTerminal('block'),
      ),
-      Optional(
+      ZeroOrMore(
       Choice(0,
          
        Sequence(
        Terminal('<%'),
+     Choice(0,
        Terminal('onbegin'),
+       Terminal('onend'),
+       Terminal('betweenitems'),
+       Terminal('onempty'),
+     ),
        Terminal('%>'), 
        NonTerminal('block'),
           ) ,
          
-       Sequence(
-       Terminal('<%'),
-       Terminal('onend'),
-       Terminal('%>'), 
-       NonTerminal('block'),
-          ),
-
- Sequence(
-       Terminal('<%'),
-       Terminal('betweenitems'),
-       Terminal('%>'), 
-       NonTerminal('block'),
-          ),
-
-
-      Sequence(
-       Terminal('<%'),
-       Terminal('onempty'),
-       Terminal('%>'), 
-       NonTerminal('block'),
-          ),
-
      ),),
 
            
@@ -156,22 +148,31 @@ Diagram(
        Terminal('while'),
        NonTerminal('expr'),
      ),
-       Optional(
-         Sequence(Terminal('offset'),  NonTerminal('expr'))
-       ),
-       Sequence(
-       Optional(
-         Sequence(Terminal('limit'),  NonTerminal('expr'))
-       ), 
-       Terminal('%>'), ),
-  ), 
-        OneOrMore(
+      Sequence(
+     ZeroOrMore(
+         Sequence(
+       Choice(0,
+         Terminal('offset'),  
+         Terminal('limit'),
+       ),  
+       NonTerminal('expr'),
+      )),
+       Terminal('%>'), 
+OneOrMore(
          Choice(0,
            NonTerminal('block'),
            Terminal('<% continue %>'),
            Terminal('<% break %>'),
          )
        ),
+
+
+      ),
+    
+
+         ),
+  
+        
 Sequence(Terminal('<%'),Terminal('end'),Terminal('%>'),
 )
     )
@@ -258,7 +259,7 @@ Diagram(
                ),
        Optional(
          Sequence(
-           Terminal('<% else %>'),
+           Terminal('<%'),Terminal('else'),Terminal('%>'),
            NonTerminal('block'),
          ),
        )
@@ -371,15 +372,10 @@ Sequence(
        Terminal('<%'),
        Terminal('with'),
        NonTerminal('expr'),  
-       ZeroOrMore(
-          Sequence(
-            Terminal(','),
-            NonTerminal('expr'),
-          )
-       ),         
+           
        Terminal('%>'),
        NonTerminal('block'),
-       Terminal('<% end %>'), 
+        Terminal('<%'),Terminal('end'),Terminal('%>'),
    )
 )
 -------------------------
@@ -390,9 +386,7 @@ Diagram(
 Sequence(
        Terminal('<%'),
        Terminal('template'),
-       Terminal('('),
        NonTerminal('expr'),  
-       Terminal(')'),
        Terminal('%>'),
       
    ),
@@ -406,9 +400,11 @@ Sequence( NonTerminal('block'),
 https://tabatkins.github.io/railroad-diagrams/generator.html#Diagram(%0ASequence(%0A%20%20%20%20%20%20%20Terminal('%3C%25')%2C%0A%20%20%20%20%20%20%20Terminal('require')%2C%0A%20%20%20%20%20%20%20NonTerminal('expr')%2C%20%20%0A%20%20%20%20%20%20%20ZeroOrMore(%0A%20%20%20%20%20%20%20%20%20%20Sequence(%0A%20%20%20%20%20%20%20%20%20%20%20%20Terminal('%2C')%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20NonTerminal('expr')%2C%0A%20%20%20%20%20%20%20%20%20%20)%0A%20%20%20%20%20%20%20)%2C%20%20%20%20%20%20%20%20%20%0A%20%20%20%20%20%20%20Terminal('%25%3E')%2C%0A%20%20%20%20%20%20%20NonTerminal('block')%2C%0A%20%20%20%20%20%20%20Terminal('%3C%25%20end%20%25%3E')%2C%20%0A%20%20%20)%0A)
 
 Diagram(
+Stack(
 Sequence(
        Terminal('<%'),
        Terminal('require'),
+       Terminal('('),
        NonTerminal('expr'),  
        ZeroOrMore(
           Sequence(
@@ -416,10 +412,14 @@ Sequence(
             NonTerminal('expr'),
           )
        ),         
+       Terminal(')'),
        Terminal('%>'),
+),
+Sequence(
        NonTerminal('block'),
        Terminal('<%'), Terminal('end'), Terminal('%>'), 
    )
+)
 )
 -------------------------
 
