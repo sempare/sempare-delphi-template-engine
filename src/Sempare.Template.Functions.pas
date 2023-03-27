@@ -55,7 +55,6 @@ implementation
 uses
 {$IFDEF SEMPARE_TEMPLATE_FIREDAC}
   Data.DB,
-  FireDAC.Comp.Client,
 {$ENDIF}
 {$IFDEF SUPPORT_HASH}
   System.Hash,
