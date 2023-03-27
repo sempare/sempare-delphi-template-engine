@@ -33,6 +33,9 @@ This <% stmt %> test.
 The above example results in _'this is a test.'_ being output.
 
 ### assignment
+
+# ![](./images/stmt_assign.svg)
+
 Within a script block, you can create temporary variables for use within the template. Basic types such a string, boolean and numbers can be used.
 ```
 <% num := 123 %>
