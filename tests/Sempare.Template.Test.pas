@@ -104,6 +104,11 @@ type
 
     [Test]
     procedure TestException;
+
+    [Test]
+    procedure TestDecimalEncodingErrorWithLists;
+    [Test]
+    procedure TestDecimalEncodingErrorWithParameters;
   end;
 
 type
@@ -387,6 +392,48 @@ begin
   ctx := Template.Context;
   ctx.Options := [eoStripRecurringSpaces, eoConvertTabsToSpaces];
   Assert.AreEqual(' hello world', Template.Eval(ctx, #9' hello '#9'  world'));
+end;
+
+procedure TTestTemplate.TestDecimalEncodingErrorWithLists;
+var
+  ctx: ITemplateContext;
+begin
+  ctx := Template.Context;
+  ctx.DecimalSeparator := ',';
+  Assert.AreEqual('', Template.Eval(ctx, '<% a := ["a"; "b"] %>'));
+  Assert.WillRaise(
+    procedure
+    begin // expecting ;
+      Assert.AreEqual('', Template.Eval(ctx, '<% a := ["a", "b"] %>'));
+    end);
+  ctx.DecimalSeparator := '.';
+  Assert.AreEqual('', Template.Eval(ctx, '<% a := ["a", "b"] %>'));
+  Assert.WillRaise(
+    procedure
+    begin // expecting ,
+      Assert.AreEqual('', Template.Eval(ctx, '<% a := ["a"; "b"] %>'));
+    end);
+end;
+
+procedure TTestTemplate.TestDecimalEncodingErrorWithParameters;
+var
+  ctx: ITemplateContext;
+begin
+  ctx := Template.Context;
+  ctx.DecimalSeparator := ',';
+  Assert.AreEqual('a b', Template.Eval(ctx, '<% fmt("%s %s"; "a"; "b") %>'));
+  Assert.WillRaise(
+    procedure
+    begin // expecting ;
+      Assert.AreEqual('', Template.Eval(ctx, '<% fmt("%s %s", "a", "b") %>'));
+    end);
+  ctx.DecimalSeparator := '.';
+  Assert.AreEqual('a b', Template.Eval(ctx, '<% fmt("%s %s", "a", "b")  %>'));
+  Assert.WillRaise(
+    procedure
+    begin // expecting ,
+      Assert.AreEqual('', Template.Eval(ctx, '<% fmt("%s %s"; "a"; "b")  %>'));
+    end);
 end;
 
 procedure TTestTemplate.TestDynamicLoader;

@@ -1,0 +1,541 @@
+https://tabatkins.github.io/railroad-diagrams/generator.html
+https://github.com/tabatkins/railroad-diagrams/blob/gh-pages/README-js.md
+
+-------------------------
+
+https://tabatkins.github.io/railroad-diagrams/generator.html#Diagram(%0ASequence(%0A%20%20%20%20%20%20%20Terminal('%3C%25')%2C%0A%20%20%20%20%20%20%20NonTerminal('var')%2C%0A%20%20%20%20%20%20%20Terminal('%3A%3D')%2C%0A%20%20%20%20%20%20%20NonTerminal('expr')%2C%20%20%20%20%20%20%20%20%0A%20%20%20%20%20%20%20Terminal('%25%3E')%2C%0A%20%20%20)%0A)
+
+
+Diagram(
+Sequence(
+       Terminal('<%'),
+       NonTerminal('var'),
+       Terminal(':='),
+       NonTerminal('expr'),        
+       Terminal('%>'),
+   )
+)
+
+-------------------------
+
+https://tabatkins.github.io/railroad-diagrams/generator.html#Diagram(%0ASequence(%0A%20%20%20%20%20%20%20Terminal('%3C%25')%2C%0A%20%20%20%20%20%20%20Terminal('for')%2C%0A%20%20%20%20%20%20%20NonTerminal('var')%2C%0A%20%20%20%20%20%20%20Terminal('%3A%3D')%2C%0A%20%20%20%20%20%20%20NonTerminal('expr')%2C%0A%20%20%20%20%20%20%20Choice(0%2C%0A%20%20%20%20%20%20%20%20%20Terminal('to')%2C%0A%20%20%20%20%20%20%20%20%20Terminal('downto'))%2C%0A%20%20%20%20%20%20%20NonTerminal('expr')%2C%0A%20%20%20%20%20%20%20Optional(%0A%20%20%20%20%20%20%20%20%20Sequence(Terminal('step')%2C%20%20NonTerminal('expr'))%0A%20%20%20%20%20%20%20)%2C%0A%20%20%20%20%20%20%20Optional(%0A%20%20%20%20%20%20%20%20%20Sequence(Terminal('offset')%2C%20%20NonTerminal('expr'))%0A%20%20%20%20%20%20%20)%2C%0A%20%20%20%20%20%20%20Optional(%0A%20%20%20%20%20%20%20%20%20Sequence(Terminal('limit')%2C%20%20NonTerminal('expr'))%0A%20%20%20%20%20%20%20)%2C%20%0A%20%20%20%20%20%20%20Terminal('%25%3E')%2C%0A%20%20%20%20%20%20%20OneOrMore(%0A%20%20%20%20%20%20%20%20%20Choice(0%2C%0A%20%20%20%20%20%20%20%20%20%20%20NonTerminal('block')%2C%0A%20%20%20%20%20%20%20%20%20%20%20Terminal('%3C%25%20continue%20%25%3E')%2C%0A%20%20%20%20%20%20%20%20%20%20%20Terminal('%3C%25%20break%20%25%3E')%2C%0A%20%20%20%20%20%20%20%20%20)%0A%20%20%20%20%20%20%20)%2C%0A%20%20%20%20%20%20%20Terminal('%3C%25%20end%20%25%3E')%2C%0A%20%20)%0A)
+
+Diagram(
+ Stack(
+    Stack(
+       Sequence(
+       Terminal('<%'),
+       Terminal('for'),
+       NonTerminal('var'),
+       Terminal(':='),
+       NonTerminal('expr'),
+       Terminal('to'),
+       NonTerminal('expr'),
+     ),
+       Optional(
+         Sequence(Terminal('step'),  NonTerminal('expr'))
+       ),
+       Optional(
+         Sequence(Terminal('offset'),  NonTerminal('expr'))
+       ),
+       Sequence(
+       Optional(
+         Sequence(Terminal('limit'),  NonTerminal('expr'))
+       ), 
+       Terminal('%>'), ),
+  ), 
+        OneOrMore(
+         Choice(0,
+           NonTerminal('block'),
+           Terminal('<% continue %>'),
+           Terminal('<% break %>'),
+         )
+       ),
+Sequence(Terminal('<%'),Terminal('end'),Terminal('%>'),
+)
+    )
+)
+-------------------------
+https://tabatkins.github.io/railroad-diagrams/generator.html#Diagram(%0A%20Sequence(%0A%20%20%20%20%20%20%20Terminal('%3C%25')%2C%0A%20%20%20%20%20%20%20Terminal('for')%2C%0A%20%20%20%20%20%20%20NonTerminal('var')%2C%0A%20%20%20%20%20%20%20Terminal('in')%2C%0A%20%20%20%20%20%20%20NonTerminal('expr')%2C%0A%20%20%20%20%20%20%20Optional(%0A%20%20%20%20%20%20%20%20%20Sequence(Terminal('offset')%2C%20%20NonTerminal('expr'))%0A%20%20%20%20%20%20%20)%2C%0A%20%20%20%20%20%20%20Optional(%0A%20%20%20%20%20%20%20%20%20Sequence(Terminal('limit')%2C%20%20NonTerminal('expr'))%0A%20%20%20%20%20%20%20)%2C%20%0A%20%20%20%20%20%20%20Terminal('%25%3E')%2C%0A%20%20%20%20%20%20%20OneOrMore(%0A%20%20%20%20%20%20%20%20%20Choice(0%2C%0A%20%20%20%20%20%20%20%20%20%20%20NonTerminal('block')%2C%0A%20%20%20%20%20%20%20%20%20%20%20Terminal('%3C%25%20continue%20%25%3E')%2C%0A%20%20%20%20%20%20%20%20%20%20%20Terminal('%3C%25%20break%20%25%3E')%2C%0A%20%20%20%20%20%20%20%20%20)%0A%20%20%20%20%20%20%20)%2C%0A%20%20%20%20%20%20%20Terminal('%3C%25%20end%20%25%3E')%2C%0A%20%20)%0A)
+
+Diagram(
+ Stack(
+    Stack(
+       Sequence(
+       Terminal('<%'),
+       Terminal('for'),
+       NonTerminal('var'),
+       Terminal('in'),
+       NonTerminal('expr'),
+     ),
+       Optional(
+         Sequence(Terminal('offset'),  NonTerminal('expr'))
+       ),
+       Sequence(
+       Optional(
+         Sequence(Terminal('limit'),  NonTerminal('expr'))
+       ), 
+       Terminal('%>'), ),
+  ), 
+        OneOrMore(
+         Choice(0,
+           NonTerminal('block'),
+           Terminal('<% continue %>'),
+           Terminal('<% break %>'),
+         )
+       ),
+Sequence(Terminal('<%'),Terminal('end'),Terminal('%>'),
+)
+    )
+)
+
+---------------------
+
+
+Diagram(
+ Stack(
+     
+      Sequence(
+       Terminal('<%'),
+       Terminal('for'),
+       NonTerminal('var'),
+       Terminal('in'),
+       NonTerminal('expr'),
+     ),
+      Optional(
+      Choice(0,
+         
+       Sequence(
+       Terminal('<%'),
+       Terminal('onbegin'),
+       Terminal('%>'), 
+       NonTerminal('block'),
+          ) ,
+         
+       Sequence(
+       Terminal('<%'),
+       Terminal('onend'),
+       Terminal('%>'), 
+       NonTerminal('block'),
+          ),
+
+ Sequence(
+       Terminal('<%'),
+       Terminal('betweenitems'),
+       Terminal('%>'), 
+       NonTerminal('block'),
+          ),
+
+
+      Sequence(
+       Terminal('<%'),
+       Terminal('onempty'),
+       Terminal('%>'), 
+       NonTerminal('block'),
+          ),
+
+     ),),
+
+           
+
+
+Sequence(Terminal('<%'),Terminal('end'),Terminal('%>'),
+)
+    )
+)
+
+-------------------------
+
+https://tabatkins.github.io/railroad-diagrams/generator.html#Diagram(%0ASequence(%0A%20%20%20%20%20%20%20Terminal('%3C%25')%2C%0A%20%20%20%20%20%20%20Terminal('while')%2C%0A%20%20%20%20%20%20%20NonTerminal('expr')%2C%0A%20%20%20%20%20%20%20Optional(%0A%20%20%20%20%20%20%20%20%20Sequence(Terminal('offset')%2C%20%20NonTerminal('expr'))%0A%20%20%20%20%20%20%20)%2C%0A%20%20%20%20%20%20%20Optional(%0A%20%20%20%20%20%20%20%20%20Sequence(Terminal('limit')%2C%20%20NonTerminal('expr'))%0A%20%20%20%20%20%20%20)%2C%20%0A%20%20%20%20%20%20%20Terminal('%25%3E')%2C%0A%20%20%20%20%20%20%20OneOrMore(%0A%20%20%20%20%20%20%20%20%20Choice(0%2C%0A%20%20%20%20%20%20%20%20%20%20%20NonTerminal('block')%2C%0A%20%20%20%20%20%20%20%20%20%20%20Terminal('%3C%25%20continue%20%25%3E')%2C%0A%20%20%20%20%20%20%20%20%20%20%20Terminal('%3C%25%20break%20%25%3E')%2C%0A%20%20%20%20%20%20%20%20%20)%0A%20%20%20%20%20%20%20)%2C%0A%20%20%20%20%20%20%20Terminal('%3C%25%20end%20%25%3E')%2C%0A%20%20)%0A)
+
+Diagram(
+ Stack(
+    Stack(
+       Sequence(
+       Terminal('<%'),
+       Terminal('while'),
+       NonTerminal('expr'),
+     ),
+       Optional(
+         Sequence(Terminal('offset'),  NonTerminal('expr'))
+       ),
+       Sequence(
+       Optional(
+         Sequence(Terminal('limit'),  NonTerminal('expr'))
+       ), 
+       Terminal('%>'), ),
+  ), 
+        OneOrMore(
+         Choice(0,
+           NonTerminal('block'),
+           Terminal('<% continue %>'),
+           Terminal('<% break %>'),
+         )
+       ),
+Sequence(Terminal('<%'),Terminal('end'),Terminal('%>'),
+)
+    )
+)
+
+----------------------
+
+Diagram(
+ Stack(
+     
+       Sequence(
+       Terminal('<%'),
+       Terminal('while'),
+       NonTerminal('expr'),
+       Terminal('%>'), 
+       NonTerminal('block'),
+     ),
+
+      Optional(
+      Choice(0,
+         
+       Sequence(
+       Terminal('<%'),
+       Terminal('onbegin'),
+       Terminal('%>'), 
+       NonTerminal('block'),
+          ) ,
+         
+       Sequence(
+       Terminal('<%'),
+       Terminal('onend'),
+       Terminal('%>'), 
+       NonTerminal('block'),
+          ),
+
+ Sequence(
+       Terminal('<%'),
+       Terminal('betweenitems'),
+       Terminal('%>'), 
+       NonTerminal('block'),
+          ),
+
+
+      Sequence(
+       Terminal('<%'),
+       Terminal('onempty'),
+       Terminal('%>'), 
+       NonTerminal('block'),
+          ),
+
+     ),),
+
+           
+
+
+Sequence(Terminal('<%'),Terminal('end'),Terminal('%>'),
+)
+    )
+)
+
+
+
+-------------------------
+
+https://tabatkins.github.io/railroad-diagrams/generator.html#Diagram(%0ASequence(%0A%20%20%20%20%20%20%20Terminal('%3C%25')%2C%0A%20%20%20%20%20%20%20Terminal('if')%2C%0A%20%20%20%20%20%20%20NonTerminal('expr')%2C%0A%20%20%20%20%20%20%20Terminal('%25%3E')%2C%0A%20%20%20%20%20%20%20NonTerminal('block')%2C%0A%20%20%20%20%20%20%20ZeroOrMore(%0A%20%20%20%20%20%20%20%20%20Sequence(%0A%20%20%20%20%20%20%20%20%20%20%20Terminal('%3C%25%20elif%20')%2C%0A%20%20%20%20%20%20%20%20%20%20%20NonTerminal('expr')%2C%0A%20%20%20%20%20%20%20%20%20%20%20Terminal('%25%3E')%2C%0A%20%20%20%20%20%20%20%20%20%20%20NonTerminal('block')%2C%0A%20%20%20%20%20%20%20%20%20)%2C%0A%20%20%20%20%20%20%20)%2C%0A%20%20%20%20%20%20%20Optional(%0A%20%20%20%20%20%20%20%20%20Sequence(%0A%20%20%20%20%20%20%20%20%20%20%20Terminal('%3C%25%20else%20%25%3E')%2C%0A%20%20%20%20%20%20%20%20%20%20%20NonTerminal('block')%2C%0A%20%20%20%20%20%20%20%20%20)%2C%0A%20%20%20%20%20%20%20)%2C%0A%20%20%20%20%20%20%20Terminal('%3C%25%20end%20%25%3E')%2C%0A%20%20)%0A)
+
+Diagram(
+ 
+       Stack(
+             Sequence(
+                   Terminal('<%'),
+                   Terminal('if'),
+                   NonTerminal('expr'),
+                   Terminal('%>'),
+             NonTerminal('block'),
+             ),
+               ZeroOrMore(
+                 Sequence(
+                   Terminal('<%'),Terminal('elif'),
+                   NonTerminal('expr'),
+                   Terminal('%>'),
+                   NonTerminal('block'),
+                 ),
+               ),
+       Optional(
+         Sequence(
+           Terminal('<% else %>'),
+           NonTerminal('block'),
+         ),
+       )
+  ),
+       Terminal('<%'),Terminal('end'),Terminal('%>'),
+ 
+)
+-------------------------
+https://tabatkins.github.io/railroad-diagrams/generator.html#Diagram(%0ASequence(%0A%20%20%20%20%20%20%20Terminal('%3C%25')%2C%0A%20%20%20%20%20%20%20Terminal('include')%2C%0A%20%20%20%20%20%20%20Terminal('(')%2C%0A%20%20%20%20%20%20%20NonTerminal('expr')%2C%20%20%0A%20%20%20%20%20%20%20Optional(%0A%20%20%20%20%20%20%20%20%20%20Sequence(%0A%20%20%20%20%20%20%20%20%20%20%20%20Terminal('%2C')%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20NonTerminal('expr')%2C%0A%20%20%20%20%20%20%20%20%20%20)%0A%20%20%20%20%20%20%20)%2C%20%20%20%20%20%20%0A%20%20%20%20%20%20%20Terminal(')')%2C%0A%20%20%20%20%20%20%20Terminal('%25%3E')%2C%0A%20%20%20)%0A)
+Diagram(
+Sequence(
+       Terminal('<%'),
+       Terminal('include'),
+       Terminal('('),
+       NonTerminal('expr'),  
+       Optional(
+          Sequence(
+            Terminal(','),
+            NonTerminal('expr'),
+          )
+       ),      
+       Terminal(')'),
+       Terminal('%>'),
+   )
+)
+
+
+Diagram(
+ Stack(
+Sequence(
+       Terminal('<%'),
+       Terminal('include'),
+       Terminal('('),
+       NonTerminal('expr'),  
+       Optional(
+          Sequence(
+            Terminal(','),
+            NonTerminal('expr'),
+          )
+       ),         
+       Terminal(')'),
+       Terminal('%>'),
+      
+   ),
+
+Sequence(  NonTerminal('block'),
+       Terminal('<%'),Terminal('end'),Terminal('%>'),
+)
+)
+)
+
+
+-------------------------
+https://tabatkins.github.io/railroad-diagrams/generator.html#Diagram(%0ASequence(%0A%20%20%20%20%20%20%20Terminal('%3C%25')%2C%0A%20%20%20%20%20%20%20Terminal('extends')%2C%0A%20%20%20%20%20%20%20Terminal('(')%2C%0A%20%20%20%20%20%20%20NonTerminal('expr')%2C%20%20%0A%20%20%20%20%20%20%20Optional(%0A%20%20%20%20%20%20%20%20%20%20Sequence(%0A%20%20%20%20%20%20%20%20%20%20%20%20Terminal('%2C')%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20NonTerminal('expr')%2C%0A%20%20%20%20%20%20%20%20%20%20)%0A%20%20%20%20%20%20%20)%2C%20%20%20%20%20%20%20%20%20%0A%20%20%20%20%20%20%20Terminal(')')%2C%0A%20%20%20%20%20%20%20Terminal('%25%3E')%2C%0A%20%20%20%20%20%20%20NonTerminal('block')%2C%0A%20%20%20%20%20%20%20Terminal('%3C%25%20end%20%25%3E')%2C%20%0A%20%20%20)%0A)
+
+Diagram(
+ Stack(
+Sequence(
+       Terminal('<%'),
+       Terminal('extends'),
+       Terminal('('),
+       NonTerminal('expr'),  
+       Optional(
+          Sequence(
+            Terminal(','),
+            NonTerminal('expr'),
+          )
+       ),         
+       Terminal(')'),
+       Terminal('%>'),
+      
+   ),
+ NonTerminal('block'),
+Sequence(
+       Terminal('<%'),Terminal('end'),Terminal('%>'),
+)
+)
+)
+
+Diagram(
+ Stack(
+Sequence(
+       Terminal('<%'),
+       Terminal('extends'),
+       Terminal('('),
+       NonTerminal('expr'),  
+       Optional(
+          Sequence(
+            Terminal(','),
+            NonTerminal('expr'),
+          )
+       ),         
+       Terminal(')'),
+       Terminal('%>'),
+      
+   ),
+
+Sequence(  NonTerminal('block'),
+       Terminal('<%'),Terminal('end'),Terminal('%>'),
+)
+)
+)
+
+
+-------------------------
+https://tabatkins.github.io/railroad-diagrams/generator.html#Diagram(%0ASequence(%0A%20%20%20%20%20%20%20Terminal('%3C%25')%2C%0A%20%20%20%20%20%20%20Terminal('with')%2C%0A%20%20%20%20%20%20%20NonTerminal('expr')%2C%20%20%0A%20%20%20%20%20%20%20ZeroOrMore(%0A%20%20%20%20%20%20%20%20%20%20Sequence(%0A%20%20%20%20%20%20%20%20%20%20%20%20Terminal('%2C')%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20NonTerminal('expr')%2C%0A%20%20%20%20%20%20%20%20%20%20)%0A%20%20%20%20%20%20%20)%2C%20%20%20%20%20%20%20%20%20%0A%20%20%20%20%20%20%20Terminal('%25%3E')%2C%0A%20%20%20%20%20%20%20NonTerminal('block')%2C%0A%20%20%20%20%20%20%20Terminal('%3C%25%20end%20%25%3E')%2C%20%0A%20%20%20)%0A)
+
+Diagram(
+Sequence(
+       Terminal('<%'),
+       Terminal('with'),
+       NonTerminal('expr'),  
+       ZeroOrMore(
+          Sequence(
+            Terminal(','),
+            NonTerminal('expr'),
+          )
+       ),         
+       Terminal('%>'),
+       NonTerminal('block'),
+       Terminal('<% end %>'), 
+   )
+)
+-------------------------
+https://tabatkins.github.io/railroad-diagrams/generator.html#Diagram(%0ASequence(%0A%20%20%20%20%20%20%20Terminal('%3C%25')%2C%0A%20%20%20%20%20%20%20Terminal('template')%2C%0A%20%20%20%20%20%20%20NonTerminal('expr')%2C%20%20%0A%20%20%20%20%20%20%20Optional(%0A%20%20%20%20%20%20%20%20%20%20Sequence(%0A%20%20%20%20%20%20%20%20%20%20%20%20Terminal('%2C')%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20NonTerminal('expr')%2C%0A%20%20%20%20%20%20%20%20%20%20)%0A%20%20%20%20%20%20%20)%2C%20%20%20%20%20%20%20%20%20%0A%20%20%20%20%20%20%20Terminal('%25%3E')%2C%0A%20%20%20%20%20%20%20NonTerminal('block')%2C%0A%20%20%20%20%20%20%20Terminal('%3C%25%20end%20%25%3E')%2C%20%0A%20%20%20)%0A)
+
+Diagram(
+ Stack(
+Sequence(
+       Terminal('<%'),
+       Terminal('template'),
+       Terminal('('),
+       NonTerminal('expr'),  
+       Terminal(')'),
+       Terminal('%>'),
+      
+   ),
+
+Sequence( NonTerminal('block'),
+       Terminal('<%'),Terminal('end'),Terminal('%>'),
+)
+)
+)
+-------------------------
+https://tabatkins.github.io/railroad-diagrams/generator.html#Diagram(%0ASequence(%0A%20%20%20%20%20%20%20Terminal('%3C%25')%2C%0A%20%20%20%20%20%20%20Terminal('require')%2C%0A%20%20%20%20%20%20%20NonTerminal('expr')%2C%20%20%0A%20%20%20%20%20%20%20ZeroOrMore(%0A%20%20%20%20%20%20%20%20%20%20Sequence(%0A%20%20%20%20%20%20%20%20%20%20%20%20Terminal('%2C')%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20NonTerminal('expr')%2C%0A%20%20%20%20%20%20%20%20%20%20)%0A%20%20%20%20%20%20%20)%2C%20%20%20%20%20%20%20%20%20%0A%20%20%20%20%20%20%20Terminal('%25%3E')%2C%0A%20%20%20%20%20%20%20NonTerminal('block')%2C%0A%20%20%20%20%20%20%20Terminal('%3C%25%20end%20%25%3E')%2C%20%0A%20%20%20)%0A)
+
+Diagram(
+Sequence(
+       Terminal('<%'),
+       Terminal('require'),
+       NonTerminal('expr'),  
+       ZeroOrMore(
+          Sequence(
+            Terminal(','),
+            NonTerminal('expr'),
+          )
+       ),         
+       Terminal('%>'),
+       NonTerminal('block'),
+       Terminal('<%'), Terminal('end'), Terminal('%>'), 
+   )
+)
+-------------------------
+
+https://tabatkins.github.io/railroad-diagrams/generator.html#Diagram(%0ASequence(%0A%20%20%20%20%20%20%20Terminal('%3C%25%20ignorenl%20%25%3E')%2C%0A%20%20%20%20%20%20%20NonTerminal('block')%2C%0A%20%20%20%20%20%20%20Terminal('%3C%25%20end%20%25%3E')%2C%20%0A%20%20%20)%0A)
+
+Diagram(
+Sequence(
+       Terminal('<%'),
+       Terminal('ignorenl'),
+       Terminal('%>'),
+      
+   ),
+ NonTerminal('block'),
+Sequence(
+       Terminal('<%'),Terminal('end'),Terminal('%>'),
+)
+)
+-------------------------
+
+https://tabatkins.github.io/railroad-diagrams/generator.html#Diagram(%0ASequence(%0A%20%20%20%20%20%20%20Terminal('%3C%25')%2C%0A%20%20%20%20%20%20%20Terminal('cycle')%2C%0A%20%20%20%20%20%20%20Terminal('(')%2C%0A%20%20%20%20%20%20%20NonTerminal('expr')%2C%20%20%0A%20%20%20%20%20%20%20ZeroOrMore(%0A%20%20%20%20%20%20%20%20%20%20Sequence(%0A%20%20%20%20%20%20%20%20%20%20%20%20Terminal('%2C')%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20NonTerminal('expr')%2C%0A%20%20%20%20%20%20%20%20%20%20)%0A%20%20%20%20%20%20%20)%2C%20%20%20%20%20%20%20%20%20%0A%20%20%20%20%20%20%20Terminal(')')%2C%0A%20%20%20%20%20%20%20Terminal('%25%3E')%2C%0A%20%20%20)%0A)
+
+Diagram(
+Sequence(
+       Terminal('<%'),
+       Terminal('cycle'),
+       Terminal('('),
+       NonTerminal('expr'),  
+       ZeroOrMore(
+          Sequence(
+            Terminal(','),
+            NonTerminal('expr'),
+          )
+       ),         
+       Terminal(')'),
+       Terminal('%>'),
+   )
+)
+-------------------------
+
+https://tabatkins.github.io/railroad-diagrams/generator.html#Diagram(%0ATerminal('_')%2C%0A)
+
+Diagram(
+Terminal('_'),
+)
+-------------------------
+
+https://tabatkins.github.io/railroad-diagrams/generator.html#Diagram(Sequence(%0A%20%20%20%20%20%20%20%20%20%20%20Terminal('%5C'')%2C%0A%20%20%20%20%20%20%20%20%20%20%20ZeroOrMore(%0A%20%20%20%20%20%20%20%20%20%20%20%20%20Terminal('%5Ba..zA..Z0..9...%5D')%2C%0A%20%20%20%20%20%20%20%20%20%20%20)%2C%0A%20%20%20%20%20%20%20%20%20%20%20Terminal('%5C'')%0A%20%20%20%20%20)%2C%0A)
+
+Diagram(Sequence(
+           Terminal('\''),
+           ZeroOrMore(
+             Terminal('[a..zA..Z0..9...]'),
+           ),
+           Terminal('\'')
+     ),
+)
+-------------------------
+
+https://tabatkins.github.io/railroad-diagrams/generator.html#Diagram(Sequence(%0A%20%20%20%20%20%20%20%20%20%20%20Terminal('%22')%2C%0A%20%20%20%20%20%20%20%20%20%20%20ZeroOrMore(%0A%20%20%20%20%20%20%20%20%20%20%20%20%20Terminal('%5Ba..zA..Z0..9...%5D')%0A%20%20%20%20%20%20%20%20%20%20%20)%2C%0A%20%20%20%20%20%20%20%20%20%20%20Terminal('%22')%0A%20%20%20%20%20)%2C%0A)
+
+Diagram(Sequence(
+           Terminal('"'),
+           ZeroOrMore(
+             Terminal('[a..zA..Z0..9...]')
+           ),
+           Terminal('"')
+     ),
+)
+-------------------------
+https://tabatkins.github.io/railroad-diagrams/generator.html#Diagram(%0ASequence(%0A%20%20%20%20%20%20%20%20OneOrMore('%5B0..9%5D')%2C%0A%20%20%20%20%20%20%20%20Optional(%0A%20%20%20%20%20%20%20%20%20%20%20Sequence(%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20Terminal('.')%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20OneOrMore('%5B0..9%5D')%2C%0A%20%20%20%20%20%20%20%20%20%20%20)%2C%0A%20%20%20%20%20%20%20%20)%2C%0A%20%20%20%20%20%20%20%20Optional(%0A%20%20%20%20%20%20%20%20%20%20Sequence(%0A%20%20%20%20%20%20%20%20%20%20%20%20Choice(0%2C%20%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20'e'%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20'E'%0A%20%20%20%20%20%20%20%20%20%20%20%20)%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20Optional(%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20Choice(0%2C%20%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20'%2B'%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20'-'%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20)%0A%20%20%20%20%20%20%20%20%20%20%20%20)%2C%0A%20%20%20%20%20%20%20%20%20%20%20%20OneOrMore('%5B0..9%5D')%2C%0A%20%20%20%20%20%20%20%20%20%20)%0A%20%20%20%20%20%20%20%20)%0A%20%20%20%20%20)%0A)
+Diagram(
+Sequence(
+        OneOrMore('[0..9]'),
+        Optional(
+           Sequence(
+              Terminal('.'),
+             OneOrMore('[0..9]'),
+           ),
+        ),
+        Optional(
+          Sequence(
+            Choice(0, 
+              'e',
+              'E'
+            ),
+            Optional(
+              Choice(0, 
+                '+',
+                '-'
+              )
+            ),
+            OneOrMore('[0..9]'),
+          )
+        )
+     )
+)
+-------------------------
+Diagram(
+)
+-------------------------
+Diagram(
+)
+-------------------------
+Diagram(
+)
+-------------------------
+https://tabatkins.github.io/railroad-diagrams/generator.html#Diagram(%0ASequence(%0A%20%20%20%20%20%20%20Terminal('%3C%25')%2C%0A%20%20%20%20%20%20%20Terminal('print')%2C%0A%20%20%20%20%20%20%20NonTerminal('var')%2C%0A%20%20%20%20%20%20%20Terminal('(')%2C%0A%20%20%20%20%20%20%20NonTerminal('expr')%2C%0A%20%20%20%20%20%20%20Terminal(')')%2C%0A%20%20%20%20%20%20%20Terminal('%25%3E')%2C%0A%0A%20%20)%0A)
+Diagram(
+Sequence(
+       Terminal('<%'),
+       Terminal('print'),
+       NonTerminal('var'),
+       Terminal('('),
+       NonTerminal('expr'),
+       Terminal(')'),
+       Terminal('%>'),
+
+  )
+)

@@ -34,6 +34,8 @@ unit Sempare.Template.TestFunctions;
 
 interface
 
+{$I 'Sempare.Template.Compiler.inc'}
+
 uses
   DUnitX.TestFramework;
 
@@ -90,6 +92,12 @@ type
     [Test]
     procedure AddFmtNumTest;
     [Test]
+    procedure AddCustomFmt;
+    [Test]
+    procedure AddCustomFmt2;
+    [Test]
+    procedure AddCustomFmt3;
+    [Test]
     procedure TestIsNil;
     [Test]
     procedure TestProcedure;
@@ -117,6 +125,10 @@ type
 implementation
 
 uses
+{$IFDEF SEMPARE_TEMPLATE_FIREDAC}
+  Data.DB,
+  FireDAC.Comp.Client,
+{$ENDIF}
   System.SysUtils,
   System.Rtti,
   Sempare.Template.Functions,
@@ -124,7 +136,121 @@ uses
   Sempare.Template,
   Sempare.Template.Rtti;
 
+{$IFDEF SEMPARE_TEMPLATE_FIREDAC}
+
+function CreateSendungen(): TFDMemTable;
+var
+  ds: TFDMemTable;
+begin
+  ds := TFDMemTable.Create(nil);
+  with ds do
+  begin
+    FieldDefs.Add('Spedition', ftWideString, 20);
+    FieldDefs.Add('Sendungsnummer', ftWideString, 20);
+    CreateDataSet;
+  end;
+  with ds do
+  begin
+    Append;
+    FieldByName('Spedition').value := 'blah';
+    FieldByName('Sendungsnummer').value := '123';
+    Post;
+  end;
+  exit(ds);
+end;
+
+function CreateTracking(): TFDMemTable;
+var
+  ds: TFDMemTable;
+begin
+  ds := TFDMemTable.Create(nil);
+  with ds do
+  begin
+    FieldDefs.Add('Link', ftWideString, 100);
+    CreateDataSet;
+  end;
+  with ds do
+  begin
+    Append;
+    FieldByName('Link').value := 'https://abc.com/%s';
+    Post;
+  end;
+  exit(ds);
+end;
+
+{$ENDIF}
 { TFunctionTest }
+{$IFDEF SEMPARE_TEMPLATE_FIREDAC}
+
+procedure TFunctionTest.AddCustomFmt2;
+type
+  TData = record
+    Sendungen: TDataSet;
+    Tracking: TDataSet;
+  end;
+
+var
+  Data: TData;
+  ctx: ITemplateContext;
+
+begin
+  ctx := Template.Context();
+  ctx.StartToken := '{{';
+  ctx.EndToken := '}}';
+  Data.Sendungen := nil;
+  Data.Tracking := nil;
+  try
+    Data.Sendungen := CreateSendungen;
+    Data.Tracking := CreateTracking;
+    Assert.AreEqual('<li>blah - <a href=''https://abc.com/123''>123</a></li>', Template.Eval(ctx, '<li>{{Sendungen.Spedition}} - <a href=''{{fmt(Tracking.Link, Sendungen.Sendungsnummer)}}''>{{Sendungen.Sendungsnummer}}</a></li>', Data));
+  finally
+    Data.Sendungen.Free;
+    Data.Tracking.Free;
+  end;
+end;
+{$ELSE}
+
+procedure TFunctionTest.AddCustomFmt2;
+begin
+end;
+{$ENDIF}
+
+procedure TFunctionTest.AddCustomFmt3;
+var
+  ctx: ITemplateContext;
+begin
+  ctx := Template.Context();
+  ctx.StartToken := '{{';
+  ctx.EndToken := '}}';
+  Assert.AreEqual('a', Template.Eval(ctx, '{{fmt("%s", "a")}}'));
+end;
+
+procedure TFunctionTest.AddCustomFmt;
+type
+  TData = record
+    Sendungen: record
+      Spedition: string;
+      Sendungsnummer: string;
+    end;
+
+    Tracking: record
+      Link: string;
+    end;
+  end;
+
+var
+  Data: TData;
+  ctx: ITemplateContext;
+
+begin
+  ctx := Template.Context();
+  ctx.StartToken := '{{';
+  ctx.EndToken := '}}';
+  Data.Sendungen.Spedition := 'blah';
+  Data.Sendungen.Sendungsnummer := '123';
+  Data.Tracking.Link := 'https://abc.com/%s';
+  Assert.AreEqual('<li>blah - <a href=''https://abc.com/123''>123</a></li>', Template.Eval(ctx, '<li>{{Sendungen.Spedition}} - <a href=''{{fmt(Tracking.Link, Sendungen.Sendungsnummer)}}''>{{Sendungen.Sendungsnummer}}</a></li>', Data));
+end;
 
 procedure TFunctionTest.AddFmtNumTest;
 begin
