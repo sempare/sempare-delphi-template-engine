@@ -38,6 +38,7 @@ uses
   System.Generics.Collections,
   Sempare.Template.AST,
   Sempare.Template.Common,
+  Sempare.Template.Evaluate,
   Sempare.Template.Visitor;
 
 type
@@ -50,8 +51,9 @@ type
   TBlockResolverVisitor = class(TBaseTemplateVisitor, IBlockResolverVisitor)
   private
     FBlocks: TDictionary<string, TArray<IBlockStmt>>;
+    FEvalVisitor: IEvaluationTemplateVisitor;
   public
-    constructor Create;
+    constructor Create(const AEvalVisitor: IEvaluationTemplateVisitor);
     destructor Destroy; override;
 
     function GetBlockNames: TArray<string>;
@@ -124,13 +126,15 @@ end;
 procedure TBlockResolverVisitor.Visit(const AStmt: IBlockStmt);
 var
   LList: TArray<IBlockStmt>;
+  LName: string;
 begin
-  if not FBlocks.TryGetValue(AStmt.Name, LList) then
+  LName := FEvalVisitor.EvalExprAsString(AStmt.Name);
+  if not FBlocks.TryGetValue(LName, LList) then
   begin
     LList := nil;
   end;
   insert(AStmt, LList, length(LList));
-  FBlocks.AddOrSetValue(AStmt.Name, LList);
+  FBlocks.AddOrSetValue(LName, LList);
 end;
 
 procedure TBlockResolverVisitor.Visit(const AStmt: IExtendsStmt);
@@ -138,8 +142,9 @@ begin
   AcceptVisitor(AStmt.Container, self);
 end;
 
-constructor TBlockResolverVisitor.Create;
+constructor TBlockResolverVisitor.Create(const AEvalVisitor: IEvaluationTemplateVisitor);
 begin
+  FEvalVisitor := AEvalVisitor;
   FBlocks := TDictionary < string, TArray < IBlockStmt >>.Create();
 end;
 

@@ -49,8 +49,9 @@ type
   private
     FBlockName: string;
     FReplacementBlock: ITemplate;
+    FEvalVisitor: IEvaluationTemplateVisitor;
   public
-
+    constructor Create(const AEvalVisitor: IEvaluationTemplateVisitor);
     procedure Visit(const AStmt: IIfStmt); overload; override;
     procedure Visit(const AStmt: IWhileStmt); overload; override;
     procedure Visit(const AStmt: IForInStmt); overload; override;
@@ -134,6 +135,11 @@ end;
 procedure TBlockReplacerVisitor.Visit(const AStmt: IExtendsStmt);
 begin
   AcceptVisitor(AStmt.Container, self);
+end;
+
+constructor TBlockReplacerVisitor.Create(const AEvalVisitor: IEvaluationTemplateVisitor);
+begin
+  FEvalVisitor := AEvalVisitor;
 end;
 
 procedure TBlockReplacerVisitor.Replace(const ATemplate: ITemplate; const ABlockName: string; const ABlock: ITemplate);

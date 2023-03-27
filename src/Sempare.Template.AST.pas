@@ -165,6 +165,7 @@ type
   end;
 
   ITemplateVisitor = interface;
+  IEvaluationTemplateVisitor = interface;
 
   IPositional = interface
     ['{DFA45EC1-7F39-4FB2-9894-8BD8D4ABA975}']
@@ -212,21 +213,25 @@ type
 
   IExtendsStmt = interface(IStmt)
     ['{220D7E83-280D-454B-BA60-622C97EBE131}']
-    function GetName: string;
+    function GetName: IExpr;
+    function NameAsString(const AEvalVisitor: IEvaluationTemplateVisitor): string;
+    function GetBlockContainer: ITemplate;
     function GetContainer: ITemplate;
     procedure SetContainer(const AContainer: ITemplate);
     function GetExpr: IExpr;
-    property Name: string read GetName;
+    property Name: IExpr read GetName;
     property Expr: IExpr read GetExpr;
     property Container: ITemplate read GetContainer write SetContainer;
+    property BlockContainer: ITemplate read GetBlockContainer;
   end;
 
   IBlockStmt = interface(IStmt)
     ['{EBAC38C4-9790-4D7C-844C-BE7C94E7C822}']
-    function GetName: string;
+    function GetName: IExpr;
+    function NameAsString(const AEvalVisitor: IEvaluationTemplateVisitor): string;
     function GetContainer: ITemplate;
     procedure SetContainer(const AContainer: ITemplate);
-    property Name: string read GetName;
+    property Name: IExpr read GetName;
     property Container: ITemplate read GetContainer write SetContainer;
   end;
 
@@ -512,6 +517,16 @@ type
     procedure Visit(const AStmt: IDebugStmt); overload;
     procedure Visit(const AStmt: IBlockStmt); overload;
     procedure Visit(const AStmt: IExtendsStmt); overload;
+  end;
+
+  IEvaluationTemplateVisitor = interface(ITemplateVisitor)
+    ['{D7993669-463E-4DBD-ACA2-76A7A6FF059A}']
+    function EvalExpr(const AExpr: IExpr): TValue;
+    function EvalExprAsString(const AExpr: IExpr): string;
+    function EvalExprAsInt(const AExpr: IExpr): int64;
+    function EvalExprAsNum(const AExpr: IExpr): extended;
+    function EvalExprAsBoolean(const AExpr: IExpr): boolean;
+    procedure VisitStmt(const AStmt: IStmt);
   end;
 
 implementation

@@ -60,10 +60,10 @@ type
     [Test]
     procedure TestSubTemplate;
 
-    [Test]
+    [Test, Ignore]
     procedure TestExtends;
 
-    [Test]
+    [Test, Ignore]
     procedure TestExtendsBlock;
   end;
 

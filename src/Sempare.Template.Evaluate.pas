@@ -77,7 +77,7 @@ type
     property IgnoreNewLine: boolean read FIgnoreNewline write FIgnoreNewline;
   end;
 
-  TEvaluationTemplateVisitor = class(TBaseTemplateVisitor)
+  TEvaluationTemplateVisitor = class(TBaseTemplateVisitor, IEvaluationTemplateVisitor)
   private
     FStopWatch: TStopWatch;
     FStackFrames: TObjectStack<TStackFrame>;
@@ -96,7 +96,13 @@ type
     function ExprListArgs(const AExprList: IExprList): TArray<TValue>;
     function Invoke(const AFuncCall: IFunctionCallExpr; const AArgs: TArray<TValue>; out AHasResult: boolean): TValue; overload;
     function Invoke(const AExpr: IMethodCallExpr; const AObject: TValue; const AArgs: TArray<TValue>; out AHasResult: boolean): TValue; overload;
-
+    function EvalExpr(const AExpr: IExpr): TValue;
+    function EvalExprAsString(const AExpr: IExpr): string;
+    function EvalExprAsInt(const AExpr: IExpr): int64;
+    function EvalExprAsNum(const AExpr: IExpr): extended;
+    function EvalExprAsBoolean(const AExpr: IExpr): boolean;
+    procedure VisitStmt(const AStmt: IStmt);
+    procedure VisitContainer(const AContainer: ITemplate);
   public
     constructor Create(const AContext: ITemplateContext; const AValue: TValue; const AStream: TStream); overload;
     constructor Create(const AContext: ITemplateContext; const AStackFrame: TStackFrame; const AStream: TStream); overload;
@@ -143,6 +149,8 @@ implementation
 uses
   Data.DB,
   System.TypInfo, // needed for XE6 and below to access the TTypeKind variables
+  Sempare.Template.BlockResolver,
+  Sempare.Template.BlockReplacer,
   Sempare.Template.ResourceStrings,
   Sempare.Template.Rtti,
   Sempare.Template.Util;
@@ -709,6 +717,32 @@ begin
   exit(FContext.VariableEncoder(AsString(AValue, FContext)));
 end;
 
+function TEvaluationTemplateVisitor.EvalExprAsBoolean(const AExpr: IExpr): boolean;
+begin
+  exit(AsBoolean(EvalExpr(AExpr)));
+end;
+
+function TEvaluationTemplateVisitor.EvalExpr(const AExpr: IExpr): TValue;
+begin
+  AcceptVisitor(AExpr, self);
+  exit(FEvalStack.pop);
+end;
+
+function TEvaluationTemplateVisitor.EvalExprAsInt(const AExpr: IExpr): int64;
+begin
+  exit(AsInt(EvalExpr(AExpr), FContext));
+end;
+
+function TEvaluationTemplateVisitor.EvalExprAsNum(const AExpr: IExpr): extended;
+begin
+  exit(AsNum(EvalExpr(AExpr), FContext));
+end;
+
+function TEvaluationTemplateVisitor.EvalExprAsString(const AExpr: IExpr): string;
+begin
+  exit(AsString(EvalExpr(AExpr), FContext));
+end;
+
 function TEvaluationTemplateVisitor.ExprListArgs(const AExprList: IExprList): TArray<TValue>;
 var
   LIdx: integer;
@@ -1020,6 +1054,11 @@ begin
   exit(AExpr.RttiMethod.Invoke(AObject, AArgs));
 end;
 
+procedure TEvaluationTemplateVisitor.VisitStmt(const AStmt: IStmt);
+begin
+  AcceptVisitor(AStmt, self);
+end;
+
 procedure TEvaluationTemplateVisitor.Visit(const AExpr: IMethodCallExpr);
 var
   LObj: TValue;
@@ -1165,9 +1204,44 @@ begin
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AStmt: IExtendsStmt);
+var
+  LName: string;
+  LSymbol: ITemplateSymbol;
+  LBlockResolver: IBlockResolverVisitor;
+  LBlockReplacer: IBlockReplacerVisitor;
+  LBlockName: string;
+  LBlockNames: TArray<string>;
+  LReplacementBlocks: TArray<IBlockStmt>;
+  LTemplate: ITemplate;
+  LBlock: IBlockStmt;
 begin
   if assigned(AStmt.Container) then
+  begin
+    if not FContext.TryGetTemplate(LName, LTemplate) then
+      RaiseErrorRes(LSymbol.Position, @STemplateNotFound, [LName]);
+
     AcceptVisitor(AStmt.Container, self);
+
+    LBlockResolver := TBlockResolverVisitor.Create(self);
+    AcceptVisitor(AStmt.BlockContainer, LBlockResolver);
+
+    LBlockNames := LBlockResolver.GetBlockNames;
+
+    LBlockReplacer := TBlockReplacerVisitor.Create(self);
+    for LBlockName in LBlockNames do
+    begin
+      LReplacementBlocks := LBlockResolver.GetBlocks(LBlockName);
+      for LBlock in LReplacementBlocks do
+      begin
+        LBlockReplacer.Replace(LTemplate, LBlockName, LBlock.Container);
+      end;
+    end;
+  end;
+end;
+
+procedure TEvaluationTemplateVisitor.VisitContainer(const AContainer: ITemplate);
+begin
+  AcceptVisitor(AContainer, self);
 end;
 
 { TNewLineStreamWriter }

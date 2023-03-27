@@ -115,28 +115,32 @@ type
 
   TExtendsStmt = class(TAbstractStmt, IExtendsStmt)
   private
-    FName: string;
+    FName: IExpr;
     FExpr: IExpr;
+    FBlockContainer: ITemplate; // NOTE: FContainer is something that is resolved
     FContainer: ITemplate; // NOTE: FContainer is something that is resolved
-    function GetName: string;
+    function GetName: IExpr;
     function GetExpr: IExpr;
+    function GetBlockContainer: ITemplate;
     function GetContainer: ITemplate;
     procedure SetContainer(const AContainer: ITemplate);
+    function NameAsString(const AEvalVisitor: IEvaluationTemplateVisitor): string;
   public
-    constructor Create(const APosition: IPosition; const AName: string; const AExpr: IExpr; const AContainer: ITemplate);
+    constructor Create(const APosition: IPosition; const AName, AExpr: IExpr; const ABlockContainer: ITemplate);
     procedure Accept(const AVisitor: ITemplateVisitor); override;
     function Clone: IInterface; override;
   end;
 
   TBlockStmt = class(TAbstractStmt, IBlockStmt)
   private
-    FName: string;
+    FName: IExpr;
     FContainer: ITemplate;
-    function GetName: string;
+    function GetName: IExpr;
     function GetContainer: ITemplate;
     procedure SetContainer(const AContainer: ITemplate);
+    function NameAsString(const AEvalVisitor: IEvaluationTemplateVisitor): string;
   public
-    constructor Create(const APosition: IPosition; const AName: string; const AContainer: ITemplate);
+    constructor Create(const APosition: IPosition; const AName: IExpr; const AContainer: ITemplate);
     procedure Accept(const AVisitor: ITemplateVisitor); override;
     function Clone: IInterface; override;
   end;
@@ -711,9 +715,7 @@ end;
 function TTemplateParser.ruleIncludeStmt: IStmt;
 var
   LSymbol: ITemplateSymbol;
-  LMatchSymbol: TTemplateSymbol;
   LIncludeExpr: IExpr;
-  LExtendsName: string;
   LScopeExpr: IExpr;
   LContainerTemplate: TTemplate;
 begin
@@ -1061,7 +1063,7 @@ end;
 
 function TTemplateParser.ruleBlockStmt: IStmt;
 var
-  LId: string;
+  LName: IExpr;
   LSymbol: ITemplateSymbol;
   LOptions: IPreserveValue<TParserOptions>;
   LContainer: ITemplate;
@@ -1071,7 +1073,7 @@ begin
   LSymbol := FLookahead;
 
   match(vsBlock);
-  LId := matchValue(vsString);
+  LName := ruleExpression;
   match(vsEndScript);
 
   PushContainer;
@@ -1083,7 +1085,7 @@ begin
   match(vsEndScript);
 
   PopContainer;
-  exit(TBlockStmt.Create(LSymbol.Position, LId, LContainer));
+  exit(TBlockStmt.Create(LSymbol.Position, LName, LContainer));
 
 end;
 
@@ -1615,18 +1617,11 @@ end;
 
 function TTemplateParser.ruleExtendsStmt: IStmt;
 var
-  LName: string;
+  LName: IExpr;
   LExpr: IExpr;
   LSymbol: ITemplateSymbol;
   LOptions: IPreserveValue<TParserOptions>;
   LContainer: ITemplate;
-  LBlockResolver: IBlockResolverVisitor;
-  LBlockReplacer: IBlockReplacerVisitor;
-  LBlockName: string;
-  LBlockNames: TArray<string>;
-  LReplacementBlocks: TArray<IBlockStmt>;
-  LTemplate: ITemplate;
-  LBlock: IBlockStmt;
 begin
   LOptions := Preserve.Value<TParserOptions>(FOptions, FOptions + [poAllowEnd]);
 
@@ -1634,10 +1629,7 @@ begin
 
   match(vsExtends);
   match(vsOpenRoundBracket);
-  LName := matchValue(vsString);
-
-  if not FContext.TryGetTemplate(LName, LTemplate) then
-    RaiseErrorRes(LSymbol.Position, @STemplateNotFound, [LName]);
+  LName := ruleExpression;
 
   if FLookahead.Token = vsComma then
   begin
@@ -1659,21 +1651,7 @@ begin
 
   PopContainer;
 
-  LBlockResolver := TBlockResolverVisitor.Create();
-  AcceptVisitor(LContainer, LBlockResolver);
-  LBlockNames := LBlockResolver.GetBlockNames;
-
-  LBlockReplacer := TBlockReplacerVisitor.Create();
-
-  for LBlockName in LBlockNames do
-  begin
-    LReplacementBlocks := LBlockResolver.GetBlocks(LBlockName);
-    for LBlock in LReplacementBlocks do
-    begin
-      LBlockReplacer.Replace(LTemplate, LBlockName, LBlock.Container);
-    end;
-  end;
-  exit(TExtendsStmt.Create(LSymbol.Position, LName, LExpr, LTemplate));
+  exit(TExtendsStmt.Create(LSymbol.Position, LName, LExpr, LContainer));
 end;
 
 function TTemplateParser.CurrentContainer: ITemplate;
@@ -2622,7 +2600,7 @@ begin
   exit(TBlockStmt.Create(FPosition, FName, FContainer));
 end;
 
-constructor TBlockStmt.Create(const APosition: IPosition; const AName: string; const AContainer: ITemplate);
+constructor TBlockStmt.Create(const APosition: IPosition; const AName: IExpr; const AContainer: ITemplate);
 begin
   inherited Create(APosition);
   FName := AName;
@@ -2634,9 +2612,14 @@ begin
   exit(FContainer);
 end;
 
-function TBlockStmt.GetName: string;
+function TBlockStmt.GetName: IExpr;
 begin
   exit(FName);
+end;
+
+function TBlockStmt.NameAsString(const AEvalVisitor: IEvaluationTemplateVisitor): string;
+begin
+  exit(AEvalVisitor.EvalExprAsString(FName));
 end;
 
 procedure TBlockStmt.SetContainer(const AContainer: ITemplate);
@@ -2653,15 +2636,20 @@ end;
 
 function TExtendsStmt.Clone: IInterface;
 begin
-  exit(TExtendsStmt.Create(FPosition, FName, FExpr, CloneTemplate(FContainer)));
+  exit(TExtendsStmt.Create(FPosition, FName, FExpr, FBlockContainer));
 end;
 
-constructor TExtendsStmt.Create(const APosition: IPosition; const AName: string; const AExpr: IExpr; const AContainer: ITemplate);
+constructor TExtendsStmt.Create(const APosition: IPosition; const AName, AExpr: IExpr; const ABlockContainer: ITemplate);
 begin
   inherited Create(APosition);
+  FBlockContainer := ABlockContainer;
   FName := AName;
   FExpr := AExpr;
-  FContainer := CloneTemplate(AContainer);
+end;
+
+function TExtendsStmt.GetBlockContainer: ITemplate;
+begin
+  exit(FBlockContainer);
 end;
 
 function TExtendsStmt.GetContainer: ITemplate;
@@ -2674,9 +2662,14 @@ begin
   exit(FExpr);
 end;
 
-function TExtendsStmt.GetName: string;
+function TExtendsStmt.GetName: IExpr;
 begin
   exit(FName);
+end;
+
+function TExtendsStmt.NameAsString(const AEvalVisitor: IEvaluationTemplateVisitor): string;
+begin
+  exit(AEvalVisitor.EvalExprAsString(FName));
 end;
 
 procedure TExtendsStmt.SetContainer(const AContainer: ITemplate);

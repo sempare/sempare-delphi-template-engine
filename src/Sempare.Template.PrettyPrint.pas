@@ -558,7 +558,9 @@ end;
 procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IBlockStmt);
 begin
   tab();
-  write('<% block ''' + AStmt.Name + '''%>');
+  write('<% block ''');
+  AcceptVisitor(AStmt.Name, self);
+  writeln('''%>');
   delta(4);
   AcceptVisitor(AStmt.Container, self);
   delta(-4);
@@ -569,7 +571,9 @@ end;
 procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IExtendsStmt);
 begin
   tab();
-  write('<% extends ''' + AStmt.Name + '''%>');
+  write('<% extends ''');
+  AcceptVisitor(AStmt.Name, self);
+  writeln('''%>');
   delta(4);
   AcceptVisitor(AStmt.Container, self);
   delta(-4);
