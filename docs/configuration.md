@@ -15,6 +15,7 @@ Copyright (c) 2019-2023 [Sempare Limited](http://www.sempare.ltd)
 - [Dynamic Template Resolution](#Dynamic_Template_Resolution)
 - [Ignoring Whitespace With Multi-Line Statements](#Ignoring_Whitespace_With_Multi_Line_Statements)
 - [Options](#Options)
+- [Localisation of numbers](#Localisation_of_numbers)
 
 # Overview
 
@@ -159,3 +160,22 @@ The template engine allows for the following options:
   - strip any empty lines
 - eoPrettyPrint
   - use to review the parsed structure. output is to the console.
+
+### Localisation of numbers 
+
+Numbers are commonly formatted using comma and decimal point. e.g. 123.45
+
+However, in some regions, such as Germany, it the coma may be preferred. e.g. 123,45
+
+In order to accomodate this, the context configuration has a ValueSeperator and DecimalSeparator. These default based on locale.
+
+The DecimalSeparator may be set to '.' or ','. As a comma is commonly used to separate parameters, if the DecimalSeparator is ',', then the ValueSeparator becomes ';'.
+
+The motivation for the behaviour is say we have:
+```
+<% Add(1.23, 4.56) %>
+```
+When the DecimalSeparator is ',', then the ValueSeparator becomes ';' as illustrated:
+```
+<% Add(1,23; 4,56) %>
+```
