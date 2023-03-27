@@ -41,10 +41,15 @@ uses
   Sempare.Template.Visitor;
 
 type
+  IBlockResolverVisitor = interface(ITemplateVisitor)
+    ['{623A7C4A-3592-46BD-A3C5-FE354E0E67C0}']
+    function GetBlockNames: TArray<string>;
+    function GetBlocks(const AName: string): TArray<IBlockStmt>;
+  end;
 
-  TBlockResolverVisitor = class(TBaseTemplateVisitor)
+  TBlockResolverVisitor = class(TBaseTemplateVisitor, IBlockResolverVisitor)
   private
-    FBlocks: TObjectDictionary<string, TList<IBlockStmt>>;
+    FBlocks: TDictionary<string, TArray<IBlockStmt>>;
   public
     constructor Create;
     destructor Destroy; override;
@@ -118,14 +123,14 @@ end;
 
 procedure TBlockResolverVisitor.Visit(const AStmt: IBlockStmt);
 var
-  LList: TList<IBlockStmt>;
+  LList: TArray<IBlockStmt>;
 begin
   if not FBlocks.TryGetValue(AStmt.Name, LList) then
   begin
-    LList := TList<IBlockStmt>.Create;
-    FBlocks.Add(AStmt.Name, LList);
+    LList := nil;
   end;
-  LList.Add(AStmt);
+  insert(AStmt, LList, length(LList));
+  FBlocks.AddOrSetValue(AStmt.Name, LList);
 end;
 
 procedure TBlockResolverVisitor.Visit(const AStmt: IExtendsStmt);
@@ -135,11 +140,12 @@ end;
 
 constructor TBlockResolverVisitor.Create;
 begin
-  FBlocks := TObjectDictionary < string, TList < IBlockStmt >>.Create([doOwnsValues]);
+  FBlocks := TDictionary < string, TArray < IBlockStmt >>.Create();
 end;
 
 destructor TBlockResolverVisitor.Destroy;
 begin
+  FBlocks.Clear;
   FBlocks.Free;
   inherited;
 end;
@@ -151,10 +157,10 @@ end;
 
 function TBlockResolverVisitor.GetBlocks(const AName: string): TArray<IBlockStmt>;
 var
-  LList: TList<IBlockStmt>;
+  LList: TArray<IBlockStmt>;
 begin
   if FBlocks.TryGetValue(AName, LList) then
-    exit(LList.ToArray)
+    exit(LList)
   else
     exit(nil);
 end;

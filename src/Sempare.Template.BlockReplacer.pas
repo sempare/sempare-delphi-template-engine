@@ -40,8 +40,12 @@ uses
   Sempare.Template.Visitor;
 
 type
+  IBlockReplacerVisitor = interface(ITemplateVisitor)
+    ['{81560D41-C5D1-49DF-9A26-98F2D7951E3A}']
+    procedure Replace(const ATemplate: ITemplate; const ABlockName: string; const ABlock: ITemplate);
+  end;
 
-  TBlockReplacerVisitor = class(TBaseTemplateVisitor)
+  TBlockReplacerVisitor = class(TBaseTemplateVisitor, IBlockReplacerVisitor)
   private
     FBlockName: string;
     FReplacementBlock: ITemplate;
@@ -118,7 +122,10 @@ end;
 
 procedure TBlockReplacerVisitor.Visit(const AStmt: IBlockStmt);
 begin
-  if (AStmt.Name = FBlockName) and assigned(AStmt.Container) then
+  if not assigned(AStmt.Container) then
+    exit;
+  AcceptVisitor(AStmt.Container, self);
+  if AStmt.Name = FBlockName then
   begin
     AStmt.Container := FReplacementBlock;
   end;

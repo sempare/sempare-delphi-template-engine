@@ -1620,8 +1620,8 @@ var
   LSymbol: ITemplateSymbol;
   LOptions: IPreserveValue<TParserOptions>;
   LContainer: ITemplate;
-  LBlockResolver: TBlockResolverVisitor;
-  LBlockReplacer: TBlockReplacerVisitor;
+  LBlockResolver: IBlockResolverVisitor;
+  LBlockReplacer: IBlockReplacerVisitor;
   LBlockName: string;
   LBlockNames: TArray<string>;
   LReplacementBlocks: TArray<IBlockStmt>;
@@ -1660,24 +1660,18 @@ begin
   PopContainer;
 
   LBlockResolver := TBlockResolverVisitor.Create();
-  try
-    AcceptVisitor(LContainer, LBlockResolver);
-    LBlockNames := LBlockResolver.GetBlockNames;
-    LBlockReplacer := TBlockReplacerVisitor.Create();
-    try
-      for LBlockName in LBlockNames do
-      begin
-        LReplacementBlocks := LBlockResolver.GetBlocks(LBlockName);
-        for LBlock in LReplacementBlocks do
-        begin
-          LBlockReplacer.Replace(LTemplate, LBlockName, LBlock.Container);
-        end;
-      end;
-    finally
-      // LBlockReplacer.Free;
+  AcceptVisitor(LContainer, LBlockResolver);
+  LBlockNames := LBlockResolver.GetBlockNames;
+
+  LBlockReplacer := TBlockReplacerVisitor.Create();
+
+  for LBlockName in LBlockNames do
+  begin
+    LReplacementBlocks := LBlockResolver.GetBlocks(LBlockName);
+    for LBlock in LReplacementBlocks do
+    begin
+      LBlockReplacer.Replace(LTemplate, LBlockName, LBlock.Container);
     end;
-  finally
-    // LBlockResolver.Free;
   end;
   exit(TExtendsStmt.Create(LSymbol.Position, LName, LExpr, LTemplate));
 end;
