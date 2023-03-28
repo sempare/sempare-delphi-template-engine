@@ -64,21 +64,23 @@ requires
   dbrtl;
 
 contains
-  Sempare.Template.Visitor in 'src\Sempare.Template.Visitor.pas',
-  Sempare.Template.Util in 'src\Sempare.Template.Util.pas',
-  Sempare.Template.StackFrame in 'src\Sempare.Template.StackFrame.pas',
-  Sempare.Template.Rtti in 'src\Sempare.Template.Rtti.pas',
-  Sempare.Template.PrettyPrint in 'src\Sempare.Template.PrettyPrint.pas',
-  Sempare.Template.Parser in 'src\Sempare.Template.Parser.pas',
-  Sempare.Template.Lexer in 'src\Sempare.Template.Lexer.pas',
-  Sempare.Template.Functions in 'src\Sempare.Template.Functions.pas',
-  Sempare.Template.Evaluate in 'src\Sempare.Template.Evaluate.pas',
-  Sempare.Template.Context in 'src\Sempare.Template.Context.pas',
-  Sempare.Template.Common in 'src\Sempare.Template.Common.pas',
   Sempare.Template.AST in 'src\Sempare.Template.AST.pas',
-  Sempare.Template in 'src\Sempare.Template.pas',
+  Sempare.Template.BlockReplacer in 'src\Sempare.Template.BlockReplacer.pas',
+  Sempare.Template.BlockResolver in 'src\Sempare.Template.BlockResolver.pas',
+  Sempare.Template.Common in 'src\Sempare.Template.Common.pas',
+  Sempare.Template.Context in 'src\Sempare.Template.Context.pas',
+  Sempare.Template.Evaluate in 'src\Sempare.Template.Evaluate.pas',
+  Sempare.Template.Functions in 'src\Sempare.Template.Functions.pas',
   Sempare.Template.JSON in 'src\Sempare.Template.JSON.pas',
+  Sempare.Template.Lexer in 'src\Sempare.Template.Lexer.pas',
+  Sempare.Template.Parser in 'src\Sempare.Template.Parser.pas',
+  Sempare.Template in 'src\Sempare.Template.pas',
+  Sempare.Template.PrettyPrint in 'src\Sempare.Template.PrettyPrint.pas',
   Sempare.Template.ResourceStrings in 'src\Sempare.Template.ResourceStrings.pas',
-  Sempare.Template.VariableExtraction in 'src\Sempare.Template.VariableExtraction.pas';
+  Sempare.Template.Rtti in 'src\Sempare.Template.Rtti.pas',
+  Sempare.Template.StackFrame in 'src\Sempare.Template.StackFrame.pas',
+  Sempare.Template.Util in 'src\Sempare.Template.Util.pas',
+  Sempare.Template.VariableExtraction in 'src\Sempare.Template.VariableExtraction.pas',
+  Sempare.Template.Visitor in 'src\Sempare.Template.Visitor.pas';
 
 end.
