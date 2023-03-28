@@ -218,11 +218,12 @@ type
     function GetBlockContainer: ITemplate;
     function GetContainer: ITemplate;
     procedure SetContainer(const AContainer: ITemplate);
-    function GetExpr: IExpr;
+    function GetBlockNames: TArray<string>;
+    procedure SetBlockNames(const ANames: TArray<string>);
     property Name: IExpr read GetName;
-    property Expr: IExpr read GetExpr;
     property Container: ITemplate read GetContainer write SetContainer;
     property BlockContainer: ITemplate read GetBlockContainer;
+    property BlockNames: TArray<string> read GetBlockNames write SetBlockNames;
   end;
 
   IBlockStmt = interface(IStmt)

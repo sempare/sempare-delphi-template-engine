@@ -126,7 +126,7 @@ begin
   if not assigned(AStmt.Container) then
     exit;
   AcceptVisitor(AStmt.Container, self);
-  if AStmt.Name = FBlockName then
+  if FEvalVisitor.EvalExprAsString(AStmt.Name) = FBlockName then
   begin
     AStmt.Container := FReplacementBlock;
   end;

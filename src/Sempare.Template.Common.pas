@@ -113,7 +113,35 @@ procedure RaiseError(const APositional: IPosition; const AFormat: string); overl
 procedure RaiseErrorRes(const APositional: IPosition; const ResStringRec: PResStringRec; const AArgs: array of const); overload;
 procedure RaiseErrorRes(const APositional: IPosition; const ResStringRec: PResStringRec); overload;
 
+function CloneTemplate(const ATemplate: ITemplate): ITemplate;
+function CloneVisitorHost(const AVisitorHost: ITemplateVisitorHost): ITemplateVisitorHost;
+function CloneStmt(const AStmt: IStmt): IStmt;
+
 implementation
+
+function CloneTemplate(const ATemplate: ITemplate): ITemplate;
+var
+  LIntf: IInterface;
+begin
+  LIntf := ATemplate.Clone;
+  supports(LIntf, ITemplate, result);
+end;
+
+function CloneVisitorHost(const AVisitorHost: ITemplateVisitorHost): ITemplateVisitorHost;
+var
+  LIntf: IInterface;
+begin
+  LIntf := AVisitorHost.Clone;
+  supports(LIntf, ITemplateVisitorHost, result);
+end;
+
+function CloneStmt(const AStmt: IStmt): IStmt;
+var
+  LIntf: IInterface;
+begin
+  LIntf := AStmt.Clone;
+  supports(LIntf, IStmt, result);
+end;
 
 function AsVisitorHost(const ATemplate: ITemplate): ITemplateVisitorHost; overload;
 begin

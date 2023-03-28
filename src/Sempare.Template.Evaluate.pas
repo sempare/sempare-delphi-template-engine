@@ -194,8 +194,6 @@ var
   LValue: TValue;
 begin
   LValue := AExpr.Value;
-  if LValue.IsType<TValue> then
-    LValue := LValue.AsType<TValue>();
   FEvalStack.push(LValue);
 end;
 
@@ -225,16 +223,12 @@ var
 begin
   LAllowRootDeref := Preserve.Value<boolean>(FAllowRootDeref, true);
 
-  AcceptVisitor(AExpr.variable, self);
-  LDerefObj := FEvalStack.pop;
+  LDerefObj := EvalExpr(AExpr.variable);
 
   LAllowRootDeref.SetValue(AExpr.DerefType = dtArray);
-  AcceptVisitor(AExpr.DerefExpr, self);
-  LDerefKey := FEvalStack.pop;
-
+  LDerefKey := EvalExpr(AExpr.DerefExpr);
   LDerefedValue := Deref(Position(AExpr), LDerefObj, LDerefKey, eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext);
-  if LDerefedValue.IsType<TValue> then
-    LDerefedValue := LDerefedValue.AsType<TValue>();
+
   FEvalStack.push(LDerefedValue);
 end;
 
@@ -244,10 +238,8 @@ var
   LRight: TValue;
   LResult: TValue;
 begin
-  AcceptVisitor(AExpr.LeftExpr, self);
-  AcceptVisitor(AExpr.RightExpr, self);
-  LRight := FEvalStack.pop;
-  LLeft := FEvalStack.pop;
+  LLeft := EvalExpr(AExpr.LeftExpr);
+  LRight := EvalExpr(AExpr.RightExpr);
   case AExpr.BinOp of
     boIN:
       LResult := contains(Position(AExpr.RightExpr), LLeft, LRight, FContext);
@@ -317,8 +309,7 @@ procedure TEvaluationTemplateVisitor.Visit(const AExpr: IUnaryExpr);
 var
   LValue: TValue;
 begin
-  AcceptVisitor(AExpr.Condition, self);
-  LValue := FEvalStack.pop;
+  LValue := EvalExpr(AExpr.Condition);
   case AExpr.UnaryOp of
     uoMinus:
       begin
@@ -361,8 +352,6 @@ begin
   begin
     LValue := AExpr.variable;
   end;
-  if LValue.IsType<TValue> then
-    LValue := LValue.AsType<TValue>();
   FEvalStack.push(LValue);
 end;
 
@@ -386,8 +375,7 @@ var
     end
     else
     begin
-      AcceptVisitor(AExpr, self);
-      exit(AsInt(FEvalStack.pop, FContext));
+      exit(EvalExprAsInt(AExpr));
     end;
   end;
 
@@ -406,8 +394,7 @@ begin
 
   while ((LLimit = -1) or (LLoops < LLimit)) do
   begin
-    AcceptVisitor(AStmt.Condition, self);
-    if not AsBoolean(FEvalStack.pop) or (coBreak in FLoopOptions) then
+    if not EvalExprAsBoolean(AStmt.Condition) or (coBreak in FLoopOptions) then
       break;
     CheckRunTime(Position(AStmt));
     if (LOffset = -1) or (i >= LOffset) then
@@ -616,8 +603,7 @@ var
     end
     else
     begin
-      AcceptVisitor(AExpr, self);
-      exit(AsInt(FEvalStack.pop, FContext));
+      exit(EvalExprAsInt(AExpr));
     end;
   end;
 
@@ -628,11 +614,7 @@ begin
   FStackFrames.push(FStackFrames.peek.Clone);
   LVariableName := AStmt.variable;
 
-  AcceptVisitor(AStmt.Expr, self);
-  LLoopExpr := FEvalStack.pop;
-  if LLoopExpr.IsType<TValue> then
-    LLoopExpr := LLoopExpr.AsType<TValue>();
-
+  LLoopExpr := EvalExpr(AStmt.Expr);
   LOffset := GetValue(AStmt.OffsetExpr);
   LLimit := GetValue(AStmt.LimitExpr);
 
@@ -749,7 +731,6 @@ var
   LCount: integer;
 begin
   AExprList.Accept(self);
-
   LCount := AsInt(FEvalStack.pop(), FContext);
   if LCount <> AExprList.Count then // this should not happen
     RaiseError(nil, SNumberOfArgsMismatch);
@@ -797,8 +778,7 @@ var
     end
     else
     begin
-      AcceptVisitor(AExpr, self);
-      exit(AsInt(FEvalStack.pop, FContext));
+      exit(EvalExprAsInt(AExpr));
     end;
   end;
 
@@ -807,10 +787,8 @@ begin
     exit;
   LVariable := AStmt.variable;
   LLoopOptions := Preserve.Value<TLoopOptions>(FLoopOptions, []);
-  AcceptVisitor(AStmt.LowExpr, self);
-  LStartVal := AsInt(FEvalStack.pop, FContext);
-  AcceptVisitor(AStmt.HighExpr, self);
-  LEndVal := AsInt(FEvalStack.pop, FContext);
+  LStartVal := EvalExprAsInt(AStmt.LowExpr);
+  LEndVal := EvalExprAsInt(AStmt.HighExpr);
 
   LStep := GetValue(AStmt.StepExpr);
   LFirst := true;
@@ -881,22 +859,20 @@ var
   LValue: TValue;
 begin
   LVariable := AStmt.variable;
-  AcceptVisitor(AStmt.Expr, self);
-  LValue := FEvalStack.pop;
-  if LValue.IsType<TValue> then
-    LValue := LValue.AsType<TValue>;
+  LValue := EvalExpr(AStmt.Expr);
   FStackFrames.peek[LVariable] := LValue;
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AStmt: IIfStmt);
 var
   LExpr: TValue;
+  LIsObject: boolean;
 begin
   if HasBreakOrContinue then
     exit;
-  AcceptVisitor(AStmt.Condition, self);
-  LExpr := FEvalStack.pop;
-  if LExpr.IsObject and not IsEmptyObject(LExpr.AsObject) or not LExpr.IsObject and AsBoolean(LExpr) then
+  LExpr := EvalExpr(AStmt.Condition);
+  LIsObject := LExpr.IsObject;
+  if LIsObject and not IsEmptyObject(LExpr.AsObject) or not LIsObject and AsBoolean(LExpr) then
     AcceptVisitor(AStmt.TrueContainer, self)
   else if AStmt.FalseContainer <> nil then
     AcceptVisitor(AStmt.FalseContainer, self);
@@ -914,9 +890,7 @@ var
 begin
   if HasBreakOrContinue then
     exit;
-  AcceptVisitor(AStmt.Expr, self);
-  LTemplateName := FEvalStack.pop.AsString;
-
+  LTemplateName := EvalExprAsString(AStmt.Expr);
   if FLocalTemplates.TryGetValue(LTemplateName, LTemplate) or FContext.TryGetTemplate(LTemplateName, LTemplate) then
   begin
     FStackFrames.push(FStackFrames.peek.Clone());
@@ -934,8 +908,7 @@ procedure TEvaluationTemplateVisitor.Visit(const AStmt: IPrintStmt);
 begin
   if HasBreakOrContinue then
     exit;
-  AcceptVisitor(AStmt.Expr, self);
-  FStreamWriter.Write(AsString(FEvalStack.pop, FContext));
+  FStreamWriter.Write(EvalExprAsString(AStmt.Expr));
 end;
 
 function CastArg(const AValue: TValue; const AType: TRttiType; const AContext: ITemplateContext): TValue;
@@ -986,8 +959,6 @@ begin
   begin
     LParameter := LParams[LParamIdx];
     LParamValue := CastArg(AArgs[LParamIdx - LOffset], LParameter.ParamType, AContext);
-    if LParamValue.IsType<TValue> then
-      LParamValue := LParamValue.AsType<TValue>();
     result[LParamIdx] := LParamValue;
   end;
 end;
@@ -1082,8 +1053,7 @@ end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AExpr: IEncodeExpr);
 begin
-  AcceptVisitor(AExpr.Expr, self);
-  FEvalStack.push(EncodeVariable(FEvalStack.pop));
+  FEvalStack.push(EncodeVariable(EvalExpr(AExpr.Expr)));
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AStmt: IProcessTemplateStmt);
@@ -1109,26 +1079,16 @@ begin
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AStmt: IDefineTemplateStmt);
-var
-  LTemplateName: TValue;
 begin
-  AcceptVisitor(AStmt.Name, self);
-
-  LTemplateName := FEvalStack.pop;
-  AssertString(Position(AStmt), LTemplateName);
-
-  FLocalTemplates.AddOrSetValue(AsString(LTemplateName, FContext), AStmt.Container);
+  FLocalTemplates.AddOrSetValue(EvalExprAsString(AStmt.Name), AStmt.Container);
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AStmt: IWithStmt);
 var
   LStackFrame: TStackFrame;
-  LExpr: TValue;
 begin
-  AcceptVisitor(AStmt.Expr, self);
-  LExpr := FEvalStack.pop;
 
-  LStackFrame := FStackFrames.peek.Clone(LExpr);
+  LStackFrame := FStackFrames.peek.Clone(EvalExpr(AStmt.Expr));
   FStackFrames.push(LStackFrame);
 
   AcceptVisitor(AStmt.Container, self);
@@ -1161,8 +1121,7 @@ end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AExpr: ITernaryExpr);
 begin
-  AcceptVisitor(AExpr.Condition, self);
-  if AsBoolean(FEvalStack.pop) then
+  if EvalExprAsBoolean(AExpr.Condition) then
     AcceptVisitor(AExpr.TrueExpr, self)
   else
     AcceptVisitor(AExpr.FalseExpr, self);
@@ -1172,7 +1131,6 @@ procedure TEvaluationTemplateVisitor.Visit(const AStmt: ICycleStmt);
 var
   LStackFrame: TStackFrame;
   LValue: TValue;
-  LIdx: int64;
 begin
   try
     LStackFrame := FStackFrames.peek;
@@ -1180,9 +1138,7 @@ begin
   except
     RaiseErrorRes(Position(AStmt), @SCycleStatementMustBeInALoop);
   end;
-  LIdx := LValue.AsInt64;
-  AcceptVisitor(AStmt.List[LIdx mod AStmt.List.Count], self);
-  FStreamWriter.Write(AsString(FEvalStack.pop, FContext));
+  FStreamWriter.Write(EvalExprAsString(AStmt.List[LValue.AsInt64 mod AStmt.List.Count]));
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AStmt: IDebugStmt);
@@ -1204,6 +1160,23 @@ begin
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AStmt: IExtendsStmt);
+
+  function CommonNames(const ANames: TArray<string>; const BNames: TArray<string>): TArray<string>;
+  var
+    a, b: string;
+  begin
+    result := nil;
+    // not mega optimal, but lists should be sort
+    for a in ANames do
+    begin
+      for b in BNames do
+      begin
+        if a = b then
+          insert(a, result, length(result));
+      end;
+    end;
+  end;
+
 var
   LName: string;
   LSymbol: ITemplateSymbol;
@@ -1211,32 +1184,54 @@ var
   LBlockReplacer: IBlockReplacerVisitor;
   LBlockName: string;
   LBlockNames: TArray<string>;
+  LTemplateNames: TArray<string>;
   LReplacementBlocks: TArray<IBlockStmt>;
   LTemplate: ITemplate;
   LBlock: IBlockStmt;
+  LResolveNames: boolean;
 begin
-  if assigned(AStmt.Container) then
+  LResolveNames := false;
+  if not assigned(AStmt.Container) then
   begin
-    if not FContext.TryGetTemplate(LName, LTemplate) then
+    LName := AStmt.NameAsString(self);
+    if not FLocalTemplates.TryGetValue(LName, LTemplate) and not FContext.TryGetTemplate(LName, LTemplate) then
       RaiseErrorRes(LSymbol.Position, @STemplateNotFound, [LName]);
 
-    AcceptVisitor(AStmt.Container, self);
+    AStmt.Container := LTemplate;
+    LResolveNames := true;
 
-    LBlockResolver := TBlockResolverVisitor.Create(self);
-    AcceptVisitor(AStmt.BlockContainer, LBlockResolver);
+  end
+  else
+  begin
+    LTemplate := AStmt.Container;
+  end;
 
-    LBlockNames := LBlockResolver.GetBlockNames;
+  // we need to clone the original as we do replacements
+  // not currently planning to support 'inherited', to allow to reference the original body in the original template from within the child body.
+  LTemplate := CloneTemplate(LTemplate);
 
-    LBlockReplacer := TBlockReplacerVisitor.Create(self);
-    for LBlockName in LBlockNames do
+  if LResolveNames then
+  begin
+    LBlockResolver := TBlockResolverVisitor.Create(self, AStmt.Container);
+    LTemplateNames := LBlockResolver.GetBlockNames();
+
+    LBlockResolver := TBlockResolverVisitor.Create(self, AStmt.BlockContainer);
+    LBlockNames := LBlockResolver.GetBlockNames();
+    AStmt.BlockNames := CommonNames(LTemplateNames, LBlockNames);
+  end;
+
+  // we resolve the blocks aimed for replacing defined withing the block container.
+  LBlockReplacer := TBlockReplacerVisitor.Create(self);
+  for LBlockName in AStmt.BlockNames do
+  begin
+    LReplacementBlocks := LBlockResolver.GetBlocks(LBlockName);
+    for LBlock in LReplacementBlocks do
     begin
-      LReplacementBlocks := LBlockResolver.GetBlocks(LBlockName);
-      for LBlock in LReplacementBlocks do
-      begin
-        LBlockReplacer.Replace(LTemplate, LBlockName, LBlock.Container);
-      end;
+      LBlockReplacer.Replace(LTemplate, LBlockName, LBlock.Container);
     end;
   end;
+
+  AcceptVisitor(LTemplate, self);
 end;
 
 procedure TEvaluationTemplateVisitor.VisitContainer(const AContainer: ITemplate);

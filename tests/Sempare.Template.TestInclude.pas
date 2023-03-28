@@ -60,11 +60,24 @@ type
     [Test]
     procedure TestSubTemplate;
 
-    [Test, Ignore]
+    [Test]
     procedure TestExtends;
 
-    [Test, Ignore]
+    [Test]
     procedure TestExtendsBlock;
+
+    [Test]
+    procedure TestExtendsBlockWithDynamicNames;
+
+    [Test]
+    procedure TestExtendsWebLike;
+
+    [Test]
+    procedure TestExtendsNested;
+
+    [Test]
+    procedure TestExtendsScopedExpr;
+
   end;
 
 implementation
@@ -273,54 +286,119 @@ begin
 end;
 
 procedure TTestTemplateInclude.TestExtends;
-var
-  LTpl: ITemplate;
-  LCtx: ITemplateContext;
 begin
-  LCtx := Template.Context();
-  LCtx.TemplateResolver := function(const AContext: ITemplateContext; const AName: string): ITemplate
-    begin
-      if AName = 'showmember' then
-      begin
-        exit(Template.parse(AContext, '<% block ''content'' %>parent<% end %>'));
-      end
-      else
-        exit(nil);
-    end;
-
-  LTpl := Template.parse(LCtx, //
+  Assert.AreEqual('parent parent', Template.Eval( //
+    '<% template ''showmember'' %>' + //
+    '<% block ''content'' %>parent<% end %>' + //
+    '<% end %>' + //
     '<% extends (''showmember'') %>' + //
     '<% end %> ' + //
     '<% extends (''showmember'') %>' + //
     '<% end %>' //
-    );
-  Assert.AreEqual('parent parent', Template.Eval(LTpl));
+    ));
 end;
 
 procedure TTestTemplateInclude.TestExtendsBlock;
-var
-  LTpl: ITemplate;
-  LCtx: ITemplateContext;
 begin
-  LCtx := Template.Context();
-  LCtx.TemplateResolver := function(const AContext: ITemplateContext; const AName: string): ITemplate
-    begin
-      if AName = 'showmember' then
-      begin
-        exit(Template.parse(AContext, '<% block ''content'' %>parent<% end %>'));
-      end
-      else
-        exit(nil);
-    end;
-  LTpl := Template.parse(LCtx, //
+  Assert.AreEqual('child child2', Template.Eval( //
+    '<% template ''showmember'' %>' + //
+    '<% block ''content'' %>parent<% end %>' + //
+    '<% end %>' + //
     '<% extends (''showmember'') %>' + //
     '<% block ''content'' %>child<% end %>' + //
     '<% end %> ' + //
     '<% extends (''showmember'') %>' + //
     '<% block ''content'' %>child2<% end %>' + //
     '<% end %>' //
-    );
-  Assert.AreEqual('child child2', Template.Eval(LTpl));
+    ));
+end;
+
+procedure TTestTemplateInclude.TestExtendsBlockWithDynamicNames;
+begin
+  Assert.AreEqual('child child2', Template.Eval( //
+    '<% for i := 1 to 2 %>' + //
+    '<% template ''showmember'' + i %>' + //
+    '<% block ''content'' %>parent<% end %>' + //
+    '<% end %>' + //
+    '<% end %>' + //
+    '<% extends (''showmember'' + 1) %>' + //
+    '<% block ''content'' %>child<% end %>' + //
+    '<% end %> ' + //
+    '<% extends (''showmember'' + 2) %>' + //
+    '<% block ''content'' %>child2<% end %>' + //
+    '<% end %>' //
+    ));
+end;
+
+procedure TTestTemplateInclude.TestExtendsWebLike;
+begin
+  Assert.AreEqual('header content footer', Template.Eval( //
+    '<% template ''header'' %>' + //
+    'header' + //
+    '<% end %>' + //
+    '<% template ''footer'' %>' + //
+    'footer' + //
+    '<% end %>' + //
+    '<% template ''template'' %>' + //
+    '<% include(''header'') %> ' + //
+    '<% block ''body'' %>body<% end %> ' + //
+    '<% include(''footer'') %>' + //
+    '<% end %>' + //
+    '<% extends (''template'') %>' + //
+    '<% block ''body'' %>content<% end %>' + //
+    '<% end %>' //
+    ));
+end;
+
+procedure TTestTemplateInclude.TestExtendsNested;
+begin
+  Assert.AreEqual('header default header default body footer default footer', Template.Eval( //
+    '<% template ''header'' %>' + //
+    'header <% block ''general'' %>default header<% end %>' + //
+    '<% end %>' + //
+    '<% template ''footer'' %>' + //
+    'footer <% block ''general'' %>default footer<% end %>' + //
+    '<% end %>' + //
+    '<% template ''template'' %>' + //
+    '<% include(''header'') %> ' + //
+    '<% block ''general'' %>default body<% end %> ' + //
+    '<% include(''footer'') %>' + //
+    '<% end %>' + //
+    '<% extends (''template'') %>' + //
+    '<% end %>' //
+    ));
+
+  Assert.AreEqual('header default header general footer default footer', Template.Eval( //
+    '<% template ''header'' %>' + //
+    'header <% block ''general'' %>default header<% end %>' + //
+    '<% end %>' + //
+    '<% template ''footer'' %>' + //
+    'footer <% block ''general'' %>default footer<% end %>' + //
+    '<% end %>' + //
+    '<% template ''template'' %>' + //
+    '<% include(''header'') %> ' + //
+    '<% block ''general'' %>default body<% end %> ' + //
+    '<% include(''footer'') %>' + //
+    '<% end %>' + //
+    '<% extends (''template'') %>' + //
+    '<% block ''general'' %>general<% end %>' + //
+    '<% end %>' //
+    ));
+end;
+
+procedure TTestTemplateInclude.TestExtendsScopedExpr;
+begin
+  Assert.AreEqual('first 1 second 2 ', Template.Eval( //
+    '<% template ''template'' %>' + //
+    '<% block ''general'' %>body<% end %> <% _ %> ' + //
+    '<% end %>' + //
+    '<% extends (''template'', 1) %>' + //
+    '<% block ''general'' %>first<% end %> ' + //
+    '<% end %>' + //
+    '<% extends (''template'', 2) %>' + //
+    '<% block ''general'' %>second<% end %> ' + //
+    '<% end %>' //
+    ));
 end;
 
 initialization

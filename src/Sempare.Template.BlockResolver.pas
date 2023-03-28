@@ -53,7 +53,7 @@ type
     FBlocks: TDictionary<string, TArray<IBlockStmt>>;
     FEvalVisitor: IEvaluationTemplateVisitor;
   public
-    constructor Create(const AEvalVisitor: IEvaluationTemplateVisitor);
+    constructor Create(const AEvalVisitor: IEvaluationTemplateVisitor; const ATemplate: ITemplate);
     destructor Destroy; override;
 
     function GetBlockNames: TArray<string>;
@@ -142,10 +142,11 @@ begin
   AcceptVisitor(AStmt.Container, self);
 end;
 
-constructor TBlockResolverVisitor.Create(const AEvalVisitor: IEvaluationTemplateVisitor);
+constructor TBlockResolverVisitor.Create(const AEvalVisitor: IEvaluationTemplateVisitor; const ATemplate: ITemplate);
 begin
   FEvalVisitor := AEvalVisitor;
   FBlocks := TDictionary < string, TArray < IBlockStmt >>.Create();
+  AcceptVisitor(ATemplate, self);
 end;
 
 destructor TBlockResolverVisitor.Destroy;
