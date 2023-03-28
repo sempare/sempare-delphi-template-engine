@@ -83,6 +83,7 @@ var
 begin
   LContext := Template.Context();
   LContext.DecimalSeparator := ',';
+  LContext.ValueSeparator := ';';
   Assert.AreEqual('543,21', Template.Eval(LContext, '<% x:= 543,21 %><% x %>'));
   Assert.AreEqual('5,1234', Template.Eval(LContext, '<% x:= 5,1234 %><% x %>'));
   Assert.AreEqual('12,34 43,21 ', Template.Eval(LContext, '<% vals := [ 12,34 ; 43,21] %><% for x in vals %><% vals[x] %> <% end %>'));

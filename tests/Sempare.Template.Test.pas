@@ -65,6 +65,8 @@ type
     [Test]
     procedure TestVariableNotFound;
     [Test]
+    procedure TestVariableNotFoundException;
+    [Test]
     procedure TestArray;
     [Test, Ignore]
     // This is ignored because this is a potential future feature that is not currently supported.
@@ -107,8 +109,15 @@ type
 
     [Test]
     procedure TestDecimalEncodingErrorWithLists;
+
     [Test]
     procedure TestDecimalEncodingErrorWithParameters;
+
+    [Test]
+    procedure TestValueSeparatorSameAsDecimalSeparator;
+
+    [Test]
+    procedure TestDecimalEncodingErrorWithListsDefaultValueSeparator;
   end;
 
 type
@@ -400,6 +409,7 @@ var
 begin
   ctx := Template.Context;
   ctx.DecimalSeparator := ',';
+  ctx.ValueSeparator := ';';
   Assert.AreEqual('', Template.Eval(ctx, '<% a := ["a"; "b"] %>'));
   Assert.WillRaise(
     procedure
@@ -407,6 +417,7 @@ begin
       Assert.AreEqual('', Template.Eval(ctx, '<% a := ["a", "b"] %>'));
     end);
   ctx.DecimalSeparator := '.';
+  ctx.ValueSeparator := ',';
   Assert.AreEqual('', Template.Eval(ctx, '<% a := ["a", "b"] %>'));
   Assert.WillRaise(
     procedure
@@ -415,12 +426,24 @@ begin
     end);
 end;
 
+procedure TTestTemplate.TestDecimalEncodingErrorWithListsDefaultValueSeparator;
+var
+  ctx: ITemplateContext;
+begin
+  ctx := Template.Context;
+  ctx.DecimalSeparator := ',';
+  Assert.AreEqual('', Template.Eval(ctx, '<% a := ["a", "b"] %>'));
+  ctx.DecimalSeparator := '.';
+  Assert.AreEqual('', Template.Eval(ctx, '<% a := ["a", "b"] %>'));
+end;
+
 procedure TTestTemplate.TestDecimalEncodingErrorWithParameters;
 var
   ctx: ITemplateContext;
 begin
   ctx := Template.Context;
   ctx.DecimalSeparator := ',';
+  ctx.ValueSeparator := ';';
   Assert.AreEqual('a b', Template.Eval(ctx, '<% fmt("%s %s"; "a"; "b") %>'));
   Assert.WillRaise(
     procedure
@@ -428,6 +451,7 @@ begin
       Assert.AreEqual('', Template.Eval(ctx, '<% fmt("%s %s", "a", "b") %>'));
     end);
   ctx.DecimalSeparator := '.';
+  ctx.ValueSeparator := ',';
   Assert.AreEqual('a b', Template.Eval(ctx, '<% fmt("%s %s", "a", "b")  %>'));
   Assert.WillRaise(
     procedure
@@ -509,9 +533,37 @@ begin
   end;
 end;
 
+procedure TTestTemplate.TestValueSeparatorSameAsDecimalSeparator;
+var
+  ctx: ITemplateContext;
+begin
+  ctx := Template.Context;
+  ctx.DecimalSeparator := ',';
+  ctx.ValueSeparator := ',';
+  Assert.AreEqual('1,12 4,56 ', Template.Eval(ctx, '<% a := [ 1,12 , 4,56 ]  %><% for i of a %><% i %> <% end %>'));
+  Assert.WillRaise(
+    procedure
+    begin // expects ,
+      Assert.AreEqual('1,12 4,56 ', Template.Eval(ctx, '<% a := [ 1,12 ; 4,56 ]  %><% for i of a %><% i %> <% end %>'));
+    end);
+end;
+
 procedure TTestTemplate.TestVariableNotFound;
 begin
   Assert.AreEqual('', Template.Eval('<% abc %>'));
+end;
+
+procedure TTestTemplate.TestVariableNotFoundException;
+var
+  LCtx: ITemplateContext;
+begin
+  LCtx := Template.Context();
+  LCtx.Options := LCtx.Options + [eoRaiseErrorWhenVariableNotFound];
+  Assert.WillRaise(
+    procedure
+    begin // expects  abc
+      Assert.AreEqual('', Template.Eval(LCtx, '<% abc %>'));
+    end);
 end;
 
 initialization

@@ -134,6 +134,7 @@ type
     procedure SetScriptEndStripToken(const Value: string);
     procedure SetScriptStartStripToken(const Value: string);
 
+    procedure SetValueSeparator(const ASeparator: char);
     function GetValueSeparator: char;
     function GetDecimalSeparator: char;
     procedure SetDecimalSeparator(const ASeparator: char);
@@ -158,7 +159,7 @@ type
     property StartStripToken: string read GetScriptStartStripToken write SetScriptStartStripToken;
     property EndStripToken: string read GetScriptEndStripToken write SetScriptEndStripToken;
 
-    property ValueSeparator: char read GetValueSeparator;
+    property ValueSeparator: char read GetValueSeparator write SetValueSeparator;
     property DecimalSeparator: char read GetDecimalSeparator write SetDecimalSeparator;
     property FormatSettings: TFormatSettings read GetFormatSettings;
     property DebugErrorFormat: string read GetDebugErrorFormat write SetDebugErrorFormat;
@@ -286,6 +287,7 @@ type
 
     function GetFormatSettings: TFormatSettings;
 
+    procedure SetValueSeparator(const ASeparator: char);
     procedure SetDecimalSeparator(const ASeparator: char);
 
     function GetDebugErrorFormat: string;
@@ -479,10 +481,6 @@ begin
   if not(FFormatSettings.DecimalSeparator in ['.', ',']) then
     raise ETemplate.CreateRes(@SDecimalSeparatorMustBeACommaOrFullStop);
 {$WARN WIDECHAR_REDUCED ON}
-  if FFormatSettings.DecimalSeparator = '.' then
-    FValueSeparator := ','
-  else
-    FValueSeparator := ';';
 end;
 
 procedure TTemplateContext.SetEncoding(const AEncoding: TEncoding);
@@ -510,6 +508,15 @@ end;
 procedure TTemplateContext.SetOptions(const AOptions: TTemplateEvaluationOptions);
 begin
   FOptions := AOptions;
+end;
+
+procedure TTemplateContext.SetValueSeparator(const ASeparator: char);
+begin
+{$WARN WIDECHAR_REDUCED OFF}
+  if not(ASeparator in [',', ';']) then
+    raise ETemplate.CreateRes(@SDecimalSeparatorMustBeACommaOrFullStop);
+{$WARN WIDECHAR_REDUCED ON}
+  FValueSeparator := ASeparator;
 end;
 
 procedure TTemplateContext.SetVariable(const AName: string; const AValue: TValue);
