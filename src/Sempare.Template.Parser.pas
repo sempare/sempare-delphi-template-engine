@@ -1934,7 +1934,7 @@ end;
 
 function TForInStmt.Clone: IInterface;
 begin
-  exit(TForInStmt.Create(FPosition, FVariable, FForOp, FExpr, FOffsetExpr, FLimitExpr, FContainer, FOnFirst, FOnLast, FOnEmpty, FBetweenItem));
+  exit(TForInStmt.Create(FPosition, FVariable, FForOp, FExpr, FOffsetExpr, FLimitExpr, CloneTemplate(FContainer), CloneTemplate(FOnFirst), CloneTemplate(FOnLast), CloneTemplate(FOnEmpty), CloneTemplate(FBetweenItem)));
 end;
 
 constructor TForInStmt.Create(const APosition: IPosition; const AVariable: string; const AForOp: TForOp; const AExpr: IExpr; const AOffsetExpr: IExpr; const ALimitExpr: IExpr; const AContainer: ITemplate; const AOnFirst, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
@@ -2028,7 +2028,7 @@ end;
 
 function TAssignStmt.Clone: IInterface;
 begin
-  exit(TAssignStmt.Create(FPosition, FVariable, FExpr));
+  exit(self);
 end;
 
 constructor TAssignStmt.Create(const APosition: IPosition; const AVariable: string; const AExpr: IExpr);
@@ -2138,7 +2138,7 @@ end;
 
 function TContinueStmt.Clone: IInterface;
 begin
-  exit(TContinueStmt.Create(FPosition));
+  exit(self);
 end;
 
 { TBreakStmt }
@@ -2150,7 +2150,7 @@ end;
 
 function TBreakStmt.Clone: IInterface;
 begin
-  exit(TBreakStmt.Create(FPosition));
+  exit(self);
 end;
 
 { TEndStmt }
@@ -2162,7 +2162,7 @@ end;
 
 function TEndStmt.Clone: IInterface;
 begin
-  exit(TEndStmt.Create(FPosition));
+  exit(self);
 end;
 
 { TVariableDerefExpr }
@@ -2198,7 +2198,7 @@ end;
 
 function TIncludeStmt.Clone: IInterface;
 begin
-  exit(TIncludeStmt.Create(FPosition, FExpr));
+  exit(self);
 end;
 
 { TElseStmt }
@@ -2210,7 +2210,7 @@ end;
 
 function TElseStmt.Clone: IInterface;
 begin
-  exit(TElseStmt.Create(FPosition));
+  exit(self);
 end;
 
 { TElIfStmt }
@@ -2222,7 +2222,7 @@ end;
 
 function TElIfStmt.Clone: IInterface;
 begin
-  exit(TElIfStmt.Create(FPosition));
+  exit(self);
 end;
 
 { TCommentStmt }
@@ -2234,7 +2234,7 @@ end;
 
 function TCommentStmt.Clone: IInterface;
 begin
-  exit(TCommentStmt.Create(FPosition));
+  exit(self);
 end;
 
 { TAbstractBase }
@@ -2433,7 +2433,7 @@ end;
 
 function TRequireStmt.Clone: IInterface;
 begin
-  exit(TRequireStmt.Create(FPosition, FExprList));
+  exit(self);
 end;
 
 constructor TRequireStmt.Create(const APosition: IPosition; const AExprList: IExprList);
@@ -2508,7 +2508,7 @@ end;
 
 function TCycleStmt.Clone: IInterface;
 begin
-  exit(TCycleStmt.Create(FPosition, FExprList));
+  exit(self);
 end;
 
 constructor TCycleStmt.Create(const APosition: IPosition; const AList: IExprList);
@@ -2584,7 +2584,7 @@ end;
 
 function TBlockStmt.Clone: IInterface;
 begin
-  exit(TBlockStmt.Create(FPosition, FName, FContainer));
+  exit(TBlockStmt.Create(FPosition, FName, CloneTemplate(FContainer)));
 end;
 
 constructor TBlockStmt.Create(const APosition: IPosition; const AName: IExpr; const AContainer: ITemplate);
@@ -2623,7 +2623,7 @@ end;
 
 function TExtendsStmt.Clone: IInterface;
 begin
-  exit(TExtendsStmt.Create(FPosition, FName, FBlockContainer));
+  exit(TExtendsStmt.Create(FPosition, FName, CloneTemplate(FBlockContainer)));
 end;
 
 constructor TExtendsStmt.Create(const APosition: IPosition; const AName: IExpr; const ABlockContainer: ITemplate);
