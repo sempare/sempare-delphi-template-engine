@@ -50,6 +50,7 @@ type
     FBlockName: string;
     FReplacementBlock: ITemplate;
     FEvalVisitor: IEvaluationTemplateVisitor;
+    FFound: boolean;
   public
     constructor Create(const AEvalVisitor: IEvaluationTemplateVisitor);
     procedure Visit(const AStmt: IIfStmt); overload; override;
@@ -79,31 +80,43 @@ uses
 
 procedure TBlockReplacerVisitor.Visit(const AStmt: IForRangeStmt);
 begin
+  if FFound then
+    exit;
   AcceptVisitor(AStmt.Container, self);
 end;
 
 procedure TBlockReplacerVisitor.Visit(const AStmt: IProcessTemplateStmt);
 begin
+  if FFound then
+    exit;
   AcceptVisitor(AStmt.Container, self);
 end;
 
 procedure TBlockReplacerVisitor.Visit(const AStmt: IDefineTemplateStmt);
 begin
+  if FFound then
+    exit;
   AcceptVisitor(AStmt.Container, self);
 end;
 
 procedure TBlockReplacerVisitor.Visit(const AStmt: IWithStmt);
 begin
+  if FFound then
+    exit;
   AcceptVisitor(AStmt.Container, self);
 end;
 
 procedure TBlockReplacerVisitor.Visit(const AStmt: IForInStmt);
 begin
+  if FFound then
+    exit;
   AcceptVisitor(AStmt.Container, self);
 end;
 
 procedure TBlockReplacerVisitor.Visit(const AStmt: IIfStmt);
 begin
+  if FFound then
+    exit;
   AcceptVisitor(AStmt.TrueContainer, self);
   if AStmt.FalseContainer <> nil then
   begin
@@ -113,27 +126,36 @@ end;
 
 procedure TBlockReplacerVisitor.Visit(const AStmt: IWhileStmt);
 begin
+  if FFound then
+    exit;
   AcceptVisitor(AStmt.Container, self);
 end;
 
 procedure TBlockReplacerVisitor.Visit(const AStmt: IDebugStmt);
 begin
+  if FFound then
+    exit;
   AcceptVisitor(AStmt.Stmt, self);
 end;
 
 procedure TBlockReplacerVisitor.Visit(const AStmt: IBlockStmt);
 begin
+  if FFound then
+    exit;
   if not assigned(AStmt.Container) then
     exit;
   AcceptVisitor(AStmt.Container, self);
   if FEvalVisitor.EvalExprAsString(AStmt.Name) = FBlockName then
   begin
+    FFound := true;
     AStmt.Container := FReplacementBlock;
   end;
 end;
 
 procedure TBlockReplacerVisitor.Visit(const AStmt: IExtendsStmt);
 begin
+  if FFound then
+    exit;
   AcceptVisitor(AStmt.Container, self);
 end;
 
@@ -146,6 +168,7 @@ procedure TBlockReplacerVisitor.Replace(const ATemplate: ITemplate; const ABlock
 var
   LVisitor: ITemplateVisitor;
 begin
+  FFound := false;
   if not supports(self, ITemplateVisitor, LVisitor) then
     exit;
   if not assigned(ABlock) then
