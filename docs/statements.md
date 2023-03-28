@@ -374,7 +374,7 @@ would resolve to:
         <title>My Page</title>
     </head>
     <body>
-        Welcome to my page
+        <p>Welcome to my page</p>
     </body>
 </html>
 ```
