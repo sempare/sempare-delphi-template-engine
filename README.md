@@ -96,6 +96,7 @@ The playlist has a few videos that are very short (most less than a minute - bli
   - if, elif, else statements
   - for and while statements
   - include statement
+  - extends / block statements
   - with statement
   - function/method calls
 - expressions

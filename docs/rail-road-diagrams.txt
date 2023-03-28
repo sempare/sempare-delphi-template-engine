@@ -539,3 +539,26 @@ Sequence(
 
   )
 )
+
+
+
+-------------------------
+
+https://tabatkins.github.io/railroad-diagrams/generator.html#Diagram(%0AStack(%0ASequence(%0A%20%20%20%20%20%20%20Terminal('%3C%25')%2C%0A%20%20%20%20%20%20%20Terminal('block')%2C%0A%20%20%20%20%20%20%20Terminal('(')%2C%0A%20%20%20%20%20%20%20NonTerminal('expr')%2C%20%20%0A%20%20%20%20%20%20%20Terminal(')')%2C%0A%20%20%20%20%20%20%20Terminal('%25%3E')%2C%0A)%2C%0ASequence(%0A%20%20%20%20%20%20%20NonTerminal('block')%2C%0A%20%20%20%20%20%20%20Terminal('%3C%25')%2C%20Terminal('end')%2C%20Terminal('%25%3E')%2C%20%0A%20%20%20)%0A)%0A)
+
+Diagram(
+Stack(
+Sequence(
+       Terminal('<%'),
+       Terminal('block'),
+       Terminal('('),
+       NonTerminal('expr'),  
+       Terminal(')'),
+       Terminal('%>'),
+),
+Sequence(
+       NonTerminal('block'),
+       Terminal('<%'), Terminal('end'), Terminal('%>'), 
+   )
+)
+)
