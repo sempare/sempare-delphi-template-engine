@@ -48,7 +48,7 @@ type
     function GetBlocks(const AName: string): TArray<IBlockStmt>;
   end;
 
-  TBlockResolverVisitor = class(TBaseTemplateVisitor, IBlockResolverVisitor)
+  TBlockResolverVisitor = class(TNoExprTemplateVisitor, IBlockResolverVisitor)
   private
     FBlocks: TDictionary<string, TArray<IBlockStmt>>;
     FEvalVisitor: IEvaluationTemplateVisitor;
@@ -59,69 +59,14 @@ type
     function GetBlockNames: TArray<string>;
     function GetBlocks(const AName: string): TArray<IBlockStmt>;
 
-    procedure Visit(const AStmt: IIfStmt); overload; override;
-    procedure Visit(const AStmt: IWhileStmt); overload; override;
-    procedure Visit(const AStmt: IForInStmt); overload; override;
-    procedure Visit(const AStmt: IForRangeStmt); overload; override;
-
-    procedure Visit(const AStmt: IProcessTemplateStmt); overload; override;
-    procedure Visit(const AStmt: IDefineTemplateStmt); overload; override;
-    procedure Visit(const AStmt: IWithStmt); overload; override;
-
-    procedure Visit(const AStmt: IDebugStmt); overload; override;
-
     procedure Visit(const AStmt: IBlockStmt); overload; override;
     procedure Visit(const AStmt: IExtendsStmt); overload; override;
-
+    procedure Visit(const AStmt: IIncludeStmt); overload; override;
   end;
 
 implementation
 
 { TBlockResolverVisitor }
-
-procedure TBlockResolverVisitor.Visit(const AStmt: IForRangeStmt);
-begin
-  AcceptVisitor(AStmt.Container, self);
-end;
-
-procedure TBlockResolverVisitor.Visit(const AStmt: IProcessTemplateStmt);
-begin
-  AcceptVisitor(AStmt.Container, self);
-end;
-
-procedure TBlockResolverVisitor.Visit(const AStmt: IDefineTemplateStmt);
-begin
-  AcceptVisitor(AStmt.Container, self);
-end;
-
-procedure TBlockResolverVisitor.Visit(const AStmt: IWithStmt);
-begin
-  AcceptVisitor(AStmt.Container, self);
-end;
-
-procedure TBlockResolverVisitor.Visit(const AStmt: IForInStmt);
-begin
-  AcceptVisitor(AStmt.Container, self);
-end;
-
-procedure TBlockResolverVisitor.Visit(const AStmt: IIfStmt);
-begin
-  AcceptVisitor(AStmt.TrueContainer, self);
-  if AStmt.FalseContainer <> nil then
-  begin
-    AcceptVisitor(AStmt.FalseContainer, self);
-  end;
-end;
-
-procedure TBlockResolverVisitor.Visit(const AStmt: IWhileStmt);
-begin
-  AcceptVisitor(AStmt.Container, self);
-end;
-
-procedure TBlockResolverVisitor.Visit(const AStmt: IDebugStmt);
-begin
-  AcceptVisitor(AStmt.Stmt, self);
-end;
 
 procedure TBlockResolverVisitor.Visit(const AStmt: IBlockStmt);
 var
@@ -138,8 +83,19 @@ begin
 end;
 
 procedure TBlockResolverVisitor.Visit(const AStmt: IExtendsStmt);
+var
+  LTemplate: ITemplate;
 begin
-  AcceptVisitor(AStmt.Container, self);
+  LTemplate := FEvalVisitor.ResolveTemplate(AStmt.Name);
+  AcceptVisitor(LTemplate, self);
+end;
+
+procedure TBlockResolverVisitor.Visit(const AStmt: IIncludeStmt);
+var
+  LTemplate: ITemplate;
+begin
+  LTemplate := FEvalVisitor.ResolveTemplate(AStmt.Expr);
+  AcceptVisitor(LTemplate, self);
 end;
 
 constructor TBlockResolverVisitor.Create(const AEvalVisitor: IEvaluationTemplateVisitor; const ATemplate: ITemplate);
