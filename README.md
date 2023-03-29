@@ -189,15 +189,15 @@ Review [contibution terms and conditions](./docs/CONTRIBUTION.pdf) to contribute
 # License
 
 The Sempare Template Engine is dual-licensed. You may choose to use it under the restrictions of the [GPL v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html) at
-no cost to you, or you may purchase for use under the [Sempare Limited Commercial License](./docs/commercial.license.md)
+no cost to you, or you may license it for use under the [Sempare Limited Commercial License](./docs/commercial.license.md)
 
-The dual-licensing scheme allows you to test the library with no restrictions, but subject to the terms of the GPL. A nominal fee is requested to support the maintenance of the library if the product is to be used in commercial products. This support fee binds you to the commercial license, removing any of the GPL restrictions, and allowing you to use the library in your products as you will. The Sempare Template Engine may not be included/distributed as part of another commercial library without approval / commercial review.
+The dual-licensing scheme allows you to use and test the library with no restrictions, but subject to the terms of the GPL. A nominal fee is requested to support the maintenance of the library if the product is to be used in commercial products. This support fee binds you to the commercial license, removing any of the GPL restrictions, and allowing you to use the library in your products as you will. The Sempare Template Engine may NOT be included or distributed as part of another commercial library or framework without approval / commercial review.
 
 A commercial licence grants you the right to use Sempare Template Engine in your own applications, royalty free, and without any requirement to disclose your source code nor any modifications to
-Sempare Templte Engine to any other party. A commercial licence lasts into perpetuity, and entitles you to all future updates - free of charge.
+Sempare Templte Engine or to any other party. A commercial licence lasts into perpetuity, and entitles you to all future updates.
 
-A commercial licence is provided per developer developing applications that use the Sempare Template Engine. The initial cost is $70 per developer and includes first year of support.
-For support thereafter, at your discretion, a support fee of $30 per developer per year would be appreciated (the cost of a few cups of coffee). Please contact us for site license pricing.
+A commercial licence is provided per developer developing applications that uses the Sempare Template Engine. The initial license fee is $70 per developer and includes the first year of support.
+For support thereafter, at your discretion, a support fee of $30 per developer per year would be appreciated. Please contact us for site license pricing.
 
 Please send an e-mail to info@sempare.ltd to request an invoice which will contain the bank details.
 
