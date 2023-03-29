@@ -169,7 +169,8 @@ end;
 class procedure Template.Eval<T>(const AContext: ITemplateContext; const ATemplate: ITemplate; const AValue: T; const AStream: TStream);
 var
   LValue: TTemplateValue;
-  LTemplateVisitor: ITemplateVisitor;
+  LTemplateVisitor: IEvaluationTemplateVisitor;
+  LTemplate: ITemplate;
 begin
 {$IFNDEF SEMPARE_TEMPLATE_CONFIRM_LICENSE}
 {$IFDEF MSWINDOWS}
@@ -179,17 +180,16 @@ begin
       'Thank you for trying the Sempare Template Engine.'#13#10#13#10 + //
       'To supress this message, set the conditional define SEMPARE_TEMPLATE_CONFIRM_LICENSE in the project options.'#13#10#13#10 + //
       'Please remember the library is dual licensed. You are free to use it under the GPL or you can support the project to keep it alive as per:'#13#10#13#10 + //
-      'https://github.com/sempare/sempare-delphi-template-engine/blob/master/docs/commercial.license.md' //
+      'https://github.com/sempare/sempare-delphi-template-engine/blob/main/docs/commercial.license.md' //
       );
     FLicenseShown := true;
   end;
 {$ENDIF}
 {$ENDIF}
+  LTemplate := CloneTemplate(ATemplate);
   LValue := TTemplateValue.From<T>(AValue);
-  if typeinfo(T) = typeinfo(TTemplateValue) then
-    LValue := LValue.AsType<TTemplateValue>();
   LTemplateVisitor := TEvaluationTemplateVisitor.Create(AContext, LValue, AStream);
-  AcceptVisitor(ATemplate, LTemplateVisitor);
+  AcceptVisitor(LTemplate, LTemplateVisitor);
 end;
 
 class procedure Template.Eval(const ATemplate: ITemplate; const AStream: TStream; const AOptions: TTemplateEvaluationOptions);

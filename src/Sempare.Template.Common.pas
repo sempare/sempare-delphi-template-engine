@@ -122,27 +122,18 @@ function CloneStmt(const AStmt: IStmt): IStmt;
 implementation
 
 function CloneTemplate(const ATemplate: ITemplate): ITemplate;
-var
-  LIntf: IInterface;
 begin
-  LIntf := ATemplate.Clone;
-  supports(LIntf, ITemplate, result);
+  supports(ATemplate.Clone, ITemplate, result);
 end;
 
 function CloneVisitorHost(const AVisitorHost: ITemplateVisitorHost): ITemplateVisitorHost;
-var
-  LIntf: IInterface;
 begin
-  LIntf := AVisitorHost.Clone;
-  supports(LIntf, ITemplateVisitorHost, result);
+  supports(AVisitorHost.Clone, ITemplateVisitorHost, result);
 end;
 
 function CloneStmt(const AStmt: IStmt): IStmt;
-var
-  LIntf: IInterface;
 begin
-  LIntf := AStmt.Clone;
-  supports(LIntf, IStmt, result);
+  supports(AStmt.Clone, IStmt, result);
 end;
 
 function AsVisitorHost(const ATemplate: ITemplate): ITemplateVisitorHost; overload;

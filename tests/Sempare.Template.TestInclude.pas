@@ -84,6 +84,9 @@ type
     [Test]
     procedure TestNestedBody;
 
+    [Test]
+    procedure TestNestedBody2;
+
   end;
 
 implementation
@@ -538,6 +541,35 @@ begin
     ' // this is ignored ' + //
     '<% end %>' + //
     ''));
+end;
+
+procedure TTestTemplateInclude.TestNestedBody2;
+var
+  LTemplate: ITemplate;
+begin
+  LTemplate := Template.parse( //
+    '<% template "tpl1" %>' + //
+    '     <% block "content" %>tpl1<% end %>' + //
+    '<% end %>' + //
+
+    '<% template "template" %>' + //
+    '     <% extends ("tpl1") %>' + //
+    '          // this is ignored ' + //
+    '          <% block "content" %><% _ %><% end %>' + //
+    '          // this is ignored ' + //
+    '     <% end %>' + //
+    '     <% block "content" %>tpl1<% end %>' + //
+    '<% end %>' + //
+
+    '<% extends ("template") %>' + //
+    '     // this is ignored ' + //
+    '     <% block "content" %>hello<% end %>' + //
+    '     // this is ignored ' + //
+    '<% end %>' + //
+    '');
+
+  Assert.AreEqual('          hello123     hello', Template.Eval(LTemplate, 'hello123'));
+  Assert.AreEqual('          hello456     hello', Template.Eval(LTemplate, 'hello456'));
 end;
 
 initialization
