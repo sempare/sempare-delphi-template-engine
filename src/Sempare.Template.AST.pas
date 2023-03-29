@@ -480,7 +480,7 @@ type
     function GetUnaryOp: TUnaryOp;
     function GetExpr: IExpr;
     property UnaryOp: TUnaryOp read GetUnaryOp;
-    property Condition: IExpr read GetExpr;
+    property Expr: IExpr read GetExpr;
   end;
 
   ITemplateVisitor = interface
@@ -527,6 +527,7 @@ type
     function EvalExprAsInt(const AExpr: IExpr): int64;
     function EvalExprAsNum(const AExpr: IExpr): extended;
     function EvalExprAsBoolean(const AExpr: IExpr): boolean;
+    function ResolveTemplate(const AExpr: IExpr): ITemplate;
     procedure VisitStmt(const AStmt: IStmt);
   end;
 
