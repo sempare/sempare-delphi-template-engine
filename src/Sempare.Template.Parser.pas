@@ -146,6 +146,28 @@ type
     procedure Accept(const AVisitor: ITemplateVisitor); override;
   end;
 
+  TStripStmt = class(TAbstractStmt, IStripStmt)
+  private
+    FDirection: TStripDirection;
+    FAction: TStripAction;
+    function GetDirection: TStripDirection;
+    function GetAction: TStripAction;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
+  public
+    constructor Create(const ADirection: TStripDirection; const AAction: TStripAction);
+  end;
+
+  TCompositeStmt = class(TAbstractStmt, ICompositeStmt)
+  private
+    FFirstStmt: IStmt;
+    FSecondStmt: IStmt;
+    function GetFirstStmt: IStmt;
+    function GetSecondStmt: IStmt;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
+  public
+    constructor Create(const AFirstStmt, ASecondStmt: IStmt);
+  end;
+
   TIncludeStmt = class(TAbstractStmtWithExpr, IIncludeStmt)
   private
     procedure Accept(const AVisitor: ITemplateVisitor); override;
@@ -438,7 +460,7 @@ type
     function lookaheadValue: string;
     function matchValue(const ASymbol: TTemplateSymbol): string;
     procedure match(ASymbol: ITemplateSymbol); overload; inline;
-    procedure match(const ASymbol: TTemplateSymbol); overload;
+    function match(const ASymbol: TTemplateSymbol): TStripAction; overload;
     function matchNumber(const ASymbol: TTemplateSymbol): extended;
 
   private
@@ -864,10 +886,11 @@ end;
 function TTemplateParser.ruleStmt: IStmt;
 var
   LSymbol: ITemplateSymbol;
+  LStripAction: TStripAction;
 begin
   result := nil;
   LSymbol := FLookahead;
-  match(vsStartScript);
+  LStripAction := match(vsStartScript);
   case FLookahead.Token of
     vsBreak:
       result := ruleBreakStmt;
@@ -907,6 +930,11 @@ begin
   if (eoEmbedException in FContext.Options) and (result <> nil) then
   begin
     result := TDebugStmt.Create(result);
+  end;
+
+  if LStripAction <> TStripAction.saNone then
+  begin
+    result := TCompositeStmt.Create(TStripStmt.Create(sdLeft, LStripAction), result);
   end;
 end;
 
@@ -1524,11 +1552,12 @@ begin
     exit('');
 end;
 
-procedure TTemplateParser.match(const ASymbol: TTemplateSymbol);
+function TTemplateParser.match(const ASymbol: TTemplateSymbol): TStripAction;
 var
   LSymbol: ITemplateSymbol;
 begin
   LSymbol := FLookahead;
+  result := TStripAction.saNone;
   if ASymbol = FLookahead.Token then
   begin
     if LSymbol.StripWS then
@@ -1539,6 +1568,10 @@ begin
         vsEndScript:
           include(FOptions, poStripWS);
       end;
+    end;
+    case ASymbol of
+      vsStartScript, vsEndScript:
+        result := LSymbol.StripAction;
     end;
     FLookahead := FLexer.GetToken;
     exit;
@@ -2319,6 +2352,52 @@ end;
 function TLoopStmt.GetOnFirstContainer: ITemplate;
 begin
   exit(FOnFirst);
+end;
+
+{ TCompositeStmt }
+
+procedure TCompositeStmt.Accept(const AVisitor: ITemplateVisitor);
+begin
+  AVisitor.Visit(self);
+end;
+
+constructor TCompositeStmt.Create(const AFirstStmt, ASecondStmt: IStmt);
+begin
+  FFirstStmt := AFirstStmt;
+  FSecondStmt := ASecondStmt;
+end;
+
+function TCompositeStmt.GetFirstStmt: IStmt;
+begin
+  exit(FFirstStmt);
+end;
+
+function TCompositeStmt.GetSecondStmt: IStmt;
+begin
+  exit(FSecondStmt);
+end;
+
+{ TStripStmt }
+
+procedure TStripStmt.Accept(const AVisitor: ITemplateVisitor);
+begin
+  AVisitor.Visit(self);
+end;
+
+constructor TStripStmt.Create(const ADirection: TStripDirection; const AAction: TStripAction);
+begin
+  FDirection := ADirection;
+  FAction := AAction;
+end;
+
+function TStripStmt.GetAction: TStripAction;
+begin
+  exit(FAction);
+end;
+
+function TStripStmt.GetDirection: TStripDirection;
+begin
+  exit(FDirection);
 end;
 
 initialization

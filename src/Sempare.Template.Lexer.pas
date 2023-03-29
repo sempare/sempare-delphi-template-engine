@@ -728,8 +728,8 @@ AddHashedKeyword('onend', vsOnEnd);
 AddHashedKeyword('onempty', vsOnEmpty);
 AddHashedKeyword('betweenitems', vsBetweenItem);
 
-AddSymKeyword('ScriptStartToken', VsStartScript);
-AddSymKeyword('ScriptEndToken', VsEndScript);
+AddSymKeyword('<%', VsStartScript);
+AddSymKeyword('%>', VsEndScript);
 AddSymKeyword('(', vsOpenRoundBracket);
 AddSymKeyword(')', vsCloseRoundBracket);
 AddSymKeyword('(*   *) ', vsComment);
