@@ -215,6 +215,24 @@ type
     ['{FB4CC3AB-BFEC-4189-B555-153DDA490D15}']
   end;
 
+  TStripDirection = (sdLeft, sdRight);
+
+  IStripStmt = interface(IStmt)
+    ['{3313745B-D635-4453-9808-660DC462E15C}']
+    function GetDirection: TStripDirection;
+    function GetAction: TStripAction;
+    property Direction: TStripDirection read GetDirection;
+    property Action: TStripAction read GetAction;
+  end;
+
+  ICompositeStmt = interface(IStmt)
+    ['{790FB188-9763-401F-A0B1-FC9CCF4EF18D}']
+    function GetFirstStmt: IStmt;
+    function GetSecondStmt: IStmt;
+    property FirstStmt: IStmt read GetFirstStmt;
+    property SecondStmt: IStmt read GetSecondStmt;
+  end;
+
   IEndStmt = interface(IStmt)
     ['{926DED70-2F66-4810-9DF1-FCFD83FF7E5D}']
   end;
@@ -491,7 +509,18 @@ type
     procedure Visit(const AStmt: IWithStmt); overload;
     procedure Visit(const AStmt: ICycleStmt); overload;
     procedure Visit(const AStmt: IDebugStmt); overload;
+    procedure Visit(const AStmt: ICompositeStmt); overload;
+    procedure Visit(const AStmt: IStripStmt); overload;
   end;
+
+const
+  StripDirectionStr: array [TStripDirection] of string = ('sdLeft', 'sdRight');
+
+  StripActionStr: array [TStripAction] of string = ( //
+    'saWhitespace', //
+    'saWhitespaceAndNL', //
+    'saNone' //
+    );
 
 implementation
 
