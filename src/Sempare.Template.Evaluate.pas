@@ -132,6 +132,9 @@ type
     procedure Visit(const AStmt: IWithStmt); overload; override;
     procedure Visit(const AStmt: ICycleStmt); overload; override;
     procedure Visit(const AStmt: IDebugStmt); overload; override;
+    procedure Visit(const AStmt: ICompositeStmt); overload; override;
+    procedure Visit(const AStmt: IStripStmt); overload; override;
+
   end;
 
 implementation
@@ -1152,6 +1155,17 @@ begin
       FStreamWriter.Write(Format(FContext.DebugErrorFormat, [e.Message]));
     end;
   end;
+end;
+
+procedure TEvaluationTemplateVisitor.Visit(const AStmt: IStripStmt);
+begin
+
+end;
+
+procedure TEvaluationTemplateVisitor.Visit(const AStmt: ICompositeStmt);
+begin
+  AcceptVisitor(AStmt.FirstStmt, self);
+  AcceptVisitor(AStmt.SecondStmt, self);
 end;
 
 { TNewLineStreamWriter }

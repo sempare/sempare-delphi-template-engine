@@ -83,6 +83,8 @@ type
     procedure Visit(const AStmt: IProcessTemplateStmt); overload; override;
     procedure Visit(const AStmt: IDefineTemplateStmt); overload; override;
     procedure Visit(const AStmt: IWithStmt); overload; override;
+    procedure Visit(const AStmt: ICompositeStmt); overload; override;
+    procedure Visit(const AStmt: IStripStmt); overload; override;
 
     property Variables: TArray<string> read GetVariables;
     property Functions: TArray<string> read GetFunctions;
@@ -265,6 +267,17 @@ begin
 
   if not FVariables.contains(AExpr.Variable) then
     FVariables.Add(AExpr.Variable);
+end;
+
+procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: IStripStmt);
+begin
+
+end;
+
+procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: ICompositeStmt);
+begin
+  AcceptVisitor(AStmt.FirstStmt, self);
+  AcceptVisitor(AStmt.SecondStmt, self);
 end;
 
 end.

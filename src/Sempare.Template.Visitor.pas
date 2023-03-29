@@ -46,7 +46,6 @@ type
     procedure Visit(const AContainer: ITemplate); overload; virtual;
     procedure Visit(const AContainer: ITemplateVisitorHost); overload; virtual;
 
-    procedure Visit(const AExpr: IExpr); overload; virtual;
     procedure Visit(const AExpr: IBinopExpr); overload; virtual;
     procedure Visit(const AExpr: IUnaryExpr); overload; virtual;
     procedure Visit(const AExpr: IVariableExpr); overload; virtual;
@@ -55,8 +54,8 @@ type
     procedure Visit(const AExprList: IExprList); overload; virtual;
     procedure Visit(const AExpr: ITernaryExpr); overload; virtual;
     procedure Visit(const AExpr: IArrayExpr); overload; virtual;
+    procedure Visit(const AExpr: IExpr); overload; virtual;
 
-    procedure Visit(const AStmt: IStmt); overload; virtual;
     procedure Visit(const AStmt: IAssignStmt); overload; virtual;
     procedure Visit(const AStmt: IContinueStmt); overload; virtual;
     procedure Visit(const AStmt: IElseStmt); overload; virtual;
@@ -77,6 +76,10 @@ type
     procedure Visit(const AStmt: IWithStmt); overload; virtual;
     procedure Visit(const AStmt: ICycleStmt); overload; virtual;
     procedure Visit(const AStmt: IDebugStmt); overload; virtual;
+    procedure Visit(const AStmt: ICompositeStmt); overload; virtual;
+    procedure Visit(const AStmt: IStripStmt); overload; virtual;
+    procedure Visit(const AStmt: IStmt); overload; virtual;
+
   end;
 
 implementation
@@ -249,6 +252,16 @@ begin
 end;
 
 procedure TBaseTemplateVisitor.Visit(const AStmt: IDebugStmt);
+begin
+
+end;
+
+procedure TBaseTemplateVisitor.Visit(const AStmt: IStripStmt);
+begin
+
+end;
+
+procedure TBaseTemplateVisitor.Visit(const AStmt: ICompositeStmt);
 begin
 
 end;

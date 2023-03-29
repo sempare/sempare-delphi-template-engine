@@ -84,6 +84,8 @@ type
     procedure Visit(const AStmt: IDefineTemplateStmt); overload; override;
     procedure Visit(const AStmt: IWithStmt); overload; override;
     procedure Visit(const AStmt: ICycleStmt); overload; override;
+    procedure Visit(const AStmt: ICompositeStmt); overload; override;
+    procedure Visit(const AStmt: IStripStmt); overload; override;
 
   end;
 
@@ -482,14 +484,14 @@ end;
 procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IWithStmt);
 begin
   tab();
-  write('<% with ');
+  write('<%% with ');
   AcceptVisitor(AStmt.Expr, self);
-  writeln(' %>');
+  writeln(' %%>');
   delta(4);
   AcceptVisitor(AStmt.Container, self);
   delta(-4);
   tab();
-  writeln('<% end %>');
+  writeln('<%% end %%>');
 end;
 
 procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IRequireStmt);
@@ -497,14 +499,14 @@ var
   LIdx: integer;
 begin
   tab();
-  write('<% require(');
+  write('<%% require(');
   for LIdx := 0 to AStmt.ExprList.Count - 1 do
   begin
     if LIdx > 0 then
       write(',');
     AcceptVisitor(AStmt.ExprList.Expr[LIdx], self);
   end;
-  writeln('%>');
+  writeln('%%>');
 end;
 
 procedure TPrettyPrintTemplateVisitor.Visit(const AExpr: IArrayExpr);
@@ -535,14 +537,41 @@ var
   LIdx: integer;
 begin
   tab();
-  write('<% cycle [');
+  write('<%% cycle (');
   for LIdx := 0 to AStmt.List.Count - 1 do
   begin
     if LIdx > 0 then
       write(',');
     AcceptVisitor(AStmt.List.Expr[LIdx], self);
   end;
-  writeln('%>');
+  writeln(') %%>');
+end;
+
+procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IStripStmt);
+var
+  LIdx: integer;
+begin
+  tab();
+  write('<%% strip(');
+  write(StripDirectionStr[AStmt.Direction]);
+  write(',');
+  write(StripActionStr[AStmt.Action]);
+  write(')');
+  writeln('%%>');
+end;
+
+procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: ICompositeStmt);
+var
+  LIdx: integer;
+begin
+  tab();
+  writeln('<%% composite %%>');
+  delta(4);
+  AcceptVisitor(AStmt.FirstStmt, self);
+  AcceptVisitor(AStmt.SecondStmt, self);
+  delta(-4);
+  tab();
+  writeln('<%% end %%>');
 end;
 
 initialization
