@@ -103,6 +103,8 @@ type
     function EvalExprAsBoolean(const AExpr: IExpr): boolean;
     procedure VisitStmt(const AStmt: IStmt);
     procedure VisitContainer(const AContainer: ITemplate);
+    function ResolveTemplate(const AExpr: IExpr): ITemplate; overload;
+    function ResolveTemplate(const APosition: IPosition; const AName: string): ITemplate; overload;
   public
     constructor Create(const AContext: ITemplateContext; const AValue: TValue; const AStream: TStream); overload;
     constructor Create(const AContext: ITemplateContext; const AStackFrame: TStackFrame; const AStream: TStream); overload;
@@ -309,7 +311,7 @@ procedure TEvaluationTemplateVisitor.Visit(const AExpr: IUnaryExpr);
 var
   LValue: TValue;
 begin
-  LValue := EvalExpr(AExpr.Condition);
+  LValue := EvalExpr(AExpr.Expr);
   case AExpr.UnaryOp of
     uoMinus:
       begin
@@ -891,7 +893,8 @@ begin
   if HasBreakOrContinue then
     exit;
   LTemplateName := EvalExprAsString(AStmt.Expr);
-  if FLocalTemplates.TryGetValue(LTemplateName, LTemplate) or FContext.TryGetTemplate(LTemplateName, LTemplate) then
+  LTemplate := ResolveTemplate(Position(AStmt.Expr), LTemplateName);
+  if assigned(LTemplate) then
   begin
     FStackFrames.push(FStackFrames.peek.Clone());
     try
@@ -899,9 +902,7 @@ begin
     finally
       FStackFrames.pop;
     end;
-  end
-  else
-    RaiseErrorRes(Position(AStmt), @STemplateNotFound, [LTemplateName]);
+  end;
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AStmt: IPrintStmt);
@@ -1023,6 +1024,19 @@ begin
 
   AHasResult := AExpr.RttiMethod.ReturnType <> nil;
   exit(AExpr.RttiMethod.Invoke(AObject, AArgs));
+end;
+
+function TEvaluationTemplateVisitor.ResolveTemplate(const APosition: IPosition; const AName: string): ITemplate;
+begin
+  if not FLocalTemplates.TryGetValue(AName, result) and not FContext.TryGetTemplate(AName, result) then
+  begin
+    RaiseErrorRes(APosition, @STemplateNotFound, [AName]);
+  end;
+end;
+
+function TEvaluationTemplateVisitor.ResolveTemplate(const AExpr: IExpr): ITemplate;
+begin
+  exit(ResolveTemplate(Position(AExpr), EvalExprAsString(AExpr)));
 end;
 
 procedure TEvaluationTemplateVisitor.VisitStmt(const AStmt: IStmt);
@@ -1194,8 +1208,7 @@ begin
   if not assigned(AStmt.Container) then
   begin
     LName := AStmt.NameAsString(self);
-    if not FLocalTemplates.TryGetValue(LName, LTemplate) and not FContext.TryGetTemplate(LName, LTemplate) then
-      RaiseErrorRes(LSymbol.Position, @STemplateNotFound, [LName]);
+    LTemplate := ResolveTemplate(Position(AStmt), LName);
 
     AStmt.Container := LTemplate;
     LResolveNames := true;
