@@ -103,6 +103,8 @@ function AsVisitorHost(const AStmt: IStmt): ITemplateVisitorHost; inline; overlo
 procedure AcceptVisitor(const ATemplate: ITemplate; const AVisitor: ITemplateVisitor); inline; overload;
 procedure AcceptVisitor(const AExpr: IExpr; const AVisitor: ITemplateVisitor); inline; overload;
 procedure AcceptVisitor(const AStmt: IStmt; const AVisitor: ITemplateVisitor); inline; overload;
+procedure AcceptVisitor(const AExpr: IExprList; const AVisitor: ITemplateVisitor); overload;
+procedure AcceptVisitor(const AHost: ITemplateVisitorHost; const AVisitor: ITemplateVisitor); overload;
 
 function Position(const AStmt: IStmt): IPosition; inline; overload;
 function Position(const AExpr: IExpr): IPosition; inline; overload;
@@ -162,6 +164,8 @@ procedure AcceptVisitor(const ATemplate: ITemplate; const AVisitor: ITemplateVis
 var
   LHost: ITemplateVisitorHost;
 begin
+  if not assigned(ATemplate) then
+    exit;
   LHost := AsVisitorHost(ATemplate);
   LHost.Accept(AVisitor);
 end;
@@ -170,6 +174,8 @@ procedure AcceptVisitor(const AExpr: IExpr; const AVisitor: ITemplateVisitor);
 var
   LHost: ITemplateVisitorHost;
 begin
+  if not assigned(AExpr) then
+    exit;
   LHost := AsVisitorHost(AExpr);
   LHost.Accept(AVisitor);
 end;
@@ -178,8 +184,31 @@ procedure AcceptVisitor(const AStmt: IStmt; const AVisitor: ITemplateVisitor);
 var
   LHost: ITemplateVisitorHost;
 begin
+  if not assigned(AStmt) then
+    exit;
   LHost := AsVisitorHost(AStmt);
   LHost.Accept(AVisitor);
+end;
+
+procedure AcceptVisitor(const AHost: ITemplateVisitorHost; const AVisitor: ITemplateVisitor);
+begin
+  if not assigned(AHost) then
+    exit;
+  AHost.Accept(AVisitor);
+end;
+
+procedure AcceptVisitor(const AExpr: IExprList; const AVisitor: ITemplateVisitor);
+var
+  LHost: ITemplateVisitorHost;
+  i: integer;
+begin
+  if not assigned(AExpr) then
+    exit;
+  for i := 0 to AExpr.Count - 1 do
+  begin
+    LHost := AsVisitorHost(AExpr[i]);
+    LHost.Accept(AVisitor);
+  end;
 end;
 
 function Position(const AStmt: IStmt): IPosition; overload;
