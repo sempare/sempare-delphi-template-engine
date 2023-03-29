@@ -496,6 +496,9 @@ type
     function ruleFunctionExpr(const ASymbol: string): IExpr;
     function ruleMethodExpr(AExpr: IExpr; AMethodExpr: IExpr): IExpr;
     function ruleRequireStmt: IStmt;
+
+    function GetValueSeparatorSymbol: TTemplateSymbol;
+    procedure CheckForOppositeValueSeparator(const AExpect: TTemplateSymbol);
   public
     constructor Create(AContext: ITemplateContext);
     destructor Destroy; override;
@@ -565,6 +568,32 @@ begin
 end;
 
 { TTemplateParser }
+const
+  ValueSeparators = [vsComma, vsSemiColon];
+
+function OppositeValueSepartor(const ASep: TTemplateSymbol): TTemplateSymbol;
+begin
+  if ASep = vsComma then
+    exit(vsSemiColon)
+  else
+    exit(vsComma);
+end;
+
+function TTemplateParser.GetValueSeparatorSymbol: TTemplateSymbol;
+begin
+  if FContext.ValueSeparator = ';' then
+    exit(vsSemiColon)
+  else
+    exit(vsComma);
+end;
+
+procedure TTemplateParser.CheckForOppositeValueSeparator(const AExpect: TTemplateSymbol);
+
+begin
+  if FLookahead.Token in ValueSeparators then
+    match(OppositeValueSepartor(FLookahead.Token));
+  match(AExpect);
+end;
 
 constructor TTemplateParser.Create(AContext: ITemplateContext);
 begin
@@ -658,19 +687,21 @@ var
   LIncludeExpr: IExpr;
   LScopeExpr: IExpr;
   LContainerTemplate: TTemplate;
+  LValueSeparator: TTemplateSymbol;
 begin
   LSymbol := FLookahead;
   match(vsInclude);
   match(vsOpenRoundBracket);
   LIncludeExpr := ruleExpression;
 
-  if FLookahead.Token = vsComma then
+  LValueSeparator := GetValueSeparatorSymbol;
+  if FLookahead.Token = LValueSeparator then
   begin
-    match(vsComma);
+    match(LValueSeparator);
     LScopeExpr := ruleExpression;
   end;
 
-  match(vsCloseRoundBracket);
+  CheckForOppositeValueSeparator(vsCloseRoundBracket);
   match(vsEndScript);
 
   if LScopeExpr <> nil then
@@ -693,7 +724,7 @@ begin
   match(vsRequire);
   match(vsOpenRoundBracket);
   result := TRequireStmt.Create(LSymbol.Position, self.ruleExprList());
-  match(vsCloseRoundBracket);
+  CheckForOppositeValueSeparator(vsCloseRoundBracket);
   match(vsEndScript);
 end;
 
@@ -704,7 +735,7 @@ begin
   LSymbol := FLookahead;
   match(vsOpenRoundBracket);
   result := TMethodCallExpr.Create(LSymbol.Position, AExpr, AsVarString(AMethodExpr), ruleExprList);
-  match(vsCloseRoundBracket);
+  CheckForOppositeValueSeparator(vsCloseRoundBracket);
 end;
 
 function TTemplateParser.ruleStmts(Container: ITemplate; const AEndToken: TTemplateSymbolSet): TTemplateSymbol;
@@ -1047,7 +1078,7 @@ begin
 
   LListExpr := ruleExprList();
 
-  match(vsCloseRoundBracket);
+  CheckForOppositeValueSeparator(vsCloseRoundBracket);
   match(vsEndScript);
 
   exit(TCycleStmt.Create(LSymbol.Position, LListExpr));
@@ -1169,6 +1200,7 @@ end;
 function TTemplateParser.ruleFactor: IExpr;
 var
   LSymbol: ITemplateSymbol;
+
 begin
   LSymbol := FLookahead;
   case LSymbol.Token of
@@ -1176,14 +1208,14 @@ begin
       begin
         match(vsOpenSquareBracket);
         result := TArrayExpr.Create(LSymbol.Position, ruleExprList(vsCloseSquareBracket));
-        match(vsCloseSquareBracket);
+        CheckForOppositeValueSeparator(vsCloseSquareBracket);
         exit;
       end;
     vsOpenRoundBracket:
       begin
         match(vsOpenRoundBracket);
         result := ruleExpression;
-        match(vsCloseRoundBracket);
+        CheckForOppositeValueSeparator(vsCloseRoundBracket);
         exit;
       end;
     vsString:
@@ -1335,7 +1367,7 @@ begin
     RaiseError(LSymbol.Position, SFunctionNotRegisteredInContext, [ASymbol]);
   match(vsOpenRoundBracket);
   result := TFunctionCallExpr.Create(LSymbol.Position, LFunctions, ruleExprList);
-  match(vsCloseRoundBracket);
+  CheckForOppositeValueSeparator(vsCloseRoundBracket);
 end;
 
 function TTemplateParser.ruleIdStmt: IStmt;
@@ -1483,7 +1515,7 @@ begin
   match(vsPrint);
   match(vsOpenRoundBracket);
   LExpr := ruleExpression;
-  match(vsCloseRoundBracket);
+  CheckForOppositeValueSeparator(vsCloseRoundBracket);
   match(vsEndScript);
   exit(TPrintStmt.Create(LSymbol.Position, LExpr));
 end;
@@ -1508,10 +1540,7 @@ begin
   result := TExprList.Create(LSymbol.Position);
   if FLookahead.Token <> AEndToken then
     result.AddExpr(ruleExpression);
-  if FContext.ValueSeparator = ';' then
-    LValueSeparator := vsSemiColon
-  else
-    LValueSeparator := vsComma;
+  LValueSeparator := GetValueSeparatorSymbol;
   while FLookahead.Token = LValueSeparator do
   begin
     match(LValueSeparator);

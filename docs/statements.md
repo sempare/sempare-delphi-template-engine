@@ -18,6 +18,10 @@ Copyright (c) 2019-2023 [Sempare Limited](http://www.sempare.ltd)
 
 ### print
 
+![print expr](./images/stmt_print_expr.svg)
+
+![print](./images/stmt_print.svg)
+
 Within a script, all text outside of the script _'<%'_ start and _'%>'_ end tokens is output.
 
 ```
@@ -32,7 +36,16 @@ This <% stmt %> test.
 ```
 The above example results in _'this is a test.'_ being output.
 
+You may also rely on the print() statement.
+
+```
+<% print('this is a test') %>
+```
+
 ### assignment
+
+![assign](./images/stmt_assign.svg)
+
 Within a script block, you can create temporary variables for use within the template. Basic types such a string, boolean and numbers can be used.
 ```
 <% num := 123 %>
@@ -40,6 +53,8 @@ Within a script block, you can create temporary variables for use within the tem
 <% bool := false %>
 ```
 ### if
+
+![if](./images/stmt_if.svg)
 
 You may want to conditionally include content:
 ```
@@ -75,6 +90,8 @@ the list as at least one item
 
 ### for
 
+![for range](./images/stmt_for_range.svg)
+
 The _for to/downto_ loop comes in two forms as it does in Object Pascal:
 ```
 increasing integers from 1 to 10
@@ -97,6 +114,8 @@ You can change the _step_ interval as follows:
 <% end %>
 ```
 
+![for in](./images/stmt_for_in.svg)
+
 The other _for in_ variation is as follows:
 ```
 Attendees:
@@ -112,6 +131,8 @@ Attendees:
    <% i.name %> <% i.age %>
 <%end%> 
 ```
+
+![for in event](./images/stmt_for_in_event.svg)
 
 Further, there are _onbegin_, _onend_, _betweenitems_ and _onempty_ events that can be used.
 ```
@@ -192,6 +213,8 @@ Using for-in on TDataSet, the loop variable enumerates rows. The loop variable c
 
 ### while
 
+![while](./images/stmt_while.svg)
+
 While blocks are very flexibe looping constructs based on a boolean condition being true.
 
 ```
@@ -219,6 +242,9 @@ While loops may also have _offset_ and _limits_ defined:
    <% i := i + 1%>
 <% end %>
 ```
+
+![while events](./images/stmt_while_event.svg)
+
 While loops may also have _onbegin_, _onend_, _betweenitems_ and _onempty_ events defined:
 ```
 <% i := 1 %>
@@ -264,6 +290,8 @@ This will produce
 
 ### include
 
+![include](./images/stmt_include.svg)
+
 You may want to decompose templates into reusable parts. You register templates on a Template context. 
 
 ```
@@ -286,6 +314,8 @@ begin
 include() can also take a second parameter, allowing for improved scoping of variables, similar to the _with_ statement.
 
 ### with
+
+![with](./images/stmt_with.svg)
 
 The with() statement is used to localise variables from a nested structure.
 
@@ -319,6 +349,8 @@ The _with()_ statement will push all fields/properties in a record/class into a 
 
 ### template
 
+![template](./images/stmt_template.svg)
+
 Localised templates can also be defined locally within a template.
 
 The _include_() statement is used to render a local template as is the normal behaviour. Note that local templates take precedence over templates defined in a context when they are being resolved.
@@ -333,6 +365,8 @@ Using the TInfo structure above it could be appli
 ```
 
 ### require
+
+![require](./images/stmt_require.svg)
 
 The _require_() statement is used to validate that the input variable is of a particular type.
 
@@ -355,6 +389,8 @@ An exeption is thrown when the
 _require_ can take multiple parameters - in which case the input must match one of the types listed.
 
 ### ignorenl
+
+![ignorenl](./images/stmt_ignorenl.svg)
 
 The purpose of an _ignorenl_ block is to allow for template designers to space out content for easy maintenance, but to allow for the output to be more compact when required.
 
@@ -382,6 +418,8 @@ This would yield something like
 The _eoAllowIgnoreNL_ must be provided in the Context.Options or via Template.Eval() options.
 
 ### cycle
+
+![cycle](./images/stmt_cycle.svg)
 
 This allows for values to cycle when rendering content. e.g. 
 
