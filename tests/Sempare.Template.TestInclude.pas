@@ -59,11 +59,40 @@ type
 
     [Test]
     procedure TestSubTemplate;
+
+    [Test]
+    procedure TestExtends;
+
+    [Test]
+    procedure TestExtendsBlock;
+
+    [Test]
+    procedure TestExtendsBlockWithDynamicNames;
+
+    [Test]
+    procedure TestExtendsWebLike;
+
+    [Test]
+    procedure TestExtendsNested;
+
+    [Test]
+    procedure TestExtendsScopedExpr;
+
+    [Test]
+    procedure TestWebForm;
+
+    [Test]
+    procedure TestNestedBody;
+
+    [Test]
+    procedure TestNestedBody2;
+
   end;
 
 implementation
 
 uses
+  System.SysUtils,
   System.Generics.Collections,
   Sempare.Template.Context,
   Sempare.Template;
@@ -264,6 +293,283 @@ begin
     '<% include(''suffix'', footer) %>' //
     , info));
 
+end;
+
+procedure TTestTemplateInclude.TestExtends;
+begin
+  Assert.AreEqual('parent parent', Template.Eval( //
+    '<% template ''showmember'' %>' + //
+    '<% block ''content'' %>parent<% end %>' + //
+    '<% end %>' + //
+    '<% extends (''showmember'') %>' + //
+    '<% end %> ' + //
+    '<% extends (''showmember'') %>' + //
+    '<% end %>' //
+    ));
+end;
+
+procedure TTestTemplateInclude.TestExtendsBlock;
+begin
+  Assert.AreEqual('child child2', Template.Eval( //
+    '<% template ''showmember'' %>' + //
+    '<% block ''content'' %>parent<% end %>' + //
+    '<% end %>' + //
+    '<% extends (''showmember'') %>' + //
+    '<% block ''content'' %>child<% end %>' + //
+    '<% end %> ' + //
+    '<% extends (''showmember'') %>' + //
+    '<% block ''content'' %>child2<% end %>' + //
+    '<% end %>' //
+    ));
+end;
+
+procedure TTestTemplateInclude.TestExtendsBlockWithDynamicNames;
+begin
+  Assert.AreEqual('child child2', Template.Eval( //
+    '<% for i := 1 to 2 %>' + //
+    '<% template ''showmember'' + i %>' + //
+    '<% block ''content'' %>parent<% end %>' + //
+    '<% end %>' + //
+    '<% end %>' + //
+    '<% extends (''showmember'' + 1) %>' + //
+    '<% block ''content'' %>child<% end %>' + //
+    '<% end %> ' + //
+    '<% extends (''showmember'' + 2) %>' + //
+    '<% block ''content'' %>child2<% end %>' + //
+    '<% end %>' //
+    ));
+end;
+
+procedure TTestTemplateInclude.TestExtendsWebLike;
+begin
+  Assert.AreEqual('header content footer', Template.Eval( //
+    '<% template ''header'' %>' + //
+    'header' + //
+    '<% end %>' + //
+    '<% template ''footer'' %>' + //
+    'footer' + //
+    '<% end %>' + //
+    '<% template ''template'' %>' + //
+    '<% include(''header'') %> ' + //
+    '<% block ''body'' %>body<% end %> ' + //
+    '<% include(''footer'') %>' + //
+    '<% end %>' + //
+    '<% extends (''template'') %>' + //
+    '<% block ''body'' %>content<% end %>' + //
+    '<% end %>' //
+    ));
+end;
+
+procedure TTestTemplateInclude.TestExtendsNested;
+begin
+  Assert.AreEqual('header default header default body footer default footer', Template.Eval( //
+    '<% template ''header'' %>' + //
+    'header <% block ''general'' %>default header<% end %>' + //
+    '<% end %>' + //
+    '<% template ''footer'' %>' + //
+    'footer <% block ''general'' %>default footer<% end %>' + //
+    '<% end %>' + //
+    '<% template ''template'' %>' + //
+    '<% include(''header'') %> ' + //
+    '<% block ''general'' %>default body<% end %> ' + //
+    '<% include(''footer'') %>' + //
+    '<% end %>' + //
+    '<% extends (''template'') %>' + //
+    '<% end %>' //
+    ));
+
+  Assert.AreEqual('header general general footer general', Template.Eval( //
+    '<% template ''header'' %>' + //
+    'header <% block ''general'' %>default header<% end %>' + //
+    '<% end %>' + //
+    '<% template ''footer'' %>' + //
+    'footer <% block ''general'' %>default footer<% end %>' + //
+    '<% end %>' + //
+    '<% template ''template'' %>' + //
+    '<% include(''header'') %> ' + //
+    '<% block ''general'' %>default body<% end %> ' + //
+    '<% include(''footer'') %>' + //
+    '<% end %>' + //
+    '<% extends (''template'') %>' + //
+    '<% block ''general'' %>general<% end %>' + //
+    '<% end %>' //
+    ));
+end;
+
+procedure TTestTemplateInclude.TestExtendsScopedExpr;
+begin
+  Assert.AreEqual('first 1 second 2 ', Template.Eval( //
+    '<% template ''template'' %>' + //
+    '<% block ''general'' %>body<% end %> <% _ %> ' + //
+    '<% end %>' + //
+    '<% extends (''template'', 1) %>' + //
+    '<% block ''general'' %>first<% end %> ' + //
+    '<% end %>' + //
+    '<% extends (''template'', 2) %>' + //
+    '<% block ''general'' %>second<% end %> ' + //
+    '<% end %>' //
+    ));
+end;
+
+type
+  TField = record
+    Caption: string;
+    Name: string;
+    FieldType: string;
+    constructor create(const ACaption, AName: string; const AFieldType: string = 'TEdit');
+  end;
+
+  TButton = record
+    Caption: string;
+    Name: string;
+    constructor create(const ACaption, AName: string);
+  end;
+
+constructor TField.create(const ACaption, AName, AFieldType: string);
+begin
+  Caption := ACaption;
+  name := AName;
+  FieldType := AFieldType;
+end;
+
+constructor TButton.create(const ACaption, AName: string);
+begin
+  Caption := ACaption;
+  name := AName;
+end;
+
+procedure TTestTemplateInclude.TestWebForm;
+
+type
+
+  TTemplateData = record
+    company: string;
+    CopyrightYear: integer;
+    FormName: string;
+    FormAction: string;
+    Fields: TArray<TField>;
+    Buttons: TArray<TButton>;
+  end;
+
+var
+  LTemplateData: TTemplateData;
+  LResult: string;
+begin
+  LTemplateData.company := 'Sempare';
+  LTemplateData.CopyrightYear := 2023;
+  LTemplateData.FormName := 'userinfo';
+  LTemplateData.FormAction := '/userinfo';
+  LTemplateData.Fields := [TField.create('FirstName', 'firstname'), TField.create('LastName', 'lastname'), TField.create('Email', 'email', 'TEmail')];
+  LTemplateData.Buttons := [TButton.create('Submit', 'submit')];
+
+  LResult := Template.Eval( //
+    '<% template "TEdit" %><tr><td><% Caption %></td><td><input name="<% name %>"></td></tr><% end %>'#13#10 + // 1
+
+    '<% template "TEmail" %><tr><td><% Caption %></td><td><input type="email" name="<% name %>"></td></tr><% end %>'#13#10 + // 2
+
+    '<% template "TButton" %><input type="button" name="<% name %>" value="<% caption %>"><% end %>'#13#10 + // 3
+
+    '<% template "TForm" %>'#13#10 + // 4
+    '   <form method="POST" name="<% FormName %>" action="<% FormAction %>">'#13#10 + // 5
+    '      <table>'#13#10 + // 6
+    '         <% for field of fields %>'#13#10 + // 7
+    '             <% include(field.FieldType, field)%>'#13#10 + // 8
+    '         <% end %>'#13#10 + // 9
+    '         <tr>'#13#10 + //
+    '             <td colspan="2" align="right">'#13#10 + // 10
+    '               <% for button of buttons %>'#13#10 + // 11
+    '                 <% include("TButton", button) %>'#13#10 + // 12
+    '               <% end %>'#13#10 + // 13
+    '             </td>'#13#10 + // 14
+    '         </tr>'#13#10 + // 14
+    '      </table>'#13#10 + // 15
+    '   </form>'#13#10 + // 16
+    '<% end %>'#13#10 + // 17
+
+    '<% template "header" %>'#13#10 + // 18
+    '<html>'#13#10 + // 19
+    ' <head>'#13#10 + // 20
+    '  <title>Welcome to my <% Company %></title>'#13#10 + // 21
+    ' </head>'#13#10 + // 22
+    ' <body>'#13#10 + // 23
+    '<% end %>'#13#10 + // 24
+
+    '<% template "footer" %>'#13#10 + // 25
+    '  <p>Copyright (c) <% CopyrightYear %> </p>'#13#10 + // 26
+    ' </body>'#13#10 + // 27
+    '</html>'#13#10 + // 28
+    '<% end %>'#13#10 + // 29
+
+    '<% template "template" %>'#13#10 + // 30
+    '<% include("header") %>'#13#10 + // 31
+    '<% block "body" %>Lorem ipsum dolor sit amet, consectetur adipiscing eli...<% end %>'#13#10 + // 32
+    '<% include("footer") %>'#13#10 + // 33
+    '<% end %>'#13#10 + // 34
+
+    '<% extends ("template") %>' + // 35
+    '<% block "body" %><% include("TForm") %><% end %> '#13#10 + // 36
+    '<% end %>'#13#10 // 37
+    , LTemplateData);
+
+  // LResult := LResult.Replace(#13#10, '''#13#10''', [rfReplaceAll]);
+
+  Assert.AreEqual(#13#10#13#10#13#10#13#10#13#10#13#10#13#10#13#10#13#10'<html>'#13#10' <head>'#13#10'  <title>Welcome to my Sempare</title>'#13#10 + //
+    ' </head>'#13#10' <body>'#13#10''#13#10''#13#10'   <form method="POST" name="userinfo" action="/userinfo">'#13#10 + //
+    '      <table>'#13#10'         '#13#10'             <tr><td>FirstName</td><td><input name="firstname">' + //
+    '</td></tr>'#13#10'         '#13#10'             <tr><td>LastName</td><td><input name="lastname"></td></tr>'#13#10 + //
+    '         '#13#10'             <tr><td>Email</td><td><input type="email" name="email"></td></tr>'#13#10'         '#13#10 + //
+    '         <tr>'#13#10'             <td colspan="2" align="right">'#13#10'               '#13#10 + //
+    '                 <input type="button" name="submit" value="Submit">'#13#10'               '#13#10'             </td>'#13#10'         </tr>'#13#10 + //
+    '      </table>'#13#10'   </form>'#13#10''#13#10''#13#10'  <p>Copyright (c) 2023 </p>'#13#10' </body>'#13#10'</html>'#13#10''#13#10''#13#10, LResult);
+end;
+
+procedure TTestTemplateInclude.TestNestedBody;
+begin
+  Assert.AreEqual('hellohello', Template.Eval( //
+    '<% template "tpl1" %>' + //
+    '<% block "content" %>tpl1<% end %>' + //
+    '<% end %>' + //
+
+    '<% template "template" %>' + //
+    '<% include("tpl1") %>' + //
+    '<% block "content" %>tpl1<% end %>' + //
+    '<% end %>' + //
+
+    '<% extends ("template") %>' + //
+    ' // this is ignored ' + //
+    '<% block "content" %>hello<% end %>' + //
+    ' // this is ignored ' + //
+    '<% end %>' + //
+    ''));
+end;
+
+procedure TTestTemplateInclude.TestNestedBody2;
+var
+  LTemplate: ITemplate;
+begin
+  LTemplate := Template.parse( //
+    '<% template "tpl1" %>' + //
+    '     <% block "content" %>tpl1<% end %>' + //
+    '<% end %>' + //
+
+    '<% template "template" %>' + //
+    '     <% extends ("tpl1") %>' + //
+    '          // this is ignored ' + //
+    '          <% block "content" %><% _ %><% end %>' + //
+    '          // this is ignored ' + //
+    '     <% end %>' + //
+    '     <% block "content" %>tpl1<% end %>' + //
+    '<% end %>' + //
+
+    '<% extends ("template") %>' + //
+    '     // this is ignored ' + //
+    '     <% block "content" %>hello<% end %>' + //
+    '     // this is ignored ' + //
+    '<% end %>' + //
+    '');
+
+  Assert.AreEqual('          hello123     hello', Template.Eval(LTemplate, 'hello123'));
+  Assert.AreEqual('          hello456     hello', Template.Eval(LTemplate, 'hello456'));
 end;
 
 initialization

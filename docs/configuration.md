@@ -90,7 +90,9 @@ ctx.RegisterTemplate('footer', Template.Parse('Copyright (c) <% year %> <% compa
 ```
 ### Dynamic Template Resolution
 
-Templates don't need to be precompiled. They can also be located when being parsed by setting the template resolver property on the context:
+Templates don't need to be located in a single template. They can also be resolved dynamically using the TemplateResolver method on the context.
+Templates could be loaded from file, resources or urls are per your requirements.
+
 ```
 ctx.TemplateResolver = function(const AContext : ITemplate; const AName : string) : ITemplate
 begin

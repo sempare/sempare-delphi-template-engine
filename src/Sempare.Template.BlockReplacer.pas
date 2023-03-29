@@ -30,121 +30,88 @@
  * limitations under the License.                                                                   *
  *                                                                                                  *
  *************************************************************************************************%*)
-unit Sempare.Template.VariableExtraction;
+unit Sempare.Template.BlockReplacer;
 
 interface
 
 uses
-  System.Rtti,
-  System.Classes,
-  System.SysUtils,
-  System.Diagnostics,
-  System.Generics.Collections,
   Sempare.Template.AST,
-  Sempare.Template.StackFrame,
   Sempare.Template.Common,
-  Sempare.Template.PrettyPrint,
-  Sempare.Template.Context,
   Sempare.Template.Visitor;
 
 type
+  IBlockReplacerVisitor = interface(ITemplateVisitor)
+    ['{81560D41-C5D1-49DF-9A26-98F2D7951E3A}']
+    procedure Replace(const ATemplate: ITemplate; const ABlockName: string; const ABlock: ITemplate);
+  end;
 
-  TTemplateReferenceExtractionVisitor = class(TBaseTemplateVisitor)
+  TBlockReplacerVisitor = class(TNoExprTemplateVisitor, IBlockReplacerVisitor)
   private
-    // TODO: performance wise, could review dictionary
-    FLocalVariables: TList<string>;
-    FVariables: TList<string>;
-    FFunctions: TList<string>;
-    function GetFunctions: TArray<string>;
-    function GetVariables: TArray<string>;
-  public
-    constructor Create;
-    destructor Destroy; override;
-    procedure Visit(const AExpr: IVariableExpr); overload; override;
+    FBlockName: string;
+    FReplacementBlock: ITemplate;
+    FEvalVisitor: IEvaluationTemplateVisitor;
 
-    procedure Visit(const AStmt: IAssignStmt); overload; override;
-    procedure Visit(const AStmt: IFunctionCallExpr); overload; override;
+  public
+    constructor Create(const AEvalVisitor: IEvaluationTemplateVisitor);
+
+    procedure Visit(const AStmt: IIncludeStmt); overload; override;
 
     procedure Visit(const AStmt: IBlockStmt); overload; override;
     procedure Visit(const AStmt: IExtendsStmt); overload; override;
-    procedure Visit(const AStmt: ICompositeStmt); overload; override;
-    procedure Visit(const AStmt: IStripStmt); overload; override;
 
-    property Variables: TArray<string> read GetVariables;
-    property Functions: TArray<string> read GetFunctions;
+    procedure Replace(const ATemplate: ITemplate; const ABlockName: string; const ABlock: ITemplate);
+
   end;
 
 implementation
 
-{ TTemplateReferenceExtractionVisitor }
+uses
+  System.SysUtils;
 
-constructor TTemplateReferenceExtractionVisitor.Create;
+{ TBlockReplacerVisitor }
+
+procedure TBlockReplacerVisitor.Visit(const AStmt: IBlockStmt);
 begin
-  FLocalVariables := TList<string>.Create;
-  FVariables := TList<string>.Create;
-  FFunctions := TList<string>.Create;
+  AcceptVisitor(AStmt.Container, self);
+  if FEvalVisitor.EvalExprAsString(AStmt.Name) = FBlockName then
+  begin
+    AStmt.Container := FReplacementBlock;
+  end;
 end;
 
-destructor TTemplateReferenceExtractionVisitor.Destroy;
+procedure TBlockReplacerVisitor.Visit(const AStmt: IIncludeStmt);
+var
+  LTemplate: ITemplate;
 begin
-  FLocalVariables.Free;
-  FVariables.Free;
-  FFunctions.Free;
-  inherited;
+  LTemplate := FEvalVisitor.ResolveTemplate(AStmt.Expr);
+  AcceptVisitor(LTemplate, self);
 end;
 
-function TTemplateReferenceExtractionVisitor.GetFunctions: TArray<string>;
+constructor TBlockReplacerVisitor.Create(const AEvalVisitor: IEvaluationTemplateVisitor);
 begin
-  exit(FFunctions.ToArray);
+  FEvalVisitor := AEvalVisitor;
 end;
 
-function TTemplateReferenceExtractionVisitor.GetVariables: TArray<string>;
+procedure TBlockReplacerVisitor.Replace(const ATemplate: ITemplate; const ABlockName: string; const ABlock: ITemplate);
+var
+  LVisitor: ITemplateVisitor;
 begin
-  exit(FVariables.ToArray);
-end;
-
-procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: IAssignStmt);
-begin
-  if not FLocalVariables.contains(AStmt.Variable) then
-    FLocalVariables.Add(AStmt.Variable);
-  AcceptVisitor(AStmt.Expr, self);
-end;
-
-procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: IFunctionCallExpr);
-begin
-  if not FFunctions.contains(AStmt.FunctionInfo[0].Name) then
-    FFunctions.Add(AStmt.FunctionInfo[0].Name);
-  Visit(AStmt.ExprList);
-end;
-
-procedure TTemplateReferenceExtractionVisitor.Visit(const AExpr: IVariableExpr);
-begin
-  if FLocalVariables.contains(AExpr.Variable) then
+  if not supports(self, ITemplateVisitor, LVisitor) then
     exit;
-
-  if not FVariables.contains(AExpr.Variable) then
-    FVariables.Add(AExpr.Variable);
+  if not assigned(ABlock) then
+    exit;
+  FBlockName := ABlockName;
+  FReplacementBlock := ABlock;
+  AcceptVisitor(ATemplate, LVisitor);
+  FReplacementBlock := nil;
 end;
 
-procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: IBlockStmt);
+procedure TBlockReplacerVisitor.Visit(const AStmt: IExtendsStmt);
+var
+  LTemplate: ITemplate;
 begin
-  AcceptVisitor(AStmt.Container, self);
-end;
-
-procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: IExtendsStmt);
-begin
-  AcceptVisitor(AStmt.Container, self);
-end;
-
-procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: IStripStmt);
-begin
-
-end;
-
-procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: ICompositeStmt);
-begin
-  AcceptVisitor(AStmt.FirstStmt, self);
-  AcceptVisitor(AStmt.SecondStmt, self);
+  LTemplate := FEvalVisitor.ResolveTemplate(AStmt.Name);
+  AcceptVisitor(LTemplate, self);
 end;
 
 end.

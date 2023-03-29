@@ -34,6 +34,8 @@ unit Sempare.Template.TestIf;
 
 interface
 
+{$I 'Sempare.Template.Compiler.inc'}
+
 uses
   DUnitX.TestFramework;
 
@@ -67,7 +69,7 @@ type
     procedure TestIfList;
     [Test]
     procedure TestIfDict;
-    [Test{$IFDEF SEMPARE_TEMPLATE_FIREDAC}, Ignore {$ENDIF}]
+    [Test{$IFNDEF SEMPARE_TEMPLATE_FIREDAC}, Ignore {$ENDIF}]
     procedure TestIfDataSet;
   end;
 

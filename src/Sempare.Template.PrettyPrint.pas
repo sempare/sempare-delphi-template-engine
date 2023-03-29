@@ -86,6 +86,10 @@ type
     procedure Visit(const AStmt: ICycleStmt); overload; override;
     procedure Visit(const AStmt: ICompositeStmt); overload; override;
     procedure Visit(const AStmt: IStripStmt); overload; override;
+    procedure Visit(const AStmt: IDebugStmt); overload; override;
+
+    procedure Visit(const AStmt: IBlockStmt); overload; override;
+    procedure Visit(const AStmt: IExtendsStmt); overload; override;
 
   end;
 
@@ -413,7 +417,7 @@ end;
 procedure TPrettyPrintTemplateVisitor.Visit(const AExpr: IUnaryExpr);
 begin
   write('%s (', [UnaryToStr(AExpr.UnaryOp)]);
-  AcceptVisitor(AExpr.Condition, self);
+  AcceptVisitor(AExpr.Expr, self);
   write(')');
 end;
 
@@ -471,9 +475,9 @@ end;
 procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IDefineTemplateStmt);
 begin
   tab();
-  write('<%% define (');
+  write('<%% template ');
   AcceptVisitor(AStmt.Name, self);
-  writeln(') %%>');
+  writeln(' %%>');
   delta(4);
   AcceptVisitor(AStmt.Container, self);
   delta(-4);
@@ -548,8 +552,6 @@ begin
 end;
 
 procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IStripStmt);
-var
-  LIdx: integer;
 begin
   tab();
   write('<%% strip(');
@@ -561,14 +563,44 @@ begin
 end;
 
 procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: ICompositeStmt);
-var
-  LIdx: integer;
 begin
   tab();
   writeln('<%% composite %%>');
   delta(4);
   AcceptVisitor(AStmt.FirstStmt, self);
   AcceptVisitor(AStmt.SecondStmt, self);
+  delta(-4);
+  tab();
+  writeln('<%% end %%>');
+end;
+
+procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IDebugStmt);
+begin
+  // just proxy through
+  AcceptVisitor(AStmt.Stmt, self);
+end;
+
+procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IBlockStmt);
+begin
+  tab();
+  write('<%% block ''');
+  AcceptVisitor(AStmt.Name, self);
+  writeln('''%%>');
+  delta(4);
+  AcceptVisitor(AStmt.Container, self);
+  delta(-4);
+  tab();
+  writeln('<%% end %%>');
+end;
+
+procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IExtendsStmt);
+begin
+  tab();
+  write('<%% extends ''');
+  AcceptVisitor(AStmt.Name, self);
+  writeln('''%%>');
+  delta(4);
+  AcceptVisitor(AStmt.Container, self);
   delta(-4);
   tab();
   writeln('<%% end %%>');

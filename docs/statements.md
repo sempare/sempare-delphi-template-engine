@@ -10,11 +10,13 @@ Copyright (c) 2019-2023 [Sempare Limited](http://www.sempare.ltd)
 4. [for](#for)
 5. [while](#while)
 6. [include](#include)
-7. [with](#with)
-8. [template](#template)
-9. [require](#require)
-10. [ignorenl](#ignorenl)
-11. [cycle](#cycle)
+7. [block](#block)
+8. [extends](#extends)
+9. [with](#with)
+10. [template](#template)
+11. [require](#require)
+12. [ignorenl](#ignorenl)
+13. [cycle](#cycle)
 
 ### print
 
@@ -312,6 +314,75 @@ begin
 ```
 
 include() can also take a second parameter, allowing for improved scoping of variables, similar to the _with_ statement.
+
+### block
+
+![block](./images/stmt_block.svg)
+
+You may want to decompose templates into reusable parts. You register templates on a Template context. 
+
+```
+<% block 'content' %>
+Some content
+<% end %>
+```
+
+The block statment defines a placeholder in a template that can be replaced. When a block is contained within an extends block, it will be a replacement in the referenced template.
+
+### extends
+
+![extends](./images/stmt_extends.svg)
+
+extends() allows you to replace blocks within another template.
+
+```
+<% template 'header_footer' %>
+<html>
+    <head>
+        <title>My Page</title>
+    </head>
+    <body>
+        <% block 'content'%>the content<% end %>
+    </body>
+</html>
+<% end %>
+```
+
+Without the extends statement, include('header_footer') would resolve to:
+```
+<html>
+    <head>
+        <title>My Page</title>
+    </head>
+    <body>
+        the content
+    </body>
+</html>
+```
+
+Using the extends statement...
+```
+<% extends ('header_footer') %>
+   // content here will be ignored
+   <% block 'content' %><p>Welcome to my page</p><% end %>
+<% end %>
+```
+would resolve to:
+```
+<html>
+    <head>
+        <title>My Page</title>
+    </head>
+    <body>
+        <p>Welcome to my page</p>
+    </body>
+</html>
+```
+
+
+
+
+extends() can also take a second parameter, allowing for improved scoping of variables, similar to the _with_ statement.
 
 ### with
 
