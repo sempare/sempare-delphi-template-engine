@@ -331,11 +331,11 @@ end;
 procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IForRangeStmt);
 begin
   tab();
-  write('<%% for %s := (', [AStmt.Variable]);
+  write('<%% for %s := ', [AStmt.Variable]);
   AcceptVisitor(AStmt.LowExpr, self);
-  write(') %s (', [ForopToStr(AStmt.ForOp)]);
+  write(' %s ', [ForopToStr(AStmt.ForOp)]);
   AcceptVisitor(AStmt.HighExpr, self);
-  write(') ');
+  write(' ');
   if AStmt.StepExpr <> nil then
   begin
     write(' step ');
