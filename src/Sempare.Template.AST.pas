@@ -135,7 +135,10 @@ type
 
     // for expression list
     vsComma, //
-    vsSemiColon //
+    vsSemiColon, //
+
+    vsExtends, //
+    vsBlock //
     );
 
   IPosition = interface
@@ -162,6 +165,7 @@ type
   end;
 
   ITemplateVisitor = interface;
+  IEvaluationTemplateVisitor = interface;
 
   IPositional = interface
     ['{DFA45EC1-7F39-4FB2-9894-8BD8D4ABA975}']
@@ -172,6 +176,7 @@ type
   ITemplateVisitorHost = interface
     ['{BB5F2BF7-390D-4E20-8FD2-DB7609519143}']
     procedure Accept(const AVisitor: ITemplateVisitor);
+    function Clone: IInterface;
   end;
 
   IExpr = interface
@@ -180,6 +185,7 @@ type
 
   IStmt = interface
     ['{6D37028E-A0C0-41F1-8A59-EDC0C9ADD9C7}']
+    function Clone: IInterface;
   end;
 
   IDebugStmt = interface(IStmt)
@@ -193,6 +199,8 @@ type
     function GetItem(const AOffset: integer): ITemplateVisitorHost;
     function GetCount: integer;
     function GetLastItem: ITemplateVisitorHost;
+    function Clone: IInterface;
+
     property Items[const AOffset: integer]: ITemplateVisitorHost read GetItem;
     property Count: integer read GetCount;
     property LastItem: ITemplateVisitorHost read GetLastItem;
@@ -201,6 +209,31 @@ type
   ITemplateAdd = interface(ITemplate)
     ['{64465D68-0E9D-479F-9EF3-A30E75967809}']
     procedure Add(const AItem: ITemplateVisitorHost);
+  end;
+
+  IExtendsStmt = interface(IStmt)
+    ['{220D7E83-280D-454B-BA60-622C97EBE131}']
+    function GetName: IExpr;
+    function NameAsString(const AEvalVisitor: IEvaluationTemplateVisitor): string;
+    function GetBlockContainer: ITemplate;
+    function GetContainer: ITemplate;
+    procedure SetContainer(const AContainer: ITemplate);
+    function GetBlockNames: TArray<string>;
+    procedure SetBlockNames(const ANames: TArray<string>);
+    property Name: IExpr read GetName;
+    property Container: ITemplate read GetContainer write SetContainer;
+    property BlockContainer: ITemplate read GetBlockContainer;
+    property BlockNames: TArray<string> read GetBlockNames write SetBlockNames;
+  end;
+
+  IBlockStmt = interface(IStmt)
+    ['{EBAC38C4-9790-4D7C-844C-BE7C94E7C822}']
+    function GetName: IExpr;
+    function NameAsString(const AEvalVisitor: IEvaluationTemplateVisitor): string;
+    function GetContainer: ITemplate;
+    procedure SetContainer(const AContainer: ITemplate);
+    property Name: IExpr read GetName;
+    property Container: ITemplate read GetContainer write SetContainer;
   end;
 
   IContinueStmt = interface(IStmt)
@@ -447,7 +480,7 @@ type
     function GetUnaryOp: TUnaryOp;
     function GetExpr: IExpr;
     property UnaryOp: TUnaryOp read GetUnaryOp;
-    property Condition: IExpr read GetExpr;
+    property Expr: IExpr read GetExpr;
   end;
 
   ITemplateVisitor = interface
@@ -483,6 +516,19 @@ type
     procedure Visit(const AStmt: IWithStmt); overload;
     procedure Visit(const AStmt: ICycleStmt); overload;
     procedure Visit(const AStmt: IDebugStmt); overload;
+    procedure Visit(const AStmt: IBlockStmt); overload;
+    procedure Visit(const AStmt: IExtendsStmt); overload;
+  end;
+
+  IEvaluationTemplateVisitor = interface(ITemplateVisitor)
+    ['{D7993669-463E-4DBD-ACA2-76A7A6FF059A}']
+    function EvalExpr(const AExpr: IExpr): TValue;
+    function EvalExprAsString(const AExpr: IExpr): string;
+    function EvalExprAsInt(const AExpr: IExpr): int64;
+    function EvalExprAsNum(const AExpr: IExpr): extended;
+    function EvalExprAsBoolean(const AExpr: IExpr): boolean;
+    function ResolveTemplate(const AExpr: IExpr): ITemplate;
+    procedure VisitStmt(const AStmt: IStmt);
   end;
 
 implementation

@@ -8,10 +8,11 @@ The commercial license for Sempare Template Engine for Delphi gives you the righ
 - use the component and source code on all development systems used by the developer
 - sell any number of applications in any quantity without any additional run-time fees required
 
-A commercial licence is sold per developer developing applications that use Sempare Template Engine for Delphi. 
-The initial cost is $70 per developer and includes first year of support. For support thereafter, at your discretion, 
-a support fee of $30 per developer per year would be appreciated (the cost of a few cups of coffee). Please contact us 
-for site license pricing.
+The Sempare Template Engine may NOT be included or distributed as part of another commercial library or framework without approval / commercial review.
+
+A commercial licence is licensed per developer developing applications that use Sempare Template Engine for Delphi. 
+The initial license fee is $70 per developer and includes first year of support. For support thereafter, at your discretion, 
+a support fee of $30 per developer per year would be appreciated. Please contact us for site license pricing.
 
 Please send an e-mail to info@sempare.ltd to request an invoice which will contain the bank details.
 

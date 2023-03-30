@@ -68,8 +68,7 @@ type
     procedure TestVariableNotFoundException;
     [Test]
     procedure TestArray;
-    [Test, Ignore]
-    // This is ignored because this is a potential future feature that is not currently supported.
+    [Test]
     procedure TestStmts;
     [Test]
     procedure TestRequire;
@@ -366,7 +365,11 @@ end;
 
 procedure TTestTemplate.TestStmts;
 begin
-  Assert.AreEqual('1', Template.Eval('<% a := 1; print(a) %>'));
+  Assert.WillRaise(
+    procedure
+    begin // statement seperator is not supported. Need to review statment parsing to support this
+      Assert.AreEqual('1', Template.Eval('<% a := 1; print(a) %>'));
+    end);
 end;
 
 procedure TTestTemplate.TestStripWSScripts;

@@ -30,108 +30,101 @@
  * limitations under the License.                                                                   *
  *                                                                                                  *
  *************************************************************************************************%*)
-unit Sempare.Template.VariableExtraction;
+unit Sempare.Template.BlockResolver;
 
 interface
 
 uses
-  System.Rtti,
-  System.Classes,
-  System.SysUtils,
-  System.Diagnostics,
   System.Generics.Collections,
   Sempare.Template.AST,
-  Sempare.Template.StackFrame,
   Sempare.Template.Common,
-  Sempare.Template.PrettyPrint,
-  Sempare.Template.Context,
+  Sempare.Template.Evaluate,
   Sempare.Template.Visitor;
 
 type
+  IBlockResolverVisitor = interface(ITemplateVisitor)
+    ['{623A7C4A-3592-46BD-A3C5-FE354E0E67C0}']
+    function GetBlockNames: TArray<string>;
+    function GetBlocks(const AName: string): TArray<IBlockStmt>;
+  end;
 
-  TTemplateReferenceExtractionVisitor = class(TBaseTemplateVisitor)
+  TBlockResolverVisitor = class(TNoExprTemplateVisitor, IBlockResolverVisitor)
   private
-    // TODO: performance wise, could review dictionary
-    FLocalVariables: TList<string>;
-    FVariables: TList<string>;
-    FFunctions: TList<string>;
-    function GetFunctions: TArray<string>;
-    function GetVariables: TArray<string>;
+    FBlocks: TDictionary<string, TArray<IBlockStmt>>;
+    FEvalVisitor: IEvaluationTemplateVisitor;
   public
-    constructor Create;
+    constructor Create(const AEvalVisitor: IEvaluationTemplateVisitor; const ATemplate: ITemplate);
     destructor Destroy; override;
-    procedure Visit(const AExpr: IVariableExpr); overload; override;
 
-    procedure Visit(const AStmt: IAssignStmt); overload; override;
-    procedure Visit(const AStmt: IFunctionCallExpr); overload; override;
+    function GetBlockNames: TArray<string>;
+    function GetBlocks(const AName: string): TArray<IBlockStmt>;
 
     procedure Visit(const AStmt: IBlockStmt); overload; override;
     procedure Visit(const AStmt: IExtendsStmt); overload; override;
-
-    property Variables: TArray<string> read GetVariables;
-    property Functions: TArray<string> read GetFunctions;
+    procedure Visit(const AStmt: IIncludeStmt); overload; override;
   end;
 
 implementation
 
-{ TTemplateReferenceExtractionVisitor }
+{ TBlockResolverVisitor }
 
-constructor TTemplateReferenceExtractionVisitor.Create;
+procedure TBlockResolverVisitor.Visit(const AStmt: IBlockStmt);
+var
+  LList: TArray<IBlockStmt>;
+  LName: string;
 begin
-  FLocalVariables := TList<string>.Create;
-  FVariables := TList<string>.Create;
-  FFunctions := TList<string>.Create;
+  LName := FEvalVisitor.EvalExprAsString(AStmt.Name);
+  if not FBlocks.TryGetValue(LName, LList) then
+  begin
+    LList := nil;
+  end;
+  insert(AStmt, LList, length(LList));
+  FBlocks.AddOrSetValue(LName, LList);
 end;
 
-destructor TTemplateReferenceExtractionVisitor.Destroy;
+procedure TBlockResolverVisitor.Visit(const AStmt: IExtendsStmt);
+var
+  LTemplate: ITemplate;
 begin
-  FLocalVariables.Free;
-  FVariables.Free;
-  FFunctions.Free;
+  LTemplate := FEvalVisitor.ResolveTemplate(AStmt.Name);
+  AcceptVisitor(LTemplate, self);
+end;
+
+procedure TBlockResolverVisitor.Visit(const AStmt: IIncludeStmt);
+var
+  LTemplate: ITemplate;
+begin
+  LTemplate := FEvalVisitor.ResolveTemplate(AStmt.Expr);
+  AcceptVisitor(LTemplate, self);
+end;
+
+constructor TBlockResolverVisitor.Create(const AEvalVisitor: IEvaluationTemplateVisitor; const ATemplate: ITemplate);
+begin
+  FEvalVisitor := AEvalVisitor;
+  FBlocks := TDictionary < string, TArray < IBlockStmt >>.Create();
+  AcceptVisitor(ATemplate, self);
+end;
+
+destructor TBlockResolverVisitor.Destroy;
+begin
+  FBlocks.Clear;
+  FBlocks.Free;
   inherited;
 end;
 
-function TTemplateReferenceExtractionVisitor.GetFunctions: TArray<string>;
+function TBlockResolverVisitor.GetBlockNames: TArray<string>;
 begin
-  exit(FFunctions.ToArray);
+  exit(FBlocks.Keys.ToArray);
 end;
 
-function TTemplateReferenceExtractionVisitor.GetVariables: TArray<string>;
+function TBlockResolverVisitor.GetBlocks(const AName: string): TArray<IBlockStmt>;
+var
+  LList: TArray<IBlockStmt>;
 begin
-  exit(FVariables.ToArray);
-end;
-
-procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: IAssignStmt);
-begin
-  if not FLocalVariables.contains(AStmt.Variable) then
-    FLocalVariables.Add(AStmt.Variable);
-  AcceptVisitor(AStmt.Expr, self);
-end;
-
-procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: IFunctionCallExpr);
-begin
-  if not FFunctions.contains(AStmt.FunctionInfo[0].Name) then
-    FFunctions.Add(AStmt.FunctionInfo[0].Name);
-  Visit(AStmt.ExprList);
-end;
-
-procedure TTemplateReferenceExtractionVisitor.Visit(const AExpr: IVariableExpr);
-begin
-  if FLocalVariables.contains(AExpr.Variable) then
-    exit;
-
-  if not FVariables.contains(AExpr.Variable) then
-    FVariables.Add(AExpr.Variable);
-end;
-
-procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: IBlockStmt);
-begin
-  AcceptVisitor(AStmt.Container, self);
-end;
-
-procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: IExtendsStmt);
-begin
-  AcceptVisitor(AStmt.Container, self);
+  if FBlocks.TryGetValue(AName, LList) then
+    exit(LList)
+  else
+    exit(nil);
 end;
 
 end.

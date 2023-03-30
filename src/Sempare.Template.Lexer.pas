@@ -413,7 +413,11 @@ begin
           else
             exit(SimpleToken(vsGT));
         '=':
-          exit(SimpleToken(vsEQ));
+          begin
+            if FLookahead.Input = '=' then
+              GetInput;
+            exit(SimpleToken(vsEQ));
+          end;
         '`':
           exit(ReturnString('`'));
         '‘':
@@ -687,6 +691,8 @@ AddHashedKeyword('onbegin', vsOnBegin);
 AddHashedKeyword('onend', vsOnEnd);
 AddHashedKeyword('onempty', vsOnEmpty);
 AddHashedKeyword('betweenitems', vsBetweenItem);
+AddHashedKeyword('extends', vsExtends);
+AddHashedKeyword('block', vsBlock);
 
 AddSymKeyword('ScriptStartToken', VsStartScript);
 AddSymKeyword('ScriptEndToken', VsEndScript);
