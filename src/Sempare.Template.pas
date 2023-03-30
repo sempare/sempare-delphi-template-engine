@@ -186,9 +186,9 @@ begin
   end;
 {$ENDIF}
 {$ENDIF}
-  LTemplate := CloneTemplate(ATemplate);
   LValue := TTemplateValue.From<T>(AValue);
   LTemplateVisitor := TEvaluationTemplateVisitor.Create(AContext, LValue, AStream);
+  LTemplate := ATemplate.CloneAsTemplate;
   AcceptVisitor(LTemplate, LTemplateVisitor);
 end;
 

@@ -53,6 +53,12 @@ type
     boEQ, boNotEQ, boLT, boLTE, boGT, boGTE, // comparison
     boIN);
 
+  TStripAction = ( //
+    saWhitespace, //
+    saWhitespaceAndNL, //
+    saNone //
+    );
+
   TTemplateSymbol = ( //
     // general parsing
     vsInvalid, //
@@ -158,10 +164,12 @@ type
     ['{3EC6C60C-164F-4BF5-AF2E-8F3CFC30C594}']
     function GetPosition: IPosition;
     function GetToken: TTemplateSymbol;
+    function GetStripAction: TStripAction;
     procedure SetToken(const AToken: TTemplateSymbol);
     function StripWS: boolean;
     property Token: TTemplateSymbol read GetToken write SetToken;
     property Position: IPosition read GetPosition;
+    property StripAction: TStripAction read GetStripAction;
   end;
 
   ITemplateVisitor = interface;
@@ -173,19 +181,21 @@ type
     property Position: IPosition read GetPosition;
   end;
 
-  ITemplateVisitorHost = interface
+  ITemplateVisitorHost = interface(IPosition)
     ['{BB5F2BF7-390D-4E20-8FD2-DB7609519143}']
     procedure Accept(const AVisitor: ITemplateVisitor);
     function Clone: IInterface;
   end;
 
-  IExpr = interface
+  IExpr = interface(ITemplateVisitorHost)
     ['{8C539211-ED84-4963-B894-C569C2F7B2FE}']
   end;
 
-  IStmt = interface
+  IStmt = interface(ITemplateVisitorHost)
     ['{6D37028E-A0C0-41F1-8A59-EDC0C9ADD9C7}']
     function Clone: IInterface;
+    function CloneAsStmt: IStmt;
+    function Flatten: TArray<IStmt>;
   end;
 
   IDebugStmt = interface(IStmt)
@@ -194,21 +204,22 @@ type
     property Stmt: IStmt read GetStmt;
   end;
 
-  ITemplate = interface
+  ITemplate = interface(ITemplateVisitorHost)
     ['{93AAB971-5B4B-4959-93F2-6C7DAE15C91B}']
-    function GetItem(const AOffset: integer): ITemplateVisitorHost;
+    function GetItem(const AOffset: integer): IStmt;
     function GetCount: integer;
-    function GetLastItem: ITemplateVisitorHost;
+    function GetLastItem: IStmt;
     function Clone: IInterface;
-
-    property Items[const AOffset: integer]: ITemplateVisitorHost read GetItem;
+    function CloneAsTemplate: ITemplate;
+    procedure Optimise;
+    property Items[const AOffset: integer]: IStmt read GetItem;
     property Count: integer read GetCount;
-    property LastItem: ITemplateVisitorHost read GetLastItem;
+    property LastItem: IStmt read GetLastItem;
   end;
 
   ITemplateAdd = interface(ITemplate)
     ['{64465D68-0E9D-479F-9EF3-A30E75967809}']
-    procedure Add(const AItem: ITemplateVisitorHost);
+    procedure Add(const AItem: IStmt);
   end;
 
   IExtendsStmt = interface(IStmt)
@@ -238,6 +249,24 @@ type
 
   IContinueStmt = interface(IStmt)
     ['{FB4CC3AB-BFEC-4189-B555-153DDA490D15}']
+  end;
+
+  TStripDirection = (sdLeft, sdRight);
+
+  IStripStmt = interface(IStmt)
+    ['{3313745B-D635-4453-9808-660DC462E15C}']
+    function GetDirection: TStripDirection;
+    function GetAction: TStripAction;
+    property Direction: TStripDirection read GetDirection;
+    property Action: TStripAction read GetAction;
+  end;
+
+  ICompositeStmt = interface(IStmt)
+    ['{790FB188-9763-401F-A0B1-FC9CCF4EF18D}']
+    function GetFirstStmt: IStmt;
+    function GetSecondStmt: IStmt;
+    property FirstStmt: IStmt read GetFirstStmt;
+    property SecondStmt: IStmt read GetSecondStmt;
   end;
 
   IEndStmt = interface(IStmt)
@@ -518,6 +547,8 @@ type
     procedure Visit(const AStmt: IDebugStmt); overload;
     procedure Visit(const AStmt: IBlockStmt); overload;
     procedure Visit(const AStmt: IExtendsStmt); overload;
+    procedure Visit(const AStmt: ICompositeStmt); overload;
+    procedure Visit(const AStmt: IStripStmt); overload;
   end;
 
   IEvaluationTemplateVisitor = interface(ITemplateVisitor)
@@ -530,6 +561,15 @@ type
     function ResolveTemplate(const AExpr: IExpr): ITemplate;
     procedure VisitStmt(const AStmt: IStmt);
   end;
+
+const
+  StripDirectionStr: array [TStripDirection] of string = ('sdLeft', 'sdRight');
+
+  StripActionStr: array [TStripAction] of string = ( //
+    'saWhitespace', //
+    'saWhitespaceAndNL', //
+    'saNone' //
+    );
 
 implementation
 

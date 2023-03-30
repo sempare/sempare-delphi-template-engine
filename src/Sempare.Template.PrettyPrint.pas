@@ -84,6 +84,8 @@ type
     procedure Visit(const AStmt: IDefineTemplateStmt); overload; override;
     procedure Visit(const AStmt: IWithStmt); overload; override;
     procedure Visit(const AStmt: ICycleStmt); overload; override;
+    procedure Visit(const AStmt: ICompositeStmt); overload; override;
+    procedure Visit(const AStmt: IStripStmt); overload; override;
     procedure Visit(const AStmt: IDebugStmt); overload; override;
 
     procedure Visit(const AStmt: IBlockStmt); overload; override;
@@ -329,11 +331,11 @@ end;
 procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IForRangeStmt);
 begin
   tab();
-  write('<%% for %s := (', [AStmt.Variable]);
+  write('<%% for %s := ', [AStmt.Variable]);
   AcceptVisitor(AStmt.LowExpr, self);
-  write(') %s (', [ForopToStr(AStmt.ForOp)]);
+  write(' %s ', [ForopToStr(AStmt.ForOp)]);
   AcceptVisitor(AStmt.HighExpr, self);
-  write(') ');
+  write(' ');
   if AStmt.StepExpr <> nil then
   begin
     write(' step ');
@@ -539,14 +541,37 @@ var
   LIdx: integer;
 begin
   tab();
-  write('<%% cycle [');
+  write('<%% cycle (');
   for LIdx := 0 to AStmt.List.Count - 1 do
   begin
     if LIdx > 0 then
       write(',');
     AcceptVisitor(AStmt.List.Expr[LIdx], self);
   end;
+  writeln(') %%>');
+end;
+
+procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IStripStmt);
+begin
+  tab();
+  write('<%% strip(');
+  write(StripDirectionStr[AStmt.Direction]);
+  write(',');
+  write(StripActionStr[AStmt.Action]);
+  write(')');
   writeln('%%>');
+end;
+
+procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: ICompositeStmt);
+begin
+  tab();
+  writeln('<%% composite %%>');
+  delta(4);
+  AcceptVisitor(AStmt.FirstStmt, self);
+  AcceptVisitor(AStmt.SecondStmt, self);
+  delta(-4);
+  tab();
+  writeln('<%% end %%>');
 end;
 
 procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IDebugStmt);

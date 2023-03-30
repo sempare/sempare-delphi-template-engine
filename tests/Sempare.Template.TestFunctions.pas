@@ -278,8 +278,11 @@ begin
 end;
 
 procedure TFunctionTest.TestChrOrd;
+var
+  LCtx: ITemplateContext;
 begin
-  Assert.AreEqual(#10, Template.Eval('<% chr(10) %>'));
+  LCtx := Template.Context();
+  Assert.AreEqual(LCtx.NewLine, Template.Eval('<% chr(10) %>'));
   Assert.AreEqual(#9, Template.Eval('<% chr(9) %>'));
   Assert.AreEqual('200', Template.Eval('<% ord(chr(200)) %>'));
 end;
@@ -391,14 +394,17 @@ begin
 end;
 
 procedure TFunctionTest.TestPadding;
+var
+  LCtx: ITemplateContext;
 begin
+  LCtx := Template.Context();
   Assert.AreEqual('   123', Template.Eval('<% padleft(123, 6) %>'));
   Assert.AreEqual('000123', Template.Eval('<% padleft(123, 6, "0") %>'));
   Assert.AreEqual('123   ', Template.Eval('<% padright(123, 6) %>'));
   Assert.AreEqual('123000', Template.Eval('<% padright(123, 6, "0") %>'));
   Assert.AreEqual(#9#9#9#9#9, Template.Eval('<% tabs(5) %>'));
   Assert.AreEqual('     ', Template.Eval('<% spaces(5) %>'));
-  Assert.AreEqual(#10#10#10#10#10, Template.Eval('<% nl(5) %>'));
+  Assert.AreEqual(LCtx.NewLine + LCtx.NewLine + LCtx.NewLine + LCtx.NewLine + LCtx.NewLine, Template.Eval('<% nl(5) %>'));
   Assert.AreEqual(#13#10#13#10, Template.Eval('<% crnl(2) %>'));
 end;
 

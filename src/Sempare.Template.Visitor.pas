@@ -44,7 +44,6 @@ type
   TBaseTemplateVisitor = class(TInterfacedObject, ITemplateVisitor)
   public
     procedure Visit(const AContainer: ITemplate); overload; virtual;
-    procedure Visit(const AContainer: ITemplateVisitorHost); overload; virtual;
 
     procedure Visit(const AExpr: IExpr); overload; virtual;
     procedure Visit(const AExpr: IBinopExpr); overload; virtual;
@@ -59,7 +58,6 @@ type
     procedure Visit(const AStmt: IMethodCallExpr); overload; virtual;
     procedure Visit(const AStmt: IEncodeExpr); overload; virtual;
 
-    procedure Visit(const AStmt: IStmt); overload; virtual;
     procedure Visit(const AStmt: IAssignStmt); overload; virtual;
     procedure Visit(const AStmt: IContinueStmt); overload; virtual;
     procedure Visit(const AStmt: IElseStmt); overload; virtual;
@@ -77,6 +75,10 @@ type
     procedure Visit(const AStmt: IWithStmt); overload; virtual;
     procedure Visit(const AStmt: ICycleStmt); overload; virtual;
     procedure Visit(const AStmt: IDebugStmt); overload; virtual;
+    procedure Visit(const AStmt: ICompositeStmt); overload; virtual;
+    procedure Visit(const AStmt: IStripStmt); overload; virtual;
+    procedure Visit(const AStmt: IStmt); overload; virtual;
+
     procedure Visit(const AStmt: IBlockStmt); overload; virtual;
     procedure Visit(const AStmt: IExtendsStmt); overload; virtual;
   end;
@@ -122,11 +124,6 @@ end;
 procedure TBaseTemplateVisitor.Visit(const AStmt: IStmt);
 begin
   raise ETemplateVisitor.Create(SStatementNotSupportedInVisitor);
-end;
-
-procedure TBaseTemplateVisitor.Visit(const AContainer: ITemplateVisitorHost);
-begin
-  AcceptVisitor(AContainer, self);
 end;
 
 procedure TBaseTemplateVisitor.Visit(const AExpr: IExpr);
@@ -299,6 +296,17 @@ procedure TBaseTemplateVisitor.Visit(const AStmt: IBlockStmt);
 begin
   AcceptVisitor(AStmt.Name, self);
   AcceptVisitor(AStmt.Container, self);
+end;
+
+procedure TBaseTemplateVisitor.Visit(const AStmt: IStripStmt);
+begin
+
+end;
+
+procedure TBaseTemplateVisitor.Visit(const AStmt: ICompositeStmt);
+begin
+  AcceptVisitor(AStmt.FirstStmt, self);
+  AcceptVisitor(AStmt.SecondStmt, self);
 end;
 
 procedure TBaseTemplateVisitor.Visit(const AStmt: IExtendsStmt);

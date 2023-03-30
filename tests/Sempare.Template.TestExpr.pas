@@ -117,7 +117,6 @@ begin
   Assert.AreEqual('result', Template.Eval('<% a:= "123" %><% if a <> ''value'' %>result<% end %>'));
   Assert.AreEqual('result', Template.Eval('<% a:= "value" %><% if a = ''value'' %>result<% end %>'));
 
-
   // NOTE: NE is implemented as NOT Equal, so we test both scenarios here
   Assert.AreEqual('result', Template.Eval('<% if _ <> ''value'' %>result<% end %>', 'x'));
   Assert.AreEqual('', Template.Eval('<% if _ <> ''value'' %>result<% end %>', 'value'));

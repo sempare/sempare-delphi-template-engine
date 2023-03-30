@@ -82,6 +82,12 @@ type
     procedure TestWebForm;
 
     [Test]
+    procedure TestTimedWebForm;
+
+    [Test]
+    procedure TestThreadedWebForm;
+
+    [Test]
     procedure TestNestedBody;
 
     [Test]
@@ -92,7 +98,13 @@ type
 implementation
 
 uses
+{$IFDEF WIN32}
+  Windows,
+{$ENDIF}
+  System.Math,
+  System.Classes,
   System.SysUtils,
+  System.Diagnostics,
   System.Generics.Collections,
   Sempare.Template.Context,
   Sempare.Template;
@@ -436,6 +448,233 @@ constructor TButton.create(const ACaption, AName: string);
 begin
   Caption := ACaption;
   name := AName;
+end;
+
+{$IFDEF WIN32}
+
+function GetNanoseconds: Int64;
+var
+  frequency, counter: Int64;
+begin
+  QueryPerformanceFrequency(frequency);
+  QueryPerformanceCounter(counter);
+  Result := (counter * 1000000000) div frequency;
+end;
+{$ENDIF}
+
+procedure TTestTemplateInclude.TestThreadedWebForm;
+
+type
+
+  TTemplateData = record
+    company: string;
+    CopyrightYear: integer;
+    FormName: string;
+    FormAction: string;
+    Fields: TArray<TField>;
+    Buttons: TArray<TButton>;
+  end;
+
+var
+  LTemplateData: TTemplateData;
+  LTemplate: ITemplate;
+  i: integer;
+  LThread: TThread;
+  LThreads: TObjectList<TThread>;
+  LNumThreads: integer;
+  LNumEvals: integer;
+begin
+  LTemplateData.company := 'Sempare';
+  LTemplateData.CopyrightYear := 2023;
+  LTemplateData.FormName := 'userinfo';
+  LTemplateData.FormAction := '/userinfo';
+  LTemplateData.Fields := [TField.create('FirstName', 'firstname'), TField.create('LastName', 'lastname'), TField.create('Email', 'email', 'TEmail')];
+  LTemplateData.Buttons := [TButton.create('Submit', 'submit')];
+
+  LTemplate := Template.parse( //
+    '<% template "TEdit" %><tr><td><% Caption %></td><td><input name="<% name %>"></td></tr><% end %>'#13#10 + // 1
+
+    '<% template "TEmail" %><tr><td><% Caption %></td><td><input type="email" name="<% name %>"></td></tr><% end %>'#13#10 + // 2
+
+    '<% template "TButton" %><input type="button" name="<% name %>" value="<% caption %>"><% end %>'#13#10 + // 3
+
+    '<% template "TForm" %>'#13#10 + // 4
+    '   <form method="POST" name="<% FormName %>" action="<% FormAction %>">'#13#10 + // 5
+    '      <table>'#13#10 + // 6
+    '         <% for field of fields %>'#13#10 + // 7
+    '             <% include(field.FieldType, field)%>'#13#10 + // 8
+    '         <% end %>'#13#10 + // 9
+    '         <tr>'#13#10 + //
+    '             <td colspan="2" align="right">'#13#10 + // 10
+    '               <% for button of buttons %>'#13#10 + // 11
+    '                 <% include("TButton", button) %>'#13#10 + // 12
+    '               <% end %>'#13#10 + // 13
+    '             </td>'#13#10 + // 14
+    '         </tr>'#13#10 + // 14
+    '      </table>'#13#10 + // 15
+    '   </form>'#13#10 + // 16
+    '<% end %>'#13#10 + // 17
+
+    '<% template "header" %>'#13#10 + // 18
+    '<html>'#13#10 + // 19
+    ' <head>'#13#10 + // 20
+    '  <title>Welcome to my <% Company %></title>'#13#10 + // 21
+    ' </head>'#13#10 + // 22
+    ' <body>'#13#10 + // 23
+    '<% end %>'#13#10 + // 24
+
+    '<% template "footer" %>'#13#10 + // 25
+    '  <p>Copyright (c) <% CopyrightYear %> </p>'#13#10 + // 26
+    ' </body>'#13#10 + // 27
+    '</html>'#13#10 + // 28
+    '<% end %>'#13#10 + // 29
+
+    '<% template "template" %>'#13#10 + // 30
+    '<% include("header") %>'#13#10 + // 31
+    '<% block "body" %>Lorem ipsum dolor sit amet, consectetur adipiscing eli...<% end %>'#13#10 + // 32
+    '<% include("footer") %>'#13#10 + // 33
+    '<% end %>'#13#10 + // 34
+
+    '<% extends ("template") %>' + // 35
+    '<% block "body" %><% include("TForm") %><% end %> '#13#10 + // 36
+    '<% end %>'#13#10 // 37
+    );
+  LThreads := TObjectList<TThread>.create;
+  LNumThreads := min(1, CPUCount);
+  LNumEvals := 500;
+  for i := 0 to LNumThreads do
+  begin
+    LThread := TThread.CreateAnonymousThread(
+      procedure
+      var
+        LResult: string;
+        i: integer;
+        LStopWatch: TStopwatch;
+        LElapsedMs: double;
+      begin
+
+        LStopWatch := TStopwatch.create;
+        LStopWatch.Start;
+
+        for i := 0 to LNumEvals do
+        begin
+          LResult := Template.Eval(LTemplate, LTemplateData);
+          Assert.AreEqual(#13#10#13#10#13#10#13#10#13#10#13#10#13#10#13#10#13#10'<html>'#13#10' <head>'#13#10'  <title>Welcome to my Sempare</title>'#13#10 + //
+            ' </head>'#13#10' <body>'#13#10''#13#10''#13#10'   <form method="POST" name="userinfo" action="/userinfo">'#13#10 + //
+            '      <table>'#13#10'         '#13#10'             <tr><td>FirstName</td><td><input name="firstname">' + //
+            '</td></tr>'#13#10'         '#13#10'             <tr><td>LastName</td><td><input name="lastname"></td></tr>'#13#10 + //
+            '         '#13#10'             <tr><td>Email</td><td><input type="email" name="email"></td></tr>'#13#10'         '#13#10 + //
+            '         <tr>'#13#10'             <td colspan="2" align="right">'#13#10'               '#13#10 + //
+            '                 <input type="button" name="submit" value="Submit">'#13#10'               '#13#10'             </td>'#13#10'         </tr>'#13#10 + //
+            '      </table>'#13#10'   </form>'#13#10''#13#10''#13#10'  <p>Copyright (c) 2023 </p>'#13#10' </body>'#13#10'</html>'#13#10''#13#10''#13#10, LResult);
+        end;
+        LStopWatch.Stop;
+        LElapsedMs := LStopWatch.ElapsedMilliseconds / LNumEvals;
+
+        Assert.IsTrue(LElapsedMs < 0.1400);
+      end);
+    LThread.FreeOnTerminate := false;
+    LThreads.Add(LThread);
+  end;
+  for LThread in LThreads do
+  begin
+    LThread.Start;
+  end;
+  for LThread in LThreads do
+  begin
+    LThread.WaitFor;
+  end;
+end;
+
+procedure TTestTemplateInclude.TestTimedWebForm;
+
+type
+
+  TTemplateData = record
+    company: string;
+    CopyrightYear: integer;
+    FormName: string;
+    FormAction: string;
+    Fields: TArray<TField>;
+    Buttons: TArray<TButton>;
+  end;
+
+var
+  LTemplateData: TTemplateData;
+  LTemplate: ITemplate;
+  i: integer;
+  LStopWatch: TStopwatch;
+  LElapsedMs: double;
+  LIterations: integer;
+begin
+  LTemplateData.company := 'Sempare';
+  LTemplateData.CopyrightYear := 2023;
+  LTemplateData.FormName := 'userinfo';
+  LTemplateData.FormAction := '/userinfo';
+  LTemplateData.Fields := [TField.create('FirstName', 'firstname'), TField.create('LastName', 'lastname'), TField.create('Email', 'email', 'TEmail')];
+  LTemplateData.Buttons := [TButton.create('Submit', 'submit')];
+
+  LTemplate := Template.parse( //
+    '<% template "TEdit" %><tr><td><% Caption %></td><td><input name="<% name %>"></td></tr><% end %>'#13#10 + // 1
+
+    '<% template "TEmail" %><tr><td><% Caption %></td><td><input type="email" name="<% name %>"></td></tr><% end %>'#13#10 + // 2
+
+    '<% template "TButton" %><input type="button" name="<% name %>" value="<% caption %>"><% end %>'#13#10 + // 3
+
+    '<% template "TForm" %>'#13#10 + // 4
+    '   <form method="POST" name="<% FormName %>" action="<% FormAction %>">'#13#10 + // 5
+    '      <table>'#13#10 + // 6
+    '         <% for field of fields %>'#13#10 + // 7
+    '             <% include(field.FieldType, field)%>'#13#10 + // 8
+    '         <% end %>'#13#10 + // 9
+    '         <tr>'#13#10 + //
+    '             <td colspan="2" align="right">'#13#10 + // 10
+    '               <% for button of buttons %>'#13#10 + // 11
+    '                 <% include("TButton", button) %>'#13#10 + // 12
+    '               <% end %>'#13#10 + // 13
+    '             </td>'#13#10 + // 14
+    '         </tr>'#13#10 + // 14
+    '      </table>'#13#10 + // 15
+    '   </form>'#13#10 + // 16
+    '<% end %>'#13#10 + // 17
+
+    '<% template "header" %>'#13#10 + // 18
+    '<html>'#13#10 + // 19
+    ' <head>'#13#10 + // 20
+    '  <title>Welcome to my <% Company %></title>'#13#10 + // 21
+    ' </head>'#13#10 + // 22
+    ' <body>'#13#10 + // 23
+    '<% end %>'#13#10 + // 24
+
+    '<% template "footer" %>'#13#10 + // 25
+    '  <p>Copyright (c) <% CopyrightYear %> </p>'#13#10 + // 26
+    ' </body>'#13#10 + // 27
+    '</html>'#13#10 + // 28
+    '<% end %>'#13#10 + // 29
+
+    '<% template "template" %>'#13#10 + // 30
+    '<% include("header") %>'#13#10 + // 31
+    '<% block "body" %>Lorem ipsum dolor sit amet, consectetur adipiscing eli...<% end %>'#13#10 + // 32
+    '<% include("footer") %>'#13#10 + // 33
+    '<% end %>'#13#10 + // 34
+
+    '<% extends ("template") %>' + // 35
+    '<% block "body" %><% include("TForm") %><% end %> '#13#10 + // 36
+    '<% end %>'#13#10 // 37
+    );
+
+  LIterations := 500;
+  LStopWatch := TStopwatch.create;
+  LStopWatch.Start;
+  for i := 1 to LIterations do
+  begin
+    Template.Eval(LTemplate, LTemplateData);
+  end;
+  LStopWatch.Stop;
+  LElapsedMs := LStopWatch.ElapsedMilliseconds / LIterations;
+
+  Assert.IsTrue(LElapsedMs < 0.1400);
+
 end;
 
 procedure TTestTemplateInclude.TestWebForm;

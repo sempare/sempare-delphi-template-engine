@@ -67,6 +67,8 @@ type
 
     procedure Visit(const AStmt: IBlockStmt); overload; override;
     procedure Visit(const AStmt: IExtendsStmt); overload; override;
+    procedure Visit(const AStmt: ICompositeStmt); overload; override;
+    procedure Visit(const AStmt: IStripStmt); overload; override;
 
     property Variables: TArray<string> read GetVariables;
     property Functions: TArray<string> read GetFunctions;
@@ -132,6 +134,17 @@ end;
 procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: IExtendsStmt);
 begin
   AcceptVisitor(AStmt.Container, self);
+end;
+
+procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: IStripStmt);
+begin
+
+end;
+
+procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: ICompositeStmt);
+begin
+  AcceptVisitor(AStmt.FirstStmt, self);
+  AcceptVisitor(AStmt.SecondStmt, self);
 end;
 
 end.

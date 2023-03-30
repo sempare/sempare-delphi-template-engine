@@ -96,18 +96,11 @@ type
     property Variables[const AKey: string]: TTemplateValue read GetItem write SetItem; default;
   end;
 
-function AsVisitorHost(const ATemplate: ITemplate): ITemplateVisitorHost; inline; overload;
-function AsVisitorHost(const AExpr: IExpr): ITemplateVisitorHost; inline; overload;
-function AsVisitorHost(const AStmt: IStmt): ITemplateVisitorHost; inline; overload;
-
 procedure AcceptVisitor(const ATemplate: ITemplate; const AVisitor: ITemplateVisitor); inline; overload;
 procedure AcceptVisitor(const AExpr: IExpr; const AVisitor: ITemplateVisitor); inline; overload;
 procedure AcceptVisitor(const AStmt: IStmt; const AVisitor: ITemplateVisitor); inline; overload;
-procedure AcceptVisitor(const AExpr: IExprList; const AVisitor: ITemplateVisitor); overload;
-procedure AcceptVisitor(const AHost: ITemplateVisitorHost; const AVisitor: ITemplateVisitor); overload;
+procedure AcceptVisitor(const AExpr: IExprList; const AVisitor: ITemplateVisitor); inline; overload;
 
-function Position(const AStmt: IStmt): IPosition; inline; overload;
-function Position(const AExpr: IExpr): IPosition; inline; overload;
 function Position(const APositional: IPosition): string; inline; overload;
 
 procedure RaiseError(const APositional: IPosition; const AFormat: string; const AArgs: array of const); overload;
@@ -115,107 +108,39 @@ procedure RaiseError(const APositional: IPosition; const AFormat: string); overl
 procedure RaiseErrorRes(const APositional: IPosition; const ResStringRec: PResStringRec; const AArgs: array of const); overload;
 procedure RaiseErrorRes(const APositional: IPosition; const ResStringRec: PResStringRec); overload;
 
-function CloneTemplate(const ATemplate: ITemplate): ITemplate;
-function CloneVisitorHost(const AVisitorHost: ITemplateVisitorHost): ITemplateVisitorHost;
-function CloneStmt(const AStmt: IStmt): IStmt;
-
 implementation
 
-function CloneTemplate(const ATemplate: ITemplate): ITemplate;
-begin
-  supports(ATemplate.Clone, ITemplate, result);
-end;
-
-function CloneVisitorHost(const AVisitorHost: ITemplateVisitorHost): ITemplateVisitorHost;
-begin
-  supports(AVisitorHost.Clone, ITemplateVisitorHost, result);
-end;
-
-function CloneStmt(const AStmt: IStmt): IStmt;
-begin
-  supports(AStmt.Clone, IStmt, result);
-end;
-
-function AsVisitorHost(const ATemplate: ITemplate): ITemplateVisitorHost; overload;
-begin
-  ATemplate.QueryInterface(ITemplateVisitorHost, result);
-end;
-
-function AsVisitorHost(const AExpr: IExpr): ITemplateVisitorHost;
-begin
-  AExpr.QueryInterface(ITemplateVisitorHost, result);
-end;
-
-function AsVisitorHost(const AStmt: IStmt): ITemplateVisitorHost;
-begin
-  AStmt.QueryInterface(ITemplateVisitorHost, result);
-end;
-
 procedure AcceptVisitor(const ATemplate: ITemplate; const AVisitor: ITemplateVisitor); overload;
-var
-  LHost: ITemplateVisitorHost;
 begin
   if not assigned(ATemplate) then
     exit;
-  LHost := AsVisitorHost(ATemplate);
-  LHost.Accept(AVisitor);
+  ATemplate.Accept(AVisitor);
 end;
 
 procedure AcceptVisitor(const AExpr: IExpr; const AVisitor: ITemplateVisitor);
-var
-  LHost: ITemplateVisitorHost;
 begin
   if not assigned(AExpr) then
     exit;
-  LHost := AsVisitorHost(AExpr);
-  LHost.Accept(AVisitor);
+  AExpr.Accept(AVisitor);
 end;
 
 procedure AcceptVisitor(const AStmt: IStmt; const AVisitor: ITemplateVisitor);
-var
-  LHost: ITemplateVisitorHost;
 begin
   if not assigned(AStmt) then
     exit;
-  LHost := AsVisitorHost(AStmt);
-  LHost.Accept(AVisitor);
-end;
-
-procedure AcceptVisitor(const AHost: ITemplateVisitorHost; const AVisitor: ITemplateVisitor);
-begin
-  if not assigned(AHost) then
-    exit;
-  AHost.Accept(AVisitor);
+  AStmt.Accept(AVisitor);
 end;
 
 procedure AcceptVisitor(const AExpr: IExprList; const AVisitor: ITemplateVisitor);
 var
-  LHost: ITemplateVisitorHost;
   i: integer;
 begin
   if not assigned(AExpr) then
     exit;
   for i := 0 to AExpr.Count - 1 do
   begin
-    LHost := AsVisitorHost(AExpr[i]);
-    LHost.Accept(AVisitor);
+    AExpr[i].Accept(AVisitor);
   end;
-end;
-
-function Position(const AStmt: IStmt): IPosition; overload;
-var
-  LSymbol: IPositional;
-begin
-  AStmt.QueryInterface(IPositional, LSymbol);
-  exit(LSymbol.Position);
-end;
-
-function Position(const AExpr: IExpr): IPosition; overload;
-var
-  LSymbol: IPositional;
-begin
-  AExpr.QueryInterface(IPositional, LSymbol);
-  exit(LSymbol.Position);
 end;
 
 function Position(const APositional: IPosition): string; overload;
