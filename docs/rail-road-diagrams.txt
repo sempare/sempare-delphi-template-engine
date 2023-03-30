@@ -38,8 +38,6 @@ Diagram(
           Sequence(
            Choice(0,
              Terminal('step'),
-             Terminal('offset'),
-             Terminal('limit')
            ),
          NonTerminal('expr')
         )
