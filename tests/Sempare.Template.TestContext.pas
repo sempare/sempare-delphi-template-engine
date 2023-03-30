@@ -67,8 +67,11 @@ begin
 end;
 
 procedure TContextTest.TestCRNLTAB;
+var
+  ctx: ITemplateContext;
 begin
-  Assert.AreEqual(#10, Template.Eval('<% nl %>'));
+  ctx := Template.Context();
+  Assert.AreEqual(ctx.NewLine, Template.Eval('<% nl %>'));
   Assert.AreEqual(#13, Template.Eval('<% cr %>'));
   Assert.AreEqual(#13#10, Template.Eval('<% crnl %>'));
   Assert.AreEqual(#9, Template.Eval('<% tab %>'));

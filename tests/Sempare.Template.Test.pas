@@ -45,7 +45,13 @@ type
   TTestTemplate = class
   public
     [Test]
+    procedure TestEmpty;
+    [Test]
+    procedure TestNonStmt;
+    [Test]
     procedure TestComment;
+    [Test, Ignore]
+    procedure TestHashComment;
     [Test {$IFNDEF SEMPARE_TEMPLATE_HAS_HTML_ENCODER}, Ignore{$ENDIF}]
     procedure TestHtmlEncoding;
     [Test]
@@ -149,6 +155,15 @@ begin
   Assert.AreEqual('before after ', Template.Eval( //
     'before ' + //
     '<% (* this is '#13#10#13#10'a comment *) %>' + //
+    'after ' //
+    ));
+end;
+
+procedure TTestTemplate.TestHashComment;
+begin
+  Assert.AreEqual('before after ', Template.Eval( //
+    'before ' + //
+    '<%#  this is '#13#10#13#10'a comment  %>' + //
     'after ' //
     ));
 end;
@@ -304,6 +319,15 @@ begin
   r.Val := 'a value';
   Template.Eval('<% val := ''test'' %>', r);
   Assert.AreEqual('a value', r.Val);
+end;
+
+procedure TTestTemplate.TestNonStmt;
+begin
+  Assert.WillRaise(
+    procedure
+    begin
+      Template.Eval('<% %>');
+    end);
 end;
 
 procedure TTestTemplate.TestNoSpace;
@@ -484,6 +508,11 @@ type
 class procedure TMyExceptProc.RaiseExcept(const AValue: string);
 begin
   raise Exception.Create(AValue);
+end;
+
+procedure TTestTemplate.TestEmpty;
+begin
+  Template.Eval('');
 end;
 
 procedure TTestTemplate.TestException;
