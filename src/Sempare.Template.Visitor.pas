@@ -44,7 +44,6 @@ type
   TBaseTemplateVisitor = class(TInterfacedObject, ITemplateVisitor)
   public
     procedure Visit(const AContainer: ITemplate); overload; virtual;
-    procedure Visit(const AContainer: ITemplateVisitorHost); overload; virtual;
 
     procedure Visit(const AExpr: IExpr); overload; virtual;
     procedure Visit(const AExpr: IBinopExpr); overload; virtual;
@@ -125,11 +124,6 @@ end;
 procedure TBaseTemplateVisitor.Visit(const AStmt: IStmt);
 begin
   raise ETemplateVisitor.Create(SStatementNotSupportedInVisitor);
-end;
-
-procedure TBaseTemplateVisitor.Visit(const AContainer: ITemplateVisitorHost);
-begin
-  AcceptVisitor(AContainer, self);
 end;
 
 procedure TBaseTemplateVisitor.Visit(const AExpr: IExpr);
