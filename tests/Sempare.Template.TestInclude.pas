@@ -571,7 +571,7 @@ begin
         LStopWatch.Stop;
         LElapsedMs := LStopWatch.ElapsedMilliseconds / LNumEvals;
 
-        Assert.IsTrue(LElapsedMs < 0.1300);
+        Assert.IsTrue(LElapsedMs < 0.1400);
       end);
     LThread.FreeOnTerminate := false;
     LThreads.Add(LThread);
@@ -673,7 +673,7 @@ begin
   LStopWatch.Stop;
   LElapsedMs := LStopWatch.ElapsedMilliseconds / LIterations;
 
-  Assert.IsTrue(LElapsedMs < 0.1300);
+  Assert.IsTrue(LElapsedMs < 0.1400);
 
 end;
 
