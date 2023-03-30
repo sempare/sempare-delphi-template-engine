@@ -1485,22 +1485,27 @@ begin
     LHighValueExpr := RuleExpression();
   end;
 
-  if FLookahead.Token = vsOffset then
+  while FLookahead.Token in [vsOffset, vsLimit, vsStep] do
   begin
-    Match(vsOffset);
-    LOffsetExpr := RuleExpression();
-  end;
+    case FLookahead.Token of
+      vsOffset:
+        begin
+          Match(vsOffset);
+          LOffsetExpr := RuleExpression();
+        end;
 
-  if FLookahead.Token = vsLimit then
-  begin
-    Match(vsLimit);
-    LLimitExpr := RuleExpression();
-  end;
+      vsLimit:
+        begin
+          Match(vsLimit);
+          LLimitExpr := RuleExpression();
+        end;
 
-  if FLookahead.Token = vsStep then
-  begin
-    Match(vsStep);
-    LStep := RuleExpression();
+      vsStep:
+        begin
+          Match(vsStep);
+          LStep := RuleExpression();
+        end;
+    end;
   end;
 
   LContainerStripAction := Match(vsEndScript);
