@@ -521,7 +521,18 @@ Diagram(
 Diagram(
 )
 -------------------------
+
+https://tabatkins.github.io/railroad-diagrams/generator.html#Diagram(%0ASequence(%0A%20%20%20%20%20%20%20Terminal('%3C%25')%2C%0A%20%20%20%20%20%20%20Terminal('block')%2C%0A%20%20%20%20%20%20%20NonTerminal('expr')%2C%20%20%20%20%20%20%20%20%20%20%20%20%0A%20%20%20%20%20%20%20Terminal('%25%3E')%2C%0A%20%20%20%20%20%20%20NonTerminal('block')%2C%0A%20%20%20%20%20%20%20%20Terminal('%3C%25')%2CTerminal('end')%2CTerminal('%25%3E')%2C%0A%20%20%20)%0A)
+
 Diagram(
+Sequence(
+       Terminal('<%'),
+       Terminal('block'),
+       NonTerminal('expr'),            
+       Terminal('%>'),
+       NonTerminal('block'),
+        Terminal('<%'),Terminal('end'),Terminal('%>'),
+   )
 )
 -------------------------
 https://tabatkins.github.io/railroad-diagrams/generator.html#Diagram(%0ASequence(%0A%20%20%20%20%20%20%20Terminal('%3C%25')%2C%0A%20%20%20%20%20%20%20Terminal('print')%2C%0A%20%20%20%20%20%20%20NonTerminal('var')%2C%0A%20%20%20%20%20%20%20Terminal('(')%2C%0A%20%20%20%20%20%20%20NonTerminal('expr')%2C%0A%20%20%20%20%20%20%20Terminal(')')%2C%0A%20%20%20%20%20%20%20Terminal('%25%3E')%2C%0A%0A%20%20)%0A)
