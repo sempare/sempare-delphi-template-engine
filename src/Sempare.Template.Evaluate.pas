@@ -67,6 +67,7 @@ type
     FStripRecurringNL: boolean;
     FRemoveEmpty: boolean;
     FLastNL: boolean;
+    FStripStmt: IStripStmt;
     procedure TrimEndOfLine;
     procedure TrimLast;
     procedure DoWrite();
@@ -74,6 +75,7 @@ type
     constructor Create(const AStream: TStream; const AEncoding: TEncoding; const ANL: string; const AOptions: TTemplateEvaluationOptions);
     destructor Destroy; override;
     procedure Write(const AString: string); override;
+    procedure Handle(const AStmt: IStripStmt);
     property IgnoreNewLine: boolean read FIgnoreNewline write FIgnoreNewline;
   end;
 
@@ -224,7 +226,7 @@ begin
 
   LAllowRootDeref.SetValue(AExpr.DerefType = dtArray);
   LDerefKey := EvalExpr(AExpr.DerefExpr);
-  LDerefedValue := Deref(Position(AExpr), LDerefObj, LDerefKey, eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext);
+  LDerefedValue := Deref(AExpr, LDerefObj, LDerefKey, eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext);
 
   FEvalStack.push(LDerefedValue);
 end;
@@ -239,15 +241,15 @@ begin
   LRight := EvalExpr(AExpr.RightExpr);
   case AExpr.BinOp of
     boIN:
-      LResult := contains(Position(AExpr.RightExpr), LLeft, LRight, FContext);
+      LResult := contains(AExpr.RightExpr, LLeft, LRight, FContext);
     boAND:
       begin
-        AssertBoolean(Position(AExpr.LeftExpr), LLeft, LRight);
+        AssertBoolean(AExpr.LeftExpr, LLeft, LRight);
         LResult := AsBoolean(LLeft) and AsBoolean(LRight);
       end;
     boOR:
       begin
-        AssertBoolean(Position(AExpr.LeftExpr), LLeft, LRight);
+        AssertBoolean(AExpr.LeftExpr, LLeft, LRight);
         LResult := AsBoolean(LLeft) or AsBoolean(LRight);
       end;
     boPlus:
@@ -258,30 +260,30 @@ begin
       else if isStrLike(LLeft) and isNumLike(LRight) then
         LResult := LLeft.AsString + AsString(LRight, FContext)
       else
-        RaiseError(Position(AExpr.LeftExpr), SStringOrNumericTypesExpected);
+        RaiseError(AExpr.LeftExpr, SStringOrNumericTypesExpected);
     boMinus:
       begin
-        AssertNumeric(Position(AExpr.LeftExpr), LLeft, LRight);
+        AssertNumeric(AExpr.LeftExpr, LLeft, LRight);
         LResult := AsNum(LLeft, FContext) - AsNum(LRight, FContext);
       end;
     boSlash:
       begin
-        AssertNumeric(Position(AExpr.LeftExpr), LLeft, LRight);
+        AssertNumeric(AExpr.LeftExpr, LLeft, LRight);
         LResult := AsNum(LLeft, FContext) / AsNum(LRight, FContext);
       end;
     boDiv:
       begin
-        AssertNumeric(Position(AExpr.LeftExpr), LLeft, LRight);
+        AssertNumeric(AExpr.LeftExpr, LLeft, LRight);
         LResult := trunc(AsNum(LLeft, FContext)) div trunc(AsNum(LRight, FContext));
       end;
     boMult:
       begin
-        AssertNumeric(Position(AExpr.LeftExpr), LLeft, LRight);
+        AssertNumeric(AExpr.LeftExpr, LLeft, LRight);
         LResult := AsNum(LLeft, FContext) * AsNum(LRight, FContext);
       end;
     boMod:
       begin
-        AssertNumeric(Position(AExpr.LeftExpr), LLeft, LRight);
+        AssertNumeric(AExpr.LeftExpr, LLeft, LRight);
         LResult := AsInt(LLeft, FContext) mod AsInt(LRight, FContext);
       end;
     boEQ:
@@ -297,7 +299,7 @@ begin
     boGTE:
       LResult := not isLessThan(LLeft, LRight, FContext);
   else
-    RaiseError(Position(AExpr.LeftExpr), SBinOpNotSupported);
+    RaiseError(AExpr.LeftExpr, SBinOpNotSupported);
   end;
   FEvalStack.push(LResult);
 end;
@@ -317,7 +319,7 @@ begin
         FEvalStack.push(not AsBoolean(LValue));
       end
   else
-    RaiseError(Position(AExpr), SUnaryOpNotSupported);
+    RaiseError(AExpr, SUnaryOpNotSupported);
   end;
 end;
 
@@ -333,17 +335,17 @@ begin
     if LValue.IsEmpty then
     begin
       try
-        LValue := Deref(Position(AExpr), LStackFrame.Root, AExpr.variable, eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext);
+        LValue := Deref(AExpr, LStackFrame.Root, AExpr.variable, eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext);
       except
         on e: exception do
         begin
           if (eoRaiseErrorWhenVariableNotFound in FContext.Options) then
-            RaiseError(Position(AExpr), SCannotFindValiable, [AExpr.variable]);
+            RaiseError(AExpr, SCannotFindValiable, [AExpr.variable]);
         end;
       end;
     end;
     if LValue.IsEmpty and (eoRaiseErrorWhenVariableNotFound in FContext.Options) then
-      RaiseError(Position(AExpr), SCannotFindValiable, [AExpr.variable]);
+      RaiseError(AExpr, SCannotFindValiable, [AExpr.variable]);
   end
   else
   begin
@@ -393,7 +395,7 @@ begin
   begin
     if not EvalExprAsBoolean(AStmt.Condition) or (coBreak in FLoopOptions) then
       break;
-    CheckRunTime(Position(AStmt));
+    CheckRunTime(AStmt);
     if (LOffset = -1) or (i >= LOffset) then
     begin
       if LFirst then
@@ -461,7 +463,7 @@ var
       exit(true);
     FStackFrames.peek[LOOP_IDX_NAME] := i;
     exclude(FLoopOptions, coContinue);
-    CheckRunTime(Position(AStmt));
+    CheckRunTime(AStmt);
     if (LOffset = -1) or (i >= LOffset) then
     begin
       if LFirst then
@@ -523,10 +525,10 @@ var
     end;
     LEnumGetEnumeratorMethod := LLoopExprType.GetMethod('GetEnumerator');
     if LEnumGetEnumeratorMethod = nil then
-      RaiseError(Position(AStmt), SGetEnumeratorNotFoundOnObject);
+      RaiseError(AStmt, SGetEnumeratorNotFoundOnObject);
     LEnumValue := LEnumGetEnumeratorMethod.Invoke(LLoopExpr.AsObject, []);
     if LEnumValue.IsEmpty then
-      RaiseErrorRes(Position(AStmt), @SValueIsNotEnumerable);
+      RaiseErrorRes(AStmt, @SValueIsNotEnumerable);
     LEnumObj := LEnumValue.AsObject;
     try
       LLoopExprType := GRttiContext.GetType(LEnumObj.ClassType);
@@ -553,7 +555,7 @@ var
   begin
     LArrayType := LLoopExprType as TRttiArrayType;
     if LArrayType.DimensionCount <> 1 then
-      RaiseError(Position(AStmt), SOnlyOneDimensionalArraysAreSupported);
+      RaiseError(AStmt, SOnlyOneDimensionalArraysAreSupported);
     LDimOrdType := LArrayType.Dimensions[0] as TRttiOrdinalType;
     if LDimOrdType = nil then
       LMin := 0
@@ -630,7 +632,7 @@ begin
       tkDynArray:
         VisitDynArray;
     else
-      RaiseError(Position(AStmt), SGetEnumeratorNotFoundOnObject);
+      RaiseError(AStmt, SGetEnumeratorNotFoundOnObject);
     end;
   end;
   FStackFrames.pop;
@@ -804,7 +806,7 @@ begin
       end
   else
     begin
-      RaiseErrorRes(Position(AStmt), @STypeNotSupported);
+      RaiseErrorRes(AStmt, @STypeNotSupported);
     end;
   end;
   if LStep <> -1 then
@@ -832,7 +834,7 @@ begin
         AcceptVisitor(AStmt.BetweenItemsContainer, self);
     end;
     exclude(FLoopOptions, coContinue);
-    CheckRunTime(Position(AStmt));
+    CheckRunTime(AStmt);
     AcceptVisitor(AStmt.Container, self);
     inc(LIdx, LDelta);
     inc(i);
@@ -888,7 +890,7 @@ begin
   if HasBreakOrContinue then
     exit;
   LTemplateName := EvalExprAsString(AStmt.Expr);
-  LTemplate := ResolveTemplate(Position(AStmt.Expr), LTemplateName);
+  LTemplate := ResolveTemplate(AStmt.Expr, LTemplateName);
   if assigned(LTemplate) then
   begin
     FStackFrames.push(FStackFrames.peek.Clone());
@@ -986,7 +988,7 @@ begin
   if length(LMethod.GetParameters) = 0 then
     result := LMethod.Invoke(nil, [])
   else
-    result := LMethod.Invoke(nil, GetArgs(Position(AFuncCall), LMethod, AArgs, FContext));
+    result := LMethod.Invoke(nil, GetArgs(AFuncCall, LMethod, AArgs, FContext));
   if result.IsType<TValue> then
     result := result.AsType<TValue>();
 end;
@@ -1003,7 +1005,7 @@ begin
     FEvalStack.push(LResult);
   except
     on e: exception do
-      RaiseError(Position(AExpr), e.Message);
+      RaiseError(AExpr, e.Message);
   end;
 end;
 
@@ -1031,7 +1033,7 @@ end;
 
 function TEvaluationTemplateVisitor.ResolveTemplate(const AExpr: IExpr): ITemplate;
 begin
-  exit(ResolveTemplate(Position(AExpr), EvalExprAsString(AExpr)));
+  exit(ResolveTemplate(AExpr, EvalExprAsString(AExpr)));
 end;
 
 procedure TEvaluationTemplateVisitor.VisitStmt(const AStmt: IStmt);
@@ -1056,7 +1058,7 @@ begin
     FEvalStack.push(LResult);
   except
     on e: exception do
-      RaiseError(Position(AExpr), AExpr.Method + ':' + e.Message);
+      RaiseError(AExpr, AExpr.Method + ':' + e.Message);
   end;
 end;
 
@@ -1072,7 +1074,7 @@ var
 begin
   if FIsNLStreamWriter then
   begin
-    LSWriter := FStreamWriter as TNewLineStreamWriter;
+    LSWriter := TNewLineStreamWriter(FStreamWriter);
     LPrevNewLineState := LSWriter.IgnoreNewLine;
     try
       LSWriter.IgnoreNewLine := not AStmt.AllowNewLine;
@@ -1120,7 +1122,7 @@ begin
     if AsString(LExprs[LIndex], FContext).ToLower = LInputType then
       exit;
   end;
-  RaiseError(Position(AStmt), SInputOfRequiredTypeNotFound);
+  RaiseError(AStmt, SInputOfRequiredTypeNotFound);
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AExpr: IArrayExpr);
@@ -1145,7 +1147,7 @@ begin
     LStackFrame := FStackFrames.peek;
     LValue := LStackFrame[LOOP_IDX_NAME];
   except
-    RaiseErrorRes(Position(AStmt), @SCycleStatementMustBeInALoop);
+    RaiseErrorRes(AStmt, @SCycleStatementMustBeInALoop);
   end;
   FStreamWriter.Write(EvalExprAsString(AStmt.List[LValue.AsInt64 mod AStmt.List.Count]));
 end;
@@ -1163,8 +1165,14 @@ begin
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AStmt: IStripStmt);
+var
+  LSWriter: TNewLineStreamWriter;
 begin
-
+  if FIsNLStreamWriter then
+  begin
+    LSWriter := TNewLineStreamWriter(FStreamWriter);
+    LSWriter.Handle(AStmt);
+  end;
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AStmt: ICompositeStmt);
@@ -1213,7 +1221,7 @@ begin
   if not assigned(AStmt.Container) then
   begin
     LName := AStmt.NameAsString(self);
-    LTemplate := ResolveTemplate(Position(AStmt), LName);
+    LTemplate := ResolveTemplate(AStmt, LName);
 
     AStmt.Container := LTemplate;
     LResolveNames := true;
@@ -1226,7 +1234,7 @@ begin
 
   // we need to clone the original as we do replacements
   // not currently planning to support 'inherited', to allow to reference the original body in the original template from within the child body.
-  LTemplate := CloneTemplate(LTemplate);
+  LTemplate := LTemplate.CloneAsTemplate;
 
   if LResolveNames then
   begin
@@ -1282,6 +1290,36 @@ begin
   inherited write(FBuffer.ToString());
   FBuffer.clear;
 end;
+{$WARN WIDECHAR_REDUCED OFF}
+
+const
+  STRIP_CHARS: array [TStripAction] of set of char = ( //
+    [' ', #9], //
+    [' ', #9, #13, #10], //
+    [] //
+    );
+{$WARN WIDECHAR_REDUCED ON}
+
+procedure TNewLineStreamWriter.Handle(const AStmt: IStripStmt);
+
+begin
+  if AStmt.Action = saNone then
+  begin
+    FStripStmt := nil;
+    exit;
+  end;
+  if AStmt.Direction = sdLeft then
+  begin
+    while (FBuffer.length > 0) and charinset(FBuffer.Chars[FBuffer.length - 1], STRIP_CHARS[AStmt.Action]) do
+    begin
+      FBuffer.length := FBuffer.length - 1;
+    end;
+  end
+  else
+  begin
+    FStripStmt := AStmt;
+  end;
+end;
 
 procedure TNewLineStreamWriter.TrimEndOfLine;
 begin
@@ -1309,8 +1347,39 @@ procedure TNewLineStreamWriter.Write(const AString: string);
 var
   LChar: char;
   LIdx: integer;
+  LHasLooped: boolean;
+  LProcessed: integer;
 begin
-  for LIdx := 1 to length(AString) do
+  LIdx := 1;
+  if assigned(FStripStmt) then
+  begin
+    LHasLooped := false;
+    LProcessed := 0;
+    while LIdx < length(AString) do
+    begin
+      LChar := AString[LIdx];
+      if charinset(LChar, STRIP_CHARS[FStripStmt.Action]) then
+      begin
+        inc(LIdx);
+        LHasLooped := true;
+        if LChar = #10 then
+        begin
+          FStripStmt := nil;
+          break;
+        end;
+        continue;
+      end
+      else
+      begin
+        FStripStmt := nil;
+        break;
+      end;
+      inc(LProcessed);
+    end;
+    if LHasLooped and assigned(FStripStmt) and (LProcessed = length(AString)) then
+      exit;
+  end;
+  for LIdx := LIdx to length(AString) do
   begin
     LChar := AString[LIdx];
     if IsWhitespace(LChar) and FStartOfLine and FTrimLines then
