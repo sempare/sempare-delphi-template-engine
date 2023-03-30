@@ -513,49 +513,49 @@ type
     function CurrentContainer: ITemplate;
 
     function lookaheadValue: string;
-    function matchValue(const ASymbol: TTemplateSymbol): string;
-    procedure match(ASymbol: ITemplateSymbol); overload; inline;
-    function match(const ASymbol: TTemplateSymbol): TStripAction; overload;
-    function matchNumber(const ASymbol: TTemplateSymbol): extended;
-    procedure matchClosingBracket(const AExpect: TTemplateSymbol);
+    function MatchValue(const ASymbol: TTemplateSymbol): string;
+    procedure Match(ASymbol: ITemplateSymbol); overload; inline;
+    function Match(const ASymbol: TTemplateSymbol): TStripAction; overload;
+    function MatchNumber(const ASymbol: TTemplateSymbol): extended;
+    procedure MatchClosingBracket(const AExpect: TTemplateSymbol);
     function AddStripStmt(const AStmt: IStmt; const AStripAction: TStripAction; const ADirection: TStripDirection): IStmt;
     function AddEndStripStmt(const ATemplate: ITemplate; const AStripAction: TStripAction): ITemplate;
   private
-    function ruleStmts(Container: ITemplate; const AEndToken: TTemplateSymbolSet): TTemplateSymbol;
-    function ruleStmt: IStmt;
-    function ruleIgnoreNewline: IStmt;
-    function ruleCommentStmt: IStmt;
-    function ruleIdStmt: IStmt;
-    function ruleExprStmt: IStmt;
-    function ruleIncludeStmt: IStmt;
-    function rulePrintStmt: IStmt;
-    function ruleEndStmt: IStmt;
-    function ruleContinueStmt: IStmt;
-    function ruleBreakStmt: IStmt;
-    function ruleIfStmt: IStmt;
-    function ruleElIfStmt: IStmt;
-    function ruleExprList(const AEndToken: TTemplateSymbol = vsCloseRoundBracket): IExprList;
-    function ruleAssignStmt(ASymbol: IExpr): IStmt;
-    function rulePrintStmtVariable(AExpr: IExpr): IStmt; overload;
-    function ruleForStmt: IStmt;
-    function ruleWhileStmt: IStmt;
-    function ruleWithStmt: IStmt;
-    function ruleCycleStmt: IStmt;
-    function ruleTemplateStmt: IStmt;
+    function RuleStmts(Container: ITemplate; const AEndToken: TTemplateSymbolSet): TTemplateSymbol;
+    function RuleStmt: IStmt;
+    function RuleIgnoreNewline: IStmt;
+    function RuleCommentStmt: IStmt;
+    function RuleIdStmt: IStmt;
+    function RuleExprStmt: IStmt;
+    function RuleIncludeStmt: IStmt;
+    function RulePrintStmt: IStmt;
+    function RuleEndStmt: IStmt;
+    function RuleContinueStmt: IStmt;
+    function RuleBreakStmt: IStmt;
+    function RuleIfStmt: IStmt;
+    function RuleElIfStmt: IStmt;
+    function RuleExprList(const AEndToken: TTemplateSymbol = vsCloseRoundBracket): IExprList;
+    function RuleAssignStmt(ASymbol: IExpr): IStmt;
+    function RulePrintStmtVariable(AExpr: IExpr): IStmt; overload;
+    function RuleForStmt: IStmt;
+    function RuleWhileStmt: IStmt;
+    function RuleWithStmt: IStmt;
+    function RuleCycleStmt: IStmt;
+    function RuleTemplateStmt: IStmt;
 
-    function ruleBlockStmt: IStmt;
-    function ruleExtendsStmt: IStmt;
+    function RuleBlockStmt: IStmt;
+    function RuleExtendsStmt: IStmt;
 
-    function ruleExpression: IExpr;
-    function ruleSimpleExpression: IExpr;
-    function ruleTerm: IExpr;
-    function ruleSignedFactor: IExpr;
-    function ruleFactor: IExpr;
-    function ruleVariable: IExpr;
+    function RuleExpression: IExpr;
+    function RuleSimpleExpression: IExpr;
+    function RuleTerm: IExpr;
+    function RuleSignedFactor: IExpr;
+    function RuleFactor: IExpr;
+    function RuleVariable: IExpr;
 
-    function ruleFunctionExpr(const ASymbol: string): IExpr;
-    function ruleMethodExpr(AExpr: IExpr; AMethodExpr: IExpr): IExpr;
-    function ruleRequireStmt: IStmt;
+    function RuleFunctionExpr(const ASymbol: string): IExpr;
+    function RuleMethodExpr(AExpr: IExpr; AMethodExpr: IExpr): IExpr;
+    function RuleRequireStmt: IStmt;
 
     function GetValueSeparatorSymbol: TTemplateSymbol;
   public
@@ -607,8 +607,13 @@ begin
 end;
 
 function AsVarString(AExpr: IExpr): string;
+var
+  LVar: IVariableExpr;
 begin
-  exit((AExpr as IVariableExpr).Variable);
+  if supports(AExpr, IVariableExpr, LVar) then
+    exit(LVar.Variable)
+  else
+    exit('');
 end;
 
 function IsEnd(AStmt: IStmt): boolean;
@@ -670,12 +675,12 @@ begin
     exit(vsComma);
 end;
 
-procedure TTemplateParser.matchClosingBracket(const AExpect: TTemplateSymbol);
+procedure TTemplateParser.MatchClosingBracket(const AExpect: TTemplateSymbol);
 begin
   assert(AExpect in [vsCloseRoundBracket, vsCloseSquareBracket]);
   if FLookahead.Token in ValueSeparators then
-    match(OppositeValueSepartor(FLookahead.Token));
-  match(AExpect);
+    Match(OppositeValueSepartor(FLookahead.Token));
+  Match(AExpect);
 end;
 
 function TTemplateParser.AddEndStripStmt(const ATemplate: ITemplate; const AStripAction: TStripAction): ITemplate;
@@ -715,7 +720,7 @@ end;
 const
   IF_ELIF_END: TTemplateSymbolSet = [vsELIF, vsElse, vsEND];
 
-function TTemplateParser.ruleIfStmt: IStmt;
+function TTemplateParser.RuleIfStmt: IStmt;
 var
   LConditionalExpr: IExpr;
   LTrueContainer: ITemplate;
@@ -729,16 +734,16 @@ var
 begin
   LOptions := Preserve.Value<TParserOptions>(FOptions, FOptions + [poAllowElse, poAllowEnd, poAllowElIf]);
   LSymbol := FLookahead;
-  match(vsIF);
-  LConditionalExpr := ruleExpression;
+  Match(vsIF);
+  LConditionalExpr := RuleExpression;
 
-  LTrueStripAction := match(vsEndScript);
+  LTrueStripAction := Match(vsEndScript);
   // create new container for true condition
   PushContainer;
   LTrueContainer := self.CurrentContainer;
   AddEndStripStmt(LTrueContainer, LTrueStripAction);
 
-  ruleStmts(LTrueContainer, IF_ELIF_END);
+  RuleStmts(LTrueContainer, IF_ELIF_END);
   PopContainer;
 
   PushContainer;
@@ -749,19 +754,19 @@ begin
   begin
     while (FLookahead.Token = vsELIF) do
     begin
-      LContainerAdd.Add(ruleElIfStmt());
+      LContainerAdd.Add(RuleElIfStmt());
     end;
   end
   else if FLookahead.Token = vsElse then
   begin
-    match(vsElse);
-    LFalseStripAction := match(vsEndScript);
+    Match(vsElse);
+    LFalseStripAction := Match(vsEndScript);
     AddEndStripStmt(LFalseContainer, LFalseStripAction);
-    ruleStmts(LFalseContainer, [vsEND]);
+    RuleStmts(LFalseContainer, [vsEND]);
   end;
   PopContainer;
-  match(vsEND);
-  LEndStripAction := match(vsEndScript);
+  Match(vsEND);
+  LEndStripAction := Match(vsEndScript);
 
   if (eoEvalEarly in FContext.Options) and IsValue(LConditionalExpr) then
   begin
@@ -774,7 +779,7 @@ begin
   result := AddStripStmt(result, LEndStripAction, sdRight);
 end;
 
-function TTemplateParser.ruleIgnoreNewline: IStmt;
+function TTemplateParser.RuleIgnoreNewline: IStmt;
 var
   LSymbol: ITemplateSymbol;
   LContainerTemplate: ITemplate;
@@ -785,23 +790,23 @@ begin
   LOptions := Preserve.Value<TParserOptions>(FOptions, FOptions + [poAllowEnd]);
 
   LSymbol := FLookahead;
-  match(vsIgnoreNL);
-  LStripAction := match(vsEndScript);
+  Match(vsIgnoreNL);
+  LStripAction := Match(vsEndScript);
   PushContainer;
   LContainerTemplate := CurrentContainer;
   AddEndStripStmt(LContainerTemplate, LStripAction);
 
-  ruleStmts(LContainerTemplate, [vsEND]);
+  RuleStmts(LContainerTemplate, [vsEND]);
 
-  match(vsEND);
-  LEndStripAction := match(vsEndScript);
+  Match(vsEND);
+  LEndStripAction := Match(vsEndScript);
   PopContainer;
 
   result := TProcessTemplateStmt.Create(LSymbol.Position, LContainerTemplate, false);
   result := AddStripStmt(result, LEndStripAction, sdRight);
 end;
 
-function TTemplateParser.ruleIncludeStmt: IStmt;
+function TTemplateParser.RuleIncludeStmt: IStmt;
 var
   LSymbol: ITemplateSymbol;
   LIncludeExpr: IExpr;
@@ -811,20 +816,20 @@ var
   LStripAction: TStripAction;
 begin
   LSymbol := FLookahead;
-  match(vsInclude);
-  match(vsOpenRoundBracket);
+  Match(vsInclude);
+  Match(vsOpenRoundBracket);
 
-  LIncludeExpr := ruleExpression;
+  LIncludeExpr := RuleExpression;
 
   LValueSeparator := GetValueSeparatorSymbol;
   if FLookahead.Token = LValueSeparator then
   begin
-    match(LValueSeparator);
-    LScopeExpr := ruleExpression;
+    Match(LValueSeparator);
+    LScopeExpr := RuleExpression;
   end;
 
-  matchClosingBracket(vsCloseRoundBracket);
-  LStripAction := match(vsEndScript);
+  MatchClosingBracket(vsCloseRoundBracket);
+  LStripAction := Match(vsEndScript);
 
   if LScopeExpr <> nil then
   begin
@@ -839,31 +844,31 @@ begin
   result := AddStripStmt(result, LStripAction, sdRight);
 end;
 
-function TTemplateParser.ruleRequireStmt: IStmt;
+function TTemplateParser.RuleRequireStmt: IStmt;
 var
   LSymbol: ITemplateSymbol;
   LStripAction: TStripAction;
 begin
   LSymbol := FLookahead;
-  match(vsRequire);
-  match(vsOpenRoundBracket);
-  result := TRequireStmt.Create(LSymbol.Position, self.ruleExprList());
-  matchClosingBracket(vsCloseRoundBracket);
-  LStripAction := match(vsEndScript);
+  Match(vsRequire);
+  Match(vsOpenRoundBracket);
+  result := TRequireStmt.Create(LSymbol.Position, self.RuleExprList());
+  MatchClosingBracket(vsCloseRoundBracket);
+  LStripAction := Match(vsEndScript);
   result := AddStripStmt(result, LStripAction, sdRight);
 end;
 
-function TTemplateParser.ruleMethodExpr(AExpr: IExpr; AMethodExpr: IExpr): IExpr;
+function TTemplateParser.RuleMethodExpr(AExpr: IExpr; AMethodExpr: IExpr): IExpr;
 var
   LSymbol: ITemplateSymbol;
 begin
   LSymbol := FLookahead;
-  match(vsOpenRoundBracket);
-  result := TMethodCallExpr.Create(LSymbol.Position, AExpr, AsVarString(AMethodExpr), ruleExprList);
-  matchClosingBracket(vsCloseRoundBracket);
+  Match(vsOpenRoundBracket);
+  result := TMethodCallExpr.Create(LSymbol.Position, AExpr, AsVarString(AMethodExpr), RuleExprList);
+  MatchClosingBracket(vsCloseRoundBracket);
 end;
 
-function TTemplateParser.ruleStmts(Container: ITemplate; const AEndToken: TTemplateSymbolSet): TTemplateSymbol;
+function TTemplateParser.RuleStmts(Container: ITemplate; const AEndToken: TTemplateSymbolSet): TTemplateSymbol;
 var
   LStmt: IStmt;
   LParentContainer: ITemplateAdd;
@@ -875,15 +880,15 @@ var
   var
     LText: string;
   begin
-    LText := matchValue(vsText);
+    LText := MatchValue(vsText);
     if LText = '' then
       exit(nil);
-    exit(rulePrintStmtVariable(TValueExpr.Create(LSymbol.Position, LText)));
+    exit(RulePrintStmtVariable(TValueExpr.Create(LSymbol.Position, LText)));
   end;
 
   procedure SkipStmt;
   begin
-    matchValue(vsText)
+    MatchValue(vsText)
   end;
 
 begin
@@ -911,7 +916,7 @@ begin
         begin
           if LSymbol.StripWS then
             exclude(FOptions, poStripWS);
-          LStmt := ruleStmt;
+          LStmt := RuleStmt;
           if LStmt = nil then
             LLoop := false;
         end;
@@ -923,7 +928,7 @@ begin
   end;
 end;
 
-function TTemplateParser.ruleTemplateStmt: IStmt;
+function TTemplateParser.RuleTemplateStmt: IStmt;
 var
   LExpr: IExpr;
   LSymbol: ITemplateSymbol;
@@ -935,16 +940,16 @@ begin
   LOptions := Preserve.Value<TParserOptions>(FOptions, FOptions + [poAllowEnd]);
   LSymbol := FLookahead;
 
-  match(vsTemplate);
-  LExpr := ruleExpression;
-  LContainerStripAction := match(vsEndScript);
+  Match(vsTemplate);
+  LExpr := RuleExpression;
+  LContainerStripAction := Match(vsEndScript);
   PushContainer;
   LContainer := CurrentContainer;
   AddEndStripStmt(LContainer, LContainerStripAction);
-  ruleStmts(CurrentContainer, [vsEND]);
+  RuleStmts(CurrentContainer, [vsEND]);
 
-  match(vsEND);
-  LStripAction := match(vsEndScript);
+  Match(vsEND);
+  LStripAction := Match(vsEndScript);
   PopContainer;
 
   result := TDefineTemplateStmt.Create(LSymbol.Position, LExpr, LContainer);
@@ -952,20 +957,20 @@ begin
   LContainer.Optimise;
 end;
 
-function TTemplateParser.ruleSignedFactor: IExpr;
+function TTemplateParser.RuleSignedFactor: IExpr;
 var
   LSymbol: ITemplateSymbol;
 begin
   LSymbol := FLookahead;
 
   if LSymbol.Token in [vsMinus, vsPLUS] then
-    match(LSymbol.Token);
+    Match(LSymbol.Token);
 
-  result := ruleFactor;
+  result := RuleFactor;
 
   if LSymbol.Token = vsMinus then
   begin
-    result := ruleFactor;
+    result := RuleFactor;
     if (eoEvalEarly in FContext.Options) and IsValue(result) then
       exit(TValueExpr.Create(LSymbol.Position, -asnum(AsValue(result), FContext)))
     else
@@ -973,19 +978,19 @@ begin
   end;
 end;
 
-function TTemplateParser.ruleSimpleExpression: IExpr;
+function TTemplateParser.RuleSimpleExpression: IExpr;
 var
   LRightExpr: IExpr;
   LBinOp: TBinOp;
   LSymbol: ITemplateSymbol;
 begin
-  result := ruleTerm();
+  result := RuleTerm();
   LSymbol := FLookahead;
   if LSymbol.Token in [vsPLUS, vsMinus, vsOR] then
   begin
     TemplateBinop(LSymbol.Token, LBinOp);
-    match(LSymbol.Token);
-    LRightExpr := ruleSimpleExpression;
+    Match(LSymbol.Token);
+    LRightExpr := RuleSimpleExpression;
     if (eoEvalEarly in FContext.Options) and IsValue(result) and IsValue(LRightExpr) then
     begin
       case LBinOp of
@@ -1008,19 +1013,19 @@ begin
   end;
 end;
 
-function TTemplateParser.ruleTerm: IExpr;
+function TTemplateParser.RuleTerm: IExpr;
 var
   LRightExpr: IExpr;
   LBinOp: TBinOp;
   LSymbol: ITemplateSymbol;
 begin
-  result := ruleSignedFactor;
+  result := RuleSignedFactor;
   LSymbol := FLookahead;
   if LSymbol.Token in [vsMULT, vsDIV, vsSLASH, vsMOD, vsAND] then
   begin
     TemplateBinop(LSymbol.Token, LBinOp);
-    match(LSymbol.Token);
-    LRightExpr := ruleTerm;
+    Match(LSymbol.Token);
+    LRightExpr := RuleTerm;
 
     if (eoEvalEarly in FContext.Options) and IsValue(result) and IsValue(LRightExpr) then
     begin
@@ -1043,53 +1048,53 @@ begin
 
 end;
 
-function TTemplateParser.ruleStmt: IStmt;
+function TTemplateParser.RuleStmt: IStmt;
 var
   LSymbol: ITemplateSymbol;
   LStripAction: TStripAction;
 begin
   result := nil;
   LSymbol := FLookahead;
-  LStripAction := match(vsStartScript);
+  LStripAction := Match(vsStartScript);
   case FLookahead.Token of
     vsBreak:
-      result := ruleBreakStmt;
+      result := RuleBreakStmt;
     vsContinue:
-      result := ruleContinueStmt;
+      result := RuleContinueStmt;
     vsIgnoreNL:
-      result := ruleIgnoreNewline;
+      result := RuleIgnoreNewline;
     vsComment:
-      result := ruleCommentStmt;
+      result := RuleCommentStmt;
     vsInclude:
-      result := ruleIncludeStmt;
+      result := RuleIncludeStmt;
     vsEND:
-      result := ruleEndStmt;
+      result := RuleEndStmt;
     vsEndScript, vsElse, vsELIF, vsOnBegin, vsOnEnd, vsOnEmpty, vsBetweenItem:
       ;
     vsIF:
-      result := ruleIfStmt;
+      result := RuleIfStmt;
     vsFor:
-      result := ruleForStmt;
+      result := RuleForStmt;
     vsCycle:
-      result := ruleCycleStmt;
+      result := RuleCycleStmt;
     vsPrint:
-      result := rulePrintStmt;
+      result := RulePrintStmt;
     vsWhile:
-      result := ruleWhileStmt;
+      result := RuleWhileStmt;
     vswith:
-      result := ruleWithStmt;
+      result := RuleWithStmt;
     vsRequire:
-      result := ruleRequireStmt;
+      result := RuleRequireStmt;
     vsTemplate:
-      result := ruleTemplateStmt;
+      result := RuleTemplateStmt;
     vsID:
-      result := ruleIdStmt;
+      result := RuleIdStmt;
     vsBlock:
-      result := ruleBlockStmt;
+      result := RuleBlockStmt;
     vsExtends:
-      result := ruleExtendsStmt;
+      result := RuleExtendsStmt;
   else
-    result := ruleExprStmt;
+    result := RuleExprStmt;
   end;
   if (eoEmbedException in FContext.Options) and (result <> nil) then
   begin
@@ -1098,7 +1103,7 @@ begin
   result := AddStripStmt(result, LStripAction, sdLeft);
 end;
 
-function TTemplateParser.ruleVariable: IExpr;
+function TTemplateParser.RuleVariable: IExpr;
 var
   LId: string;
   LIdVal: TValue;
@@ -1108,7 +1113,7 @@ var
 begin
   LDone := false;
   LSymbol := FLookahead;
-  LId := matchValue(vsID);
+  LId := MatchValue(vsID);
   if (eoEvalVarsEarly in FContext.Options) and FContext.TryGetVariable(LId, LIdVal) then
     result := TValueExpr.Create(LSymbol.Position, LIdVal)
   else
@@ -1119,24 +1124,24 @@ begin
     case LSymbol.Token of
       vsOpenRoundBracket:
         begin
-          result := self.ruleFunctionExpr(LId);
+          result := self.RuleFunctionExpr(LId);
         end;
       vsOpenSquareBracket:
         begin
-          match(vsOpenSquareBracket);
-          LExpr := self.ruleExpression;
+          Match(vsOpenSquareBracket);
+          LExpr := self.RuleExpression;
           if (eoEvalVarsEarly in FContext.Options) and IsValue(result) and IsValue(LExpr) then
             result := TValueExpr.Create(LSymbol.Position, deref(LSymbol.Position, AsValue(result), AsValue(LExpr), eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext))
           else
             result := TVariableDerefExpr.Create(LSymbol.Position, dtArray, result, LExpr);
-          match(vsCloseSquareBracket);
+          Match(vsCloseSquareBracket);
         end;
       vsDOT:
         begin
-          match(vsDOT);
-          LExpr := TVariableExpr.Create(LSymbol.Position, matchValue(vsID));
+          Match(vsDOT);
+          LExpr := TVariableExpr.Create(LSymbol.Position, MatchValue(vsID));
           if FLookahead.Token = vsOpenRoundBracket then
-            result := ruleMethodExpr(result, LExpr)
+            result := RuleMethodExpr(result, LExpr)
           else
           begin
             if (eoEvalVarsEarly in FContext.Options) and IsValue(result) and IsValue(LExpr) then
@@ -1153,16 +1158,16 @@ begin
   end;
 end;
 
-function TTemplateParser.ruleAssignStmt(ASymbol: IExpr): IStmt;
+function TTemplateParser.RuleAssignStmt(ASymbol: IExpr): IStmt;
 var
   LSymbol: ITemplateSymbol;
 begin
   LSymbol := FLookahead;
-  match(vsCOLONEQ);
-  exit(TAssignStmt.Create(LSymbol.Position, (ASymbol as IVariableExpr).Variable, ruleExpression));
+  Match(vsCOLONEQ);
+  exit(TAssignStmt.Create(LSymbol.Position, AsVarString(ASymbol), RuleExpression));
 end;
 
-function TTemplateParser.ruleBlockStmt: IStmt;
+function TTemplateParser.RuleBlockStmt: IStmt;
 var
   LName: IExpr;
   LSymbol: ITemplateSymbol;
@@ -1175,17 +1180,17 @@ begin
 
   LSymbol := FLookahead;
 
-  match(vsBlock);
-  LName := ruleExpression;
-  LContainerStripAction := match(vsEndScript);
+  Match(vsBlock);
+  LName := RuleExpression;
+  LContainerStripAction := Match(vsEndScript);
 
   PushContainer;
   LContainer := CurrentContainer;
   AddEndStripStmt(LContainer, LContainerStripAction);
-  ruleStmts(LContainer, [vsEND]);
+  RuleStmts(LContainer, [vsEND]);
 
-  match(vsEND);
-  LStripAction := match(vsEndScript);
+  Match(vsEND);
+  LStripAction := Match(vsEndScript);
 
   PopContainer;
   result := TBlockStmt.Create(LSymbol.Position, LName, LContainer);
@@ -1193,68 +1198,68 @@ begin
   LContainer.Optimise;
 end;
 
-function TTemplateParser.ruleBreakStmt: IStmt;
+function TTemplateParser.RuleBreakStmt: IStmt;
 var
   LSymbol: ITemplateSymbol;
   LStripAction: TStripAction;
 begin
   LSymbol := FLookahead;
-  match(vsBreak);
-  LStripAction := match(vsEndScript);
+  Match(vsBreak);
+  LStripAction := Match(vsEndScript);
   if not(poInLoop in FOptions) then
     RaiseError(LSymbol.Position, SContinueShouldBeInALoop);
   result := TBreakStmt.Create(LSymbol.Position);
   result := AddStripStmt(result, LStripAction, sdRight);
 end;
 
-function TTemplateParser.ruleCommentStmt: IStmt;
+function TTemplateParser.RuleCommentStmt: IStmt;
 var
   LSymbol: ITemplateSymbol;
   LStartStripAction: TStripAction;
   LStripAction: TStripAction;
 begin
   LSymbol := FLookahead;
-  LStartStripAction := match(vsComment);
-  LStripAction := match(vsEndScript);
+  LStartStripAction := Match(vsComment);
+  LStripAction := Match(vsEndScript);
   result := TCommentStmt.Create(LSymbol.Position);
   result := AddStripStmt(result, LStartStripAction, sdLeft);
   result := AddStripStmt(result, LStripAction, sdRight);
 end;
 
-function TTemplateParser.ruleContinueStmt: IStmt;
+function TTemplateParser.RuleContinueStmt: IStmt;
 var
   LSymbol: ITemplateSymbol;
   LStripAction: TStripAction;
 begin
   LSymbol := FLookahead;
-  match(vsContinue);
-  LStripAction := match(vsEndScript);
+  Match(vsContinue);
+  LStripAction := Match(vsEndScript);
   if not(poInLoop in FOptions) then
     RaiseError(LSymbol.Position, SContinueShouldBeInALoop);
   result := TContinueStmt.Create(LSymbol.Position);
   result := AddStripStmt(result, LStripAction, sdRight);
 end;
 
-function TTemplateParser.ruleCycleStmt: IStmt;
+function TTemplateParser.RuleCycleStmt: IStmt;
 var
   LSymbol: ITemplateSymbol;
   LListExpr: IExprList;
   LStripAction: TStripAction;
 begin
   LSymbol := FLookahead;
-  match(vsCycle);
-  match(vsOpenRoundBracket);
+  Match(vsCycle);
+  Match(vsOpenRoundBracket);
 
-  LListExpr := ruleExprList();
+  LListExpr := RuleExprList();
 
-  matchClosingBracket(vsCloseRoundBracket);
-  LStripAction := match(vsEndScript);
+  MatchClosingBracket(vsCloseRoundBracket);
+  LStripAction := Match(vsEndScript);
 
   result := TCycleStmt.Create(LSymbol.Position, LListExpr);
   result := AddStripStmt(result, LStripAction, sdRight);
 end;
 
-function TTemplateParser.ruleElIfStmt: IStmt;
+function TTemplateParser.RuleElIfStmt: IStmt;
 var
   LConditionExpr: IExpr;
   LTrueContainer: ITemplate;
@@ -1271,27 +1276,27 @@ begin
 
   LOptions := Preserve.Value<TParserOptions>(FOptions, FOptions + [poAllowElse, poHasElse, poAllowEnd]);
 
-  LStripAction := match(vsELIF);
+  LStripAction := Match(vsELIF);
 
-  LConditionExpr := ruleExpression;
+  LConditionExpr := RuleExpression;
 
-  LTrueStripAction := match(vsEndScript);
+  LTrueStripAction := Match(vsEndScript);
   // create new container for true condition
   PushContainer;
   LTrueContainer := self.CurrentContainer;
   AddEndStripStmt(LTrueContainer, LTrueStripAction);
-  ruleStmts(LTrueContainer, IF_ELIF_END);
+  RuleStmts(LTrueContainer, IF_ELIF_END);
   PopContainer;
 
   if FLookahead.Token = vsElse then
   begin
-    match(vsElse);
-    LFalseStripAction := match(vsEndScript);
+    Match(vsElse);
+    LFalseStripAction := Match(vsEndScript);
 
     PushContainer;
     LFalseContainer := self.CurrentContainer;
     AddEndStripStmt(LFalseContainer, LFalseStripAction);
-    ruleStmts(LFalseContainer, [vsEND, vsELIF]);
+    RuleStmts(LFalseContainer, [vsEND, vsELIF]);
 
     PopContainer;
   end;
@@ -1307,18 +1312,18 @@ begin
   result := AddStripStmt(result, LStripAction, sdRight);
 end;
 
-function TTemplateParser.ruleEndStmt: IStmt;
+function TTemplateParser.RuleEndStmt: IStmt;
 var
   LSymbol: ITemplateSymbol;
 begin
   LSymbol := FLookahead;
-  // NOTE: we do not match anything as we want lookahead functions to continue to work
+  // NOTE: we do not Match anything as we want lookahead functions to continue to work
   if not(poAllowEnd in FOptions) then
     RaiseError(LSymbol.Position, SEndNotExpected);
   exit(TEndStmt.Create(LSymbol.Position));
 end;
 
-function TTemplateParser.ruleExpression: IExpr;
+function TTemplateParser.RuleExpression: IExpr;
 var
   LSymbol: ITemplateSymbol;
   LRight: IExpr;
@@ -1326,13 +1331,13 @@ var
   LFalseExpr: IExpr;
   LBinOp: TBinOp;
 begin
-  result := ruleSimpleExpression();
+  result := RuleSimpleExpression();
   LSymbol := FLookahead;
   if LSymbol.Token in [vsEQ, vsNotEQ, vsLT, vsLTE, vsGT, vsGTE, vsIn] then
   begin
     TemplateBinop(LSymbol.Token, LBinOp);
-    match(LSymbol);
-    LRight := ruleExpression;
+    Match(LSymbol);
+    LRight := RuleExpression;
     if (eoEvalEarly in FContext.Options) and IsValue(result) and IsValue(LRight) then
     begin
       case LBinOp of
@@ -1355,10 +1360,10 @@ begin
 
   if FLookahead.Token = vsQUESTION then
   begin
-    match(vsQUESTION);
-    LTrueExpr := ruleExpression();
-    match(vsColon);
-    LFalseExpr := ruleExpression();
+    Match(vsQUESTION);
+    LTrueExpr := RuleExpression();
+    Match(vsColon);
+    LFalseExpr := RuleExpression();
 
     if (eoEvalEarly in FContext.Options) and IsValue(result) then
     begin
@@ -1371,7 +1376,7 @@ begin
   end;
 end;
 
-function TTemplateParser.ruleFactor: IExpr;
+function TTemplateParser.RuleFactor: IExpr;
 var
   LSymbol: ITemplateSymbol;
 
@@ -1380,30 +1385,30 @@ begin
   case LSymbol.Token of
     vsOpenSquareBracket:
       begin
-        match(vsOpenSquareBracket);
-        result := TArrayExpr.Create(LSymbol.Position, ruleExprList(vsCloseSquareBracket));
-        matchClosingBracket(vsCloseSquareBracket);
+        Match(vsOpenSquareBracket);
+        result := TArrayExpr.Create(LSymbol.Position, RuleExprList(vsCloseSquareBracket));
+        MatchClosingBracket(vsCloseSquareBracket);
         exit;
       end;
     vsOpenRoundBracket:
       begin
-        match(vsOpenRoundBracket);
-        result := ruleExpression;
-        matchClosingBracket(vsCloseRoundBracket);
+        Match(vsOpenRoundBracket);
+        result := RuleExpression;
+        MatchClosingBracket(vsCloseRoundBracket);
         exit;
       end;
     vsString:
-      exit(TValueExpr.Create(LSymbol.Position, matchValue(vsString)));
+      exit(TValueExpr.Create(LSymbol.Position, MatchValue(vsString)));
     vsNumber:
-      exit(TValueExpr.Create(LSymbol.Position, matchNumber(vsNumber)));
+      exit(TValueExpr.Create(LSymbol.Position, MatchNumber(vsNumber)));
     vsBoolean:
-      exit(TValueExpr.Create(LSymbol.Position, matchValue(vsBoolean) = 'true'));
+      exit(TValueExpr.Create(LSymbol.Position, MatchValue(vsBoolean) = 'true'));
     vsID:
-      exit(self.ruleVariable());
+      exit(self.RuleVariable());
     vsNOT:
       begin
-        match(vsNOT);
-        result := ruleExpression;
+        Match(vsNOT);
+        result := RuleExpression;
         if (eoEvalEarly in FContext.Options) and IsValue(result) then
           exit(TValueExpr.Create(LSymbol.Position, not AsBoolean(AsValue(result))))
         else
@@ -1415,7 +1420,7 @@ end;
 const
   ONFIRST_ONEND_ONLOOP_ELSE: TTemplateSymbolSet = [vsOnBegin, vsOnEnd, vsOnEmpty, vsBetweenItem, vsEND];
 
-function TTemplateParser.ruleForStmt: IStmt;
+function TTemplateParser.RuleForStmt: IStmt;
 var
   LId: string;
   LRangeExpr: IExpr;
@@ -1460,58 +1465,58 @@ var
 begin
   LSymbol := FLookahead;
   LOptions := Preserve.Value<TParserOptions>(FOptions, FOptions + [poInLoop, poAllowEnd]);
-  match(vsFor);
-  LId := matchValue(vsID);
+  Match(vsFor);
+  LId := MatchValue(vsID);
   if FLookahead.Token in [vsIn, vsOf] then
   begin
     LForOp := TemplateForop(LSymbol.Position, FLookahead.Token);
-    match(FLookahead.Token);
-    LRangeExpr := ruleExpression;
+    Match(FLookahead.Token);
+    LRangeExpr := RuleExpression;
   end
   else
   begin
-    match(vsCOLONEQ);
-    LLowValueExpr := ruleExpression();
+    Match(vsCOLONEQ);
+    LLowValueExpr := RuleExpression();
     LForOp := TemplateForop(LSymbol.Position, FLookahead.Token);
     if FLookahead.Token in [vsDownto, vsTo] then
-      match(FLookahead.Token)
+      Match(FLookahead.Token)
     else
       RaiseError(LSymbol.Position, SUnexpectedToken);
-    LHighValueExpr := ruleExpression();
+    LHighValueExpr := RuleExpression();
   end;
 
   if FLookahead.Token = vsOffset then
   begin
-    match(vsOffset);
-    LOffsetExpr := ruleExpression();
+    Match(vsOffset);
+    LOffsetExpr := RuleExpression();
   end;
 
   if FLookahead.Token = vsLimit then
   begin
-    match(vsLimit);
-    LLimitExpr := ruleExpression();
+    Match(vsLimit);
+    LLimitExpr := RuleExpression();
   end;
 
   if FLookahead.Token = vsStep then
   begin
-    match(vsStep);
-    LStep := ruleExpression();
+    Match(vsStep);
+    LStep := RuleExpression();
   end;
 
-  LContainerStripAction := match(vsEndScript);
+  LContainerStripAction := Match(vsEndScript);
   LBlockSymbol := vsInvalid;
   LPrevSymbol := vsInvalid;
   i := 0;
   repeat
     if (i > 1) and (i mod 2 = 0) then
     begin
-      match(LBlockSymbol);
-      LContainerStripAction := match(vsEndScript);
+      Match(LBlockSymbol);
+      LContainerStripAction := Match(vsEndScript);
     end;
     PushContainer;
     LContainerTemplate := CurrentContainer;
     AddEndStripStmt(LContainerTemplate, LContainerStripAction);
-    LBlockSymbol := ruleStmts(LContainerTemplate, ONFIRST_ONEND_ONLOOP_ELSE);
+    LBlockSymbol := RuleStmts(LContainerTemplate, ONFIRST_ONEND_ONLOOP_ELSE);
     PopContainer;
     if (i mod 2 = 0) then
     begin
@@ -1520,13 +1525,13 @@ begin
     LPrevSymbol := LBlockSymbol;
     inc(i);
   until LBlockSymbol = vsEND;
-  match(vsEND);
+  Match(vsEND);
   if LOnLoop = nil then
   begin
     LOnLoop := LContainerTemplate;
   end;
 
-  LEndStripAction := match(vsEndScript);
+  LEndStripAction := Match(vsEndScript);
 
   if LForOp in [TForOp.foIn, TForOp.foOf] then
     result := TForInStmt.Create(LSymbol.Position, LId, LForOp, LRangeExpr, LOffsetExpr, LLimitExpr, LOnLoop, LOnFirst, LOnEnd, LOnEmpty, LBetweenItem)
@@ -1536,7 +1541,7 @@ begin
   Optimise([LOnLoop, LOnFirst, LOnEnd, LOnEmpty, LBetweenItem]);
 end;
 
-function TTemplateParser.ruleFunctionExpr(const ASymbol: string): IExpr;
+function TTemplateParser.RuleFunctionExpr(const ASymbol: string): IExpr;
 var
   LFunctions: TArray<TRttiMethod>;
   LSymbol: ITemplateSymbol;
@@ -1544,33 +1549,33 @@ begin
   LSymbol := FLookahead;
   if not FContext.TryGetFunction(ASymbol, LFunctions) then
     RaiseError(LSymbol.Position, SFunctionNotRegisteredInContext, [ASymbol]);
-  match(vsOpenRoundBracket);
-  result := TFunctionCallExpr.Create(LSymbol.Position, LFunctions, ruleExprList);
-  matchClosingBracket(vsCloseRoundBracket);
+  Match(vsOpenRoundBracket);
+  result := TFunctionCallExpr.Create(LSymbol.Position, LFunctions, RuleExprList);
+  MatchClosingBracket(vsCloseRoundBracket);
 end;
 
-function TTemplateParser.ruleIdStmt: IStmt;
+function TTemplateParser.RuleIdStmt: IStmt;
 var
   LSymbol: ITemplateSymbol;
   LExpr: IExpr;
   LStripAction: TStripAction;
 begin
   LSymbol := FLookahead;
-  LExpr := ruleVariable;
+  LExpr := RuleVariable;
   if FLookahead.Token = vsCOLONEQ then
   begin
-    result := ruleAssignStmt(LExpr);
+    result := RuleAssignStmt(LExpr);
   end
   else
   begin
     LExpr := TEncodeExpr.Create(LSymbol.Position, LExpr);
-    result := rulePrintStmtVariable(LExpr);
+    result := RulePrintStmtVariable(LExpr);
   end;
-  LStripAction := match(vsEndScript);
+  LStripAction := Match(vsEndScript);
   result := AddStripStmt(result, LStripAction, sdRight);
 end;
 
-function TTemplateParser.ruleWhileStmt: IStmt;
+function TTemplateParser.RuleWhileStmt: IStmt;
 var
   LCondition: IExpr;
   LOptions: IPreserveValue<TParserOptions>;
@@ -1612,35 +1617,35 @@ begin
   LSymbol := FLookahead;
   LOptions := Preserve.Value<TParserOptions>(FOptions, FOptions + [poInLoop, poAllowEnd]);
 
-  match(vsWhile);
-  LCondition := ruleExpression;
+  Match(vsWhile);
+  LCondition := RuleExpression;
 
   if FLookahead.Token = vsOffset then
   begin
-    match(vsOffset);
-    LOffsetExpr := ruleExpression();
+    Match(vsOffset);
+    LOffsetExpr := RuleExpression();
   end;
 
   if FLookahead.Token = vsLimit then
   begin
-    match(vsLimit);
-    LLimitExpr := ruleExpression();
+    Match(vsLimit);
+    LLimitExpr := RuleExpression();
   end;
 
-  LContainerStripAction := match(vsEndScript);
+  LContainerStripAction := Match(vsEndScript);
   LBlockSymbol := vsInvalid;
   LPrevSymbol := vsInvalid;
   i := 0;
   repeat
     if (i > 1) and (i mod 2 = 0) then
     begin
-      match(LBlockSymbol);
-      LContainerStripAction := match(vsEndScript);
+      Match(LBlockSymbol);
+      LContainerStripAction := Match(vsEndScript);
     end;
     PushContainer;
     LContainerTemplate := CurrentContainer;
     AddEndStripStmt(LContainerTemplate, LContainerStripAction);
-    LBlockSymbol := ruleStmts(LContainerTemplate, ONFIRST_ONEND_ONLOOP_ELSE);
+    LBlockSymbol := RuleStmts(LContainerTemplate, ONFIRST_ONEND_ONLOOP_ELSE);
     PopContainer;
     if (i mod 2 = 0) then
     begin
@@ -1649,12 +1654,12 @@ begin
     LPrevSymbol := LBlockSymbol;
     inc(i);
   until LBlockSymbol = vsEND;
-  match(vsEND);
+  Match(vsEND);
   if LOnLoop = nil then
   begin
     LOnLoop := LContainerTemplate;
   end;
-  LEndStripAction := match(vsEndScript);
+  LEndStripAction := Match(vsEndScript);
 
   if (eoEvalEarly in FContext.Options) and IsValue(LCondition) and not AsBoolean(AsValue(LCondition)) then
     result := nil
@@ -1664,7 +1669,7 @@ begin
   Optimise([LOnLoop, LOnFirst, LOnEnd, LOnEmpty, LBetweenItem]);
 end;
 
-function TTemplateParser.ruleWithStmt: IStmt;
+function TTemplateParser.RuleWithStmt: IStmt;
 var
   LExpr: IExpr;
   LSymbol: ITemplateSymbol;
@@ -1677,17 +1682,17 @@ begin
 
   LSymbol := FLookahead;
 
-  match(vswith);
-  LExpr := ruleExpression;
-  LContainerStripAction := match(vsEndScript);
+  Match(vswith);
+  LExpr := RuleExpression;
+  LContainerStripAction := Match(vsEndScript);
 
   PushContainer;
   LContainer := CurrentContainer;
   AddEndStripStmt(LContainer, LContainerStripAction);
-  ruleStmts(LContainer, [vsEND]);
+  RuleStmts(LContainer, [vsEND]);
 
-  match(vsEND);
-  LEndStripAction := match(vsEndScript);
+  Match(vsEND);
+  LEndStripAction := Match(vsEndScript);
 
   PopContainer;
   result := TWithStmt.Create(LSymbol.Position, LExpr, LContainer);
@@ -1695,23 +1700,23 @@ begin
   LContainer.Optimise;
 end;
 
-function TTemplateParser.rulePrintStmt: IStmt;
+function TTemplateParser.RulePrintStmt: IStmt;
 var
   LSymbol: ITemplateSymbol;
   LExpr: IExpr;
   LStripAction: TStripAction;
 begin
   LSymbol := FLookahead;
-  match(vsPrint);
-  match(vsOpenRoundBracket);
-  LExpr := ruleExpression;
-  matchClosingBracket(vsCloseRoundBracket);
-  LStripAction := match(vsEndScript);
+  Match(vsPrint);
+  Match(vsOpenRoundBracket);
+  LExpr := RuleExpression;
+  MatchClosingBracket(vsCloseRoundBracket);
+  LStripAction := Match(vsEndScript);
   result := TPrintStmt.Create(LSymbol.Position, LExpr);
   result := AddStripStmt(result, LStripAction, sdRight);
 end;
 
-function TTemplateParser.rulePrintStmtVariable(AExpr: IExpr): IStmt;
+function TTemplateParser.RulePrintStmtVariable(AExpr: IExpr): IStmt;
 var
   LSymbol: ITemplateSymbol;
   LValueExpr: IValueExpr;
@@ -1722,7 +1727,7 @@ begin
   exit(TPrintStmt.Create(LSymbol.Position, AExpr));
 end;
 
-function TTemplateParser.ruleExprList(const AEndToken: TTemplateSymbol): IExprList;
+function TTemplateParser.RuleExprList(const AEndToken: TTemplateSymbol): IExprList;
 var
   LSymbol: ITemplateSymbol;
   LValueSeparator: TTemplateSymbol;
@@ -1730,27 +1735,27 @@ begin
   LSymbol := FLookahead;
   result := TExprList.Create(LSymbol.Position);
   if FLookahead.Token <> AEndToken then
-    result.AddExpr(ruleExpression);
+    result.AddExpr(RuleExpression);
   LValueSeparator := GetValueSeparatorSymbol;
   while FLookahead.Token = LValueSeparator do
   begin
-    match(LValueSeparator);
-    result.AddExpr(ruleExpression);
+    Match(LValueSeparator);
+    result.AddExpr(RuleExpression);
   end;
 end;
 
-function TTemplateParser.ruleExprStmt: IStmt;
+function TTemplateParser.RuleExprStmt: IStmt;
 var
   LSymbol: ITemplateSymbol;
   LStripAction: TStripAction;
 begin
   LSymbol := FLookahead;
-  result := rulePrintStmtVariable(TEncodeExpr.Create(LSymbol.Position, ruleExpression));
-  LStripAction := match(vsEndScript);
+  result := RulePrintStmtVariable(TEncodeExpr.Create(LSymbol.Position, RuleExpression));
+  LStripAction := Match(vsEndScript);
   result := AddStripStmt(result, LStripAction, sdRight);
 end;
 
-function TTemplateParser.ruleExtendsStmt: IStmt;
+function TTemplateParser.RuleExtendsStmt: IStmt;
 var
   LName: IExpr;
   LScopeExpr: IExpr;
@@ -1764,27 +1769,27 @@ begin
 
   LSymbol := FLookahead;
 
-  match(vsExtends);
-  match(vsOpenRoundBracket);
-  LName := ruleExpression;
+  Match(vsExtends);
+  Match(vsOpenRoundBracket);
+  LName := RuleExpression;
 
   if FLookahead.Token = vsComma then
   begin
-    match(vsComma);
-    LScopeExpr := ruleExpression;
+    Match(vsComma);
+    LScopeExpr := RuleExpression;
   end;
 
-  match(vsCloseRoundBracket);
+  Match(vsCloseRoundBracket);
 
-  match(vsEndScript); // we don't care about the strip action on this as content is ignored inside an extends block
+  Match(vsEndScript); // we don't care about the strip action on this as content is ignored inside an extends block
 
   PushContainer;
   LContainer := CurrentContainer;
 
-  ruleStmts(LContainer, [vsEND]);
+  RuleStmts(LContainer, [vsEND]);
 
-  match(vsEND);
-  LEndStripAction := match(vsEndScript);
+  Match(vsEND);
+  LEndStripAction := Match(vsEndScript);
 
   PopContainer;
 
@@ -1826,7 +1831,7 @@ begin
     exit('');
 end;
 
-function TTemplateParser.match(const ASymbol: TTemplateSymbol): TStripAction;
+function TTemplateParser.Match(const ASymbol: TTemplateSymbol): TStripAction;
 var
   LSymbol: ITemplateSymbol;
 begin
@@ -1853,17 +1858,17 @@ begin
   RaiseError(LSymbol.Position, format(SParsingErrorExpecting, [TemplateSymbolToString(ASymbol)]));
 end;
 
-procedure TTemplateParser.match(ASymbol: ITemplateSymbol);
+procedure TTemplateParser.Match(ASymbol: ITemplateSymbol);
 begin
-  match(ASymbol.Token);
+  Match(ASymbol.Token);
 end;
 
-function TTemplateParser.matchNumber(const ASymbol: TTemplateSymbol): extended;
+function TTemplateParser.MatchNumber(const ASymbol: TTemplateSymbol): extended;
 begin
-  exit(StrToFloat(matchValue(ASymbol), FContext.FormatSettings));
+  exit(StrToFloat(MatchValue(ASymbol), FContext.FormatSettings));
 end;
 
-function TTemplateParser.matchValue(const ASymbol: TTemplateSymbol): string;
+function TTemplateParser.MatchValue(const ASymbol: TTemplateSymbol): string;
 var
   LSymbol: ITemplateSymbol;
 begin
@@ -1887,9 +1892,9 @@ begin
   result := CurrentContainer;
   if AStream.Size > 0 then
   begin
-    ruleStmts(result, []);
+    RuleStmts(result, []);
   end;
-  match(vsEOF);
+  Match(vsEOF);
   result.Optimise;
   if eoPrettyPrint in FContext.Options then
     writeln(Template.PrettyPrint(result));
