@@ -1625,16 +1625,20 @@ begin
   Match(vsWhile);
   LCondition := RuleExpression;
 
-  if FLookahead.Token = vsOffset then
+  while FLookahead.Token in [vsOffset, vsLimit] do
   begin
-    Match(vsOffset);
-    LOffsetExpr := RuleExpression();
-  end;
-
-  if FLookahead.Token = vsLimit then
-  begin
-    Match(vsLimit);
-    LLimitExpr := RuleExpression();
+    case FLookahead.Token of
+      vsOffset:
+        begin
+          Match(vsOffset);
+          LOffsetExpr := RuleExpression();
+        end;
+      vsLimit:
+        begin
+          Match(vsLimit);
+          LLimitExpr := RuleExpression();
+        end;
+    end;
   end;
 
   LContainerStripAction := Match(vsEndScript);
