@@ -72,23 +72,37 @@ type
 
   TTemplate = class(TInterfacedObject, ITemplate, ITemplateAdd, ITemplateVisitorHost)
   private
-    FArray: TArray<ITemplateVisitorHost>;
-    FOptimised: boolean;
+    FPosition: IPosition;
+    FArray: TArray<IStmt>;
+    function Flatten: TArray<IStmt>;
     procedure Optimise;
-    function GetItem(const AOffset: integer): ITemplateVisitorHost;
+    function GetFilename: string;
+    procedure SetFilename(const AFilename: string);
+    function GetLine: integer;
+    procedure SetLine(const Aline: integer);
+    function GetPos: integer;
+    procedure SetPos(const Apos: integer);
+    function GetItem(const AOffset: integer): IStmt;
     function GetCount: integer;
-    procedure Add(const AItem: ITemplateVisitorHost);
-    function GetLastItem: ITemplateVisitorHost;
+    procedure Add(const AItem: IStmt);
+    function GetLastItem: IStmt;
     procedure Accept(const AVisitor: ITemplateVisitor);
     function Clone: IInterface;
+    function CloneAsTemplate: ITemplate;
   public
-
+    constructor Create();
   end;
 
   TAbstractBase = class abstract(TInterfacedObject, IPositional, ITemplateVisitorHost)
   private
     FPosition: IPosition;
     function GetPosition: IPosition;
+    function GetFilename: string;
+    procedure SetFilename(const AFilename: string);
+    function GetLine: integer;
+    procedure SetLine(const Aline: integer);
+    function GetPos: integer;
+    procedure SetPos(const Apos: integer);
   public
     constructor Create(const APosition: IPosition);
     destructor Destroy; override;
@@ -97,6 +111,8 @@ type
   end;
 
   TAbstractStmt = class abstract(TAbstractBase, IStmt)
+    function CloneAsStmt: IStmt;
+    function Flatten: TArray<IStmt>; virtual;
   end;
 
   TDebugStmt = class(TAbstractStmt, IDebugStmt)
@@ -202,6 +218,7 @@ type
     function GetFirstStmt: IStmt;
     function GetSecondStmt: IStmt;
     procedure Accept(const AVisitor: ITemplateVisitor); override;
+    function Flatten: TArray<IStmt>; override;
   public
     constructor Create(const AFirstStmt, ASecondStmt: IStmt);
   end;
@@ -547,6 +564,30 @@ type
     function Parse(const AStream: TStream; const AManagedStream: boolean): ITemplate;
   end;
 
+function Flatten(const AStmts: TArray<IStmt>): TArray<IStmt>;
+var
+  LStmt: IStmt;
+begin
+  result := nil;
+  for LStmt in AStmts do
+  begin
+    result := result + LStmt.Flatten;
+  end;
+end;
+
+procedure Optimise(const ATemplates: TArray<ITemplate>);
+var
+  LTemplate: ITemplate;
+begin
+  for LTemplate in ATemplates do
+  begin
+    if assigned(LTemplate) then
+    begin
+      LTemplate.Optimise;
+    end;
+  end;
+end;
+
 function CreateTemplateParser(AContext: ITemplateContext): ITemplateParser;
 begin
   exit(TTemplateParser.Create(AContext));
@@ -641,6 +682,8 @@ function TTemplateParser.AddEndStripStmt(const ATemplate: ITemplate; const AStri
 var
   LAdd: ITemplateAdd;
 begin
+  if AStripAction = saNone then
+    exit(ATemplate);
   result := ATemplate;
   supports(result, ITemplateAdd, LAdd);
   LAdd.Add(TStripStmt.Create(sdRight, AStripAction));
@@ -706,7 +749,7 @@ begin
   begin
     while (FLookahead.Token = vsELIF) do
     begin
-      LContainerAdd.Add(AsVisitorHost(ruleElIfStmt()));
+      LContainerAdd.Add(ruleElIfStmt());
     end;
   end
   else if FLookahead.Token = vsElse then
@@ -875,7 +918,7 @@ begin
     end;
     if (LStmt <> nil) and not supports(LStmt, IElseStmt) then
     begin
-      LParentContainer.Add(AsVisitorHost(LStmt));
+      LParentContainer.Add(LStmt);
     end;
   end;
 end;
@@ -906,6 +949,7 @@ begin
 
   result := TDefineTemplateStmt.Create(LSymbol.Position, LExpr, LContainer);
   result := AddStripStmt(result, LStripAction, sdRight);
+  LContainer.Optimise;
 end;
 
 function TTemplateParser.ruleSignedFactor: IExpr;
@@ -1146,6 +1190,7 @@ begin
   PopContainer;
   result := TBlockStmt.Create(LSymbol.Position, LName, LContainer);
   result := AddStripStmt(result, LStripAction, sdRight);
+  LContainer.Optimise;
 end;
 
 function TTemplateParser.ruleBreakStmt: IStmt;
@@ -1165,12 +1210,14 @@ end;
 function TTemplateParser.ruleCommentStmt: IStmt;
 var
   LSymbol: ITemplateSymbol;
+  LStartStripAction: TStripAction;
   LStripAction: TStripAction;
 begin
   LSymbol := FLookahead;
-  match(vsComment);
+  LStartStripAction := match(vsComment);
   LStripAction := match(vsEndScript);
   result := TCommentStmt.Create(LSymbol.Position);
+  result := AddStripStmt(result, LStartStripAction, sdLeft);
   result := AddStripStmt(result, LStripAction, sdRight);
 end;
 
@@ -1486,6 +1533,7 @@ begin
   else
     result := TForRangeStmt.Create(LSymbol.Position, LId, LForOp, LLowValueExpr, LHighValueExpr, LStep, LOnLoop, LOnFirst, LOnEnd, LOnEmpty, LBetweenItem);
   result := AddStripStmt(result, LEndStripAction, sdRight);
+  Optimise([LOnLoop, LOnFirst, LOnEnd, LOnEmpty, LBetweenItem]);
 end;
 
 function TTemplateParser.ruleFunctionExpr(const ASymbol: string): IExpr;
@@ -1613,6 +1661,7 @@ begin
   else
     result := TWhileStmt.Create(LSymbol.Position, LCondition, LOffsetExpr, LLimitExpr, LOnLoop, LOnFirst, LOnEnd, LOnEmpty, LBetweenItem);
   result := AddStripStmt(result, LEndStripAction, sdRight);
+  Optimise([LOnLoop, LOnFirst, LOnEnd, LOnEmpty, LBetweenItem]);
 end;
 
 function TTemplateParser.ruleWithStmt: IStmt;
@@ -1643,7 +1692,7 @@ begin
   PopContainer;
   result := TWithStmt.Create(LSymbol.Position, LExpr, LContainer);
   result := AddStripStmt(result, LEndStripAction, sdRight);
-
+  LContainer.Optimise;
 end;
 
 function TTemplateParser.rulePrintStmt: IStmt;
@@ -1750,6 +1799,7 @@ begin
     result := TExtendsStmt.Create(LSymbol.Position, LName, LContainer);
   end;
   result := AddStripStmt(result, LEndStripAction, sdRight);
+  LContainer.Optimise;
 end;
 
 function TTemplateParser.CurrentContainer: ITemplate;
@@ -1834,9 +1884,13 @@ begin
   PushContainer;
   FLexer := CreateTemplateLexer(FContext, AStream, '', AManagedStream);
   FLookahead := FLexer.GetToken;
-  ruleStmts(CurrentContainer, []);
-  match(vsEOF);
   result := CurrentContainer;
+  if AStream.Size > 0 then
+  begin
+    ruleStmts(result, []);
+  end;
+  match(vsEOF);
+  result.Optimise;
   if eoPrettyPrint in FContext.Options then
     writeln(Template.PrettyPrint(result));
 end;
@@ -2145,7 +2199,7 @@ begin
   end;
 end;
 
-procedure TTemplate.Add(const AItem: ITemplateVisitorHost);
+procedure TTemplate.Add(const AItem: IStmt);
 var
   LOffset: integer;
 begin
@@ -2156,15 +2210,30 @@ end;
 
 function TTemplate.Clone: IInterface;
 var
-  i: ITemplateVisitorHost;
+  i: IStmt;
   LTemplate: TTemplate;
 begin
   LTemplate := TTemplate.Create;
   result := LTemplate;
   for i in FArray do
   begin
-    LTemplate.Add(CloneVisitorHost(i));
+    LTemplate.Add(i.CloneAsStmt);
   end;
+end;
+
+function TTemplate.CloneAsTemplate: ITemplate;
+begin
+  supports(Clone, ITemplate, result);
+end;
+
+constructor TTemplate.Create;
+begin
+  FPosition := TPosition.Create('', 1, 1);
+end;
+
+function TTemplate.Flatten: TArray<IStmt>;
+begin
+  result := Sempare.Template.Parser.Flatten(FArray);
 end;
 
 function TTemplate.GetCount: integer;
@@ -2172,7 +2241,12 @@ begin
   exit(length(FArray));
 end;
 
-function TTemplate.GetLastItem: ITemplateVisitorHost;
+function TTemplate.GetFilename: string;
+begin
+  exit(FPosition.FileName);
+end;
+
+function TTemplate.GetLastItem: IStmt;
 begin
   if GetCount = 0 then
     exit(nil)
@@ -2180,14 +2254,53 @@ begin
     exit(GetItem(GetCount - 1));
 end;
 
-procedure TTemplate.Optimise;
+function TTemplate.GetLine: integer;
 begin
-  if FOptimised then
-    exit;
-  FOptimised := true;
+  exit(FPosition.line);
 end;
 
-function TTemplate.GetItem(const AOffset: integer): ITemplateVisitorHost;
+function TTemplate.GetPos: integer;
+begin
+  exit(FPosition.pos);
+end;
+
+procedure TTemplate.Optimise;
+
+  function Strip(const AArray: TArray<IStmt>): TArray<IStmt>;
+  var
+    LStmt: IStmt;
+  begin
+    result := nil;
+    for LStmt in AArray do
+    begin
+      if supports(LStmt, IEndStmt) or supports(LStmt, ICommentStmt) or supports(LStmt, IElseStmt) then
+      begin
+        continue;
+      end;
+      result := result + [LStmt];
+    end;
+  end;
+
+begin
+  FArray := Strip(Flatten);
+end;
+
+procedure TTemplate.SetFilename(const AFilename: string);
+begin
+  FPosition.FileName := AFilename;
+end;
+
+procedure TTemplate.SetLine(const Aline: integer);
+begin
+  FPosition.line := Aline;
+end;
+
+procedure TTemplate.SetPos(const Apos: integer);
+begin
+  FPosition.pos := Apos;
+end;
+
+function TTemplate.GetItem(const AOffset: integer): IStmt;
 begin
   exit(FArray[AOffset]);
 end;
@@ -2311,9 +2424,39 @@ begin
   inherited;
 end;
 
+function TAbstractBase.GetFilename: string;
+begin
+  exit(FPosition.FileName);
+end;
+
+function TAbstractBase.GetLine: integer;
+begin
+  exit(FPosition.line);
+end;
+
+function TAbstractBase.GetPos: integer;
+begin
+  exit(FPosition.pos);
+end;
+
 function TAbstractBase.GetPosition: IPosition;
 begin
   exit(FPosition);
+end;
+
+procedure TAbstractBase.SetFilename(const AFilename: string);
+begin
+  FPosition.FileName := AFilename;
+end;
+
+procedure TAbstractBase.SetLine(const Aline: integer);
+begin
+  FPosition.line := Aline;
+end;
+
+procedure TAbstractBase.SetPos(const Apos: integer);
+begin
+  FPosition.pos := Apos;
 end;
 
 { TMethodCallExpr }
@@ -2619,6 +2762,11 @@ begin
   FSecondStmt := ASecondStmt;
 end;
 
+function TCompositeStmt.Flatten: TArray<IStmt>;
+begin
+  result := Sempare.Template.Parser.Flatten([FFirstStmt, FSecondStmt]);
+end;
+
 function TCompositeStmt.GetFirstStmt: IStmt;
 begin
   exit(FFirstStmt);
@@ -2661,7 +2809,7 @@ end;
 
 function TBlockStmt.Clone: IInterface;
 begin
-  exit(TBlockStmt.Create(FPosition, FName, CloneTemplate(FContainer)));
+  exit(TBlockStmt.Create(FPosition, FName, FContainer));
 end;
 
 constructor TBlockStmt.Create(const APosition: IPosition; const AName: IExpr; const AContainer: ITemplate);
@@ -2700,7 +2848,7 @@ end;
 
 function TExtendsStmt.Clone: IInterface;
 begin
-  exit(TExtendsStmt.Create(FPosition, FName, CloneTemplate(FBlockContainer)));
+  exit(TExtendsStmt.Create(FPosition, FName, FBlockContainer));
 end;
 
 constructor TExtendsStmt.Create(const APosition: IPosition; const AName: IExpr; const ABlockContainer: ITemplate);
@@ -2750,6 +2898,18 @@ end;
 function TAbstractExpr.Clone: IInterface;
 begin
   exit(self);
+end;
+
+{ TAbstractStmt }
+
+function TAbstractStmt.CloneAsStmt: IStmt;
+begin
+  supports(Clone, IStmt, result);
+end;
+
+function TAbstractStmt.Flatten: TArray<IStmt>;
+begin
+  result := [self];
 end;
 
 initialization
