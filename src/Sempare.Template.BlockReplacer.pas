@@ -93,16 +93,12 @@ begin
 end;
 
 procedure TBlockReplacerVisitor.Replace(const ATemplate: ITemplate; const ABlockName: string; const ABlock: ITemplate);
-var
-  LVisitor: ITemplateVisitor;
 begin
-  if not supports(self, ITemplateVisitor, LVisitor) then
-    exit;
   if not assigned(ABlock) then
     exit;
   FBlockName := ABlockName;
   FReplacementBlock := ABlock;
-  AcceptVisitor(ATemplate, LVisitor);
+  AcceptVisitor(ATemplate, self);
   FReplacementBlock := nil;
 end;
 
