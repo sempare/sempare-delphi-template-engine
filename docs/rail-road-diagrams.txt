@@ -34,11 +34,11 @@ Diagram(
        NonTerminal('expr'),
      ),
     Sequence(
-     ZeroOrMore(
+     Optional(
           Sequence(
-           Choice(0,
+           
              Terminal('step'),
-           ),
+           
          NonTerminal('expr')
         )
       ),
