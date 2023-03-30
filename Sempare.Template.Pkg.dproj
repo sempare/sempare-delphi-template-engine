@@ -90,7 +90,8 @@
         </DelphiCompile>
         <DCCReference Include="rtl.dcp"/>
         <DCCReference Include="dbrtl.dcp"/>
-        <DCCReference Include="vcl.dcp"/>
+        <DCCReference Include="src\Sempare.Template.BlockResolver.pas"/>
+        <DCCReference Include="src\Sempare.Template.BlockReplacer.pas"/>
         <DCCReference Include="src\Sempare.Template.Visitor.pas"/>
         <DCCReference Include="src\Sempare.Template.Util.pas"/>
         <DCCReference Include="src\Sempare.Template.StackFrame.pas"/>
