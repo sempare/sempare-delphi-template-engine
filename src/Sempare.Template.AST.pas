@@ -181,19 +181,21 @@ type
     property Position: IPosition read GetPosition;
   end;
 
-  ITemplateVisitorHost = interface
+  ITemplateVisitorHost = interface(IPosition)
     ['{BB5F2BF7-390D-4E20-8FD2-DB7609519143}']
     procedure Accept(const AVisitor: ITemplateVisitor);
     function Clone: IInterface;
   end;
 
-  IExpr = interface
+  IExpr = interface(ITemplateVisitorHost)
     ['{8C539211-ED84-4963-B894-C569C2F7B2FE}']
   end;
 
-  IStmt = interface
+  IStmt = interface(ITemplateVisitorHost)
     ['{6D37028E-A0C0-41F1-8A59-EDC0C9ADD9C7}']
     function Clone: IInterface;
+    function CloneAsStmt: IStmt;
+    function Flatten: TArray<IStmt>;
   end;
 
   IDebugStmt = interface(IStmt)
@@ -202,21 +204,22 @@ type
     property Stmt: IStmt read GetStmt;
   end;
 
-  ITemplate = interface
+  ITemplate = interface(ITemplateVisitorHost)
     ['{93AAB971-5B4B-4959-93F2-6C7DAE15C91B}']
-    function GetItem(const AOffset: integer): ITemplateVisitorHost;
+    function GetItem(const AOffset: integer): IStmt;
     function GetCount: integer;
-    function GetLastItem: ITemplateVisitorHost;
+    function GetLastItem: IStmt;
     function Clone: IInterface;
+    function CloneAsTemplate: ITemplate;
     procedure Optimise;
-    property Items[const AOffset: integer]: ITemplateVisitorHost read GetItem;
+    property Items[const AOffset: integer]: IStmt read GetItem;
     property Count: integer read GetCount;
-    property LastItem: ITemplateVisitorHost read GetLastItem;
+    property LastItem: IStmt read GetLastItem;
   end;
 
   ITemplateAdd = interface(ITemplate)
     ['{64465D68-0E9D-479F-9EF3-A30E75967809}']
-    procedure Add(const AItem: ITemplateVisitorHost);
+    procedure Add(const AItem: IStmt);
   end;
 
   IExtendsStmt = interface(IStmt)
