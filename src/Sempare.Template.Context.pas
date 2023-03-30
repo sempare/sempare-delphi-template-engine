@@ -628,10 +628,7 @@ GUTF8WithoutPreambleEncoding := TUTF8WithoutPreambleEncoding.Create;
 GDefaultEncoding := TEncoding.UTF8WithoutBOM;
 GStreamWriterProvider := function(const AStream: TStream; AContext: ITemplateContext): TStreamWriter
   begin
-    if (eoTrimLines in AContext.Options) or (eoStripRecurringNewlines in AContext.Options) or (eoAllowIgnoreNL in AContext.Options) or (eoInternalUseNewLine in AContext.Options) then
-      exit(TNewLineStreamWriter.Create(AStream, AContext.Encoding, AContext.NewLine, AContext.Options))
-    else
-      exit(TStreamWriter.Create(AStream, AContext.Encoding));
+    exit(TNewLineStreamWriter.Create(AStream, AContext.Encoding, AContext.NewLine, AContext.Options));
   end;
 
 finalization
