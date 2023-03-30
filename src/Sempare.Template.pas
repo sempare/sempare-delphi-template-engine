@@ -141,7 +141,6 @@ uses
   VCL.Dialogs,
 {$ENDIF}
 {$ENDIF}
-  Sempare.Template.CleanupVisitor,
   Sempare.Template.Evaluate,
   Sempare.Template.VariableExtraction,
   Sempare.Template.PrettyPrint;
@@ -172,7 +171,6 @@ var
   LValue: TTemplateValue;
   LTemplateVisitor: IEvaluationTemplateVisitor;
   LTemplate: ITemplate;
-  LCleanup: ICleanupVisitor;
 begin
 {$IFNDEF SEMPARE_TEMPLATE_CONFIRM_LICENSE}
 {$IFDEF MSWINDOWS}
@@ -190,13 +188,7 @@ begin
 {$ENDIF}
   LValue := TTemplateValue.From<T>(AValue);
   LTemplateVisitor := TEvaluationTemplateVisitor.Create(AContext, LValue, AStream);
-
-  // need a lock around cleanup actually
-  // LCleanup := TCleanupVisitor.Create(LTemplateVisitor);
-  // LCleanup.Cleanup(ATemplate);
-
-  LTemplate := CloneTemplate(ATemplate);
-
+  LTemplate := ATemplate.CloneAsTemplate;
   AcceptVisitor(LTemplate, LTemplateVisitor);
 end;
 
