@@ -32,9 +32,10 @@ Open Source: https://github.com/sempare/sempare-delphi-template-engine
 16. [Components](./docs/components.md)
 17. [Tricks](./docs/tricks.md)
 18. [Template Patterns](./docs/template-patterns.md)
-19. [Internals](./docs/internals.md)
-20. [Restrictions/Limitations/Known Bugs](./docs/restrictions.md)
-21. [License](#License)
+19. [Whitespace Removal](./docs/whitespace-removal.md)
+20. [Internals](./docs/internals.md)
+21. [Restrictions/Limitations/Known Bugs](./docs/restrictions.md)
+22. [License](#License)
 
 ## Introduction
 
@@ -169,7 +170,7 @@ Open __Sempare.Template.Engine.Group.groupproj__ which will include:
      
 - __Sempare.Template.Tester.dproj__
 
-   100+ unit tests
+   160+ unit tests
 
 - __demo\VelocityDemo\Sempare.Template.Demo.dproj__
 
