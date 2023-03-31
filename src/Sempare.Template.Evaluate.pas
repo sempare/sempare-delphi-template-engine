@@ -45,7 +45,6 @@ uses
   Sempare.Template.AST,
   Sempare.Template.StackFrame,
   Sempare.Template.Common,
-  Sempare.Template.PrettyPrint,
   Sempare.Template.Context,
   Sempare.Template.Visitor;
 
@@ -89,6 +88,7 @@ type
     FIsNLStreamWriter: boolean;
     FLoopOptions: TLoopOptions;
     FContext: ITemplateContext;
+    FEvaluationContext: ITemplateEvaluationContext;
     FAllowRootDeref: boolean;
     FLocalTemplates: TDictionary<string, ITemplate>;
 
@@ -149,7 +149,6 @@ uses
   Data.DB,
   System.TypInfo, // needed for XE6 and below to access the TTypeKind variables
   Sempare.Template.BlockResolver,
-  Sempare.Template.BlockReplacer,
   Sempare.Template.ResourceStrings,
   Sempare.Template.Rtti,
   Sempare.Template.Util;
@@ -401,8 +400,8 @@ begin
       if LFirst then
       begin
         LFirst := false;
-        if AStmt.OnFirstContainer <> nil then
-          AcceptVisitor(AStmt.OnFirstContainer, self);
+        if AStmt.OnBeginContainer <> nil then
+          AcceptVisitor(AStmt.OnBeginContainer, self);
       end
       else
       begin
@@ -469,8 +468,8 @@ var
       if LFirst then
       begin
         LFirst := false;
-        if AStmt.OnFirstContainer <> nil then
-          AcceptVisitor(AStmt.OnFirstContainer, self);
+        if AStmt.OnBeginContainer <> nil then
+          AcceptVisitor(AStmt.OnBeginContainer, self);
       end
       else
       begin
@@ -667,6 +666,10 @@ begin
 
   FLoopOptions := [];
   FContext := AContext;
+
+  FEvaluationContext := FContext as ITemplateEvaluationContext;
+  FEvaluationContext.StartEvaluation;
+
   FStream := AStream;
 
   FStreamWriter := FContext.StreamWriterProvider(FStream, FContext);
@@ -682,12 +685,12 @@ end;
 
 destructor TEvaluationTemplateVisitor.Destroy;
 begin
+  FEvaluationContext.EndEvaluation;
   FLocalTemplates.Free;
   FStreamWriter.Free;
   FStopWatch.Stop;
   FEvalStack.Free;
   FStackFrames.Free;
-  FContext := nil;
   inherited;
 end;
 
@@ -825,8 +828,8 @@ begin
     if LFirst then
     begin
       LFirst := false;
-      if AStmt.OnFirstContainer <> nil then
-        AcceptVisitor(AStmt.OnFirstContainer, self);
+      if AStmt.OnBeginContainer <> nil then
+        AcceptVisitor(AStmt.OnBeginContainer, self);
     end
     else
     begin
@@ -891,14 +894,15 @@ begin
     exit;
   LTemplateName := EvalExprAsString(AStmt.Expr);
   LTemplate := ResolveTemplate(AStmt.Expr, LTemplateName);
-  if assigned(LTemplate) then
+  if not assigned(LTemplate) then
   begin
-    FStackFrames.push(FStackFrames.peek.Clone());
-    try
-      Visit(LTemplate);
-    finally
-      FStackFrames.pop;
-    end;
+    exit;
+  end;
+  FStackFrames.push(FStackFrames.peek.Clone());
+  try
+    Visit(LTemplate);
+  finally
+    FStackFrames.pop;
   end;
 end;
 
@@ -1182,82 +1186,67 @@ begin
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AStmt: IBlockStmt);
+var
+  LBlockName: string;
+  LReplacementBlock: IBlockStmt;
 begin
-  if assigned(AStmt.Container) then
-    AcceptVisitor(AStmt.Container, self);
+  LBlockName := AStmt.NameAsString(self);
+  FStackFrames.push(FStackFrames.peek.Clone());
+  try
+    if FEvaluationContext.TryGetBlock(LBlockName, LReplacementBlock) then
+    begin
+      Visit(LReplacementBlock.Container);
+    end
+    else
+    begin
+      Visit(AStmt.Container);
+    end;
+  finally
+    FStackFrames.pop;
+  end;
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AStmt: IExtendsStmt);
-
-  function CommonNames(const ANames: TArray<string>; const BNames: TArray<string>): TArray<string>;
-  var
-    a, b: string;
-  begin
-    result := nil;
-    // not mega optimal, but lists should be sort
-    for a in ANames do
-    begin
-      for b in BNames do
-      begin
-        if a = b then
-          insert(a, result, length(result));
-      end;
-    end;
-  end;
-
 var
   LName: string;
-  LBlockResolver: IBlockResolverVisitor;
-  LBlockReplacer: IBlockReplacerVisitor;
   LBlockName: string;
-  LBlockNames: TArray<string>;
-  LTemplateNames: TArray<string>;
-  LReplacementBlocks: TArray<IBlockStmt>;
+  LReplacementBlock: IBlockStmt;
   LTemplate: ITemplate;
-  LBlock: IBlockStmt;
-  LResolveNames: boolean;
+  LBlockResolver: IBlockResolverVisitor;
+  LBlockPair: TPair<string, IBlockStmt>;
+  LBlocks: TDictionary<string, IBlockStmt>;
 begin
-  LResolveNames := false;
-  if not assigned(AStmt.Container) then
+  LName := AStmt.NameAsString(self);
+  LTemplate := ResolveTemplate(AStmt, LName);
+  if not assigned(LTemplate) then
   begin
-    LName := AStmt.NameAsString(self);
-    LTemplate := ResolveTemplate(AStmt, LName);
-
-    AStmt.Container := LTemplate;
-    LResolveNames := true;
-
-  end
-  else
-  begin
-    LTemplate := AStmt.Container;
+    exit;
   end;
-
-  // we need to clone the original as we do replacements
-  // not currently planning to support 'inherited', to allow to reference the original body in the original template from within the child body.
-  LTemplate := LTemplate.CloneAsTemplate;
-
-  if LResolveNames then
-  begin
-    LBlockResolver := TBlockResolverVisitor.Create(self, AStmt.Container);
-    LTemplateNames := LBlockResolver.GetBlockNames();
-
+  LBlocks := TDictionary<string, IBlockStmt>.Create;
+  try
     LBlockResolver := TBlockResolverVisitor.Create(self, AStmt.BlockContainer);
-    LBlockNames := LBlockResolver.GetBlockNames();
-    AStmt.BlockNames := CommonNames(LTemplateNames, LBlockNames);
-  end;
-
-  // we resolve the blocks aimed for replacing defined withing the block container.
-  LBlockReplacer := TBlockReplacerVisitor.Create(self);
-  for LBlockName in AStmt.BlockNames do
-  begin
-    LReplacementBlocks := LBlockResolver.GetBlocks(LBlockName);
-    for LBlock in LReplacementBlocks do
+    for LBlockName in LBlockResolver.GetBlockNames do
     begin
-      LBlockReplacer.Replace(LTemplate, LBlockName, LBlock.Container);
+      LReplacementBlock := LBlockResolver.GetBlock(LBlockName);
+      LBlocks.AddOrSetValue(LBlockName.ToLower, LReplacementBlock);
     end;
+    for LBlockPair in LBlocks do
+    begin
+      FEvaluationContext.AddBlock(LBlockPair.Key, LBlockPair.Value);
+    end;
+    FStackFrames.push(FStackFrames.peek.Clone());
+    try
+      Visit(LTemplate);
+    finally
+      FStackFrames.pop;
+    end;
+    for LBlockPair in LBlocks do
+    begin
+      FEvaluationContext.RemoveBlock(LBlockPair.Key);
+    end;
+  finally
+    LBlocks.Free;
   end;
-
-  AcceptVisitor(LTemplate, self);
 end;
 
 { TNewLineStreamWriter }
@@ -1296,12 +1285,14 @@ const
   STRIP_CHARS: array [TStripAction] of set of char = ( //
     [' ', #9], //
     [' ', #9, #13, #10], //
+    [' ', #9, #13, #10], //
     [] //
     );
 {$WARN WIDECHAR_REDUCED ON}
 
 procedure TNewLineStreamWriter.Handle(const AStmt: IStripStmt);
-
+var
+  LStripped: boolean;
 begin
   if AStmt.Action = saNone then
   begin
@@ -1310,9 +1301,15 @@ begin
   end;
   if AStmt.Direction = sdLeft then
   begin
+    LStripped := false;
     while (FBuffer.length > 0) and charinset(FBuffer.Chars[FBuffer.length - 1], STRIP_CHARS[AStmt.Action]) do
     begin
       FBuffer.length := FBuffer.length - 1;
+      LStripped := true;
+    end;
+    if LStripped and (AStmt.Action = saWhitespaceAndNLButOne) then
+    begin
+      FBuffer.Append(' ');
     end;
   end
   else
@@ -1349,16 +1346,18 @@ var
   LIdx: integer;
   LHasLooped: boolean;
   LProcessed: integer;
+  LStripAction: TStripAction;
 begin
   LIdx := 1;
   if assigned(FStripStmt) then
   begin
+    LStripAction := FStripStmt.Action;
     LHasLooped := false;
     LProcessed := 0;
     while LIdx < length(AString) do
     begin
       LChar := AString[LIdx];
-      if charinset(LChar, STRIP_CHARS[FStripStmt.Action]) then
+      if charinset(LChar, STRIP_CHARS[LStripAction]) then
       begin
         inc(LIdx);
         LHasLooped := true;
@@ -1376,8 +1375,15 @@ begin
       end;
       inc(LProcessed);
     end;
-    if LHasLooped and assigned(FStripStmt) and (LProcessed = length(AString)) then
-      exit;
+    if LHasLooped then
+    begin
+      if assigned(FStripStmt) and (LProcessed = length(AString)) then
+        exit;
+      if LStripAction = saWhitespaceAndNLButOne then
+      begin
+        FBuffer.Append(' ');
+      end;
+    end;
   end;
   for LIdx := LIdx to length(AString) do
   begin

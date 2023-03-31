@@ -38,26 +38,25 @@ uses
   System.Generics.Collections,
   Sempare.Template.AST,
   Sempare.Template.Common,
-  Sempare.Template.Evaluate,
   Sempare.Template.Visitor;
 
 type
   IBlockResolverVisitor = interface(ITemplateVisitor)
     ['{623A7C4A-3592-46BD-A3C5-FE354E0E67C0}']
     function GetBlockNames: TArray<string>;
-    function GetBlocks(const AName: string): TArray<IBlockStmt>;
+    function GetBlock(const AName: string): IBlockStmt;
   end;
 
   TBlockResolverVisitor = class(TNoExprTemplateVisitor, IBlockResolverVisitor)
   private
-    FBlocks: TDictionary<string, TArray<IBlockStmt>>;
+    FBlocks: TDictionary<string, IBlockStmt>;
     FEvalVisitor: IEvaluationTemplateVisitor;
   public
     constructor Create(const AEvalVisitor: IEvaluationTemplateVisitor; const ATemplate: ITemplate);
     destructor Destroy; override;
 
     function GetBlockNames: TArray<string>;
-    function GetBlocks(const AName: string): TArray<IBlockStmt>;
+    function GetBlock(const AName: string): IBlockStmt;
 
     procedure Visit(const AStmt: IBlockStmt); overload; override;
     procedure Visit(const AStmt: IExtendsStmt); overload; override;
@@ -70,16 +69,15 @@ implementation
 
 procedure TBlockResolverVisitor.Visit(const AStmt: IBlockStmt);
 var
-  LList: TArray<IBlockStmt>;
+  LBlock: IBlockStmt;
   LName: string;
 begin
   LName := FEvalVisitor.EvalExprAsString(AStmt.Name);
-  if not FBlocks.TryGetValue(LName, LList) then
+  if FBlocks.TryGetValue(LName, LBlock) then
   begin
-    LList := nil;
+    exit;
   end;
-  insert(AStmt, LList, length(LList));
-  FBlocks.AddOrSetValue(LName, LList);
+  FBlocks.AddOrSetValue(LName, AStmt);
 end;
 
 procedure TBlockResolverVisitor.Visit(const AStmt: IExtendsStmt);
@@ -101,7 +99,7 @@ end;
 constructor TBlockResolverVisitor.Create(const AEvalVisitor: IEvaluationTemplateVisitor; const ATemplate: ITemplate);
 begin
   FEvalVisitor := AEvalVisitor;
-  FBlocks := TDictionary < string, TArray < IBlockStmt >>.Create();
+  FBlocks := TDictionary<string, IBlockStmt>.Create();
   AcceptVisitor(ATemplate, self);
 end;
 
@@ -117,13 +115,9 @@ begin
   exit(FBlocks.Keys.ToArray);
 end;
 
-function TBlockResolverVisitor.GetBlocks(const AName: string): TArray<IBlockStmt>;
-var
-  LList: TArray<IBlockStmt>;
+function TBlockResolverVisitor.GetBlock(const AName: string): IBlockStmt;
 begin
-  if FBlocks.TryGetValue(AName, LList) then
-    exit(LList)
-  else
+  if not FBlocks.TryGetValue(AName, result) then
     exit(nil);
 end;
 

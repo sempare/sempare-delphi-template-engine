@@ -133,7 +133,7 @@ end;
 
 procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: IExtendsStmt);
 begin
-  AcceptVisitor(AStmt.Container, self);
+  AcceptVisitor(AStmt.BlockContainer, self);
 end;
 
 procedure TTemplateReferenceExtractionVisitor.Visit(const AStmt: IStripStmt);

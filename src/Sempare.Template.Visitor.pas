@@ -78,6 +78,7 @@ type
     procedure Visit(const AStmt: ICompositeStmt); overload; virtual;
     procedure Visit(const AStmt: IStripStmt); overload; virtual;
     procedure Visit(const AStmt: IStmt); overload; virtual;
+    procedure Visit(const AStmt: INoopStmt); overload; virtual;
 
     procedure Visit(const AStmt: IBlockStmt); overload; virtual;
     procedure Visit(const AStmt: IExtendsStmt); overload; virtual;
@@ -155,7 +156,7 @@ begin
   AcceptVisitor(AStmt.Container, self);
   AcceptVisitor(AStmt.OffsetExpr, self);
   AcceptVisitor(AStmt.LimitExpr, self);
-  AcceptVisitor(AStmt.OnFirstContainer, self);
+  AcceptVisitor(AStmt.OnBeginContainer, self);
   AcceptVisitor(AStmt.OnEndContainer, self);
   AcceptVisitor(AStmt.OnEmptyContainer, self);
   AcceptVisitor(AStmt.BetweenItemsContainer, self);
@@ -168,7 +169,7 @@ begin
   AcceptVisitor(AStmt.Container, self);
   AcceptVisitor(AStmt.OffsetExpr, self);
   AcceptVisitor(AStmt.LimitExpr, self);
-  AcceptVisitor(AStmt.OnFirstContainer, self);
+  AcceptVisitor(AStmt.OnBeginContainer, self);
   AcceptVisitor(AStmt.OnEndContainer, self);
   AcceptVisitor(AStmt.OnEmptyContainer, self);
   AcceptVisitor(AStmt.BetweenItemsContainer, self);
@@ -180,7 +181,7 @@ begin
   AcceptVisitor(AStmt.HighExpr, self);
   AcceptVisitor(AStmt.StepExpr, self);
   AcceptVisitor(AStmt.Container, self);
-  AcceptVisitor(AStmt.OnFirstContainer, self);
+  AcceptVisitor(AStmt.OnBeginContainer, self);
   AcceptVisitor(AStmt.OnEndContainer, self);
   AcceptVisitor(AStmt.OnEmptyContainer, self);
   AcceptVisitor(AStmt.BetweenItemsContainer, self);
@@ -313,6 +314,11 @@ procedure TBaseTemplateVisitor.Visit(const AStmt: IExtendsStmt);
 begin
   AcceptVisitor(AStmt.Name, self);
   AcceptVisitor(AStmt.BlockContainer, self);
+end;
+
+procedure TBaseTemplateVisitor.Visit(const AStmt: INoopStmt);
+begin
+
 end;
 
 { TNoExprTemplateVisitor }

@@ -39,7 +39,9 @@ Copyright (c) 2019-2023 [Sempare Limited](http://www.sempare.ltd)
 - [crnl](#crnl)
 - [nl](#nl)
 - [recordcount](#recordcount)
-
+- [min](#min)
+- [max](#max)
+- [abs](#abs)
 
 ## trim(string)
 Remove whitespace from a string.
@@ -219,4 +221,21 @@ return a string with len #10
 return the length of a dataset
 ```
 <% RecordCount(ds) %>
+```
+
+## min(adouble, bdouble)
+return the minimum of two values
+```
+<% min(1,2) %>
+```
+
+## max(adouble, bdouble)
+return the maximum of two values
+```
+<% max(1,2) %>
+```
+## abs(value)
+return the absolute value of a value
+```
+<% abs(-123.45) %>
 ```

@@ -56,6 +56,7 @@ type
   TStripAction = ( //
     saWhitespace, //
     saWhitespaceAndNL, //
+    saWhitespaceAndNLButOne, //
     saNone //
     );
 
@@ -184,7 +185,7 @@ type
   ITemplateVisitorHost = interface(IPosition)
     ['{BB5F2BF7-390D-4E20-8FD2-DB7609519143}']
     procedure Accept(const AVisitor: ITemplateVisitor);
-    function Clone: IInterface;
+
   end;
 
   IExpr = interface(ITemplateVisitorHost)
@@ -193,8 +194,6 @@ type
 
   IStmt = interface(ITemplateVisitorHost)
     ['{6D37028E-A0C0-41F1-8A59-EDC0C9ADD9C7}']
-    function Clone: IInterface;
-    function CloneAsStmt: IStmt;
     function Flatten: TArray<IStmt>;
   end;
 
@@ -209,8 +208,6 @@ type
     function GetItem(const AOffset: integer): IStmt;
     function GetCount: integer;
     function GetLastItem: IStmt;
-    function Clone: IInterface;
-    function CloneAsTemplate: ITemplate;
     procedure Optimise;
     property Items[const AOffset: integer]: IStmt read GetItem;
     property Count: integer read GetCount;
@@ -222,19 +219,15 @@ type
     procedure Add(const AItem: IStmt);
   end;
 
+  IBlockStmt = interface;
+
   IExtendsStmt = interface(IStmt)
     ['{220D7E83-280D-454B-BA60-622C97EBE131}']
     function GetName: IExpr;
     function NameAsString(const AEvalVisitor: IEvaluationTemplateVisitor): string;
     function GetBlockContainer: ITemplate;
-    function GetContainer: ITemplate;
-    procedure SetContainer(const AContainer: ITemplate);
-    function GetBlockNames: TArray<string>;
-    procedure SetBlockNames(const ANames: TArray<string>);
     property Name: IExpr read GetName;
-    property Container: ITemplate read GetContainer write SetContainer;
     property BlockContainer: ITemplate read GetBlockContainer;
-    property BlockNames: TArray<string> read GetBlockNames write SetBlockNames;
   end;
 
   IBlockStmt = interface(IStmt)
@@ -242,9 +235,8 @@ type
     function GetName: IExpr;
     function NameAsString(const AEvalVisitor: IEvaluationTemplateVisitor): string;
     function GetContainer: ITemplate;
-    procedure SetContainer(const AContainer: ITemplate);
     property Name: IExpr read GetName;
-    property Container: ITemplate read GetContainer write SetContainer;
+    property Container: ITemplate read GetContainer;
   end;
 
   IContinueStmt = interface(IStmt)
@@ -275,6 +267,10 @@ type
 
   IElseStmt = interface(IStmt)
     ['{C82384C1-73D8-47D8-8A8C-068BA613FDD8}']
+  end;
+
+  INoopStmt = interface(IStmt)
+    ['{0F11CAFA-E6FB-487E-95F4-B9E96BA2F175}']
   end;
 
   IBreakStmt = interface(IStmt)
@@ -352,11 +348,11 @@ type
 
   ILoopStmt = interface(IStmt)
     ['{D6C26A41-3250-4EB9-A776-8952DE3931BD}']
-    function GetOnFirstContainer: ITemplate;
+    function GetOnBeginContainer: ITemplate;
     function GetOnEndContainer: ITemplate;
     function GetOnEmptyContainer: ITemplate;
     function GetBetweenItemContainer: ITemplate;
-    property OnFirstContainer: ITemplate read GetOnFirstContainer;
+    property OnBeginContainer: ITemplate read GetOnBeginContainer;
     property OnEndContainer: ITemplate read GetOnEndContainer;
     property OnEmptyContainer: ITemplate read GetOnEmptyContainer;
     property BetweenItemsContainer: ITemplate read GetBetweenItemContainer;
@@ -568,6 +564,7 @@ const
   StripActionStr: array [TStripAction] of string = ( //
     'saWhitespace', //
     'saWhitespaceAndNL', //
+    'saWhitespaceAndNLButOne', //
     'saNone' //
     );
 

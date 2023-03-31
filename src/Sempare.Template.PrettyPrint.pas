@@ -236,12 +236,12 @@ begin
   delta(4);
   AcceptVisitor(AStmt.Container, self);
   delta(-4);
-  if AStmt.OnFirstContainer <> nil then
+  if AStmt.OnBeginContainer <> nil then
   begin
     tab();
     writeln('<%% onbegin %%>');
     delta(4);
-    AcceptVisitor(AStmt.OnFirstContainer, self);
+    AcceptVisitor(AStmt.OnBeginContainer, self);
     delta(-4);
   end;
   if AStmt.OnEndContainer <> nil then
@@ -292,12 +292,12 @@ begin
   delta(4);
   AcceptVisitor(AStmt.Container, self);
   delta(-4);
-  if AStmt.OnFirstContainer <> nil then
+  if AStmt.OnBeginContainer <> nil then
   begin
     tab();
     writeln('<%% onbegin %%>');
     delta(4);
-    AcceptVisitor(AStmt.OnFirstContainer, self);
+    AcceptVisitor(AStmt.OnBeginContainer, self);
     delta(-4);
   end;
   if AStmt.OnEndContainer <> nil then
@@ -345,12 +345,12 @@ begin
   delta(4);
   AcceptVisitor(AStmt.Container, self);
   delta(-4);
-  if AStmt.OnFirstContainer <> nil then
+  if AStmt.OnBeginContainer <> nil then
   begin
     tab();
     writeln('<%% onbegin %%>');
     delta(4);
-    AcceptVisitor(AStmt.OnFirstContainer, self);
+    AcceptVisitor(AStmt.OnBeginContainer, self);
     delta(-4);
   end;
   if AStmt.OnEndContainer <> nil then
@@ -600,7 +600,7 @@ begin
   AcceptVisitor(AStmt.Name, self);
   writeln('''%%>');
   delta(4);
-  AcceptVisitor(AStmt.Container, self);
+  AcceptVisitor(AStmt.BlockContainer, self);
   delta(-4);
   tab();
   writeln('<%% end %%>');

@@ -417,7 +417,12 @@ begin
         '?':
           exit(SimpleToken(vsQUESTION));
         '+':
-          exit(SimpleToken(vsPLUS));
+          begin
+            if isEndOfScript(Result, TStripAction.saWhitespaceAndNLButOne, True) then
+              exit
+            else
+              exit(SimpleToken(vsPLUS, false, saNone, false));
+          end;
         '-':
           begin
             if isEndOfScript(Result, TStripAction.saWhitespace, True) then
@@ -549,6 +554,8 @@ begin
       case FLookahead.Input of
         '-':
           LState := TStripAction.saWhitespace;
+        '+':
+          LState := TStripAction.saWhitespaceAndNLButOne;
         '*':
           LState := TStripAction.saWhitespaceAndNL;
       else

@@ -65,7 +65,6 @@ requires
 
 contains
   Sempare.Template.BlockResolver in 'src\Sempare.Template.BlockResolver.pas',
-  Sempare.Template.BlockReplacer in 'src\Sempare.Template.BlockReplacer.pas',
   Sempare.Template.Visitor in 'src\Sempare.Template.Visitor.pas',
   Sempare.Template.Util in 'src\Sempare.Template.Util.pas',
   Sempare.Template.StackFrame in 'src\Sempare.Template.StackFrame.pas',

@@ -168,9 +168,7 @@ end;
 
 class procedure Template.Eval<T>(const AContext: ITemplateContext; const ATemplate: ITemplate; const AValue: T; const AStream: TStream);
 var
-  LValue: TTemplateValue;
   LTemplateVisitor: IEvaluationTemplateVisitor;
-  LTemplate: ITemplate;
 begin
 {$IFNDEF SEMPARE_TEMPLATE_CONFIRM_LICENSE}
 {$IFDEF MSWINDOWS}
@@ -186,10 +184,8 @@ begin
   end;
 {$ENDIF}
 {$ENDIF}
-  LValue := TTemplateValue.From<T>(AValue);
-  LTemplateVisitor := TEvaluationTemplateVisitor.Create(AContext, LValue, AStream);
-  LTemplate := ATemplate.CloneAsTemplate;
-  AcceptVisitor(LTemplate, LTemplateVisitor);
+  LTemplateVisitor := TEvaluationTemplateVisitor.Create(AContext, TTemplateValue.From<T>(AValue), AStream);
+  AcceptVisitor(ATemplate, LTemplateVisitor);
 end;
 
 class procedure Template.Eval(const ATemplate: ITemplate; const AStream: TStream; const AOptions: TTemplateEvaluationOptions);
@@ -235,6 +231,8 @@ var
   LVisitor: ITemplateVisitor;
   LTemplateVisitor: TPrettyPrintTemplateVisitor;
 begin
+  if not assigned(ATemplate) then
+    exit('');
   LTemplateVisitor := TPrettyPrintTemplateVisitor.Create();
   LVisitor := LTemplateVisitor;
   AcceptVisitor(ATemplate, LVisitor);

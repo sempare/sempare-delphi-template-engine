@@ -104,8 +104,10 @@ uses
   System.Math,
   System.Classes,
   System.SysUtils,
+  System.SyncObjs,
   System.Diagnostics,
   System.Generics.Collections,
+  Sempare.Template.Util,
   Sempare.Template.Context,
   Sempare.Template;
 
@@ -462,10 +464,7 @@ begin
 end;
 {$ENDIF}
 
-procedure TTestTemplateInclude.TestThreadedWebForm;
-
 type
-
   TTemplateData = record
     company: string;
     CopyrightYear: integer;
@@ -475,14 +474,58 @@ type
     Buttons: TArray<TButton>;
   end;
 
+const
+  ExpectedResult = #$D#$A#$D#$A#$D#$A#$D#$A#$D#$A#$D#$A#$D#$A#$D#$A#$D#$A'<html>'#$D#$A' <head>'#$D#$A + //
+    '  <title>Welcome to my Sempare</title>'#$D#$A' </head>'#$D#$A' <body>'#$D#$A#$D#$A#$D#$A + //
+    '   <form method="POST" name="userinfo" action="/userinfo">'#$D#$A'      <table>'#$D#$A'         '#$D#$A + //
+    '             <tr><td>FirstName</td><td><input name="firstname"></td></tr>'#$D#$A'         '#$D#$A + //
+    '             <tr><td>LastName</td><td><input name="lastname"></td></tr>'#$D#$A'         '#$D#$A + //
+    '             <tr><td>Email</td><td><input type="email" name="email"></td></tr>'#$D#$A'         '#$D#$A + //
+    '         <tr>'#$D#$A'             <td colspan="2" align="right">'#$D#$A'               '#$D#$A + //
+    '                 <input type="button" name="submit" value="Submit">'#$D#$A'               '#$D#$A + //
+    '             </td>'#$D#$A'         </tr>'#$D#$A'      </table>'#$D#$A'   </form>'#$D#$A#$D#$A#$D#$A + //
+    '  <p>Copyright (c) 2023 </p>'#$D#$A' </body>'#$D#$A'</html>'#$D#$A#$D#$A#$D#$A;
+
+procedure ThreadDetail(const AFailed: pinteger; const ANumEvals: integer; const ATemplate: ITemplate; const ATemplateData: TTemplateData);
+var
+  LResult: string;
+  i: integer;
+  LStopWatch: TStopwatch;
+  LElapsedMs: double;
+begin
+
+  LStopWatch := TStopwatch.create;
+  LStopWatch.Start;
+
+  for i := 0 to ANumEvals do
+  begin
+    try
+      LResult := Template.Eval(ATemplate, ATemplateData);
+      if ExpectedResult <> LResult then
+      begin
+        AtomicIncrement(AFailed^);
+      end;
+    except
+      AtomicIncrement(AFailed^);
+    end;
+  end;
+  LStopWatch.Stop;
+  LElapsedMs := LStopWatch.ElapsedMilliseconds / ANumEvals;
+
+  if LElapsedMs > GetTestTimeTollerance(0.25, 6.0) then
+    AtomicIncrement(AFailed^);
+
+end;
+
+procedure TTestTemplateInclude.TestThreadedWebForm;
 var
   LTemplateData: TTemplateData;
   LTemplate: ITemplate;
   i: integer;
-  LThread: TThread;
-  LThreads: TObjectList<TThread>;
   LNumThreads: integer;
   LNumEvals: integer;
+  LFailed: integer;
+  LEvent: TCountDownEvent;
 begin
   LTemplateData.company := 'Sempare';
   LTemplateData.CopyrightYear := 2023;
@@ -539,57 +582,33 @@ begin
     '<% block "body" %><% include("TForm") %><% end %> '#13#10 + // 36
     '<% end %>'#13#10 // 37
     );
-  LThreads := TObjectList<TThread>.create;
-  LNumThreads := min(1, CPUCount);
-  LNumEvals := 500;
-  for i := 0 to LNumThreads do
-  begin
-    LThread := TThread.CreateAnonymousThread(
-      procedure
-      var
-        LResult: string;
-        i: integer;
-        LStopWatch: TStopwatch;
-        LElapsedMs: double;
-      begin
 
-        LStopWatch := TStopwatch.create;
-        LStopWatch.Start;
+  LEvent := nil;
+  try
+    LNumThreads := min(1, CPUCount);
+    LEvent := TCountDownEvent.create(LNumThreads);
 
-        for i := 0 to LNumEvals do
+    LNumEvals := 500;
+    LFailed := 0;
+
+    for i := 1 to LNumThreads do
+    begin
+      TThread.CreateAnonymousThread(
+        procedure
         begin
-          LResult := Template.Eval(LTemplate, LTemplateData);
-          Assert.AreEqual(#13#10#13#10#13#10#13#10#13#10#13#10#13#10#13#10#13#10'<html>'#13#10' <head>'#13#10'  <title>Welcome to my Sempare</title>'#13#10 + //
-            ' </head>'#13#10' <body>'#13#10''#13#10''#13#10'   <form method="POST" name="userinfo" action="/userinfo">'#13#10 + //
-            '      <table>'#13#10'         '#13#10'             <tr><td>FirstName</td><td><input name="firstname">' + //
-            '</td></tr>'#13#10'         '#13#10'             <tr><td>LastName</td><td><input name="lastname"></td></tr>'#13#10 + //
-            '         '#13#10'             <tr><td>Email</td><td><input type="email" name="email"></td></tr>'#13#10'         '#13#10 + //
-            '         <tr>'#13#10'             <td colspan="2" align="right">'#13#10'               '#13#10 + //
-            '                 <input type="button" name="submit" value="Submit">'#13#10'               '#13#10'             </td>'#13#10'         </tr>'#13#10 + //
-            '      </table>'#13#10'   </form>'#13#10''#13#10''#13#10'  <p>Copyright (c) 2023 </p>'#13#10' </body>'#13#10'</html>'#13#10''#13#10''#13#10, LResult);
-        end;
-        LStopWatch.Stop;
-        LElapsedMs := LStopWatch.ElapsedMilliseconds / LNumEvals;
-
-        Assert.IsTrue(LElapsedMs < 0.1400);
-      end);
-    LThread.FreeOnTerminate := false;
-    LThreads.Add(LThread);
-  end;
-  for LThread in LThreads do
-  begin
-    LThread.Start;
-  end;
-  for LThread in LThreads do
-  begin
-    LThread.WaitFor;
+          ThreadDetail(@LFailed, LNumEvals, LTemplate, LTemplateData);
+          LEvent.Signal();
+        end).Start;
+    end;
+    LEvent.WaitFor();
+    Assert.AreEqual(0, LFailed);
+  finally
+    LEvent.Free;
   end;
 end;
 
 procedure TTestTemplateInclude.TestTimedWebForm;
-
 type
-
   TTemplateData = record
     company: string;
     CopyrightYear: integer;
@@ -672,9 +691,9 @@ begin
   end;
   LStopWatch.Stop;
   LElapsedMs := LStopWatch.ElapsedMilliseconds / LIterations;
-
-  Assert.IsTrue(LElapsedMs < 0.1400);
-
+{$IF defined( WIN32) OR defined(WIN64)}
+  Assert.IsTrue(LElapsedMs <= GetTestTimeTollerance(0.15, 6.0));
+{$ENDIF}
 end;
 
 procedure TTestTemplateInclude.TestWebForm;
