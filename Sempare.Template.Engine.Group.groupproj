@@ -12,6 +12,9 @@
         <Projects Include="demo\VelocityDemo\Sempare.Template.Demo.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="demo\WebBrokerStandalone\WebBrokerStandalone8080.dproj">
+            <Dependencies/>
+        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -47,14 +50,23 @@
     <Target Name="Sempare_Template_Demo:Make">
         <MSBuild Projects="demo\VelocityDemo\Sempare.Template.Demo.dproj" Targets="Make"/>
     </Target>
+    <Target Name="WebBrokerStandalone8080">
+        <MSBuild Projects="demo\WebBrokerStandalone\WebBrokerStandalone8080.dproj"/>
+    </Target>
+    <Target Name="WebBrokerStandalone8080:Clean">
+        <MSBuild Projects="demo\WebBrokerStandalone\WebBrokerStandalone8080.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="WebBrokerStandalone8080:Make">
+        <MSBuild Projects="demo\WebBrokerStandalone\WebBrokerStandalone8080.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="Sempare_Template_Pkg;Sempare_Template_Tester;Sempare_Template_Demo"/>
+        <CallTarget Targets="Sempare_Template_Pkg;Sempare_Template_Tester;Sempare_Template_Demo;WebBrokerStandalone8080"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="Sempare_Template_Pkg:Clean;Sempare_Template_Tester:Clean;Sempare_Template_Demo:Clean"/>
+        <CallTarget Targets="Sempare_Template_Pkg:Clean;Sempare_Template_Tester:Clean;Sempare_Template_Demo:Clean;WebBrokerStandalone8080:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="Sempare_Template_Pkg:Make;Sempare_Template_Tester:Make;Sempare_Template_Demo:Make"/>
+        <CallTarget Targets="Sempare_Template_Pkg:Make;Sempare_Template_Tester:Make;Sempare_Template_Demo:Make;WebBrokerStandalone8080:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>
