@@ -72,7 +72,7 @@ This yields:
 hello•world
 ```
 
-This stops on the first non whitespace character or including newline). The newline will be removed.
+This stops on the first non whitespace character or including newline. The newline will be removed.
 
 #### Using around scripts with content
 
