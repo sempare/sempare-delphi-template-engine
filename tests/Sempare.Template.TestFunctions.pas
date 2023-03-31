@@ -115,6 +115,12 @@ type
     procedure HtmlEscape;
     [Test]
     procedure HtmlUnescape;
+    [Test]
+    procedure TestMin;
+    [Test]
+    procedure TestMax;
+    [Test]
+    procedure TestAbs;
   end;
 
 type
@@ -512,6 +518,22 @@ end;
 procedure TFunctionTest.TestUppercase;
 begin
   Assert.AreEqual('HELLO', Template.Eval('<% uppercase(''HeLlo'') %>'));
+end;
+
+procedure TFunctionTest.TestMin;
+begin
+  Assert.AreEqual('1', Template.Eval('<% min(1,2) %>'));
+end;
+
+procedure TFunctionTest.TestMax;
+begin
+  Assert.AreEqual('2', Template.Eval('<% max(1,2) %>'));
+end;
+
+procedure TFunctionTest.TestAbs;
+begin
+  Assert.AreEqual('123.45', Template.Eval('<% abs(-123.45) %>'));
+  Assert.AreEqual('123.45', Template.Eval('<% abs(123.45) %>'));
 end;
 
 initialization

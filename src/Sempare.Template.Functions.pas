@@ -194,6 +194,7 @@ type
     class function PadRight(const AStr: string; const ANum: integer; const APadChar: char): string; overload; static;
     class function Min(const AValue, BValue: double): double; static;
     class function Max(const AValue, BValue: double): double; static;
+    class function Abs(const AValue: double): double; static;
 {$IFDEF SEMPARE_TEMPLATE_FIREDAC}
     class function RecordCount(const ADataset: TDataSet): integer; static;
 {$ENDIF}
@@ -583,6 +584,11 @@ begin
   exit(TNetEncoding.Base64.Encode(AStr));
 end;
 {$ENDIF}
+
+class function TInternalFuntions.Abs(const AValue: double): double;
+begin
+  exit(System.Abs(AValue));
+end;
 
 class function TInternalFuntions.Bool(const AValue: TValue): boolean;
 begin
