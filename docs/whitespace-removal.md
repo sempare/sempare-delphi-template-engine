@@ -13,7 +13,7 @@ Scripts start with <% and close with %>. These tags may have additional hints to
 | Hint | Note |
 |---|---|
 | - | Removes whitespace only.  |
-| + | Removes whitespace only, but leaves one space.  |
+| + | Removes whitespace as well as a newline, but leaves one space.  |
 | * | Removes whitespace as well as a newline.  |
 
 #### Using -
@@ -58,7 +58,7 @@ hello••••<%+ 'world' +%>••••<NL>
 
 This yields:
 ```
-hello•world•<NL>
+hello•world•
 ```
 
 #### Using *

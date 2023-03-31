@@ -1354,7 +1354,7 @@ begin
     LStripAction := FStripStmt.Action;
     LHasLooped := false;
     LProcessed := 0;
-    while LIdx < length(AString) do
+    while LIdx <= length(AString) do
     begin
       LChar := AString[LIdx];
       if charinset(LChar, STRIP_CHARS[LStripAction]) then
