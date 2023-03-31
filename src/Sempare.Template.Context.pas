@@ -84,6 +84,16 @@ type
 
   TTemplateResolver = reference to function(const AContext: ITemplateContext; const AName: string): ITemplate;
 
+  ITemplateEvaluationContext = interface
+    ['{FCE6891F-3D39-4CC4-8ADB-024D843C7770}']
+    function TryGetBlock(const AName: string; out ABlock: IBlockStmt): boolean;
+    procedure AddBlock(const AName: string; const ABlock: IBlockStmt);
+    procedure RemoveBlock(const AName: string);
+
+    procedure StartEvaluation;
+    procedure EndEvaluation;
+  end;
+
   ITemplateContext = interface
     ['{979D955C-B4BD-46BB-9430-1E74CBB999D4}']
 
@@ -207,8 +217,20 @@ uses
   Sempare.Template.ResourceStrings;
 
 type
+  TEvaluationContext = class
+  private
+    FBlocks: TObjectDictionary<string, TStack<IBlockStmt>>;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    function TryGetBlock(const AName: string; out ABlock: IBlockStmt): boolean;
+    procedure AddBlock(const AName: string; const ABlock: IBlockStmt);
+    procedure RemoveBlock(const AName: string);
+  end;
 
-  TTemplateContext = class(TInterfacedObject, ITemplateContext, ITemplateContextForScope)
+  TTemplateContext = class(TInterfacedObject, ITemplateContext, ITemplateContextForScope, ITemplateEvaluationContext)
+  private
+    class threadvar FEvaluationContext: TEvaluationContext;
   private
     FTemplateResolver: TTemplateResolver;
     FTemplates: TDictionary<string, ITemplate>;
@@ -232,6 +254,13 @@ type
   public
     constructor Create(const AOptions: TTemplateEvaluationOptions);
     destructor Destroy; override;
+
+    function TryGetBlock(const AName: string; out ABlock: IBlockStmt): boolean;
+    procedure AddBlock(const AName: string; const ABlock: IBlockStmt);
+    procedure RemoveBlock(const AName: string);
+
+    procedure StartEvaluation;
+    procedure EndEvaluation;
 
     function GetEncoding: TEncoding;
     procedure SetEncoding(const AEncoding: TEncoding);
@@ -311,6 +340,13 @@ begin
   end;
 end;
 
+procedure TTemplateContext.AddBlock(const AName: string; const ABlock: IBlockStmt);
+begin
+  if not assigned(FEvaluationContext) then
+    exit;
+  FEvaluationContext.AddBlock(AName, ABlock);
+end;
+
 procedure TTemplateContext.ApplyTo(const AScope: TStackFrame);
 var
   LPair: TPair<string, TValue>;
@@ -350,6 +386,18 @@ begin
   FFunctions := nil;
   FLock.Free;
   inherited;
+end;
+
+procedure TTemplateContext.EndEvaluation;
+begin
+  FreeAndNil(FEvaluationContext);
+end;
+
+function TTemplateContext.TryGetBlock(const AName: string; out ABlock: IBlockStmt): boolean;
+begin
+  if not assigned(FEvaluationContext) then
+    exit(false);
+  exit(FEvaluationContext.TryGetBlock(AName, ABlock));
 end;
 
 function TTemplateContext.TryGetFunction(const AName: string; out AFunction: TArray<TRttiMethod>): boolean;
@@ -426,6 +474,13 @@ end;
 function TTemplateContext.GetVariables: ITemplateVariables;
 begin
   exit(FVariables);
+end;
+
+procedure TTemplateContext.RemoveBlock(const AName: string);
+begin
+  if not assigned(FEvaluationContext) then
+    exit;
+  FEvaluationContext.RemoveBlock(AName);
 end;
 
 function TTemplateContext.GetScriptEndStripToken: string;
@@ -534,6 +589,11 @@ begin
   FVariableEncoder := AEncoder;
 end;
 
+procedure TTemplateContext.StartEvaluation;
+begin
+  FEvaluationContext := TEvaluationContext.Create;
+end;
+
 procedure TTemplateContext.SetScriptEndStripToken(const Value: string);
 begin
   FEndStripToken := Value;
@@ -571,7 +631,7 @@ begin
     result := FTemplates.TryGetValue(AName, ATemplate);
     if result then
       exit(true);
-    if not Assigned(FTemplateResolver) then
+    if not assigned(FTemplateResolver) then
       exit(false);
     ATemplate := FTemplateResolver(self, AName);
     if ATemplate = nil then
@@ -618,7 +678,51 @@ begin
   setlength(result, 0);
 end;
 
-{ TNoEncoding }
+{ TEvaluationContext }
+
+procedure TEvaluationContext.AddBlock(const AName: string; const ABlock: IBlockStmt);
+var
+  LStack: TStack<IBlockStmt>;
+begin
+  if not FBlocks.TryGetValue(AName, LStack) then
+  begin
+    LStack := TStack<IBlockStmt>.Create;
+    FBlocks.AddOrSetValue(AName, LStack);
+  end;
+  LStack.Push(ABlock)
+end;
+
+constructor TEvaluationContext.Create;
+begin
+  FBlocks := TObjectDictionary < string, TStack < IBlockStmt >>.Create([doOwnsValues]);
+end;
+
+destructor TEvaluationContext.Destroy;
+begin
+  FBlocks.Free;
+  inherited;
+end;
+
+procedure TEvaluationContext.RemoveBlock(const AName: string);
+var
+  LStack: TStack<IBlockStmt>;
+begin
+  if not FBlocks.TryGetValue(AName, LStack) then
+    exit;
+  LStack.pop;
+  if LStack.Count = 0 then
+    FBlocks.Remove(AName);
+end;
+
+function TEvaluationContext.TryGetBlock(const AName: string; out ABlock: IBlockStmt): boolean;
+var
+  LStack: TStack<IBlockStmt>;
+begin
+  if not FBlocks.TryGetValue(AName, LStack) then
+    exit(false);
+  ABlock := LStack.Peek;
+  exit(true);
+end;
 
 initialization
 

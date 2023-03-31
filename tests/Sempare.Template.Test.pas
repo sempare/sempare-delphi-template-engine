@@ -280,14 +280,15 @@ begin
 end;
 
 procedure TTestTemplate.TestList;
+type
+  TContainer = record
+    data: TObjectList<TTestClass>;
+  end;
+
 var
   LList: TObjectList<TTestClass>;
-  LContainer: record data: TObjectList<TTestClass>;
-end;
-LEmptyContainer:
-record data: TObjectList<TTestClass>;
-end;
-
+  LContainer: TContainer;
+  LEmptyContainer: TContainer;
 begin
   LList := TObjectList<TTestClass>.Create();
   try
@@ -323,11 +324,8 @@ end;
 
 procedure TTestTemplate.TestNonStmt;
 begin
-  Assert.WillRaise(
-    procedure
-    begin
-      Template.Eval('<% %>');
-    end);
+  Template.Eval('<% %>');
+  Template.Eval('   <% %>   <% %> ');
 end;
 
 procedure TTestTemplate.TestNoSpace;

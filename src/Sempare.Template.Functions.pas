@@ -192,6 +192,8 @@ type
     class function PadLeft(const AStr: string; const ANum: integer): string; overload; static;
     class function PadRight(const AStr: string; const ANum: integer): string; overload; static;
     class function PadRight(const AStr: string; const ANum: integer; const APadChar: char): string; overload; static;
+    class function Min(const AValue, BValue: double): double; static;
+    class function Max(const AValue, BValue: double): double; static;
 {$IFDEF SEMPARE_TEMPLATE_FIREDAC}
     class function RecordCount(const ADataset: TDataSet): integer; static;
 {$ENDIF}
@@ -208,6 +210,16 @@ type
 {$ENDIF}
     class function TemplateExists(const AContext: ITemplateContext; const AStr: string): boolean; static;
   end;
+
+class function TInternalFuntions.Min(const AValue, BValue: double): double;
+begin
+  exit(System.Math.Min(AValue, BValue));
+end;
+
+class function TInternalFuntions.Max(const AValue, BValue: double): double;
+begin
+  exit(System.Math.Max(AValue, BValue));
+end;
 
 class function TInternalFuntions.PadLeft(const AStr: string; const ANum: integer): string;
 begin

@@ -44,7 +44,6 @@ type
 
   ITemplateParser = interface
     ['{DAF8A08D-9158-4D2C-9E76-BE80E9DA50A3}']
-
     function Parse(const AStream: TStream; const AManagedStream: boolean = true): ITemplate;
   end;
 
@@ -54,15 +53,11 @@ implementation
 
 uses
   System.SysUtils,
-  System.Math,
   System.Rtti,
   System.Generics.Collections,
   Sempare.Template,
   Sempare.Template.BlockResolver,
-  Sempare.Template.BlockReplacer,
   Sempare.Template.ResourceStrings,
-  Sempare.Template.PrettyPrint,
-  Sempare.Template.Evaluate,
   Sempare.Template.Common,
   Sempare.Template.Lexer,
   Sempare.Template.Rtti,
@@ -87,8 +82,7 @@ type
     procedure Add(const AItem: IStmt);
     function GetLastItem: IStmt;
     procedure Accept(const AVisitor: ITemplateVisitor);
-    function Clone: IInterface;
-    function CloneAsTemplate: ITemplate;
+
   public
     constructor Create();
   end;
@@ -107,12 +101,13 @@ type
     constructor Create(const APosition: IPosition);
     destructor Destroy; override;
     procedure Accept(const AVisitor: ITemplateVisitor); virtual; abstract;
-    function Clone: IInterface; virtual;
   end;
 
   TAbstractStmt = class abstract(TAbstractBase, IStmt)
-    function CloneAsStmt: IStmt;
+  private
     function Flatten: TArray<IStmt>; virtual;
+  public
+    constructor Create(const APosition: IPosition);
   end;
 
   TDebugStmt = class(TAbstractStmt, IDebugStmt)
@@ -133,19 +128,12 @@ type
   private
     FName: IExpr;
     FBlockContainer: ITemplate;
-    FContainer: ITemplate; // NOTE: FContainer is something that is resolved
-    FBlockNames: TArray<string>; // NOTE: names in the container
     function GetName: IExpr;
     function GetBlockContainer: ITemplate;
-    function GetContainer: ITemplate;
-    procedure SetContainer(const AContainer: ITemplate);
-    function GetBlockNames: TArray<string>;
-    procedure SetBlockNames(const ANames: TArray<string>);
     function NameAsString(const AEvalVisitor: IEvaluationTemplateVisitor): string;
   public
     constructor Create(const APosition: IPosition; const AName: IExpr; const ABlockContainer: ITemplate);
     procedure Accept(const AVisitor: ITemplateVisitor); override;
-    function Clone: IInterface; override;
   end;
 
   TBlockStmt = class(TAbstractStmt, IBlockStmt)
@@ -154,15 +142,18 @@ type
     FContainer: ITemplate;
     function GetName: IExpr;
     function GetContainer: ITemplate;
-    procedure SetContainer(const AContainer: ITemplate);
     function NameAsString(const AEvalVisitor: IEvaluationTemplateVisitor): string;
   public
     constructor Create(const APosition: IPosition; const AName: IExpr; const AContainer: ITemplate);
     procedure Accept(const AVisitor: ITemplateVisitor); override;
-    function Clone: IInterface; override;
   end;
 
   TElseStmt = class(TAbstractStmt, IElseStmt)
+  private
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
+  end;
+
+  TNoopStmt = class(TAbstractStmt, INoopStmt)
   private
     procedure Accept(const AVisitor: ITemplateVisitor); override;
   end;
@@ -288,17 +279,17 @@ type
 
   TLoopStmt = class(TAbstractStmtWithContainer, ILoopStmt)
   protected
-    FOnFirst: ITemplate;
-    FOnLast: ITemplate;
+    FOnBegin: ITemplate;
+    FOnEnd: ITemplate;
     FOnEmpty: ITemplate;
     FBetweenItem: ITemplate;
 
-    function GetOnFirstContainer: ITemplate;
+    function GetOnBeginContainer: ITemplate;
     function GetOnEndContainer: ITemplate;
     function GetOnEmptyContainer: ITemplate;
     function GetBetweenItemContainer: ITemplate;
   public
-    constructor Create(APosition: IPosition; AContainer: ITemplate; AOnFirst, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
+    constructor Create(APosition: IPosition; AContainer: ITemplate; AOnBegin, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
   end;
 
   TWhileStmt = class(TLoopStmt, IWhileStmt)
@@ -311,7 +302,7 @@ type
     function GetOffsetExpr: IExpr;
     function GetLimitExpr: IExpr;
   public
-    constructor Create(const APosition: IPosition; const ACondition: IExpr; const AOffsetExpr: IExpr; const ALimitExpr: IExpr; const AContainer: ITemplate; const AOnFirst, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
+    constructor Create(const APosition: IPosition; const ACondition: IExpr; const AOffsetExpr: IExpr; const ALimitExpr: IExpr; const AContainer: ITemplate; const AOnBegin, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
   end;
 
   TForInStmt = class(TLoopStmt, IForInStmt)
@@ -328,7 +319,7 @@ type
     function GetLimitExpr: IExpr;
     procedure Accept(const AVisitor: ITemplateVisitor); override;
   public
-    constructor Create(const APosition: IPosition; const AVariable: string; const AForOp: TForOp; const AExpr: IExpr; const AOffsetExpr: IExpr; const ALimitExpr: IExpr; const AContainer: ITemplate; const AOnFirst, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
+    constructor Create(const APosition: IPosition; const AVariable: string; const AForOp: TForOp; const AExpr: IExpr; const AOffsetExpr: IExpr; const ALimitExpr: IExpr; const AContainer: ITemplate; const AOnBegin, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
   end;
 
   TForRangeStmt = class(TLoopStmt, IForRangeStmt)
@@ -345,7 +336,7 @@ type
     function GetStepExpr: IExpr;
     procedure Accept(const AVisitor: ITemplateVisitor); override;
   public
-    constructor Create(const APosition: IPosition; const AVariable: string; const AForOp: TForOp; const ALowExpr: IExpr; const AHighExpr: IExpr; const AStep: IExpr; const AContainer: ITemplate; const AOnFirst, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
+    constructor Create(const APosition: IPosition; const AVariable: string; const AForOp: TForOp; const ALowExpr: IExpr; const AHighExpr: IExpr; const AStep: IExpr; const AContainer: ITemplate; const AOnBegin, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
   end;
 
   TAssignStmt = class(TAbstractStmtWithExpr, IAssignStmt)
@@ -373,12 +364,10 @@ type
     procedure AddExpr(const AExpr: IExpr);
     function GetExprCount: integer;
     procedure Accept(const AVisitor: ITemplateVisitor); override;
-    function Clone: IInterface; override;
   public
   end;
 
   TAbstractExpr = class abstract(TAbstractBase, IExpr)
-    function Clone: IInterface; override;
   end;
 
   TValueExpr = class(TAbstractExpr, IValueExpr)
@@ -556,6 +545,7 @@ type
     function RuleFunctionExpr(const ASymbol: string): IExpr;
     function RuleMethodExpr(AExpr: IExpr; AMethodExpr: IExpr): IExpr;
     function RuleRequireStmt: IStmt;
+    function RuleNoopStmt: IStmt;
 
     function GetValueSeparatorSymbol: TTemplateSymbol;
   public
@@ -602,7 +592,7 @@ function AsValue(AExpr: IExpr): TValue;
 var
   LValueExpr: IValueExpr;
 begin
-  AExpr.QueryInterface(IValueExpr, LValueExpr);
+  LValueExpr := AExpr as IValueExpr;
   exit(LValueExpr.Value);
 end;
 
@@ -748,7 +738,7 @@ begin
 
   PushContainer;
   LFalseContainer := self.CurrentContainer;
-  LFalseContainer.QueryInterface(ITemplateAdd, LContainerAdd);
+  LContainerAdd := LFalseContainer as ITemplateAdd;
 
   if FLookahead.Token = vsELIF then
   begin
@@ -894,7 +884,7 @@ var
 begin
   result := vsInvalid;
   LEndToken := AEndToken + [vsEOF];
-  Container.QueryInterface(ITemplateAdd, LParentContainer);
+  LParentContainer := Container as ITemplateAdd;
   LLoop := true;
   while LLoop do
   begin
@@ -1057,6 +1047,8 @@ begin
   LSymbol := FLookahead;
   LStripAction := Match(vsStartScript);
   case FLookahead.Token of
+    vsEndScript:
+      result := RuleNoopStmt;
     vsBreak:
       result := RuleBreakStmt;
     vsContinue:
@@ -1069,8 +1061,8 @@ begin
       result := RuleIncludeStmt;
     vsEND:
       result := RuleEndStmt;
-    vsEndScript, vsElse, vsELIF, vsOnBegin, vsOnEnd, vsOnEmpty, vsBetweenItem:
-      ;
+    vsElse, vsELIF, vsOnBegin, vsOnEnd, vsOnEmpty, vsBetweenItem:
+      result := nil;
     vsIF:
       result := RuleIfStmt;
     vsFor:
@@ -1196,6 +1188,17 @@ begin
   result := TBlockStmt.Create(LSymbol.Position, LName, LContainer);
   result := AddStripStmt(result, LStripAction, sdRight);
   LContainer.Optimise;
+end;
+
+function TTemplateParser.RuleNoopStmt: IStmt;
+var
+  LSymbol: ITemplateSymbol;
+  LStripAction: TStripAction;
+begin
+  LSymbol := FLookahead;
+  LStripAction := Match(vsEndScript);
+  result := TNoopStmt.Create(LSymbol.Position);
+  result := AddStripStmt(result, LStripAction, sdRight);
 end;
 
 function TTemplateParser.RuleBreakStmt: IStmt;
@@ -1430,7 +1433,7 @@ var
   LOptions: IPreserveValue<TParserOptions>;
   LContainerTemplate: ITemplate;
   LSymbol: ITemplateSymbol;
-  LOnFirst, LOnEnd, LOnLoop, LOnEmpty, LBetweenItem: ITemplate;
+  LOnBegin, LOnEnd, LOnLoop, LOnEmpty, LBetweenItem: ITemplate;
   LPrevSymbol, LBlockSymbol: TTemplateSymbol;
   i: integer;
   LContainerStripAction: TStripAction;
@@ -1445,7 +1448,7 @@ var
         end;
       vsOnBegin:
         begin
-          LOnFirst := LContainerTemplate;
+          LOnBegin := LContainerTemplate;
         end;
       vsOnEnd:
         begin
@@ -1539,11 +1542,11 @@ begin
   LEndStripAction := Match(vsEndScript);
 
   if LForOp in [TForOp.foIn, TForOp.foOf] then
-    result := TForInStmt.Create(LSymbol.Position, LId, LForOp, LRangeExpr, LOffsetExpr, LLimitExpr, LOnLoop, LOnFirst, LOnEnd, LOnEmpty, LBetweenItem)
+    result := TForInStmt.Create(LSymbol.Position, LId, LForOp, LRangeExpr, LOffsetExpr, LLimitExpr, LOnLoop, LOnBegin, LOnEnd, LOnEmpty, LBetweenItem)
   else
-    result := TForRangeStmt.Create(LSymbol.Position, LId, LForOp, LLowValueExpr, LHighValueExpr, LStep, LOnLoop, LOnFirst, LOnEnd, LOnEmpty, LBetweenItem);
+    result := TForRangeStmt.Create(LSymbol.Position, LId, LForOp, LLowValueExpr, LHighValueExpr, LStep, LOnLoop, LOnBegin, LOnEnd, LOnEmpty, LBetweenItem);
   result := AddStripStmt(result, LEndStripAction, sdRight);
-  Optimise([LOnLoop, LOnFirst, LOnEnd, LOnEmpty, LBetweenItem]);
+  Optimise([LOnLoop, LOnBegin, LOnEnd, LOnEmpty, LBetweenItem]);
 end;
 
 function TTemplateParser.RuleFunctionExpr(const ASymbol: string): IExpr;
@@ -1587,7 +1590,7 @@ var
   LSymbol: ITemplateSymbol;
   LOffsetExpr, LLimitExpr: IExpr;
   LContainerTemplate: ITemplate;
-  LOnFirst, LOnEnd, LOnLoop, LOnEmpty, LBetweenItem: ITemplate;
+  LOnBegin, LOnEnd, LOnLoop, LOnEmpty, LBetweenItem: ITemplate;
   LPrevSymbol, LBlockSymbol: TTemplateSymbol;
   i: integer;
   LContainerStripAction: TStripAction;
@@ -1601,7 +1604,7 @@ var
         end;
       vsOnBegin:
         begin
-          LOnFirst := LContainerTemplate;
+          LOnBegin := LContainerTemplate;
         end;
       vsOnEnd:
         begin
@@ -1673,9 +1676,9 @@ begin
   if (eoEvalEarly in FContext.Options) and IsValue(LCondition) and not AsBoolean(AsValue(LCondition)) then
     result := nil
   else
-    result := TWhileStmt.Create(LSymbol.Position, LCondition, LOffsetExpr, LLimitExpr, LOnLoop, LOnFirst, LOnEnd, LOnEmpty, LBetweenItem);
+    result := TWhileStmt.Create(LSymbol.Position, LCondition, LOffsetExpr, LLimitExpr, LOnLoop, LOnBegin, LOnEnd, LOnEmpty, LBetweenItem);
   result := AddStripStmt(result, LEndStripAction, sdRight);
-  Optimise([LOnLoop, LOnFirst, LOnEnd, LOnEmpty, LBetweenItem]);
+  Optimise([LOnLoop, LOnBegin, LOnEnd, LOnEmpty, LBetweenItem]);
 end;
 
 function TTemplateParser.RuleWithStmt: IStmt;
@@ -1834,10 +1837,8 @@ function TTemplateParser.lookaheadValue: string;
 var
   val: ITemplateValueSymbol;
 begin
-  if FLookahead.QueryInterface(ITemplateValueSymbol, val) = 0 then
-    exit(val.Value)
-  else
-    exit('');
+  val := FLookahead as ITemplateValueSymbol;
+  exit(val.Value)
 end;
 
 function TTemplateParser.Match(const ASymbol: TTemplateSymbol): TStripAction;
@@ -1953,11 +1954,6 @@ begin
   LOffset := length(FExprs);
   setlength(FExprs, LOffset + 1);
   FExprs[LOffset] := AExpr;
-end;
-
-function TExprList.Clone: IInterface;
-begin
-  exit(self);
 end;
 
 function TExprList.GetExpr(const AOffset: integer): IExpr;
@@ -2106,9 +2102,9 @@ begin
   AVisitor.Visit(self);
 end;
 
-constructor TForInStmt.Create(const APosition: IPosition; const AVariable: string; const AForOp: TForOp; const AExpr: IExpr; const AOffsetExpr: IExpr; const ALimitExpr: IExpr; const AContainer: ITemplate; const AOnFirst, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
+constructor TForInStmt.Create(const APosition: IPosition; const AVariable: string; const AForOp: TForOp; const AExpr: IExpr; const AOffsetExpr: IExpr; const ALimitExpr: IExpr; const AContainer: ITemplate; const AOnBegin, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
 begin
-  inherited Create(APosition, AContainer, AOnFirst, AOnEnd, AOnEmpty, ABetweenItem);
+  inherited Create(APosition, AContainer, AOnBegin, AOnEnd, AOnEmpty, ABetweenItem);
   FVariable := AVariable;
   FForOp := AForOp;
   FExpr := AExpr;
@@ -2148,9 +2144,9 @@ begin
   AVisitor.Visit(self);
 end;
 
-constructor TForRangeStmt.Create(const APosition: IPosition; const AVariable: string; const AForOp: TForOp; const ALowExpr: IExpr; const AHighExpr: IExpr; const AStep: IExpr; const AContainer: ITemplate; const AOnFirst, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
+constructor TForRangeStmt.Create(const APosition: IPosition; const AVariable: string; const AForOp: TForOp; const ALowExpr: IExpr; const AHighExpr: IExpr; const AStep: IExpr; const AContainer: ITemplate; const AOnBegin, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
 begin
-  inherited Create(APosition, AContainer, AOnFirst, AOnEnd, AOnEmpty, ABetweenItem);
+  inherited Create(APosition, AContainer, AOnBegin, AOnEnd, AOnEmpty, ABetweenItem);
   FVariable := AVariable;
   FForOp := AForOp;
   FLowExpr := ALowExpr;
@@ -2222,24 +2218,6 @@ begin
   FArray[LOffset] := AItem;
 end;
 
-function TTemplate.Clone: IInterface;
-var
-  i: IStmt;
-  LTemplate: TTemplate;
-begin
-  LTemplate := TTemplate.Create;
-  result := LTemplate;
-  for i in FArray do
-  begin
-    LTemplate.Add(i.CloneAsStmt);
-  end;
-end;
-
-function TTemplate.CloneAsTemplate: ITemplate;
-begin
-  supports(Clone, ITemplate, result);
-end;
-
 constructor TTemplate.Create;
 begin
   FPosition := TPosition.Create('', 1, 1);
@@ -2287,7 +2265,7 @@ procedure TTemplate.Optimise;
     result := nil;
     for LStmt in AArray do
     begin
-      if supports(LStmt, IEndStmt) or supports(LStmt, ICommentStmt) or supports(LStmt, IElseStmt) then
+      if supports(LStmt, IEndStmt) or supports(LStmt, ICommentStmt) or supports(LStmt, IElseStmt) or supports(LStmt, INoopStmt) then
       begin
         continue;
       end;
@@ -2326,9 +2304,9 @@ begin
   AVisitor.Visit(self);
 end;
 
-constructor TWhileStmt.Create(const APosition: IPosition; const ACondition: IExpr; const AOffsetExpr: IExpr; const ALimitExpr: IExpr; const AContainer: ITemplate; const AOnFirst, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
+constructor TWhileStmt.Create(const APosition: IPosition; const ACondition: IExpr; const AOffsetExpr: IExpr; const ALimitExpr: IExpr; const AContainer: ITemplate; const AOnBegin, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
 begin
-  inherited Create(APosition, AContainer, AOnFirst, AOnEnd, AOnEmpty, ABetweenItem);
+  inherited Create(APosition, AContainer, AOnBegin, AOnEnd, AOnEmpty, ABetweenItem);
   FCondition := ACondition;
   FOffsetExpr := AOffsetExpr;
   FLimitExpr := ALimitExpr;
@@ -2421,11 +2399,6 @@ begin
 end;
 
 { TAbstractBase }
-
-function TAbstractBase.Clone: IInterface;
-begin
-  exit(self);
-end;
 
 constructor TAbstractBase.Create(const APosition: IPosition);
 begin
@@ -2734,11 +2707,11 @@ end;
 
 { TLoopStmt }
 
-constructor TLoopStmt.Create(APosition: IPosition; AContainer, AOnFirst, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
+constructor TLoopStmt.Create(APosition: IPosition; AContainer, AOnBegin, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
 begin
   inherited Create(APosition, AContainer);
-  FOnFirst := AOnFirst;
-  FOnLast := AOnEnd;
+  FOnBegin := AOnBegin;
+  FOnEnd := AOnEnd;
   FOnEmpty := AOnEmpty;
   FBetweenItem := ABetweenItem;
 end;
@@ -2755,12 +2728,12 @@ end;
 
 function TLoopStmt.GetOnEndContainer: ITemplate;
 begin
-  exit(FOnLast);
+  exit(FOnEnd);
 end;
 
-function TLoopStmt.GetOnFirstContainer: ITemplate;
+function TLoopStmt.GetOnBeginContainer: ITemplate;
 begin
-  exit(FOnFirst);
+  exit(FOnBegin);
 end;
 
 { TCompositeStmt }
@@ -2821,11 +2794,6 @@ begin
   AVisitor.Visit(self);
 end;
 
-function TBlockStmt.Clone: IInterface;
-begin
-  exit(TBlockStmt.Create(FPosition, FName, FContainer));
-end;
-
 constructor TBlockStmt.Create(const APosition: IPosition; const AName: IExpr; const AContainer: ITemplate);
 begin
   inherited Create(APosition);
@@ -2848,21 +2816,11 @@ begin
   exit(AEvalVisitor.EvalExprAsString(FName));
 end;
 
-procedure TBlockStmt.SetContainer(const AContainer: ITemplate);
-begin
-  FContainer := AContainer;
-end;
-
 { TExtendsStmt }
 
 procedure TExtendsStmt.Accept(const AVisitor: ITemplateVisitor);
 begin
   AVisitor.Visit(self);
-end;
-
-function TExtendsStmt.Clone: IInterface;
-begin
-  exit(TExtendsStmt.Create(FPosition, FName, FBlockContainer));
 end;
 
 constructor TExtendsStmt.Create(const APosition: IPosition; const AName: IExpr; const ABlockContainer: ITemplate);
@@ -2877,16 +2835,6 @@ begin
   exit(FBlockContainer);
 end;
 
-function TExtendsStmt.GetBlockNames: TArray<string>;
-begin
-  exit(FBlockNames);
-end;
-
-function TExtendsStmt.GetContainer: ITemplate;
-begin
-  exit(FContainer);
-end;
-
 function TExtendsStmt.GetName: IExpr;
 begin
   exit(FName);
@@ -2897,33 +2845,23 @@ begin
   exit(AEvalVisitor.EvalExprAsString(FName));
 end;
 
-procedure TExtendsStmt.SetBlockNames(const ANames: TArray<string>);
-begin
-  FBlockNames := ANames;
-end;
-
-procedure TExtendsStmt.SetContainer(const AContainer: ITemplate);
-begin
-  FContainer := AContainer;
-end;
-
-{ TAbstractExpr }
-
-function TAbstractExpr.Clone: IInterface;
-begin
-  exit(self);
-end;
-
 { TAbstractStmt }
 
-function TAbstractStmt.CloneAsStmt: IStmt;
+constructor TAbstractStmt.Create(const APosition: IPosition);
 begin
-  supports(Clone, IStmt, result);
+  inherited Create(APosition);
 end;
 
 function TAbstractStmt.Flatten: TArray<IStmt>;
 begin
   result := [self];
+end;
+
+{ TNoopStmt }
+
+procedure TNoopStmt.Accept(const AVisitor: ITemplateVisitor);
+begin
+  AVisitor.Visit(self);
 end;
 
 initialization
