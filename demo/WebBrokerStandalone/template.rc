@@ -1,0 +1,4 @@
+index RCDATA "templates\\index.tpl"
+dynform RCDATA "templates\\dynform.tpl"
+helper RCDATA "templates\\helper_template.tpl"
+template RCDATA "templates\\main_template.tpl"
