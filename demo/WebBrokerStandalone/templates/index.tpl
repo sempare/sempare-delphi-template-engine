@@ -9,5 +9,7 @@
                         <li><% i %></li>
                 <%- end *%>
                 </ul>
+                <a href="/form">example form</a>
+                <a href="/random">random eror 404</a>
         <%- end *%>
 <% end *%>

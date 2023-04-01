@@ -4,6 +4,10 @@
 
 <% template "TButton" %><input type="button" name="<% name %>" value="<% caption %>"><% end %>
 
+<% template "TResetButton" %><input type="reset" name="<% name %>" value="<% caption %>"><% end %>
+
+<% template "TSubmitButton" %><input type="submit" name="<% name %>" value="<% caption %>"><% end %>
+
 <% template "TForm" %>
 <h1><% Title %></h1>
 <form method="POST" name="<% FormName %>" action="<% FormAction %>">
@@ -14,7 +18,7 @@
      <tr>
          <td colspan="2" align="right">
            <% for button of buttons %>
-             <% include("TButton", button) %>
+             <% include(button.FieldType, button) %>
            <% end %>
          </td>
      </tr>
