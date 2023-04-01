@@ -203,6 +203,8 @@ type
     class function Base64Decode(const AStr: string): string; static;
     class function HtmlUnescape(const AStr: string): string; static;
     class function HtmlEscape(const AStr: string): string; static;
+    class function UrlDecode(const AStr: string): string; static;
+    class function FormDecode(const AStr: string): string; static;
 {$ENDIF}
 {$IFDEF SUPPORT_HASH}
     class function Md5(const AStr: string): string; static;
@@ -567,6 +569,16 @@ end;
 class function TInternalFuntions.HtmlEscape(const AStr: string): string;
 begin
   exit(TNetEncoding.HTML.Encode(AStr));
+end;
+
+class function TInternalFuntions.FormDecode(const AStr: string): string;
+begin
+  exit(TNetEncoding.URL.FormDecode(AStr));
+end;
+
+class function TInternalFuntions.UrlDecode(const AStr: string): string;
+begin
+  exit(TNetEncoding.URL.UrlDecode(AStr));
 end;
 
 class function TInternalFuntions.HtmlUnescape(const AStr: string): string;
