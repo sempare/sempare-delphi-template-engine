@@ -14,30 +14,35 @@ License: [GPL v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html) or [Sempare Li
 Open Source: https://github.com/sempare/sempare-delphi-template-engine
 
 ## Contents
-1. [Introduction](#Introduction)
-2. [Quickstart](#Quickstart)
-3. [Features](#Features)
-4. [Objectives](#Objectives)
-5. [Requirements](#Requirements)
-6. [Installation: GetIt](#GetIt)
-7. [Installation: Delphinus](#DelphinusSupport)
-8. [Installation: Manual Install](#ManualInstall)
-9. [Feedback](#Feedback)
-10. [Statements](./docs/statements.md)
-11. [Expressions](./docs/expressions.md)
-12. [Builtin functions](./docs/builtin-functions.md)
-13. [Builtin variables](./docs/builtin-variables.md)
-14. [Custom functions](./docs/custom-functions.md)
-15. [Configuration](./docs/configuration.md)
-16. [Components](./docs/components.md)
-17. [Tricks](./docs/tricks.md)
-18. [Template Patterns](./docs/template-patterns.md)
-19. [Whitespace Removal](./docs/whitespace-removal.md)
-20. [Internals](./docs/internals.md)
-21. [Restrictions/Limitations/Known Bugs](./docs/restrictions.md)
-22. [License](#License)
+- [Introduction](#Introduction)
+- [Call To Action](#CallToAction)
+- [Quickstart](#Quickstart)
+- [Features](#Features)
+- [Objectives](#Objectives)
+- [Requirements](#Requirements)
+- [Installation](#Installation)
+    - [GetIt](#GetIt)
+    - [Boss](#Boss)
+    - [Delphinus](#DelphinusSupport)
+    - [Manual Install](#ManualInstall)
+- [Feedback](#Feedback)
+- Template Language
+  - [Statements](./docs/statements.md)
+  - [Expressions](./docs/expressions.md)
+  - [Builtin functions](./docs/builtin-functions.md)
+  - [Builtin variables](./docs/builtin-variables.md)
+- Customisation
+  - [Custom functions](./docs/custom-functions.md)
+  - [Configuration](./docs/configuration.md)
+- [Components](./docs/components.md)
+- [Tricks](./docs/tricks.md)
+- [Template Patterns](./docs/template-patterns.md)
+- [Whitespace Removal](./docs/whitespace-removal.md)
+- [Internals](./docs/internals.md)
+- [Restrictions/Limitations/Known Bugs](./docs/restrictions.md)
+- [License](#License)
 
-## Introduction
+<a name="Introduction"><h2>Introduction</h3></a>
 
 Template engines are used often in technology where text needs to be customised by substituting variables with values from a data source. Examples where this may take place:
 - web sites using template engines (for server side scripting)
@@ -78,21 +83,26 @@ In the example above, you can see that the '<%' start and '%>' end the scripting
 
 **NOTE** In examples in this documentation I may use the latest Delphi syntax, e.g. inline variable declarations. This is not backward compatible as they were introduced in Delphi 10.2 and are used to shorten the code/examples being illustrated in the documentation. The codebase will attempt to be as backward compatible as possible.
 
-## Call to action
+<a name="CallToAction"><h2>Call to action</h3></a>
 
 Please 'star' the project on github.
 
 ![](./images/sempare-template-engine-start-cta.png)
 
-## Quickstart
+<a name="Quickstart"><h2>Quickstart</h3></a>
+
+There are a few ways to get started quickly.
+
+- Look at the examples on how to do server side scripting using some popular web frameworks:
+   - [WebBroker](https://docwiki.embarcadero.com/RADStudio/Alexandria/en/Creating_WebBroker_Applications) [Demo](https://github.com/sempare/sempare-delphi-template-engine/tree/main/demo/WebBrokerStandalone)
+   - [Horse](https://github.com/hashload/horse) [Demo](https://github.com/sempare/sempare-delphi-template-engine-horse-demo)
 
 [Try the demo](./demo/VelocityDemo/README.md) if you want to dive in quick and play with the template engine.
 
 Quick tutorials on [You Tube](https://www.youtube.com/playlist?list=PLjjz4SuVScHreGKEInvrjPtLPMBU6l130). 
 The playlist has a few videos that are very short (most less than a minute - blink and they are done). You can drag the slider in the videos if you miss something or refer to the rest of the documentation. 
 
-
-## Features
+<a name="Features"><h2>Features</h3></a>
 - statements
   - if, elif, else statements
   - for and while statements
@@ -117,13 +127,13 @@ The playlist has a few videos that are very short (most less than a minute - bli
 - allow use of custom encoding (UTF-8 with BOM, UTF-8 without BOM, ASCII, etc)
 - extensibile RTTI interface to easily dereference classes and interfaces (current customisations for ITemplateVariables, TDictionary, TJsonObject)
 
-## Objectives
+<a name="Objectives"><h2>Objectives</h3></a>
 
 The Sempare Template Engine is not intended to be a fully featured general purpose programming language such as PHP where the script itself could be a self contained programming language (but it does have most of the features).
 
 Sempare Template Engine aims to provide just enough functionality to allow you to easily work with the 'view' aspects of a template. Any enhanced functionality required from the scripting environment should be provided by the custom functions written in Object Pascal.
 
-## Requirements
+<a name="Requirements"><h2>Requirements</h3></a>
 
 The template engine works with modern versions of [Delphi](https://www.embarcadero.com/products/delphi). 
 
@@ -146,19 +156,31 @@ Have a look at Sempare.Template.Compiler.inc. The following defines can be defin
 - SEMPARE_TEMPLATE_NO_INDY - if Indy is not present. This is used to access an html encoder if TNetEncoding is not available.
 - SEMPARE_TEMPLATE_CONFIRM_LICENSE - if present, you confirm you understand the conditions.
 
-<a name="GetIt"><h2>Installation: GetIt</h2></a>
+<a name="Installation"><h2>Installation</h3></a>
+
+<a name="GetIt"><h3>GetIt</h3></a>
 
 The Sempare Template Engine for Delphi can be installed via the [Embarcadero GetIt manager](https://getitnow.embarcadero.com/?q=sempare&product=rad-studio)
 
 This will add the *src* folder to the search path so you can start working immediately.
 
-<a name="DelphinusSupport"><h2>Installation: Delphinus Support</h2></a>
+<a name="Boss"><h3>Boss</h3></a>
+
+The Sempare Template Engine for Delphi can be installed via the [Boss](https://github.com/hashload/boss/releases) package manager.
+
+Simply run: 
+```
+boss install sempare/sempare-delphi-template-engine
+```
+
+
+<a name="DelphinusSupport"><h3>Delphinus</h3></a>
 
 The Sempare Template Engine for Delphi can be installed via the [Delphinus](https://github.com/Memnarch/Delphinus) package manager.
 
 This will add the *src* folder to the search path so you can start working immediately.
 
-<a name="ManualInstall"><h2>Installation: Manual Install</h2></a>
+<a name="ManualInstall"><h3>Manual Install</h3></a>
 
 Start by adding the *src* folder to the Delphi search path. Otherwise, there are some projects you can use:
 
@@ -176,18 +198,17 @@ Open __Sempare.Template.Engine.Group.groupproj__ which will include:
 
    The velocity real-time demo.   
    
-   
-## Feedback
+<a name="Feedback"><h2>Feedback</h3></a>
 
 You can raise issues on [GitHub](https://github.com/sempare/sempare.template) and they will be addressed based on priority.
 
 Most features have some basic tests in place. If a bug is been discovered, please include a basic test/scenario replicating the issue if possible as this will ease the investigation process.
 
-# Contributions
+<a name="Contributions"><h2>Contributions</h3></a>
 
 Review [contibution terms and conditions](./docs/CONTRIBUTION.pdf) to contribute to the project.
 
-# License
+<a name="License"><h2>License</h3></a>
 
 The Sempare Template Engine is dual-licensed. You may choose to use it under the restrictions of the [GPL v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html) at
 no cost to you, or you may license it for use under the [Sempare Limited Commercial License](./docs/commercial.license.md)

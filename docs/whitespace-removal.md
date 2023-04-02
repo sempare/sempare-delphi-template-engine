@@ -4,6 +4,8 @@ Copyright (c) 2019-2023 [Sempare Limited](http://www.sempare.ltd)
 
 ## Whitespace Removal
 
+v1.7.0 introduces some new concepts is still experimental and will change slightly. The new behaviour that will be provided in an v1.7.1 is described in the 'general notes' below.
+
 Removing whitespace is a tricky problem in templates. In the template engine, attempts have been made to address this in a number of ways. 
 
 ### Using script tag hints
@@ -98,3 +100,19 @@ This is important to appreciate especially when dealing with looping.
 
 - If you want to remove a script block from the output, use <%- *%>
 - Use the template engine demo to play to see how it behaves.
+- In v1.7.1, the basics described above will remain, however, in the case of script tags that have an end, the stripping action hints will be applied across all lines in the contained block.
+
+e.g.
+```
+••••<%- if cond *%>••••<NL>
+••••<% 'hello' %>••••<NL>
+••••<% end %>••••<NL>
+```
+
+The above example illustrates what we will be doing in an upcoming release. Rather than having to apply the hinting at each level, the hinting will
+be applied to all lines within the block.
+
+Thus the above would result in the following if the cond is true:
+```
+hello
+```
