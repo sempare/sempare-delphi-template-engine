@@ -157,22 +157,22 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
-        <RcCompile Include="template.rc">
-            <Form>template.res</Form>
-        </RcCompile>
         <DCCReference Include="WebModuleUnit1.pas">
             <Form>WebModule1</Form>
             <FormType>dfm</FormType>
             <DesignClass>TWebModule</DesignClass>
         </DCCReference>
         <DCCReference Include="ServerConst1.pas"/>
-        <DCCReference Include="TemplateRegistry.pas"/>
         <DCCReference Include="DynForm.pas"/>
+        <RcCompile Include="WebBrokerStandalone8080.rc">
+            <Form>template.res</Form>
+        </RcCompile>
         <None Include="templates\dynform.tpl"/>
         <None Include="templates\index.tpl"/>
-        <None Include="templates\main_template.tpl"/>
-        <None Include="templates\helper_template.tpl"/>
+        <None Include="templates\template.tpl"/>
+        <None Include="templates\helper.tpl"/>
         <None Include="README.md"/>
+        <None Include="templates\error404.tpl"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -227,13 +227,19 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
+                <DeployFile LocalName="templates\404.tpl" Configuration="Debug" Class="ProjectFile">
+                    <Platform Name="Win32">
+                        <RemoteDir>.\</RemoteDir>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
                 <DeployFile LocalName="templates\dynform.tpl" Configuration="Debug" Class="ProjectFile">
                     <Platform Name="Win32">
                         <RemoteDir>.\</RemoteDir>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="templates\helper_template.tpl" Configuration="Debug" Class="ProjectFile">
+                <DeployFile LocalName="templates\helper.tpl" Configuration="Debug" Class="ProjectFile">
                     <Platform Name="Win32">
                         <RemoteDir>.\</RemoteDir>
                         <Overwrite>true</Overwrite>
@@ -245,7 +251,7 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="templates\main_template.tpl" Configuration="Debug" Class="ProjectFile">
+                <DeployFile LocalName="templates\template.tpl" Configuration="Debug" Class="ProjectFile">
                     <Platform Name="Win32">
                         <RemoteDir>.\</RemoteDir>
                         <Overwrite>true</Overwrite>

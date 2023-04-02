@@ -1,6 +1,5 @@
 program WebBrokerStandalone8080;
 {$APPTYPE CONSOLE}
-{$R 'template.res' 'template.rc'}
 
 uses
   System.SysUtils,
@@ -12,11 +11,9 @@ uses
   Web.WebBroker,
   WebModuleUnit1 in 'WebModuleUnit1.pas' {WebModule1: TWebModule},
   ServerConst1 in 'ServerConst1.pas',
-  TemplateRegistry in 'TemplateRegistry.pas',
   DynForm in 'DynForm.pas';
 
 {$R *.res}
-{$R template.res}
 
 function BindPort(APort: Integer): Boolean;
 var

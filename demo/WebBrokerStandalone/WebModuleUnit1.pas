@@ -24,7 +24,7 @@ implementation
 
 uses
   DynForm,
-  TemplateRegistry;
+  Sempare.Template;
 
 {%CLASSGROUP 'System.Classes.TPersistent'}
 {$R *.dfm}

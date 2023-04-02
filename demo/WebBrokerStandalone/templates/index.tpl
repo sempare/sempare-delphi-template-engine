@@ -1,6 +1,6 @@
 <% extends ( 'template' ) %>
         <%- block 'body' *%>
-
+                <h1>Welcome to the Web Broker Demo</h1>
                 <p>
                 Here are some numbers from 1 to 10:
                 </p>
