@@ -56,6 +56,7 @@ uses
   System.Rtti,
   System.Generics.Collections,
   Sempare.Template,
+  Sempare.Template.PrettyPrint,
   Sempare.Template.BlockResolver,
   Sempare.Template.ResourceStrings,
   Sempare.Template.Common,
@@ -1907,7 +1908,7 @@ begin
   Match(vsEOF);
   result.Optimise;
   if eoPrettyPrint in FContext.Options then
-    writeln(Template.PrettyPrint(result));
+    FContext.PrettyPrintOutput(Template.PrettyPrint(result));
 end;
 
 function TTemplateParser.PopContainer: ITemplate;

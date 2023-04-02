@@ -42,6 +42,7 @@ uses
   Sempare.Template.Common,
   Sempare.Template.Context,
   Sempare.Template.AST,
+  Sempare.Template.TemplateRegistry,
   Sempare.Template.Parser;
 
 const
@@ -58,6 +59,9 @@ const
   eoRaiseErrorWhenVariableNotFound = TTemplateEvaluationOption.eoRaiseErrorWhenVariableNotFound;
   eoReplaceNewline = TTemplateEvaluationOption.eoReplaceNewline;
   eoStripEmptyLines = TTemplateEvaluationOption.eoStripEmptyLines;
+  tlsLoadResource = Sempare.Template.TemplateRegistry.tlsLoadResource;
+  tlsLoadFile = Sempare.Template.TemplateRegistry.tlsLoadFile;
+  tlsLoadFileElseResource = Sempare.Template.TemplateRegistry.tlsLoadFileElseResource;
 
 type
   TTemplateEvaluationOptions = Sempare.Template.Context.TTemplateEvaluationOptions;
@@ -70,6 +74,8 @@ type
   TTemplateEncodeFunction = Sempare.Template.Common.TTemplateEncodeFunction;
   ITemplateVariables = Sempare.Template.Common.ITemplateVariables;
   TUTF8WithoutPreambleEncoding = Sempare.Template.Context.TUTF8WithoutPreambleEncoding;
+  TTemplateRegistry = Sempare.Template.TemplateRegistry.TTemplateRegistry;
+  TTemplateLoadStrategy = Sempare.Template.TemplateRegistry.TTemplateLoadStrategy;
 
   Template = class
 {$IFNDEF SEMPARE_TEMPLATE_CONFIRM_LICENSE}
