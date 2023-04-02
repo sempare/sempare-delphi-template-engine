@@ -116,26 +116,32 @@ type
     FRefreshIntervalS: integer;
     FShutdown: TEvent;
     FThreadDone: TEvent;
+    FThread: TThread;
     FAutomaticRefresh: boolean;
 
     procedure Refresh;
 
     procedure SetRefreshIntervalS(const Value: integer);
     procedure SetAutomaticRefresh(const Value: boolean);
+    procedure SetLoadStrategy(const Value: TTemplateLoadStrategy);
+  private
+    procedure SetTemplateFileExt(const Value: string);
   public
     constructor Create();
     destructor Destroy; override;
     function GetTemplate(const ATemplateName: string): ITemplate;
-    function ProcessTemplate<T>(const ATemplateName: string; const AData: T): string; overload;
-    function ProcessTemplate(const ATemplateName: string): string; overload;
+    procedure Eval(const AOutputStream: TStream; const ATemplateName: string); overload;
+    procedure Eval<T>(const AOutputStream: TStream; const ATemplateName: string; const AData: T); overload;
+    function Eval<T>(const ATemplateName: string; const AData: T): string; overload;
+    function Eval(const ATemplateName: string): string; overload;
     class property Instance: TTemplateRegistry read FTemplateRegistry;
 
     property Context: ITemplateContext read FContext;
     property ResourceNameResolver: TTemplateResourceNameResolver read FResourceNameResolver write FResourceNameResolver;
     property FileResolver: TTemplateFileNameResolver read FFileNameResolver write FFileNameResolver;
     property TemplateRootFolder: string read FTemplateRootFolder write FTemplateRootFolder;
-    property TemplateFileExt: string read FTemplateFileExt write FTemplateFileExt;
-    property LoadStrategy: TTemplateLoadStrategy read FLoadStrategy write FLoadStrategy;
+    property TemplateFileExt: string read FTemplateFileExt write SetTemplateFileExt;
+    property LoadStrategy: TTemplateLoadStrategy read FLoadStrategy write SetLoadStrategy;
     property RefreshIntervalS: integer read FRefreshIntervalS write SetRefreshIntervalS;
     property AutomaticRefresh: boolean read FAutomaticRefresh write SetAutomaticRefresh;
   end;
@@ -157,29 +163,20 @@ begin
   FShutdown := TEvent.Create;
   FThreadDone := TEvent.Create;
 
-{$IFDEF DEBUG}
-  FLoadStrategy := tlsLoadFileElseResource;
-  FRefreshIntervalS := 5;
-  AutomaticRefresh := true;
-{$ELSE}
-  FRefreshIntervalS := 10;
-  FLoadStrategy := tlsLoadResource;
-  AutomaticRefresh := false;
-{$ENDIF}
   FLock := TCriticalSection.Create;
   FTemplates := TDictionary<string, ITemplate>.Create;
   FContext := Template.Context([eoEmbedException]);
 
-  FTemplateFileExt := '.tpl';
+  TemplateFileExt := '.tpl';
 
   FResourceNameResolver := function(const AName: string): string
     begin
-      exit(AName.ToLower + TTemplateRegistry.Instance.TemplateFileExt.Replace('.', '_'));
+      exit(AName.ToLower.Replace('.', '_', [rfReplaceAll]));
     end;
 
   FFileNameResolver := function(const AName: string): string
     begin
-      exit(TPath.Combine(TTemplateRegistry.Instance.TemplateRootFolder, AName) + TTemplateRegistry.Instance.TemplateFileExt);
+      exit(TPath.Combine(TTemplateRegistry.Instance.TemplateRootFolder, AName));
     end;
 
   FTemplateRootFolder := TPath.Combine(TPath.GetDirectoryName(paramstr(0)), 'templates');
@@ -199,6 +196,16 @@ begin
     begin
       exit(GetTemplate(AName));
     end;
+
+{$IFDEF DEBUG}
+  FLoadStrategy := tlsLoadFileElseResource;
+  FRefreshIntervalS := 5;
+  AutomaticRefresh := true;
+{$ELSE}
+  FRefreshIntervalS := 10;
+  FLoadStrategy := tlsLoadResource;
+  AutomaticRefresh := false;
+{$ENDIF}
 end;
 
 class constructor TTemplateRegistry.Create;
@@ -227,40 +234,41 @@ function TTemplateRegistry.GetTemplate(const ATemplateName: string): ITemplate;
   function LoadFromRegistry(out ATemplate: ITemplate): boolean;
   var
     LName: string;
+    LExt: string;
   begin
-    LName := FResourceNameResolver(ATemplateName);
-    try
-      ATemplate := TResourceTemplate.Create(FContext, LName);
-      exit(true);
-    except
-      begin
-        ATemplate := nil;
-        exit(false);
+    ATemplate := nil;
+    for LExt in [FTemplateFileExt, ''] do
+    begin
+      LName := FResourceNameResolver(ATemplateName + LExt);
+      try
+        ATemplate := TResourceTemplate.Create(FContext, LName);
+        exit(true);
+      except
+        // do nothing, lets try the next ext
       end;
     end;
+    exit(false);
   end;
 
   function LoadFromFile(out ATemplate: ITemplate): boolean;
   var
     LName: string;
+    LExt: string;
   begin
-    LName := FFileNameResolver(ATemplateName);
-    if TFile.Exists(LName) then
+    result := false;
+    ATemplate := nil;
+    for LExt in [FTemplateFileExt, ''] do
     begin
-      try
-        ATemplate := TFileTemplate.Create(FContext, LName);
-        exit(true);
-      except
-        begin
-          ATemplate := nil;
-          exit(false);
+      LName := FFileNameResolver(ATemplateName + FTemplateFileExt);
+      if TFile.Exists(LName) then
+      begin
+        try
+          ATemplate := TFileTemplate.Create(FContext, LName);
+          exit(true);
+        except
+          // do nothing, try next extension
         end;
       end;
-    end
-    else
-    begin
-      ATemplate := nil;
-      exit(false);
     end;
   end;
 
@@ -299,7 +307,7 @@ begin
   end;
 end;
 
-function TTemplateRegistry.ProcessTemplate(const ATemplateName: string): string;
+function TTemplateRegistry.Eval(const ATemplateName: string): string;
 var
   LTemplate: ITemplate;
 begin
@@ -307,7 +315,23 @@ begin
   exit(Template.Eval(FContext, LTemplate));
 end;
 
-function TTemplateRegistry.ProcessTemplate<T>(const ATemplateName: string; const AData: T): string;
+procedure TTemplateRegistry.Eval(const AOutputStream: TStream; const ATemplateName: string);
+var
+  LTemplate: ITemplate;
+begin
+  LTemplate := GetTemplate(ATemplateName);
+  Template.Eval(FContext, LTemplate, AOutputStream);
+end;
+
+procedure TTemplateRegistry.Eval<T>(const AOutputStream: TStream; const ATemplateName: string; const AData: T);
+var
+  LTemplate: ITemplate;
+begin
+  LTemplate := GetTemplate(ATemplateName);
+  Template.Eval(FContext, LTemplate, AData, AOutputStream);
+end;
+
+function TTemplateRegistry.Eval<T>(const ATemplateName: string; const AData: T): string;
 var
   LTemplate: ITemplate;
 begin
@@ -335,8 +359,6 @@ begin
 end;
 
 procedure TTemplateRegistry.SetAutomaticRefresh(const Value: boolean);
-var
-  LThread: TThread;
 begin
   if FAutomaticRefresh = Value then
     exit;
@@ -344,7 +366,7 @@ begin
   FAutomaticRefresh := Value;
   if Value then
   begin
-    LThread := TThread.CreateAnonymousThread(
+    FThread := TThread.CreateAnonymousThread(
       procedure
       begin
         while true do
@@ -359,15 +381,23 @@ begin
         end;
         FThreadDone.SetEvent;
       end);
-
-    TThread.NameThreadForDebugging('Sempare.TTemplateRegistry.RefreshThread', LThread.ThreadID);
-    LThread.Start;
+{$IFDEF DEBUG}
+    TThread.NameThreadForDebugging('TTemplateRegistry.RefreshThread', FThread.ThreadID);
+{$ENDIF}
+    FThread.Start;
   end
-  else
+  else if FThread <> nil then
   begin
     FShutdown.SetEvent;
     FThreadDone.WaitFor();
   end;
+end;
+
+procedure TTemplateRegistry.SetLoadStrategy(const Value: TTemplateLoadStrategy);
+begin
+  FLoadStrategy := Value;
+  if FLoadStrategy = tlsLoadResource then
+    AutomaticRefresh := false;
 end;
 
 procedure TTemplateRegistry.SetRefreshIntervalS(const Value: integer);
@@ -375,6 +405,13 @@ begin
   if Value < 5 then
     raise ETemplateRefreshTooFrequent.Create();
   FRefreshIntervalS := Value;
+end;
+
+procedure TTemplateRegistry.SetTemplateFileExt(const Value: string);
+begin
+  FTemplateFileExt := Value;
+  if not FTemplateFileExt.StartsWith('.') then
+    FTemplateFileExt := '.' + FTemplateFileExt;
 end;
 
 { TAbstractProxyTemplate }
@@ -468,7 +505,7 @@ var
 begin
   if FModifiedAt = ATime then
     exit;
-  LStream := TBufferedFileStream.Create(AFilename, fmOpenRead);
+  LStream := TBufferedFileStream.Create(AFilename, fmOpenRead or fmShareDenyNone);
   LTemplate := Template.Parse(FContext, LStream);
   inherited Create(LTemplate);
   LTemplate.FileName := AFilename;

@@ -31,13 +31,13 @@ uses
 
 procedure TWebModule1.WebModule1IndexHandlerAction(Sender: TObject; Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
 begin
-  Response.Content := TTemplateRegistry.Instance.ProcessTemplate('index');
+  Response.Content := TTemplateRegistry.Instance.Eval('index');
   Handled := true;
 end;
 
 procedure TWebModule1.WebModule1ErrorHandlerAction(Sender: TObject; Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
 begin
-  Response.Content := TTemplateRegistry.Instance.ProcessTemplate('error404');
+  Response.Content := TTemplateRegistry.Instance.Eval('error404');
   Response.StatusCode := 404;
   Handled := true;
 end;
@@ -55,7 +55,7 @@ begin
     TField.create('Email', 'email', 'TEmail') //
     ];
   LTemplateData.Buttons := [TButton.create('Submit', 'submit')];
-  Response.Content := TTemplateRegistry.Instance.ProcessTemplate('dynform', LTemplateData);
+  Response.Content := TTemplateRegistry.Instance.Eval('dynform', LTemplateData);
   Handled := true;
 end;
 
@@ -72,7 +72,7 @@ begin
     LFormData.firstname := Params.Values['firstname'];
     LFormData.lastname := Params.Values['lastname'];
     LFormData.email := Params.Values['email'];
-    Response.Content := TTemplateRegistry.Instance.ProcessTemplate('submitted', LFormData);
+    Response.Content := TTemplateRegistry.Instance.Eval('submitted', LFormData);
   finally
     Params.Free;
   end;
