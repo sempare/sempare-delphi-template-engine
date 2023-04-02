@@ -82,6 +82,7 @@ type
 
   TTemplateEvaluationOptions = set of TTemplateEvaluationOption;
 
+  TPrettyPrintOutput = reference to procedure(const APrettyPrint: string);
   TTemplateResolver = reference to function(const AContext: ITemplateContext; const AName: string): ITemplate;
 
   ITemplateEvaluationContext = interface
@@ -153,6 +154,9 @@ type
     function GetDebugErrorFormat: string;
     procedure SetDebugErrorFormat(const AFormat: string);
 
+    procedure SetPrettyPrintOutput(const APrettyPrintOutput: TPrettyPrintOutput);
+    function GetPrettyPrintOutput: TPrettyPrintOutput;
+
     property Functions: ITemplateFunctions read GetFunctions write SetFunctions;
     property NewLine: string read GetNewLine write SetNewLine;
     property TemplateResolver: TTemplateResolver read GetTemplateResolver write SetTemplateResolver;
@@ -174,6 +178,7 @@ type
     property FormatSettings: TFormatSettings read GetFormatSettings;
     property DebugErrorFormat: string read GetDebugErrorFormat write SetDebugErrorFormat;
     property StreamWriterProvider: TStreamWriterProvider read GetStreamWriterProvider write SetStreamWriterProvider;
+    property PrettyPrintOutput: TPrettyPrintOutput read GetPrettyPrintOutput write SetPrettyPrintOutput;
   end;
 
   ITemplateContextForScope = interface
@@ -196,7 +201,7 @@ var
   GDefaultEncoding: TEncoding;
   GUTF8WithoutPreambleEncoding: TUTF8WithoutPreambleEncoding;
   GStreamWriterProvider: TStreamWriterProvider;
-
+  GPrettyPrintOutput: TPrettyPrintOutput;
   GDefaultOpenStripWSTag: string = '<|';
   GDefaultCloseWSTag: string = '|>';
 
@@ -251,6 +256,7 @@ type
     FValueSeparator: char;
     FFormatSettings: TFormatSettings;
     FDebugFormat: string;
+    FPrettyPrintOutput: TPrettyPrintOutput;
   public
     constructor Create(const AOptions: TTemplateEvaluationOptions);
     destructor Destroy; override;
@@ -258,6 +264,9 @@ type
     function TryGetBlock(const AName: string; out ABlock: IBlockStmt): boolean;
     procedure AddBlock(const AName: string; const ABlock: IBlockStmt);
     procedure RemoveBlock(const AName: string);
+
+    procedure SetPrettyPrintOutput(const APrettyPrintOutput: TPrettyPrintOutput);
+    function GetPrettyPrintOutput: TPrettyPrintOutput;
 
     procedure StartEvaluation;
     procedure EndEvaluation;
@@ -359,6 +368,7 @@ constructor TTemplateContext.Create(const AOptions: TTemplateEvaluationOptions);
 begin
   FOptions := AOptions;
   FMaxRuntimeMs := GDefaultRuntimeMS;
+  FPrettyPrintOutput := GPrettyPrintOutput;
   SetEncoding(GDefaultEncoding);
   FStartToken := GDefaultOpenTag;
   FEndToken := GDefaultCloseTag;
@@ -454,6 +464,11 @@ end;
 function TTemplateContext.GetOptions: TTemplateEvaluationOptions;
 begin
   exit(FOptions);
+end;
+
+function TTemplateContext.GetPrettyPrintOutput: TPrettyPrintOutput;
+begin
+  result := FPrettyPrintOutput;
 end;
 
 function TTemplateContext.GetVariable(const AName: string): TValue;
@@ -563,6 +578,11 @@ end;
 procedure TTemplateContext.SetOptions(const AOptions: TTemplateEvaluationOptions);
 begin
   FOptions := AOptions;
+end;
+
+procedure TTemplateContext.SetPrettyPrintOutput(const APrettyPrintOutput: TPrettyPrintOutput);
+begin
+  FPrettyPrintOutput := APrettyPrintOutput;
 end;
 
 procedure TTemplateContext.SetValueSeparator(const ASeparator: char);
@@ -733,6 +753,10 @@ GDefaultEncoding := TEncoding.UTF8WithoutBOM;
 GStreamWriterProvider := function(const AStream: TStream; AContext: ITemplateContext): TStreamWriter
   begin
     exit(TNewLineStreamWriter.Create(AStream, AContext.Encoding, AContext.NewLine, AContext.Options));
+  end;
+
+GPrettyPrintOutput := procedure(const APrettyPrint: string)
+  begin
   end;
 
 finalization
