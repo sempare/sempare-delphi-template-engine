@@ -4,21 +4,21 @@ Copyright (c) 2019-2023 [Sempare Limited](http://www.sempare.ltd)
 
 ## Statements
 
-1. [print](#print)
-2. [assignment](#assignment)
-3. [if](#if)
-4. [for](#for)
-5. [while](#while)
-6. [include](#include)
-7. [block](#block)
-8. [extends](#extends)
-9. [with](#with)
-10. [template](#template)
-11. [require](#require)
-12. [ignorenl](#ignorenl)
-13. [cycle](#cycle)
+- [print](#print)
+- [assignment](#assignment)
+- [if](#if)
+- [for](#for)
+- [while](#while)
+- [include](#include)
+- [block](#block)
+- [extends](#extends)
+- [with](#with)
+- [template](#template)
+- [require](#require)
+- [ignorenl](#ignorenl)
+- [cycle](#cycle)
 
-### print
+<a name="print"><h2>print</h2></a>
 
 ![print expr](./images/stmt_print_expr.svg)
 
@@ -44,7 +44,7 @@ You may also rely on the print() statement.
 <% print('this is a test') %>
 ```
 
-### assignment
+<a name="assignment"><h2>assignment</h2></a>
 
 ![assign](./images/stmt_assign.svg)
 
@@ -54,7 +54,7 @@ Within a script block, you can create temporary variables for use within the tem
 <% str := 'abc' %>
 <% bool := false %>
 ```
-### if
+<a name="if"><h2>if</h2></a>
 
 ![if](./images/stmt_if.svg)
 
@@ -90,7 +90,7 @@ the list as at least one item
 <% end %>
 ```
 
-### for
+<a name="for"><h2>for</h2></a>
 
 ![for range](./images/stmt_for_range.svg)
 
@@ -212,8 +212,7 @@ end;
 
 Using for-in on TDataSet, the loop variable enumerates rows. The loop variable can be dereferenced with the name of the field in the given row. 
 
-
-### while
+<a name="while"><h2>while</h2></a>
 
 ![while](./images/stmt_while.svg)
 
@@ -262,7 +261,7 @@ While loops may also have _onbegin_, _onend_, _betweenitems_ and _onempty_ event
 <% end %>
 ```
 
-## break / continue
+<h2>break / continue</h2>
 
 The _for_ and _while_ loops can include the following _break_ and _continue_ statements to assist with flow control.
 
@@ -290,7 +289,7 @@ This will produce
 0 1 2
 ```
 
-### include
+<a name="include"><h2>include</h2></a>
 
 ![include](./images/stmt_include.svg)
 
@@ -315,7 +314,7 @@ begin
 
 include() can also take a second parameter, allowing for improved scoping of variables, similar to the _with_ statement.
 
-### block
+<a name="block"><h2>block</h2></a>
 
 ![block](./images/stmt_block.svg)
 
@@ -329,7 +328,7 @@ Some content
 
 The block statment defines a placeholder in a template that can be replaced. When a block is contained within an extends block, it will be a replacement in the referenced template.
 
-### extends
+<a name="extends"><h2>extends</h2></a>
 
 ![extends](./images/stmt_extends.svg)
 
@@ -384,7 +383,7 @@ would resolve to:
 
 extends() can also take a second parameter, allowing for improved scoping of variables, similar to the _with_ statement.
 
-### with
+<a name="with"><h2>with</h2></a>
 
 ![with](./images/stmt_with.svg)
 
@@ -418,7 +417,7 @@ begin
 
 The _with()_ statement will push all fields/properties in a record/class into a new scope/stack frame. 
 
-### template
+<a name="template"><h2>template</h2></a>
 
 ![template](./images/stmt_template.svg)
 
@@ -435,7 +434,7 @@ Using the TInfo structure above it could be appli
 <% include ('mytemplate', level1.level2.level3.level4) %>	
 ```
 
-### require
+<a name="require"><h2>require</h2></a>
 
 ![require](./images/stmt_require.svg)
 
@@ -459,7 +458,7 @@ An exeption is thrown when the
 
 _require_ can take multiple parameters - in which case the input must match one of the types listed.
 
-### ignorenl
+<a name="ignorenl"><h2>ignorenl</h2></a>
 
 ![ignorenl](./images/stmt_ignorenl.svg)
 
@@ -488,7 +487,7 @@ This would yield something like
 
 The _eoAllowIgnoreNL_ must be provided in the Context.Options or via Template.Eval() options.
 
-### cycle
+<a name="cycle"><h2>cycle</h2></a>
 
 ![cycle](./images/stmt_cycle.svg)
 
