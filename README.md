@@ -174,7 +174,6 @@ Simply run:
 boss install sempare/sempare-delphi-template-engine
 ```
 
-
 <a name="DelphinusSupport"><h3>Delphinus</h3></a>
 
 The Sempare Template Engine for Delphi can be installed via the [Delphinus](https://github.com/Memnarch/Delphinus) package manager.
