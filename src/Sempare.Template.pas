@@ -61,7 +61,7 @@ const
   eoStripEmptyLines = TTemplateEvaluationOption.eoStripEmptyLines;
   tlsLoadResource = Sempare.Template.TemplateRegistry.tlsLoadResource;
   tlsLoadFile = Sempare.Template.TemplateRegistry.tlsLoadFile;
-  tlsLoadFileElseResource = Sempare.Template.TemplateRegistry.tlsLoadFileElseResource;
+  tlsLoadCustom = Sempare.Template.TemplateRegistry.tlsLoadCustom;
 
 type
   TTemplateEvaluationOptions = Sempare.Template.Context.TTemplateEvaluationOptions;
@@ -76,6 +76,7 @@ type
   TUTF8WithoutPreambleEncoding = Sempare.Template.Context.TUTF8WithoutPreambleEncoding;
   TTemplateRegistry = Sempare.Template.TemplateRegistry.TTemplateRegistry;
   TTemplateLoadStrategy = Sempare.Template.TemplateRegistry.TTemplateLoadStrategy;
+  TSempareServerPages = TTemplateRegistry;
 
   Template = class
 {$IFNDEF SEMPARE_TEMPLATE_CONFIRM_LICENSE}

@@ -29,9 +29,24 @@ uses
 {%CLASSGROUP 'System.Classes.TPersistent'}
 {$R *.dfm}
 
+type
+  TDemo = record
+    Name: string;
+    FrameworkUrl: string;
+    Url: string;
+    Current: Boolean;
+    constructor Create(const AName: String; const AFrameworkUrl, AUrl: string; const ACurrent: Boolean = false);
+  end;
+
 procedure TWebModule1.WebModule1IndexHandlerAction(Sender: TObject; Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
+var
+  LDemos: TArray<TDemo>;
 begin
-  Response.Content := TTemplateRegistry.Instance.Eval('index');
+  LDemos := [ //
+    TDemo.Create('Web Broker', 'https://docwiki.embarcadero.com/RADStudio/Alexandria/en/Creating_WebBroker_Applications', 'https://github.com/sempare/sempare-delphi-template-engine/tree/main/demo/WebBrokerStandalone', true), //
+    TDemo.Create('Horse', 'https://github.com/HashLoad/horse', 'https://github.com/sempare/sempare-delphi-template-engine-horse-demo') //
+    ];
+  Response.Content := TTemplateRegistry.Instance.Eval('index', LDemos);
   Handled := true;
 end;
 
@@ -50,11 +65,11 @@ begin
   LTemplateData.FormName := 'userinfo';
   LTemplateData.FormAction := Request.PathInfo;
   LTemplateData.Fields := [ //
-    TField.create('FirstName', 'firstname'), //
-    TField.create('LastName', 'lastname'), //
-    TField.create('Email', 'email', 'TEmail') //
+    TField.Create('FirstName', 'firstname'), //
+    TField.Create('LastName', 'lastname'), //
+    TField.Create('Email', 'email', 'TEmail') //
     ];
-  LTemplateData.Buttons := [TButton.create('Submit', 'submit')];
+  LTemplateData.Buttons := [TButton.Create('Submit', 'submit')];
   Response.Content := TTemplateRegistry.Instance.Eval('dynform', LTemplateData);
   Handled := true;
 end;
@@ -66,7 +81,7 @@ var
   Params: TStrings;
 begin
   PostData := Request.Content;
-  Params := TStringList.create;
+  Params := TStringList.Create;
   try
     ExtractStrings(['&'], [], PChar(PostData), Params);
     LFormData.firstname := Params.Values['firstname'];
@@ -77,6 +92,16 @@ begin
     Params.Free;
   end;
   Handled := true;
+end;
+
+{ TDemo }
+
+constructor TDemo.Create(const AName, AFrameworkUrl, AUrl: string; const ACurrent: Boolean);
+begin
+  name := AName;
+  FrameworkUrl := AFrameworkUrl;
+  Url := AUrl;
+  Current := ACurrent;
 end;
 
 end.
