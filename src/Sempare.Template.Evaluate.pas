@@ -874,7 +874,7 @@ begin
     exit;
   LExpr := EvalExpr(AStmt.Condition);
   LIsObject := LExpr.IsObject;
-  if LIsObject and not IsEmptyObject(LExpr.AsObject) or not LIsObject and AsBoolean(LExpr) then
+  if LIsObject and not IsEmptyObject(LExpr.AsObject) or isStrLike(LExpr) and (AsString(LExpr, FContext) <> '') or not LIsObject and AsBoolean(LExpr) then
     AcceptVisitor(AStmt.TrueContainer, self)
   else if AStmt.FalseContainer <> nil then
     AcceptVisitor(AStmt.FalseContainer, self);
