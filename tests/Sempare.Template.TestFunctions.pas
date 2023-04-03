@@ -121,6 +121,12 @@ type
     procedure TestMax;
     [Test]
     procedure TestAbs;
+    [Test]
+    procedure TestIsObject;
+    [Test]
+    procedure TestIsRecord;
+    [Test]
+    procedure TestIsEmpty;
   end;
 
 type
@@ -137,6 +143,7 @@ uses
 {$ENDIF}
   System.SysUtils,
   System.Rtti,
+  System.Generics.Collections,
   Sempare.Template.Functions,
   Sempare.Template.Context,
   Sempare.Template,
@@ -534,6 +541,43 @@ procedure TFunctionTest.TestAbs;
 begin
   Assert.AreEqual('123.45', Template.Eval('<% abs(-123.45) %>'));
   Assert.AreEqual('123.45', Template.Eval('<% abs(123.45) %>'));
+end;
+
+procedure TFunctionTest.TestIsRecord;
+var
+  LRecord: record end;
+  LObject: TObject;
+begin
+  LObject := TObject.Create;
+  Assert.AreEqual('true', Template.Eval('<% isrecord(_) %>', LRecord));
+  Assert.AreEqual('false', Template.Eval('<% isrecord(_) %>', LObject));
+  LObject.Free;
+end;
+
+procedure TFunctionTest.TestIsObject;
+var
+  LRecord: record end;
+  LObject: TObject;
+begin
+  LObject := TObject.Create;
+  Assert.AreEqual('false', Template.Eval('<% isobject(_) %>', LRecord));
+  Assert.AreEqual('true', Template.Eval('<% isobject(_) %>', LObject));
+  LObject.Free;
+end;
+
+procedure TFunctionTest.TestIsEmpty;
+var
+  LEmpty: TList<string>;
+  LNonEmpty: TList<string>;
+begin
+  LEmpty := TList<string>.Create;
+  LNonEmpty := TList<string>.Create;
+  LNonEmpty.Add('value');
+
+  Assert.AreEqual('true', Template.Eval('<% isempty(_) %>', LEmpty));
+  Assert.AreEqual('false', Template.Eval('<% isempty(_) %>', LNonEmpty));
+  LEmpty.Free;
+  LNonEmpty.Free;
 end;
 
 initialization
