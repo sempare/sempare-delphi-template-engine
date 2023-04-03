@@ -750,7 +750,7 @@ end;
 
 class function TInternalFuntions.IsRecord(const AValue: TValue): boolean;
 begin
-  exit(AValue.Kind in [tkRecord, tkMRecord]);
+  exit(AValue.Kind in [tkRecord{$IFDEF SUPPORT_CUSTOM_MANAGED_RECORDS}, tkMRecord{$ENDIF}]);
 end;
 
 constructor TTemplateFunctions.Create;
