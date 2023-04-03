@@ -95,9 +95,8 @@ end;
 procedure WriteStatus(const AServer: TIdHTTPWebBrokerBridge);
 begin
   Writeln(sIndyVersion + AServer.SessionList.Version);
-  Writeln(sActive + AServer.Active.ToString(TUseBoolStrs.True));
+  Writeln(sActive + AServer.Active.ToString());
   Writeln(sPort + AServer.DefaultPort.ToString);
-  Writeln(sSessionID + AServer.SessionIDCookieName);
   Write(cArrow);
 end;
 

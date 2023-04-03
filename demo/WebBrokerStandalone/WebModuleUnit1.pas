@@ -42,10 +42,9 @@ procedure TWebModule1.WebModule1IndexHandlerAction(Sender: TObject; Request: TWe
 var
   LDemos: TArray<TDemo>;
 begin
-  LDemos := [ //
-    TDemo.Create('Web Broker', 'https://docwiki.embarcadero.com/RADStudio/Alexandria/en/Creating_WebBroker_Applications', 'https://github.com/sempare/sempare-delphi-template-engine/tree/main/demo/WebBrokerStandalone', true), //
-    TDemo.Create('Horse', 'https://github.com/HashLoad/horse', 'https://github.com/sempare/sempare-delphi-template-engine-horse-demo') //
-    ];
+  setlength(LDemos, 2);
+  LDemos[0] := TDemo.Create('Web Broker', 'https://docwiki.embarcadero.com/RADStudio/Alexandria/en/Creating_WebBroker_Applications', 'https://github.com/sempare/sempare-delphi-template-engine/tree/main/demo/WebBrokerStandalone', true);
+  LDemos[1] := TDemo.Create('Horse', 'https://github.com/HashLoad/horse', 'https://github.com/sempare/sempare-delphi-template-engine-horse-demo');
   Response.Content := TTemplateRegistry.Instance.Eval('index', LDemos);
   Handled := true;
 end;
@@ -64,12 +63,12 @@ begin
   LTemplateData.Title := 'User Details';
   LTemplateData.FormName := 'userinfo';
   LTemplateData.FormAction := Request.PathInfo;
-  LTemplateData.Fields := [ //
-    TField.Create('FirstName', 'firstname'), //
-    TField.Create('LastName', 'lastname'), //
-    TField.Create('Email', 'email', 'TEmail') //
-    ];
-  LTemplateData.Buttons := [TButton.Create('Submit', 'submit')];
+  setlength(LTemplateData.Fields, 3);
+  LTemplateData.Fields[0] := TField.Create('FirstName', 'firstname');
+  LTemplateData.Fields[1] := TField.Create('LastName', 'lastname');
+  LTemplateData.Fields[2] := TField.Create('Email', 'email', 'TEmail');
+  setlength(LTemplateData.Buttons, 1);
+  LTemplateData.Buttons[0] := TButton.Create('Submit', 'submit');
   Response.Content := TTemplateRegistry.Instance.Eval('dynform', LTemplateData);
   Handled := true;
 end;
