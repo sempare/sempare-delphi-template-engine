@@ -558,11 +558,17 @@ type
 function Flatten(const AStmts: TArray<IStmt>): TArray<IStmt>;
 var
   LStmt: IStmt;
+  LFlattenedStmts:TList<IStmt>;
 begin
-  result := nil;
-  for LStmt in AStmts do
-  begin
-    result := result + LStmt.Flatten;
+  LFlattenedStmts:=TList<IStmt>.Create;
+  try
+    for LStmt in AStmts do
+    begin
+      LFlattenedStmts.AddRange(LStmt.Flatten);
+    end;
+    exit(LFlattenedStmts.ToArray);
+  finally
+     LFlattenedStmts.Free;
   end;
 end;
 
@@ -1424,6 +1430,22 @@ end;
 const
   ONFIRST_ONEND_ONLOOP_ELSE: TTemplateSymbolSet = [vsOnBegin, vsOnEnd, vsOnEmpty, vsBetweenItem, vsEND];
 
+{$IFDEF SUPPORT_PASS_ARRAY_OF_INTERFACE}
+function ArrayOfTemplate(const ATemplates: TArray<ITemplate>):TArray<ITemplate>;
+begin
+  exit(AStmts);
+end;
+{$ELSE}
+function ArrayOfTemplate(const ATemplates:array of ITemplate):TArray<ITemplate>;
+var
+  i : integer;
+begin
+  setlength(result, length(ATemplates));
+  for i := Low(atemplates) to High(atemplates) do
+    result[i] := atemplates[i];
+end;
+{$ENDIF}
+
 function TTemplateParser.RuleForStmt: IStmt;
 var
   LId: string;
@@ -1547,7 +1569,7 @@ begin
   else
     result := TForRangeStmt.Create(LSymbol.Position, LId, LForOp, LLowValueExpr, LHighValueExpr, LStep, LOnLoop, LOnBegin, LOnEnd, LOnEmpty, LBetweenItem);
   result := AddStripStmt(result, LEndStripAction, sdRight);
-  Optimise([LOnLoop, LOnBegin, LOnEnd, LOnEmpty, LBetweenItem]);
+  Optimise(ArrayOfTemplate([LOnLoop, LOnBegin, LOnEnd, LOnEmpty, LBetweenItem]));
 end;
 
 function TTemplateParser.RuleFunctionExpr(const ASymbol: string): IExpr;
@@ -1679,7 +1701,7 @@ begin
   else
     result := TWhileStmt.Create(LSymbol.Position, LCondition, LOffsetExpr, LLimitExpr, LOnLoop, LOnBegin, LOnEnd, LOnEmpty, LBetweenItem);
   result := AddStripStmt(result, LEndStripAction, sdRight);
-  Optimise([LOnLoop, LOnBegin, LOnEnd, LOnEmpty, LBetweenItem]);
+  Optimise(ArrayOfTemplate([LOnLoop, LOnBegin, LOnEnd, LOnEmpty, LBetweenItem]));
 end;
 
 function TTemplateParser.RuleWithStmt: IStmt;
@@ -2262,15 +2284,21 @@ procedure TTemplate.Optimise;
   function Strip(const AArray: TArray<IStmt>): TArray<IStmt>;
   var
     LStmt: IStmt;
+    LStmts:TList<IStmt>;
   begin
-    result := nil;
-    for LStmt in AArray do
-    begin
-      if supports(LStmt, IEndStmt) or supports(LStmt, ICommentStmt) or supports(LStmt, IElseStmt) or supports(LStmt, INoopStmt) then
+    LStmts:=TList<IStmt>.Create;
+    try
+      for LStmt in AArray do
       begin
-        continue;
+        if supports(LStmt, IEndStmt) or supports(LStmt, ICommentStmt) or supports(LStmt, IElseStmt) or supports(LStmt, INoopStmt) then
+        begin
+          continue;
+        end;
+        LStmts.Add(LStmt);
       end;
-      result := result + [LStmt];
+      exit(LStmts.ToArray);
+    finally
+      LStmts.Free;
     end;
   end;
 
@@ -2751,8 +2779,13 @@ begin
 end;
 
 function TCompositeStmt.Flatten: TArray<IStmt>;
+var
+  LStmts:TArray<IStmt>;
 begin
-  result := Sempare.Template.Parser.Flatten([FFirstStmt, FSecondStmt]);
+  setlength(LStmts, 2);
+  LStmts[0] := FFirstStmt;
+  LStmts[1] := FSecondStmt;
+  exit(Sempare.Template.Parser.Flatten(LStmts));
 end;
 
 function TCompositeStmt.GetFirstStmt: IStmt;
@@ -2855,7 +2888,8 @@ end;
 
 function TAbstractStmt.Flatten: TArray<IStmt>;
 begin
-  result := [self];
+  setlength(result, 1);
+  result[0] := self;
 end;
 
 { TNoopStmt }
