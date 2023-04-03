@@ -970,11 +970,16 @@ var
   LMethod: TRttiMethod;
 
   function GetParamCount: integer;
+  var
+    LParams: TArray<TRttiParameter>;
+    LParam: TRttiParameter;
   begin
-    result := length(LMethod.GetParameters);
+    LParams := LMethod.GetParameters;
+    result := length(LParams);
     if result > 0 then
     begin
-      if LMethod.GetParameters[0].ParamType.Handle = TypeInfo(ITemplateContext) then
+      LParam := LParams[0];
+      if LParam.ParamType.Handle = TypeInfo(ITemplateContext) then
         dec(result);
     end;
   end;
