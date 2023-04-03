@@ -56,7 +56,7 @@ type
   TJSONFalse = Data.DBXJSON.TJSONFalse;
 {$ELSE}
   TJsonValue = System.JSON.TJsonValue;
-  TJSONBool = System.JSON.TJSONBool;
+  //TJSONBool = System.JSON.TJSONBool; // not in XE6
   TJSONString = System.JSON.TJSONString;
   TJSONNumber = System.JSON.TJSONNumber;
   TJsonObject = System.JSON.TJsonObject;
