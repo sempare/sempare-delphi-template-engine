@@ -278,6 +278,8 @@ end;
 
 function IsIntLike(const AValue: TValue): boolean;
 begin
+  if AValue.Kind = tkFloat then
+    exit(abs(AValue.asExtended - trunc(AValue.asExtended)) < 1E-8);
   exit(AValue.Kind in INT_LIKE);
 end;
 
@@ -290,7 +292,7 @@ function AsNum(const AValue: TValue; const AContext: ITemplateContext): extended
 begin
   case AValue.Kind of
     tkFloat:
-      exit(AValue.AsExtended);
+      exit(AValue.asExtended);
     tkString, tkWString, tkUString, tkLString:
       exit(StrToFloat(AValue.AsString, AContext.FormatSettings));
     tkInteger, tkInt64:
@@ -357,9 +359,9 @@ begin
     tkInteger, tkInt64:
       exit(AValue.AsInt64 <> 0);
     tkFloat:
-      exit(AValue.AsExtended <> 0);
+      exit(AValue.asExtended <> 0);
     tkString, tkWString, tkUString, tkLString:
-      exit(AValue.AsString <> '');
+      exit(AValue.AsString.ToLower = 'true');
     tkDynArray:
       exit(AValue.GetArrayLength > 0);
   else
@@ -409,9 +411,9 @@ begin
       exit(inttostr(AValue.AsInt64));
     tkFloat:
       if AValue.TypeInfo = TypeInfo(TDateTime) then
-        exit(DateTimeToStr(DoubleToDT(AValue.AsExtended), AContext.FormatSettings))
+        exit(DateTimeToStr(DoubleToDT(AValue.asExtended), AContext.FormatSettings))
       else
-        exit(FloatToStr(AValue.AsExtended, AContext.FormatSettings));
+        exit(FloatToStr(AValue.asExtended, AContext.FormatSettings));
     tkString, tkWString, tkUString, tkLString:
       exit(AValue.AsString);
     tkDynArray, tkArray:
@@ -439,7 +441,7 @@ begin
     tkInteger, tkInt64:
       exit(DoubleToDT(AValue.AsInt64));
     tkFloat:
-      exit(DoubleToDT(AValue.AsExtended));
+      exit(DoubleToDT(AValue.asExtended));
     tkString, tkWString, tkUString, tkLString:
       exit(StrToDateTime(AValue.AsString));
   else
