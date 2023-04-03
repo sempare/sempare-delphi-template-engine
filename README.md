@@ -49,7 +49,9 @@ Template engines are used often in technology where text needs to be customised 
 - web sites using template engines (for server side scripting)
 - code generation
 - mail merge 
-- notification messages 
+- notification messages
+
+Please review the [License](#License) section below before including the Sempare Template Engine in commercial products.
 
 The Sempare Template Engine is a small templating engine for [Delphi](https://www.embarcadero.com/products/delphi) (Object Pascal) that allows for templates to be created easily and efficiently by providing a simple and easy to use API.
 
@@ -216,11 +218,19 @@ no cost to you, or you may license it for use under the [Sempare Limited Commerc
 The dual-licensing scheme allows you to use and test the library with no restrictions, but subject to the terms of the GPL. A nominal fee is requested to support the maintenance of the library if the product is to be used in commercial products. This support fee binds you to the commercial license, removing any of the GPL restrictions, and allowing you to use the library in your products as you will. The Sempare Template Engine may NOT be included or distributed as part of another commercial library or framework without approval / commercial review.
 
 A commercial licence grants you the right to use Sempare Template Engine in your own applications, royalty free, and without any requirement to disclose your source code nor any modifications to
-Sempare Templte Engine or to any other party. A commercial licence lasts into perpetuity, and entitles you to all future updates.
+Sempare Template Engine or to any other party. A commercial license lasts into perpetuity, and entitles you to all future updates.
 
-A commercial licence is provided per developer developing applications that uses the Sempare Template Engine. The initial license fee is $70 per developer and includes the first year of support.
-For support thereafter, at your discretion, a support fee of $30 per developer per year would be appreciated. Please contact us for site license pricing.
+A commercial licence is provided per developer developing applications that uses the Sempare Template Engine. The initial license fee is $70 per developer.
+For support thereafter, at your discretion, a support fee of $30 per developer per year would be appreciated. The initial site licensing fee is $1,500 and the annual site support licensing fee is $500.
 
-Please send an e-mail to info@sempare.ltd to request an invoice which will contain the bank details.
+The following payment links allow you to quickly subscribe. Please note that the initial license and support links are seperate.
+- [Initial License Fee](https://buy.stripe.com/aEU7t61N88pffQIdQQ)
+- [Annual Support License Fee](https://buy.stripe.com/00g8xa4ZkbBr480145)
+
+The following payment links are available for site licenses. Please note that the initial license and support links are seperate.
+- [Initial Site License Fee](https://buy.stripe.com/eVa00E77s7lbfQIaEG)
+- [Annual Support License Fee](https://buy.stripe.com/6oE14I4Zk6h7fQI003)
+
+Please send an e-mail to info@sempare.ltd to request an invoice which will contain alternative payment details.
 
 Support and enhancement requests submitted by users that pay for support will be prioritised. New developments may incur additional costs depending on time required for implementation.
