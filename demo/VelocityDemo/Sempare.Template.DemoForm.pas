@@ -399,19 +399,23 @@ begin
 end;
 
 procedure TFormRealTime.Process;
+var
+  LPrettyOk: boolean;
 begin
   if not Finit then
     exit;
   GridPropsToContext;
+    LPrettyOk := false;
   try
-    // evalEngine.Enabled := true;
-    memoOutput.Lines.Text := Template.Eval(FContext, FTemplate);
     memoPrettyPrint.Lines.Text := Sempare.Template.Template.PrettyPrint(FTemplate);
+    LPrettyOk := true;
+    memoOutput.Lines.Text := Template.Eval(FContext, FTemplate);
   except
     on E: Exception do
     begin
       memoOutput.Lines.Text := E.Message;
-      memoPrettyPrint.Lines.Text := '';
+      if not LPrettyOk then
+        memoPrettyPrint.Lines.Text := '';
     end;
   end;
   WriteTmpHtml;
