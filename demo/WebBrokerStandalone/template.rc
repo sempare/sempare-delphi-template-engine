@@ -1,6 +1,0 @@
-index RCDATA "templates\\index.tpl"
-dynform RCDATA "templates\\dynform.tpl"
-helper RCDATA "templates\\helper_template.tpl"
-template RCDATA "templates\\main_template.tpl"
-submitted RCDATA "templates\\submitted.tpl"
-error404 RCDATA "templates\\404.tpl"

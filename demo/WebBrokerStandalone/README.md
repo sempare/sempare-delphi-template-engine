@@ -25,7 +25,7 @@ This is the web module that has been slightly modified for the example.
 It uses DynForm and TemplateRegistry.
 
 You should observe that templates are loaded using:
-      TTemplateRegistry.Instance.ProcessTemplate(templatename, data);
+      TTemplateRegistry.Instance.Eval(templatename, data);
       
 # Limitations
 

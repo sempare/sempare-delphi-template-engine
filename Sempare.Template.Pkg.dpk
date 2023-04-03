@@ -1,4 +1,5 @@
- (*%*************************************************************************************************
+{+ block 'copyright' +}
+(*%*************************************************************************************************
  *                 ___                                                                              *
  *                / __|  ___   _ __    _ __   __ _   _ _   ___                                      *
  *                \__ \ / -_) | '  \  | '_ \ / _` | | '_| / -_)                                     *
@@ -12,7 +13,7 @@
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
  ****************************************************************************************************
  *                                                                                                  *
- * Copyright (c) 2019-2021 Sempare Limited                                                          * 
+ * Copyright (c) 2019-2021 Sempare Limited                                                          *
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
@@ -30,8 +31,10 @@
  * limitations under the License.                                                                   *
  *                                                                                                  *
  *************************************************************************************************%*)
-package Sempare.Template.Pkg;
+{+ end +}
+package Sempare.Template.Pkg{+ CompilerVersion +};
 
+{+ block 'directives' +}
 {$R *.res}
 {$IFDEF IMPLICITBUILDING This IFDEF should not be used by users}
 {$ALIGN 8}
@@ -58,12 +61,17 @@ package Sempare.Template.Pkg;
 {$DEFINE DEBUG}
 {$ENDIF IMPLICITBUILDING}
 {$IMPLICITBUILD ON}
+{+ end +}
 
 requires
+{+ block 'requires' +}
   rtl,
-  dbrtl;
+  dbrtl,
+  vcl;
+{+ end +}
 
 contains
+{+ block 'contains' +}
   Sempare.Template.BlockResolver in 'src\Sempare.Template.BlockResolver.pas',
   Sempare.Template.Visitor in 'src\Sempare.Template.Visitor.pas',
   Sempare.Template.Util in 'src\Sempare.Template.Util.pas',
@@ -80,6 +88,8 @@ contains
   Sempare.Template in 'src\Sempare.Template.pas',
   Sempare.Template.JSON in 'src\Sempare.Template.JSON.pas',
   Sempare.Template.ResourceStrings in 'src\Sempare.Template.ResourceStrings.pas',
-  Sempare.Template.VariableExtraction in 'src\Sempare.Template.VariableExtraction.pas';
+  Sempare.Template.VariableExtraction in 'src\Sempare.Template.VariableExtraction.pas',
+  Sempare.Template.TemplateRegistry in 'src\Sempare.Template.TemplateRegistry.pas';
+{+ end +}
 
 end.

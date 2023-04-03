@@ -170,9 +170,13 @@ type
     class function UCFirst(const AString: string): string; static;
     class function Rev(const AString: string): string; static;
     class function IsNull(const AValue: TValue): boolean; static;
+    class function IsNil(const AValue: TValue): boolean; static;
+    class function IsEmpty(const AValue: TValue): boolean; static;
+    class function IsObject(const AValue: TValue): boolean; static;
+    class function IsRecord(const AValue: TValue): boolean; static;
     class function IsStr(const AValue: TValue): boolean; static;
     class function IsInt(const AValue: TValue): boolean; static;
-    class function IsBool(const AValue): boolean; static;
+    class function IsBool(const AValue: TValue): boolean; static;
     class function IsNum(const AValue: TValue): boolean; static;
     class function StartsWith(const AString, ASearch: string): boolean; overload; static;
     class function StartsWith(const AString, ASearch: string; const AIgnoreCase: boolean): boolean; overload; static;
@@ -197,6 +201,7 @@ type
     class function Abs(const AValue: double): double; static;
 {$IFDEF SEMPARE_TEMPLATE_FIREDAC}
     class function RecordCount(const ADataset: TDataSet): integer; static;
+    class function IsDataSet(const ADataset: TValue): boolean; static;
 {$ENDIF}
 {$IFDEF SUPPORT_ENCODING}
     class function Base64Encode(const AStr: string): string; static;
@@ -698,6 +703,11 @@ begin
   exit(reverse(AString));
 end;
 
+class function TInternalFuntions.IsNil(const AValue: TValue): boolean;
+begin
+  exit(IsNull(AValue));
+end;
+
 class function TInternalFuntions.IsNull(const AValue: TValue): boolean;
 begin
   exit(Sempare.Template.Rtti.IsNull(AValue));
@@ -713,14 +723,34 @@ begin
   exit(isIntLike(AValue));
 end;
 
-class function TInternalFuntions.IsBool(const AValue): boolean;
+class function TInternalFuntions.IsBool(const AValue: TValue): boolean;
 begin
-  exit(IsBool(AValue));
+  exit(Sempare.Template.Rtti.IsBool(AValue));
+end;
+
+class function TInternalFuntions.IsEmpty(const AValue: TValue): boolean;
+var
+  LObject: TObject;
+begin
+  if not AValue.IsObject then
+    exit(false);
+  LObject := AValue.AsObject;
+  exit(not assigned(LObject) or IsEmptyObject(LObject));
 end;
 
 class function TInternalFuntions.IsNum(const AValue: TValue): boolean;
 begin
   exit(isnumlike(AValue));
+end;
+
+class function TInternalFuntions.IsObject(const AValue: TValue): boolean;
+begin
+  exit(AValue.IsObject);
+end;
+
+class function TInternalFuntions.IsRecord(const AValue: TValue): boolean;
+begin
+  exit(AValue.Kind in [tkRecord, tkMRecord]);
 end;
 
 constructor TTemplateFunctions.Create;
@@ -777,6 +807,11 @@ begin
   exit(AStr.PadLeft(ANum, APadChar));
 end;
 {$IFDEF SEMPARE_TEMPLATE_FIREDAC}
+
+class function TInternalFuntions.IsDataSet(const ADataset: TValue): boolean;
+begin
+  exit(ADataset.IsObject and ADataset.IsInstanceOf(TDataSet));
+end;
 
 class function TInternalFuntions.RecordCount(const ADataset: TDataSet): integer;
 begin

@@ -874,7 +874,7 @@ begin
     exit;
   LExpr := EvalExpr(AStmt.Condition);
   LIsObject := LExpr.IsObject;
-  if LIsObject and not IsEmptyObject(LExpr.AsObject) or not LIsObject and AsBoolean(LExpr) then
+  if LIsObject and not IsEmptyObject(LExpr.AsObject) or isStrLike(LExpr) and (AsString(LExpr, FContext) <> '') or not LIsObject and AsBoolean(LExpr) then
     AcceptVisitor(AStmt.TrueContainer, self)
   else if AStmt.FalseContainer <> nil then
     AcceptVisitor(AStmt.FalseContainer, self);
@@ -970,11 +970,16 @@ var
   LMethod: TRttiMethod;
 
   function GetParamCount: integer;
+  var
+    LParams: TArray<TRttiParameter>;
+    LParam: TRttiParameter;
   begin
-    result := length(LMethod.GetParameters);
+    LParams := LMethod.GetParameters;
+    result := length(LParams);
     if result > 0 then
     begin
-      if LMethod.GetParameters[0].ParamType.Handle = TypeInfo(ITemplateContext) then
+      LParam := LParams[0];
+      if LParam.ParamType.Handle = TypeInfo(ITemplateContext) then
         dec(result);
     end;
   end;
