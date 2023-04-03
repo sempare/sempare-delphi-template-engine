@@ -103,8 +103,9 @@ type
   TTemplateRegistry = class
   strict private
     class var FTemplateRegistry: TTemplateRegistry;
-    class constructor Create;
-    class destructor Destroy;
+  private
+    class procedure Initialize;
+    class procedure Finalize;
   strict private
     FLock: TCriticalSection;
     FTemplates: TDictionary<string, ITemplate>;
@@ -165,8 +166,6 @@ type
 implementation
 
 uses
-  System.Net.UrlClient,
-  System.Net.HttpClient,
   Sempare.Template.ResourceStrings,
   Sempare.Template,
   System.IOUtils,
@@ -216,17 +215,20 @@ begin
     end;
 
 {$IFDEF DEBUG}
-  FLoadStrategy := [tlsLoadFile, tlsLoadResource];
+  setlength(FLoadStrategy, 2);
+  FLoadStrategy[0] := tlsLoadFile;
+  FLoadStrategy[1] := tlsLoadResource;
   FRefreshIntervalS := 5;
   AutomaticRefresh := true;
 {$ELSE}
   FRefreshIntervalS := 10;
-  FLoadStrategy := [tlsLoadResource];
+  setlength(FLoadStrategy, 1);
+  FLoadStrategy[1] := tlsLoadResource;
   AutomaticRefresh := false;
 {$ENDIF}
 end;
 
-class constructor TTemplateRegistry.Create;
+class procedure TTemplateRegistry.Initialize;
 begin
   FTemplateRegistry := TTemplateRegistry.Create;
 end;
@@ -242,7 +244,7 @@ begin
   inherited;
 end;
 
-class destructor TTemplateRegistry.Destroy;
+class procedure TTemplateRegistry.Finalize;
 begin
   FTemplateRegistry.Free;
 end;
@@ -251,16 +253,17 @@ function TTemplateRegistry.GetTemplate(const ATemplateName: string): ITemplate;
 
 var
   LNameContext: TArray<string>;
+  LExts: TArray<string>;
 
   function LoadFromRegistry(out ATemplate: ITemplate): boolean;
   var
     LName: string;
-    LExt: string;
+    LExt: integer;
   begin
     ATemplate := nil;
-    for LExt in [FTemplateFileExt, ''] do
+    for LExt := low(LExts) to high(LExts) do
     begin
-      LName := FResourceNameResolver(ATemplateName + LExt, LNameContext);
+      LName := FResourceNameResolver(ATemplateName + LExts[LExt], LNameContext);
       try
         ATemplate := TResourceTemplate.Create(FContext, LName);
         exit(true);
@@ -275,13 +278,13 @@ var
   function LoadFromFile(out ATemplate: ITemplate): boolean;
   var
     LName: string;
-    LExt: string;
+    LExt: integer;
   begin
     result := false;
     ATemplate := nil;
-    for LExt in [FTemplateFileExt, ''] do
+    for LExt := low(LExts) to high(LExts) do
     begin
-      LName := FFileNameResolver(ATemplateName + FTemplateFileExt, LNameContext);
+      LName := FFileNameResolver(ATemplateName + LExts[LExt], LNameContext);
       if TFile.Exists(LName) then
       begin
         try
@@ -298,18 +301,18 @@ var
   function LoadFromCustom(out ATemplate: ITemplate): boolean;
   var
     LName: string;
-    LExt: string;
+    LExt: integer;
   begin
     result := false;
     ATemplate := nil;
     if not assigned(FCustomTemplateLoader) then
       exit;
 
-    for LExt in [FTemplateFileExt, ''] do
+    for LExt := low(LExts) to high(LExts) do
     begin
       try
-        LName := FResourceNameResolver(ATemplateName + LExt, LNameContext);
-        ATemplate := FCustomTemplateLoader(FContext, LName + FTemplateFileExt);
+        LName := FResourceNameResolver(ATemplateName + LExts[LExt], LNameContext);
+        ATemplate := FCustomTemplateLoader(FContext, LName);
         exit(true);
       except
         on e: Exception do
@@ -330,6 +333,9 @@ begin
     FLock.Release;
   end;
   result := nil;
+  setlength(LExts, 2);
+  LExts[0] := FTemplateFileExt;
+  LExts[1] := '';
   if assigned(FNameContextResolver) then
     LNameContext := FNameContextResolver
   else
@@ -582,7 +588,11 @@ var
 begin
   if FModifiedAt = ATime then
     exit;
+{$IFDEF SUPPORT_BUFFERED_STREAM}
   LStream := TBufferedFileStream.Create(AFilename, fmOpenRead or fmShareDenyNone);
+{$ELSE}
+  LStream := TFileStream.Create(AFilename, fmOpenRead or fmShareDenyNone);
+{$ENDIF}
   LTemplate := Template.Parse(FContext, LStream);
   inherited Create(LTemplate);
   LTemplate.FileName := AFilename;
@@ -607,5 +617,13 @@ constructor ETemplateRefreshTooFrequent.Create;
 begin
   inherited CreateRes(@SRefreshTooFrequent);
 end;
+
+initialization
+
+TTemplateRegistry.Initialize;
+
+finalization
+
+TTemplateRegistry.Finalize;
 
 end.
