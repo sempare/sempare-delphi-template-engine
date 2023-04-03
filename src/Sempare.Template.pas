@@ -83,7 +83,7 @@ type
 {$IFDEF MSWINDOWS}
   private
     class var FLicenseShown: boolean;
-    class constructor Create;
+    class procedure Initialize;
 {$ENDIF}
 {$ENDIF}
   public
@@ -375,7 +375,7 @@ end;
 {$IFNDEF SEMPARE_TEMPLATE_CONFIRM_LICENSE}
 {$IFDEF MSWINDOWS}
 
-class constructor Template.Create;
+class procedure Template.Initialize;
 begin
   FLicenseShown := false;
 end;
@@ -402,6 +402,12 @@ end;
 initialization
 
 GEmpty := TObject.Create;
+
+{$IFNDEF SEMPARE_TEMPLATE_CONFIRM_LICENSE}
+{$IFDEF MSWINDOWS}
+Template.Initialize;
+{$ENDIF}
+{$ENDIF}
 
 finalization
 
