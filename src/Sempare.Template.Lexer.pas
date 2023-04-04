@@ -308,34 +308,49 @@ var
     exit(ValueToken(vsString));
   end;
 
-  function isEndOfScript(out aResult: ITemplateSymbol; const AStripAction: TStripAction; const AGetInput: Boolean = false): Boolean;
-  begin
-    if AGetInput then
-      GetInput;
-    if CharInSet(FCurrent.Input, [FEndScript[1], FEndStripScript[1]]) then
+  function isEndOfScript(const ALastChar: char; out aResult: ITemplateSymbol; const AStripAction: TStripAction): Boolean;
+
+    function CheckEnd(const ACurrent, ANext: char; const AStripAction: TStripAction): Boolean;
     begin
-      if FCurrent.Input = FEndScript[1] then
-        LEndExpect := FEndScript[2]
-      else
-        LEndExpect := FEndStripScript[2];
-      if Expecting(LEndExpect) then
+      if CharInSet(ACurrent, [FEndScript[1], FEndStripScript[1]]) then
       begin
-        LEndStripWS := FCurrent.Input = FEndStripScript[1];
-        GetInput;
-        if FAccumulator.length > 0 then
-        begin
-          aResult := ValueToken(vsText);
-          FNextToken := SimpleToken(VsEndScript, LEndStripWS, AStripAction);
-        end
+        if ACurrent = FEndScript[1] then
+          LEndExpect := FEndScript[2]
         else
+          LEndExpect := FEndStripScript[2];
+        if ANext = LEndExpect then
         begin
-          aResult := SimpleToken(VsEndScript, LEndStripWS, AStripAction);
+          LEndStripWS := ACurrent = FEndStripScript[1];
+          if AStripAction = saNone then
+            GetInput;
+          if FAccumulator.length > 0 then
+          begin
+            aResult := ValueToken(vsText);
+            FNextToken := SimpleToken(VsEndScript, LEndStripWS, AStripAction);
+          end
+          else
+          begin
+            aResult := SimpleToken(VsEndScript, LEndStripWS, AStripAction);
+          end;
+          FState := SText;
+          exit(True);
         end;
-        FState := SText;
-        exit(True);
       end;
+      exit(false);
     end;
-    exit(false);
+
+  var
+    LGetInput: Boolean;
+  begin
+    LGetInput := AStripAction <> saNone;
+    if LGetInput then
+    begin
+      GetInput;
+      Result := CheckEnd(ALastChar, FCurrent.Input, AStripAction);
+      if Result then
+        exit;
+    end;
+    exit(CheckEnd(FCurrent.Input, FLookahead.Input, saNone));
   end;
 
 begin
@@ -418,21 +433,21 @@ begin
           exit(SimpleToken(vsQUESTION));
         '+':
           begin
-            if isEndOfScript(Result, TStripAction.saWhitespaceAndNLButOne, True) then
+            if isEndOfScript('+', Result, TStripAction.saWhitespaceAndNLButOne) then
               exit
             else
               exit(SimpleToken(vsPLUS, false, saNone, false));
           end;
         '-':
           begin
-            if isEndOfScript(Result, TStripAction.saWhitespace, True) then
+            if isEndOfScript('-', Result, TStripAction.saWhitespace) then
               exit
             else
               exit(SimpleToken(vsMinus, false, saNone, false));
           end;
         '*':
           begin
-            if isEndOfScript(Result, TStripAction.saWhitespaceAndNL, True) then
+            if isEndOfScript('*', Result, TStripAction.saWhitespaceAndNL) then
               exit
             else
               exit(SimpleToken(vsMULT, false, saNone, false));
@@ -486,7 +501,7 @@ begin
             exit(SimpleToken(vsCOLON));
       else
         begin
-          if isEndOfScript(Result, TStripAction.saNone) then
+          if isEndOfScript(#0, Result, TStripAction.saNone) then
             exit;
         end;
       end;
