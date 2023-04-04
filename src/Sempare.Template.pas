@@ -77,6 +77,8 @@ type
   TTemplateRegistry = Sempare.Template.TemplateRegistry.TTemplateRegistry;
   TTemplateLoadStrategy = Sempare.Template.TemplateRegistry.TTemplateLoadStrategy;
   TSempareServerPages = TTemplateRegistry;
+  ETemplateNotResolved = Sempare.Template.TemplateRegistry.ETemplateNotResolved;
+  TTempateLogMessage = Sempare.Template.TemplateRegistry.TTempateLogMessage;
 
   Template = class
 {$IFNDEF SEMPARE_TEMPLATE_CONFIRM_LICENSE}
