@@ -34,6 +34,8 @@ unit Sempare.Template.Parser;
 
 interface
 
+{$I 'Sempare.Template.Compiler.inc'}
+
 uses
   System.Classes,
   Sempare.Template.AST,
@@ -558,9 +560,9 @@ type
 function Flatten(const AStmts: TArray<IStmt>): TArray<IStmt>;
 var
   LStmt: IStmt;
-  LFlattenedStmts:TList<IStmt>;
+  LFlattenedStmts: TList<IStmt>;
 begin
-  LFlattenedStmts:=TList<IStmt>.Create;
+  LFlattenedStmts := TList<IStmt>.Create;
   try
     for LStmt in AStmts do
     begin
@@ -568,7 +570,7 @@ begin
     end;
     exit(LFlattenedStmts.ToArray);
   finally
-     LFlattenedStmts.Free;
+    LFlattenedStmts.Free;
   end;
 end;
 
@@ -1431,18 +1433,20 @@ const
   ONFIRST_ONEND_ONLOOP_ELSE: TTemplateSymbolSet = [vsOnBegin, vsOnEnd, vsOnEmpty, vsBetweenItem, vsEND];
 
 {$IFDEF SUPPORT_PASS_ARRAY_OF_INTERFACE}
-function ArrayOfTemplate(const ATemplates: TArray<ITemplate>):TArray<ITemplate>;
+
+function ArrayOfTemplate(const ATemplates: TArray<ITemplate>): TArray<ITemplate>;
 begin
-  exit(AStmts);
+  exit(ATemplates);
 end;
 {$ELSE}
-function ArrayOfTemplate(const ATemplates:array of ITemplate):TArray<ITemplate>;
+
+function ArrayOfTemplate(const ATemplates: array of ITemplate): TArray<ITemplate>;
 var
-  i : integer;
+  i: integer;
 begin
   setlength(result, length(ATemplates));
-  for i := Low(atemplates) to High(atemplates) do
-    result[i] := atemplates[i];
+  for i := Low(ATemplates) to High(ATemplates) do
+    result[i] := ATemplates[i];
 end;
 {$ENDIF}
 
@@ -2284,9 +2288,9 @@ procedure TTemplate.Optimise;
   function Strip(const AArray: TArray<IStmt>): TArray<IStmt>;
   var
     LStmt: IStmt;
-    LStmts:TList<IStmt>;
+    LStmts: TList<IStmt>;
   begin
-    LStmts:=TList<IStmt>.Create;
+    LStmts := TList<IStmt>.Create;
     try
       for LStmt in AArray do
       begin
@@ -2780,7 +2784,7 @@ end;
 
 function TCompositeStmt.Flatten: TArray<IStmt>;
 var
-  LStmts:TArray<IStmt>;
+  LStmts: TArray<IStmt>;
 begin
   setlength(LStmts, 2);
   LStmts[0] := FFirstStmt;
