@@ -101,6 +101,7 @@ type
     function TryGetTemplate(const AName: string; out ATemplate: ITemplate): boolean;
     function GetTemplate(const AName: string): ITemplate;
     procedure SetTemplate(const AName: string; const ATemplate: ITemplate);
+    procedure RemoveTemplate(const AName: string);
 
     function GetTemplateResolver: TTemplateResolver;
     procedure SetTemplateResolver(const AResolver: TTemplateResolver);
@@ -277,6 +278,7 @@ type
     function TryGetTemplate(const AName: string; out ATemplate: ITemplate): boolean;
     function GetTemplate(const AName: string): ITemplate;
     procedure SetTemplate(const AName: string; const ATemplate: ITemplate);
+    procedure RemoveTemplate(const AName: string);
 
     function GetTemplateResolver: TTemplateResolver;
     procedure SetTemplateResolver(const AResolver: TTemplateResolver);
@@ -496,6 +498,16 @@ begin
   if not assigned(FEvaluationContext) then
     exit;
   FEvaluationContext.RemoveBlock(AName);
+end;
+
+procedure TTemplateContext.RemoveTemplate(const AName: string);
+begin
+  FLock.Enter;
+  try
+    FTemplates.Remove(AName);
+  finally
+    FLock.Leave;
+  end;
 end;
 
 function TTemplateContext.GetScriptEndStripToken: string;
