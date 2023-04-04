@@ -164,7 +164,7 @@ begin
   try
     if FFilename <> '' then
       butSave.Enabled := true;
-    FTemplate := Template.Parse(memoTemplate.Lines.Text);
+    FTemplate := Template.Parse(FContext, memoTemplate.Lines.Text);
     // Template.TemplateText := memoTemplate.Lines.Text;
     Process;
     // this is a hack so that app does not throw an exception
