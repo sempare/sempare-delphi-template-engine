@@ -99,6 +99,7 @@ type
   TTemplateNameContextResolver = reference to function: TArray<string>;
   TTemplateNameResolver = reference to function(const AName: string; const AContext: TArray<string>): string;
   TTempateLogException = reference to procedure(const AException: Exception);
+  TTempateLogMessage = reference to procedure(const AMessage: string; const args: array of const);
 
   TTemplateRegistry = class
   strict private
@@ -122,7 +123,8 @@ type
     FAutomaticRefresh: boolean;
     FCustomTemplateLoader: TTemplateResolver;
     FNameContextResolver: TTemplateNameContextResolver;
-    FLogException: TTempateLogException;
+    FExceptionLogger: TTempateLogException;
+    FLogger: TTempateLogMessage;
 
     procedure Refresh;
 
@@ -131,11 +133,13 @@ type
     procedure SetLoadStrategy(const Value: TArray<TTemplateLoadStrategy>);
     procedure SetTemplateFileExt(const Value: string);
     procedure LogException(const AException: Exception);
+    procedure Log(const AMsg: string; const AArgs: array of const);
   public
     constructor Create();
     destructor Destroy; override;
 
     function GetTemplate(const ATemplateName: string): ITemplate; overload;
+    procedure RemoveTemplate(const ATemplateName: string);
 
     procedure Eval(const AOutputStream: TStream; const ATemplate: ITemplate); overload;
     procedure Eval<T>(const AOutputStream: TStream; const ATemplate: ITemplate; const AData: T); overload;
@@ -159,8 +163,8 @@ type
     property AutomaticRefresh: boolean read FAutomaticRefresh write SetAutomaticRefresh;
     property CustomTemplateLoader: TTemplateResolver read FCustomTemplateLoader write FCustomTemplateLoader;
     property NameContextResolver: TTemplateNameContextResolver read FNameContextResolver write FNameContextResolver;
-    property ExceptionLogger: TTempateLogException read FLogException write FLogException;
-
+    property ExceptionLogger: TTempateLogException read FExceptionLogger write FExceptionLogger;
+    property Logger: TTempateLogMessage read FLogger write FLogger;
   end;
 
 implementation
@@ -168,6 +172,9 @@ implementation
 uses
   Sempare.Template.ResourceStrings,
   Sempare.Template,
+{$IFDEF DEBUG}
+  Sempare.Template.PrettyPrint,
+{$ENDIF}
   System.IOUtils,
   System.DateUtils;
 
@@ -255,7 +262,7 @@ var
   LNameContext: TArray<string>;
   LExts: TArray<string>;
 
-  function LoadFromRegistry(out ATemplate: ITemplate): boolean;
+  function LoadFromResource(out ATemplate: ITemplate): boolean;
   var
     LName: string;
     LExt: integer;
@@ -266,10 +273,14 @@ var
       LName := FResourceNameResolver(ATemplateName + LExts[LExt], LNameContext);
       try
         ATemplate := TResourceTemplate.Create(FContext, LName);
+        Log('Loaded template from resource: %s', [LName]);
         exit(true);
       except
         on e: Exception do
-          LogException(e);
+          if LExt = high(LExts) then
+          begin
+            LogException(e);
+          end;
       end;
     end;
     exit(false);
@@ -289,10 +300,14 @@ var
       begin
         try
           ATemplate := TFileTemplate.Create(FContext, LName);
+          Log('Loaded template from file: %s', [LName]);
           exit(true);
         except
           on e: Exception do
-            LogException(e);
+            if LExt = high(LExts) then
+            begin
+              LogException(e);
+            end;
         end;
       end;
     end;
@@ -313,10 +328,14 @@ var
       try
         LName := FResourceNameResolver(ATemplateName + LExts[LExt], LNameContext);
         ATemplate := FCustomTemplateLoader(FContext, LName);
+        Log('Loaded template from custom loader: %s', [LName]);
         exit(true);
       except
         on e: Exception do
-          LogException(e);
+          if LExt = high(LExts) then
+          begin
+            LogException(e);
+          end;
       end;
     end;
   end;
@@ -344,7 +363,7 @@ begin
   begin
     case LLoadStrategy of
       tlsLoadResource:
-        if LoadFromRegistry(result) then
+        if LoadFromResource(result) then
           break;
       tlsLoadFile:
         if LoadFromFile(result) then
@@ -364,10 +383,16 @@ begin
   end;
 end;
 
+procedure TTemplateRegistry.Log(const AMsg: string; const AArgs: array of const);
+begin
+  if assigned(FLogger) then
+    FLogger(AMsg, AArgs);
+end;
+
 procedure TTemplateRegistry.LogException(const AException: Exception);
 begin
-  if assigned(FLogException) then
-    FLogException(AException);
+  if assigned(FExceptionLogger) then
+    FExceptionLogger(AException);
 end;
 
 function TTemplateRegistry.Eval(const ATemplateName: string): string;
@@ -380,12 +405,12 @@ end;
 
 function TTemplateRegistry.Eval<T>(const ATemplate: ITemplate; const AData: T): string;
 begin
-
+  exit(Template.Eval(FContext, ATemplate, AData));
 end;
 
 procedure TTemplateRegistry.Eval<T>(const AOutputStream: TStream; const ATemplate: ITemplate; const AData: T);
 begin
-
+  Template.Eval(FContext, ATemplate, AData, AOutputStream);
 end;
 
 procedure TTemplateRegistry.Eval(const AOutputStream: TStream; const ATemplateName: string);
@@ -406,12 +431,12 @@ end;
 
 procedure TTemplateRegistry.Eval(const AOutputStream: TStream; const ATemplate: ITemplate);
 begin
-
+  Template.Eval(FContext, ATemplate, AOutputStream);
 end;
 
 function TTemplateRegistry.Eval(const ATemplate: ITemplate): string;
 begin
-
+  exit(Template.Eval(FContext, ATemplate));
 end;
 
 function TTemplateRegistry.Eval<T>(const ATemplateName: string; const AData: T): string;
@@ -436,6 +461,17 @@ begin
         LRefreshable.Refresh;
       end;
     end;
+  finally
+    FLock.Release;
+  end;
+end;
+
+procedure TTemplateRegistry.RemoveTemplate(const ATemplateName: string);
+begin
+  FLock.Acquire;
+  try
+    FContext.RemoveTemplate(ATemplateName);
+    FTemplates.Remove(ATemplateName);
   finally
     FLock.Release;
   end;
@@ -585,6 +621,8 @@ procedure TFileTemplate.Load(const AFilename: string; const ATime: TDateTime);
 var
   LStream: TStream;
   LTemplate: ITemplate;
+{$IFDEF DEBUG}
+  LStr: string; {$ENDIF}
 begin
   if FModifiedAt = ATime then
     exit;
@@ -593,7 +631,18 @@ begin
 {$ELSE}
   LStream := TFileStream.Create(AFilename, fmOpenRead or fmShareDenyNone);
 {$ENDIF}
-  LTemplate := Template.Parse(FContext, LStream);
+  try
+    LTemplate := Template.Parse(FContext, LStream);
+  except
+    on e: Exception do
+    begin
+      writeln(e.message);
+      raise;
+    end;
+  end;
+{$IFDEF DEBUG}
+  LStr := Template.PrettyPrint(LTemplate);
+{$ENDIF}
   inherited Create(LTemplate);
   LTemplate.FileName := AFilename;
   FModifiedAt := ATime;
