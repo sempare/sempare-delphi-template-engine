@@ -51,6 +51,8 @@ type
     procedure Visit(const AExpr: IVariableExpr); overload; virtual;
     procedure Visit(const AExpr: IVariableDerefExpr); overload; virtual;
     procedure Visit(const AExpr: IValueExpr); overload; virtual;
+    procedure Visit(const AExpr: INewLineExpr); overload; virtual;
+    procedure Visit(const AExpr: IWhitespaceExpr); overload; virtual;
     procedure Visit(const AExprList: IExprList); overload; virtual;
     procedure Visit(const AExpr: ITernaryExpr); overload; virtual;
     procedure Visit(const AExpr: IArrayExpr); overload; virtual;
@@ -314,6 +316,16 @@ procedure TBaseTemplateVisitor.Visit(const AStmt: IExtendsStmt);
 begin
   AcceptVisitor(AStmt.Name, self);
   AcceptVisitor(AStmt.BlockContainer, self);
+end;
+
+procedure TBaseTemplateVisitor.Visit(const AExpr: IWhitespaceExpr);
+begin
+  Visit(AExpr as IValueExpr);
+end;
+
+procedure TBaseTemplateVisitor.Visit(const AExpr: INewLineExpr);
+begin
+  Visit(AExpr as IValueExpr);
 end;
 
 procedure TBaseTemplateVisitor.Visit(const AStmt: INoopStmt);

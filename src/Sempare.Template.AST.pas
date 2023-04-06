@@ -55,6 +55,7 @@ type
 
   TStripAction = ( //
     saWhitespace, //
+    //    saUnindent, //
     saWhitespaceAndNL, //
     saWhitespaceAndNLButOne, //
     saNone //
@@ -145,8 +146,13 @@ type
     vsSemiColon, //
 
     vsExtends, //
-    vsBlock //
+    vsBlock, //
+
+    vsNewLine, //
+    vsWhiteSpace //
     );
+
+  TTemplateSymbolSet = set of TTemplateSymbol;
 
   IPosition = interface
     ['{2F087E1F-42EE-44D4-B928-047AA1788F50}']
@@ -195,6 +201,8 @@ type
   IStmt = interface(ITemplateVisitorHost)
     ['{6D37028E-A0C0-41F1-8A59-EDC0C9ADD9C7}']
     function Flatten: TArray<IStmt>;
+    function GetHasEnd: boolean;
+    property HasEnd: boolean read GetHasEnd;
   end;
 
   IDebugStmt = interface(IStmt)
@@ -243,14 +251,20 @@ type
     ['{FB4CC3AB-BFEC-4189-B555-153DDA490D15}']
   end;
 
-  TStripDirection = (sdLeft, sdRight);
+  TStripDirection = (sdLeft, sdRight, sdEnd, sdBeforeNewLine = sdRight, sdAfterNewLine = sdLeft);
 
   IStripStmt = interface(IStmt)
     ['{3313745B-D635-4453-9808-660DC462E15C}']
     function GetDirection: TStripDirection;
     function GetAction: TStripAction;
+    function GetHasEnd: boolean;
+    procedure SetHasEnd(const AHasEnd: boolean);
+    function GetIndent: string;
+    procedure SetIndent(const AIndent: string);
     property Direction: TStripDirection read GetDirection;
     property Action: TStripAction read GetAction;
+    property HasEnd: boolean read GetHasEnd write SetHasEnd;
+    property Indent: string read GetIndent write SetIndent;
   end;
 
   ICompositeStmt = interface(IStmt)
@@ -423,6 +437,14 @@ type
     property Value: TValue read GetValue;
   end;
 
+  INewLineExpr = interface(IValueExpr)
+    ['{A140C174-1C92-4C4C-AD8C-5A46066B2338}']
+  end;
+
+  IWhitespaceExpr = interface(IValueExpr)
+    ['{65ACCA2B-B671-42E9-8ED4-179B11C36AA0}']
+  end;
+
   IVariableExpr = interface(IExpr)
     ['{AE35E829-A756-4A1C-9F41-01CF3DD34096}']
     function GetVariable: string;
@@ -515,6 +537,7 @@ type
     procedure Visit(const AExpr: IBinopExpr); overload;
     procedure Visit(const AExpr: IUnaryExpr); overload;
     procedure Visit(const AExpr: IVariableExpr); overload;
+    procedure Visit(const AExpr: INewLineExpr); overload;
     procedure Visit(const AExpr: IValueExpr); overload;
     procedure Visit(const AExpr: ITernaryExpr); overload;
     procedure Visit(const AExpr: IArrayExpr); overload;
@@ -559,10 +582,11 @@ type
   end;
 
 const
-  StripDirectionStr: array [TStripDirection] of string = ('sdLeft', 'sdRight');
+  StripDirectionStr: array [TStripDirection] of string = ('sdAfterNewLine', 'sdBeforeNewLine', 'sdEnd');
 
   StripActionStr: array [TStripAction] of string = ( //
     'saWhitespace', //
+    //'saUnindent', //
     'saWhitespaceAndNL', //
     'saWhitespaceAndNLButOne', //
     'saNone' //

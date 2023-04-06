@@ -135,7 +135,7 @@ begin
   ctx.Template['test2'] := Template.parse('test <% value %>');
 
   // illustrate simple template
-  Assert.AreEqual('test 123', Template.Eval(ctx, 'test <%_%>', '123'));
+  Assert.AreEqual('test 123', Template.Eval(ctx, 'test <% _ %>', '123'));
 
   // test using include - stackframe is preserved
   Assert.AreEqual('test 123', Template.Eval(ctx, '<%include (''test'') %>', '123'));

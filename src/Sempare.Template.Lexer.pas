@@ -310,7 +310,7 @@ var
 
   function isEndOfScript(const ALastChar: char; out aResult: ITemplateSymbol; const AStripAction: TStripAction): Boolean;
 
-    function CheckEnd(const ACurrent, ANext: char; const AStripAction: TStripAction): Boolean;
+    function CheckEnd(const ACurrent, ANext: char; const AStripAction: TStripAction; const AGetInput: Boolean = false): Boolean;
     begin
       if CharInSet(ACurrent, [FEndScript[1], FEndStripScript[1]]) then
       begin
@@ -321,7 +321,7 @@ var
         if ANext = LEndExpect then
         begin
           LEndStripWS := ACurrent = FEndStripScript[1];
-          if AStripAction = saNone then
+          if (AStripAction = saNone) or AGetInput then
             GetInput;
           if FAccumulator.length > 0 then
           begin
@@ -349,6 +349,7 @@ var
       Result := CheckEnd(ALastChar, FCurrent.Input, AStripAction);
       if Result then
         exit;
+      exit(CheckEnd(FCurrent.Input, FLookahead.Input, AStripAction, True));
     end;
     exit(CheckEnd(FCurrent.Input, FLookahead.Input, saNone));
   end;
@@ -522,7 +523,6 @@ function TTemplateLexer.GetTextToken: ITemplateSymbol;
 var
   LLine: integer;
   LPosition: integer;
-  LLastChar, LCurChar: char;
   LIsStartStripWSToken: Boolean;
   LState: TStripAction;
 
@@ -543,21 +543,57 @@ var
     GetInput;
   end;
 
-  function ValueToken(const ASymbol: TTemplateSymbol): ITemplateSymbol;
+  function ValueToken(const ASymbol: TTemplateSymbol; const AGetNext: Boolean = True): ITemplateSymbol;
   var
     LPosition: IPosition;
   begin
     LPosition := MakePosition;
     Result := TTemplateValueSymbol.Create(LPosition, ASymbol, FAccumulator.ToString);
     FAccumulator.Clear;
-    GetInput;
+    if AGetNext then
+      GetInput;
+  end;
+
+  procedure AccumulateChars(const Achars: TCharSet; const ATransform: TFunc<char, char>);
+  begin
+    while not FCurrent.Eof and (CharInSet(FCurrent.Input, Achars)) do
+    begin
+      FAccumulator.Append(FCurrent.Input);
+      GetInput;
+    end;
+  end;
+
+  function CanProduceToken(const AToken: TTemplateSymbol; const Achars: TCharSet; out ASymbol: ITemplateSymbol; const ATransform: TFunc<char, char>; const AFinal: TFunc<string, string>): Boolean;
+  var
+    lstr: string;
+  begin
+    if not CharInSet(FCurrent.Input, Achars) then
+      exit(false);
+
+    if FAccumulator.length > 0 then
+    begin
+      ASymbol := ValueToken(vsText, false);
+      AccumulateChars(Achars, ATransform);
+      lstr := AFinal(FAccumulator.ToString);
+      FAccumulator.Clear;
+      FAccumulator.Append(lstr);
+      FNextToken := ValueToken(vsNewLine, false);
+    end
+    else
+    begin
+      AccumulateChars(Achars, ATransform);
+      lstr := AFinal(FAccumulator.ToString);
+      FAccumulator.Clear;
+      FAccumulator.Append(lstr);
+      ASymbol := ValueToken(vsNewLine, false);
+    end;
+    exit(True);
   end;
 
 begin
   FAccumulator.Clear;
   LLine := FLine;
   LPosition := FPos;
-  LLastChar := #0;
   if FCurrent.Input = #0 then
     GetInput;
   while not FCurrent.Eof do
@@ -567,6 +603,8 @@ begin
     begin
       Result := ValueToken(vsText);
       case FLookahead.Input of
+        // '_':
+        // LState := TStripAction.saUnindent;
         '-':
           LState := TStripAction.saWhitespace;
         '+':
@@ -581,21 +619,57 @@ begin
       FState := SScript;
       FNextToken := SimpleToken(VsStartScript, LIsStartStripWSToken, LState);
       exit();
-    end
-    else
-    begin
-      LCurChar := FCurrent.Input;
-      if (eoConvertTabsToSpaces in FOptions) and (LCurChar = #9) then
-        LCurChar := ' ';
-      if (eoStripRecurringSpaces in FOptions) and (LLastChar = ' ') and (LCurChar = ' ') then
-        GetInput
-      else
-      begin
-        FAccumulator.Append(LCurChar);
-        LLastChar := LCurChar;
-        GetInput;
-      end;
     end;
+
+    if CanProduceToken(vsNewLine, [#13, #10], Result,
+      function(c: char): char
+      begin
+        exit(c);
+      end,
+      function(s: string): string
+      begin
+        if eoStripRecurringNewlines in FOptions then
+          exit(FContext.NewLine)
+        else
+          exit(s);
+      end) then
+    begin
+      FCurrent.Input := FCurrent.Input;
+      exit;
+    end;
+
+    if CanProduceToken(vsWhiteSpace, [' ', #9], Result,
+      function(c: char): char
+      begin
+        if (eoConvertTabsToSpaces in FOptions) and (c = #9) then
+          exit(' ')
+        else
+          exit(c);
+      end,
+      function(s: string): string
+      var
+        i: integer;
+        l: char;
+      begin
+        if not(eoStripRecurringSpaces in FOptions) then
+          exit(s);
+        Result := '';
+        l := #0;
+        for i := Low(s) to High(s) do
+        begin
+          if l = s[i] then
+            continue;
+          l := s[i];
+          Result := Result + l;
+        end;
+      end) then
+    begin
+      FCurrent.Input := FCurrent.Input;
+      exit;
+    end;
+
+    FAccumulator.Append(FCurrent.Input);
+    GetInput;
   end;
 
   if FAccumulator.length > 0 then
@@ -788,6 +862,9 @@ AddSymKeyword('/', vsSLASH);
 
 AddSymKeyword(',', vsComma);
 AddSymKeyword(';', vsSemiColon);
+
+AddSymKeyword({$IFDEF MSWINDOWS}#13#10{$ELSE}#10{$ENDIF}, vsNewLine);
+AddSymKeyword(' ', vsWhiteSpace);
 
 finalization
 

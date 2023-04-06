@@ -66,7 +66,7 @@ begin
   o2 := TJSonObject.create;
   o2.AddPair('subval', 'value');
   o.AddPair('object', o2);
-  Assert.AreEqual('string true  123 value', Template.Eval('<% _.str %> <% _.bool%> <%_.null%> <%_.num%> <% _.object.subval %>', o));
+  Assert.AreEqual('string true  123 value', Template.Eval('<% _.str %> <% _.bool%> <% _.null%> <% _.num%> <% _.object.subval %>', o));
   o.Free;
 end;
 

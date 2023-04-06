@@ -115,6 +115,7 @@ type
     procedure Visit(const AExpr: IVariableExpr); overload; override;
     procedure Visit(const AExpr: IVariableDerefExpr); overload; override;
     procedure Visit(const AExpr: IValueExpr); overload; override;
+
     procedure Visit(const AExprList: IExprList); overload; override;
     procedure Visit(const AExpr: ITernaryExpr); overload; override;
     procedure Visit(const AExpr: IEncodeExpr); overload; override;
@@ -910,7 +911,17 @@ procedure TEvaluationTemplateVisitor.Visit(const AStmt: IPrintStmt);
 begin
   if HasBreakOrContinue then
     exit;
+  if supports(AStmt.Expr, INewlineExpr) then
+  begin
+  //  FStreamWriter.Write('[beforenl]');
+  end;
   FStreamWriter.Write(EvalExprAsString(AStmt.Expr));
+  if supports(AStmt.Expr, INewlineExpr) then
+  begin
+   // FStreamWriter.Write('[afternl]');
+
+  end;
+
 end;
 
 function CastArg(const AValue: TValue; const AType: TRttiType; const AContext: ITemplateContext): TValue;
@@ -1288,10 +1299,11 @@ end;
 
 const
   STRIP_CHARS: array [TStripAction] of set of char = ( //
-    [' ', #9], //
-    [' ', #9, #13, #10], //
-    [' ', #9, #13, #10], //
-    [] //
+    [' ', #9], //             saWhitespace
+    // [' ', #9],        //   saUnindent
+    [' ', #9, #13, #10], //   saWhitespaceAndNL
+    [' ', #9, #13, #10], //   saWhitespaceAndNLButOne
+    [] //                     saNone
     );
 {$WARN WIDECHAR_REDUCED ON}
 
