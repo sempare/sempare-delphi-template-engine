@@ -95,7 +95,7 @@ type
     class function Context(const AOptions: TTemplateEvaluationOptions = [eoOptimiseTemplate]): ITemplateContext; inline; static;
     class function Parser(const AContext: ITemplateContext): ITemplateParser; overload; inline; static;
     class function Parser(): ITemplateParser; overload; inline; static;
-    class function PrettyPrint(ATemplate: ITemplate): string; inline; static;
+    class function PrettyPrint(const ATemplate: ITemplate): string; inline; static;
 
     // EVAL output to stream
 
@@ -238,7 +238,7 @@ begin
   exit(CreateTemplateParser(Context));
 end;
 
-class function Template.PrettyPrint(ATemplate: ITemplate): string;
+class function Template.PrettyPrint(const ATemplate: ITemplate): string;
 var
   LVisitor: ITemplateVisitor;
   LTemplateVisitor: TPrettyPrintTemplateVisitor;
