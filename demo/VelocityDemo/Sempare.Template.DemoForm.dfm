@@ -327,17 +327,58 @@ object FormRealTime: TFormRealTime
       ExplicitHeight = 252
       object tsTemplate: TTabSheet
         Caption = 'Template'
-        object memoTemplate: TMemo
+        object Panel2: TPanel
           Left = 0
           Top = 0
           Width = 456
           Height = 225
           Align = alClient
-          ScrollBars = ssBoth
+          BevelOuter = bvNone
+          Caption = 'Panel2'
           TabOrder = 0
-          WantTabs = True
-          OnChange = memoTemplateChange
-          ExplicitHeight = 224
+          ExplicitLeft = 56
+          ExplicitWidth = 185
+          ExplicitHeight = 41
+          object memoTemplate: TMemo
+            Left = 0
+            Top = 17
+            Width = 456
+            Height = 208
+            Align = alClient
+            ScrollBars = ssBoth
+            TabOrder = 0
+            WantTabs = True
+            OnChange = memoTemplateChange
+            OnKeyUp = memoTemplateKeyUp
+            OnMouseDown = memoTemplateMouseDown
+            ExplicitTop = 0
+            ExplicitHeight = 225
+          end
+          object Panel3: TPanel
+            Left = 0
+            Top = 0
+            Width = 456
+            Height = 17
+            Align = alTop
+            Caption = 'Panel3'
+            ShowCaption = False
+            TabOrder = 1
+            object lblPosition: TLabel
+              AlignWithMargins = True
+              Left = 4
+              Top = 4
+              Width = 448
+              Height = 17
+              Align = alTop
+              Alignment = taRightJustify
+              AutoSize = False
+              Caption = '(Line: 1, Position: 1)'
+              Transparent = False
+              ExplicitLeft = 0
+              ExplicitTop = 0
+              ExplicitWidth = 456
+            end
+          end
         end
       end
       object tsPrettyPrint: TTabSheet

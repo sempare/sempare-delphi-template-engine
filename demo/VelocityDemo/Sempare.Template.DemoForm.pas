@@ -100,6 +100,9 @@ type
     cbUseCustomScriptTags: TCheckBox;
     cbFlattenTemplate: TCheckBox;
     cbShowWhitespace: TCheckBox;
+    lblPosition: TLabel;
+    Panel2: TPanel;
+    Panel3: TPanel;
     procedure cbConvertTabsToSpacesClick(Sender: TObject);
     procedure cbStripRecurringSpacesClick(Sender: TObject);
     procedure cbTrimLinesClick(Sender: TObject);
@@ -125,6 +128,8 @@ type
     procedure cbFlattenTemplateClick(Sender: TObject);
     procedure cmbCustomScriptTagsChange(Sender: TObject);
     procedure cbShowWhitespaceClick(Sender: TObject);
+    procedure memoTemplateMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure memoTemplateKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
   private
     { Private declarations }
     FEncoding: TEncoding;
@@ -438,6 +443,21 @@ begin
   if not cbAutoEvaluate.Checked then
     exit;
   butEvalClick(Sender);
+end;
+
+function GetRowCol(const AMemo: TMemo): string;
+begin
+  exit(format('(Line: %d, Position: %d)   ', [AMemo.CaretPos.Y + 1, AMemo.CaretPos.X + 1]));
+end;
+
+procedure TFormRealTime.memoTemplateKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  lblPosition.Caption := GetRowCol(memoTemplate);
+end;
+
+procedure TFormRealTime.memoTemplateMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  lblPosition.Caption := GetRowCol(memoTemplate);
 end;
 
 procedure TFormRealTime.OnException(Sender: TObject; E: Exception);
