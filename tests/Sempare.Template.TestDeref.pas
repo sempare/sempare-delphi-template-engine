@@ -131,7 +131,7 @@ end;
 
 procedure TTestTemplateDeref.TestSimpleDrefef;
 begin
-  Template.parse('before <% a.b %> after ');
+  Assert.IsNotNull(Template.parse('before <% a.b %> after '));
 end;
 
 procedure TTestTemplateDeref.TestWith;

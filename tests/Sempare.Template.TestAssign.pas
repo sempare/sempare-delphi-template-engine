@@ -56,7 +56,7 @@ uses
 
 procedure TTestTemplateAssign.TestSimpleAssignment;
 begin
-  Template.parse('before <% abc := true %> after  <% abc %> final');
+  Assert.IsNotNull(Template.parse('before <% abc := true %> after  <% abc %> final'));
 end;
 
 type
@@ -80,7 +80,7 @@ var
 begin
   ctx := Template.Context;
   ctx.Functions.addfunctions(TDoSomething);
-  Template.parse(ctx, 'before <% abc := sum(3,4,5) %> after  <% abc %> final');
+  Assert.IsNotNull(Template.parse(ctx, 'before <% abc := sum(3,4,5) %> after  <% abc %> final'));
 end;
 
 initialization
