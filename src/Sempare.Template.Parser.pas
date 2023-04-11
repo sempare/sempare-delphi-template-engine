@@ -1188,11 +1188,9 @@ end;
 function TTemplateParser.RuleStmt: IStmt;
 var
   LSymbol: ITemplateSymbol;
-  LToken: TTemplateSymbol;
 begin
   result := nil;
   LSymbol := FLookahead;
-  LToken := vsStartScript;
   if assigned(FSemiColon) then
   begin
     FAfterNLStripActions := FStripActionsStack.peek.AfterNLStripActions;
