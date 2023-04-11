@@ -567,7 +567,7 @@ object FormRealTime: TFormRealTime
       Top = 72
       Width = 97
       Height = 17
-      Caption = 'cbFlattenTemplate'
+      Caption = 'Flatten Template'
       TabOrder = 15
       OnClick = cbFlattenTemplateClick
     end
