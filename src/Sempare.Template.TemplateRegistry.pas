@@ -71,7 +71,7 @@ type
     function GetCount: integer;
     function GetLastItem: IStmt;
     procedure FlattenTemplate;
-    procedure OptimiseTemplate;
+    procedure OptimiseTemplate(const AOptions: TParserOptions);
     procedure Accept(const AVisitor: ITemplateVisitor);
     function GetFilename: string;
     procedure SetFilename(const AFilename: string);
@@ -581,9 +581,9 @@ begin
   FTemplate.FlattenTemplate;
 end;
 
-procedure TAbstractProxyTemplate.OptimiseTemplate;
+procedure TAbstractProxyTemplate.OptimiseTemplate(const AOptions: TParserOptions);
 begin
-  FTemplate.OptimiseTemplate;
+  FTemplate.OptimiseTemplate(AOptions);
 end;
 
 procedure TAbstractProxyTemplate.SetFilename(const AFilename: string);

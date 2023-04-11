@@ -86,6 +86,7 @@ type
     vsInclude, //
     vsRequire, //
     vsIgnoreNL, //
+    vsIgnoreWS, //
     vsOffset, //
     vsStep, //
     vsLimit, //
@@ -173,7 +174,6 @@ type
     function GetToken: TTemplateSymbol;
     function GetStripActions: TStripActionSet;
     procedure SetToken(const AToken: TTemplateSymbol);
-    function StripWS: boolean;
     property Token: TTemplateSymbol read GetToken write SetToken;
     property Position: IPosition read GetPosition;
     property StripActions: TStripActionSet read GetStripActions;
@@ -211,13 +211,16 @@ type
     property Stmt: IStmt read GetStmt;
   end;
 
+  TParserOption = (poAllowEnd, poAllowElse, poAllowElIf, poHasElse, poInLoop, poStripNL, poStripWS);
+  TParserOptions = set of TParserOption;
+
   ITemplate = interface(ITemplateVisitorHost)
     ['{93AAB971-5B4B-4959-93F2-6C7DAE15C91B}']
     function GetItem(const AOffset: integer): IStmt;
     function GetCount: integer;
     function GetLastItem: IStmt;
     procedure FlattenTemplate;
-    procedure OptimiseTemplate();
+    procedure OptimiseTemplate(const AOptions: TParserOptions);
     property Items[const AOffset: integer]: IStmt read GetItem;
     property Count: integer read GetCount;
     property LastItem: IStmt read GetLastItem;
