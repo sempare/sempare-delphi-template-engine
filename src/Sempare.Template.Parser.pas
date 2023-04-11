@@ -757,7 +757,11 @@ var
   LSym: TTemplateSymbol;
 begin
   LSym := vsEndScript;
-  exit(Match([vsEndScript, vsSemiColon], LSym));
+  result := Match([vsEndScript, vsSemiColon], LSym);
+  if LSym = vsEndScript then
+  begin
+    FSemiColon := nil;
+  end;
 end;
 
 procedure TTemplateParser.AddStmt(const ATemplate: ITemplate; const AStmt: IStmt);
@@ -821,6 +825,7 @@ var
   LSymbol: ITemplateSymbol;
   LBeforeNLStripActions: TStripActionSet;
   LAfterNLStripActions: TStripActionSet;
+  LEndStripActions: TStripActionSet;
 begin
   LOptions := Preserve.Value<TParserOptions>(FOptions, FOptions + [poAllowElse, poAllowEnd, poAllowElIf]);
   LSymbol := FLookahead;
@@ -853,7 +858,11 @@ begin
   end;
   PopContainer;
   Match(vsEND);
-  MatchEndOfScript;
+  LEndStripActions := MatchEndOfScript;
+
+  if LBeforeNLStripActions = [] then
+    LBeforeNLStripActions := LEndStripActions;
+
   try
     if LTrueContainer.Count = 0 then
       LTrueContainer := nil;
@@ -986,7 +995,7 @@ end;
 function TTemplateParser.RuleStmts(Container: ITemplate; const AEndToken: TTemplateSymbolSet): TTemplateSymbol;
 var
   LStmt: IStmt;
-  LParentContainer: ITemplateAdd;
+  LParentContainer: ITemplate;
   LSymbol: ITemplateSymbol;
   LLoop: boolean;
   LEndToken: TTemplateSymbolSet;
@@ -1022,7 +1031,7 @@ var
 begin
   result := vsInvalid;
   LEndToken := AEndToken + [vsEOF];
-  LParentContainer := Container as ITemplateAdd;
+  LParentContainer := Container;
   LLoop := true;
   while LLoop do
   begin
@@ -1063,10 +1072,13 @@ begin
       if not LIsNLorWS or not LIsWSStmt and //
         not(poStripNL in FOptions) or //
         LIsWSStmt and not(poStripWS in FOptions) then
-        LParentContainer.Add(LStmt);
+      begin
+        AddStmt(LParentContainer, LStmt);
+      end;
 
       if LIsNLorWS and not LIsWSStmt then
         AddStripStmt(LParentContainer, FStripActionsStack.peek.AfterNLStripActions, sdAfterNewLine);
+
     end;
   end;
 end;
@@ -1635,7 +1647,7 @@ var
   i: integer;
   LBeforeNLStripActions: TStripActionSet;
   LAfterNLStripActions: TStripActionSet;
-
+  LEndStripActions: TStripActionSet;
   procedure ResolveTemplate(const ASymbol: TTemplateSymbol);
   begin
     case ASymbol of
@@ -1737,7 +1749,10 @@ begin
   begin
     LOnLoop := LContainerTemplate;
   end;
-  MatchEndOfScript;
+  LEndStripActions := MatchEndOfScript;
+
+  if LBeforeNLStripActions = [] then
+    LBeforeNLStripActions := LEndStripActions;
 
   Optimise(FContext.Options, FOptions, ArrayOfTemplate([LOnLoop, LOnBegin, LOnEnd, LOnEmpty, LBetweenItem]));
 
@@ -1817,6 +1832,8 @@ var
   i: integer;
   LBeforeNLStripActions: TStripActionSet;
   LAfterNLStripActions: TStripActionSet;
+  LEndStripActions: TStripActionSet;
+
   procedure ResolveTemplate(const ASymbol: TTemplateSymbol);
   begin
     case ASymbol of
@@ -1893,7 +1910,10 @@ begin
   begin
     LOnLoop := LContainerTemplate;
   end;
-  MatchEndOfScript;
+  LEndStripActions := MatchEndOfScript;
+
+  if LBeforeNLStripActions = [] then
+    LBeforeNLStripActions := LEndStripActions;
 
   Optimise(FContext.Options, FOptions, ArrayOfTemplate([LOnLoop, LOnBegin, LOnEnd, LOnEmpty, LBetweenItem]));
 
