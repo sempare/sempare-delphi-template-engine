@@ -82,7 +82,7 @@ implementation
 uses
   SysUtils,
   WinAPI.Windows,
-  {$IFDEF SUPPORT_WIN_REGISTRY}Win.{$ENDIF}Registry;
+{$IFDEF SUPPORT_WIN_REGISTRY}Win.{$ENDIF}Registry;
 
 var
   GVmwareResolved: boolean;
