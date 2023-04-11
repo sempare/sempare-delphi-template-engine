@@ -77,7 +77,7 @@ type
     eoRaiseErrorWhenVariableNotFound, //
     eoAllowIgnoreNL, //
     eoStripEmptyLines, //
-    eoInternalUseNewLine, //
+    eoShowWhitespace, //
     eoFlattenTemplate, //
     eoOptimiseTemplate //
     );
@@ -370,7 +370,7 @@ end;
 
 constructor TTemplateContext.Create(const AOptions: TTemplateEvaluationOptions);
 begin
-  FOptions := AOptions;
+  FOptions := AOptions + [eoFlattenTemplate, eoOptimiseTemplate];
   FMaxRuntimeMs := GDefaultRuntimeMS;
   FPrettyPrintOutput := GPrettyPrintOutput;
   SetEncoding(GDefaultEncoding);
@@ -586,7 +586,6 @@ end;
 procedure TTemplateContext.SetNewLine(const ANewLine: string);
 begin
   FNewLine := ANewLine;
-  include(FOptions, eoInternalUseNewLine);
 end;
 
 procedure TTemplateContext.SetOptions(const AOptions: TTemplateEvaluationOptions);
