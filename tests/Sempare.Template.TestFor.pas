@@ -426,17 +426,18 @@ end;
 
 procedure TTestTemplateFor.TestSimpleFor;
 begin
-  Template.parse('before <% for a := 1 to 10 %> after <% end %> ');
+  Assert.AreEqual('before            after', Template.Eval('before <% for a := 1 to 10 %> <% end %> after'));
 end;
 
 procedure TTestTemplateFor.TestSimpleForDownTo;
 begin
-  Template.parse('before <% for a := 1 downto 10 %> after <% end %> ');
+  Assert.AreEqual('before  after', Template.Eval('before <% for a := 1 downto 10 %> <% end %> after'));
+  Assert.AreEqual('before            after', Template.Eval('before <% for a := 10 downto 1 %> <% end %> after'));
 end;
 
 procedure TTestTemplateFor.TestSimpleForin;
 begin
-  Template.parse('before <% for a in b %> pre <% a %> post  <% end %> ');
+  Assert.IsNotNull(Template.parse('before <% for a in b %> pre <% a %> post  <% end %> '));
 end;
 
 type

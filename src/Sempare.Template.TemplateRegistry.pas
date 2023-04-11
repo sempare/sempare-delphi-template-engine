@@ -70,7 +70,8 @@ type
     function GetItem(const AOffset: integer): IStmt;
     function GetCount: integer;
     function GetLastItem: IStmt;
-    procedure Optimise;
+    procedure FlattenTemplate;
+    procedure OptimiseTemplate(const AOptions: TParserOptions);
     procedure Accept(const AVisitor: ITemplateVisitor);
     function GetFilename: string;
     procedure SetFilename(const AFilename: string);
@@ -575,9 +576,14 @@ begin
   exit(FTemplate.pos);
 end;
 
-procedure TAbstractProxyTemplate.Optimise;
+procedure TAbstractProxyTemplate.FlattenTemplate;
 begin
-  FTemplate.Optimise;
+  FTemplate.FlattenTemplate;
+end;
+
+procedure TAbstractProxyTemplate.OptimiseTemplate(const AOptions: TParserOptions);
+begin
+  FTemplate.OptimiseTemplate(AOptions);
 end;
 
 procedure TAbstractProxyTemplate.SetFilename(const AFilename: string);

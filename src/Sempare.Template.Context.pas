@@ -77,7 +77,9 @@ type
     eoRaiseErrorWhenVariableNotFound, //
     eoAllowIgnoreNL, //
     eoStripEmptyLines, //
-    eoInternalUseNewLine //
+    eoShowWhitespace, //
+    eoFlattenTemplate, //
+    eoOptimiseTemplate //
     );
 
   TTemplateEvaluationOptions = set of TTemplateEvaluationOption;
@@ -368,7 +370,7 @@ end;
 
 constructor TTemplateContext.Create(const AOptions: TTemplateEvaluationOptions);
 begin
-  FOptions := AOptions;
+  FOptions := AOptions + [eoFlattenTemplate, eoOptimiseTemplate];
   FMaxRuntimeMs := GDefaultRuntimeMS;
   FPrettyPrintOutput := GPrettyPrintOutput;
   SetEncoding(GDefaultEncoding);
@@ -584,12 +586,13 @@ end;
 procedure TTemplateContext.SetNewLine(const ANewLine: string);
 begin
   FNewLine := ANewLine;
-  include(FOptions, eoInternalUseNewLine);
 end;
 
 procedure TTemplateContext.SetOptions(const AOptions: TTemplateEvaluationOptions);
 begin
   FOptions := AOptions;
+  if eoOptimiseTemplate in FOptions then
+    include(FOptions, eoFlattenTemplate);
 end;
 
 procedure TTemplateContext.SetPrettyPrintOutput(const APrettyPrintOutput: TPrettyPrintOutput);
@@ -764,7 +767,7 @@ GUTF8WithoutPreambleEncoding := TUTF8WithoutPreambleEncoding.Create;
 GDefaultEncoding := TEncoding.UTF8WithoutBOM;
 GStreamWriterProvider := function(const AStream: TStream; AContext: ITemplateContext): TStreamWriter
   begin
-    exit(TNewLineStreamWriter.Create(AStream, AContext.Encoding, AContext.NewLine, AContext.Options));
+    exit(TStreamWriter.Create(AStream, AContext.Encoding, 4096));
   end;
 
 GPrettyPrintOutput := procedure(const APrettyPrint: string)

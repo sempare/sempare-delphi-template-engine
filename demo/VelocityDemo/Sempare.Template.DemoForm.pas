@@ -95,6 +95,14 @@ type
     GroupBox1: TGroupBox;
     butEval: TButton;
     cbAutoEvaluate: TCheckBox;
+    cmbCustomScriptTags: TComboBox;
+    cbOptimiseTemplate: TCheckBox;
+    cbUseCustomScriptTags: TCheckBox;
+    cbFlattenTemplate: TCheckBox;
+    cbShowWhitespace: TCheckBox;
+    lblPosition: TLabel;
+    Panel2: TPanel;
+    Panel3: TPanel;
     procedure cbConvertTabsToSpacesClick(Sender: TObject);
     procedure cbStripRecurringSpacesClick(Sender: TObject);
     procedure cbTrimLinesClick(Sender: TObject);
@@ -115,6 +123,13 @@ type
     procedure butSaveAsClick(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure butEvalClick(Sender: TObject);
+    procedure cbUseCustomScriptTagsClick(Sender: TObject);
+    procedure cbOptimiseTemplateClick(Sender: TObject);
+    procedure cbFlattenTemplateClick(Sender: TObject);
+    procedure cmbCustomScriptTagsChange(Sender: TObject);
+    procedure cbShowWhitespaceClick(Sender: TObject);
+    procedure memoTemplateMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+    procedure memoTemplateKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
   private
     { Private declarations }
     FEncoding: TEncoding;
@@ -126,6 +141,8 @@ type
     procedure GridPropsToContext;
     procedure WriteTmpHtml;
     procedure SetOption(const AEnable: boolean; const AOption: TTemplateEvaluationOption);
+    procedure SetScriptTags(const AIdx: Integer);
+
   public
     { Public declarations }
     procedure OnException(Sender: TObject; E: Exception);
@@ -233,6 +250,11 @@ begin
   SetOption(cbEvalVarsEarly.Checked, eoEvalVarsEarly);
 end;
 
+procedure TFormRealTime.cbFlattenTemplateClick(Sender: TObject);
+begin
+  SetOption(cbFlattenTemplate.Checked, eoFlattenTemplate);
+end;
+
 function DefaultEncoder(const AValue: string): string;
 begin
   exit(AValue);
@@ -245,6 +267,13 @@ begin
   else
     FContext.VariableEncoder := DefaultEncoder;
   Process;
+end;
+
+procedure TFormRealTime.cbOptimiseTemplateClick(Sender: TObject);
+begin
+  SetOption(cbOptimiseTemplate.Checked, eoOptimiseTemplate);
+  if cbOptimiseTemplate.Checked then
+    cbFlattenTemplate.Checked := true;
 end;
 
 procedure TFormRealTime.cbRaiseErrorWhenVariableNotFoundClick(Sender: TObject);
@@ -267,6 +296,14 @@ begin
   SetOption(cbTrimLines.Checked, eoTrimLines);
 end;
 
+procedure TFormRealTime.cbUseCustomScriptTagsClick(Sender: TObject);
+begin
+  if cbUseCustomScriptTags.Checked then
+    SetScriptTags(cmbCustomScriptTags.ItemIndex)
+  else
+    SetScriptTags(0);
+end;
+
 procedure TFormRealTime.cbUseHtmlBRClick(Sender: TObject);
 begin
   if cbUseHtmlBR.Checked then
@@ -274,6 +311,13 @@ begin
   else
     FContext.NewLine := #13#10;
   SetOption(cbUseHtmlBR.Checked, eoReplaceNewline);
+end;
+
+procedure TFormRealTime.cmbCustomScriptTagsChange(Sender: TObject);
+begin
+  cbUseCustomScriptTags.Checked := true;
+  SetScriptTags(cmbCustomScriptTags.ItemIndex);
+  Process;
 end;
 
 procedure TFormRealTime.cbSetEncodingClick(Sender: TObject);
@@ -294,6 +338,11 @@ begin
   Process;
 end;
 
+procedure TFormRealTime.cbShowWhitespaceClick(Sender: TObject);
+begin
+  SetOption(cbShowWhitespace.Checked, eoShowWhitespace);
+end;
+
 procedure TFormRealTime.FormCreate(Sender: TObject);
 begin
   FContext := Template.Context();
@@ -301,7 +350,7 @@ begin
   properties.Cells[0, 1] := 'name';
   properties.Cells[1, 1] := 'world';
   FEncoding := TEncoding.UTF8WithoutBOM;
-  FTemplate := Template.Parse('');
+  FTemplate := Template.Parse(FContext, '');
   properties.Cells[0, 0] := 'Variable';
   properties.Cells[1, 0] := 'Value';
   memoOutput.Lines.Text := '';
@@ -313,6 +362,8 @@ begin
 {$ENDIF}
   cbHtml.Checked := true;
   cbUseHtmlBR.Checked := true;
+  cbFlattenTemplate.Checked := true;
+  cbOptimiseTemplate.Checked := true;
   WebBrowser1.Enabled := true;
   pcTemplate.ActivePageIndex := 0;
   pcOutput.ActivePageIndex := 0;
@@ -394,6 +445,21 @@ begin
   butEvalClick(Sender);
 end;
 
+function GetRowCol(const AMemo: TMemo): string;
+begin
+  exit(format('(Line: %d, Position: %d)   ', [AMemo.CaretPos.Y + 1, AMemo.CaretPos.X + 1]));
+end;
+
+procedure TFormRealTime.memoTemplateKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  lblPosition.Caption := GetRowCol(memoTemplate);
+end;
+
+procedure TFormRealTime.memoTemplateMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  lblPosition.Caption := GetRowCol(memoTemplate);
+end;
+
 procedure TFormRealTime.OnException(Sender: TObject; E: Exception);
 begin
 end;
@@ -405,7 +471,7 @@ begin
   if not Finit then
     exit;
   GridPropsToContext;
-    LPrettyOk := false;
+  LPrettyOk := false;
   try
     memoPrettyPrint.Lines.Text := Sempare.Template.Template.PrettyPrint(FTemplate);
     LPrettyOk := true;
@@ -440,6 +506,42 @@ begin
   else
     FContext.Options := FContext.Options - [AOption];
   Process;
+end;
+
+procedure TFormRealTime.SetScriptTags(const AIdx: Integer);
+begin
+  case AIdx of
+    1:
+      begin
+        FContext.StartToken := '{{';
+        FContext.EndToken := '}}';
+      end;
+    2:
+      begin
+        FContext.StartToken := '<+';
+        FContext.EndToken := '+>';
+      end;
+    3:
+      begin
+        FContext.StartToken := '{+';
+        FContext.EndToken := '+}';
+      end;
+    4:
+      begin
+        FContext.StartToken := '{%';
+        FContext.EndToken := '%}';
+      end;
+    5:
+      begin
+        FContext.StartToken := '<<';
+        FContext.EndToken := '>>';
+      end;
+  else
+    begin
+      FContext.StartToken := '<%';
+      FContext.EndToken := '%>';
+    end;
+  end;
 end;
 
 procedure TFormRealTime.WriteTmpHtml;

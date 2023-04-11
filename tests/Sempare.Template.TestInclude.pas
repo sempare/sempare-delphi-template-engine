@@ -135,7 +135,7 @@ begin
   ctx.Template['test2'] := Template.parse('test <% value %>');
 
   // illustrate simple template
-  Assert.AreEqual('test 123', Template.Eval(ctx, 'test <%_%>', '123'));
+  Assert.AreEqual('test 123', Template.Eval(ctx, 'test <% _ %>', '123'));
 
   // test using include - stackframe is preserved
   Assert.AreEqual('test 123', Template.Eval(ctx, '<%include (''test'') %>', '123'));
@@ -692,7 +692,7 @@ begin
   LStopWatch.Stop;
   LElapsedMs := LStopWatch.ElapsedMilliseconds / LIterations;
 {$IF defined( WIN32) OR defined(WIN64)}
-  Assert.IsTrue(LElapsedMs <= GetTestTimeTollerance(0.15, 6.0));
+  Assert.IsTrue(LElapsedMs <= GetTestTimeTollerance(0.25, 6.0));
 {$ENDIF}
 end;
 

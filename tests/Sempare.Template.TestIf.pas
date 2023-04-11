@@ -223,7 +223,7 @@ end;
 
 procedure TTestTemplateIf.TestNestedIf;
 begin
-  Template.parse('before <% if (true) %> pre <% if (true) %> midd;e <% end %> post <% end %> ');
+  Assert.IsNotNull(Template.parse('before <% if (true) %> pre <% if (true) %> midd;e <% end %> post <% end %> '));
 end;
 
 type

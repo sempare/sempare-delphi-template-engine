@@ -70,7 +70,7 @@ uses
 
 procedure TTestTemplateExpr.TestSimpleVariable;
 begin
-  Template.parse('before <% abc %> after');
+  Assert.IsNotNull(Template.parse('before <% abc %> after'));
 end;
 
 procedure TTestTemplateExpr.TestTernary;
@@ -81,7 +81,7 @@ end;
 
 procedure TTestTemplateExpr.TestExprNum;
 begin
-  Template.parse('before <% a := 123 %> after ');
+  Assert.IsNotNull(Template.parse('before <% a := 123 %> after '));
 end;
 
 procedure TTestTemplateExpr.TestExprNumDiv;
@@ -93,12 +93,12 @@ end;
 
 procedure TTestTemplateExpr.TestExprNumFloat;
 begin
-  Template.parse('before <% a := 123.45 %> after ');
+  Assert.IsNotNull(Template.parse('before <% a := 123.45 %> after '));
 end;
 
 procedure TTestTemplateExpr.TestExprStr;
 begin
-  Template.parse('before <% a := ''hello world'' %> after ');
+  Assert.IsNotNull(Template.parse('before <% a := ''hello world'' %> after '));
 end;
 
 procedure TTestTemplateExpr.TestInExpr;
@@ -134,11 +134,11 @@ end;
 
 procedure TTestTemplateExpr.TestExprBool;
 begin
-  Template.parse('before <% a := true %> after ');
-  Template.parse('before <% a:= false %> after ');
-  Template.parse('before <% a:= true and false %> after ');
-  Template.parse('before <% a:= true or false %> after ');
-  Template.parse('before <% a:= true and false or true %> after ');
+  Assert.IsNotNull(Template.parse('before <% a := true %> after '));
+  Assert.IsNotNull(Template.parse('before <% a:= false %> after '));
+  Assert.IsNotNull(Template.parse('before <% a:= true and false %> after '));
+  Assert.IsNotNull(Template.parse('before <% a:= true or false %> after '));
+  Assert.IsNotNull(Template.parse('before <% a:= true and false or true %> after '));
 end;
 
 initialization

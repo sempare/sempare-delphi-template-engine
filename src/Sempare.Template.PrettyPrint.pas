@@ -557,7 +557,7 @@ begin
   write('<%% strip(');
   write(StripDirectionStr[AStmt.Direction]);
   write(',');
-  write(StripActionStr[AStmt.Action]);
+  write(AStmt.Action.ToString);
   write(')');
   writeln('%%>');
 end;

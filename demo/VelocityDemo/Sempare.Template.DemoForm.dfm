@@ -3,20 +3,18 @@ object FormRealTime: TFormRealTime
   Top = 0
   Caption = 'Sempare Template Demo'
   ClientHeight = 487
-  ClientWidth = 991
+  ClientWidth = 1176
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
   Font.Name = 'Tahoma'
   Font.Style = []
-  OldCreateOrder = False
   OnCreate = FormCreate
   OnResize = FormResize
   DesignSize = (
-    991
+    1176
     487)
-  PixelsPerInch = 96
   TextHeight = 13
   object Image1: TImage
     Left = 24
@@ -303,11 +301,13 @@ object FormRealTime: TFormRealTime
   object Panel1: TPanel
     Left = 18
     Top = 224
-    Width = 951
+    Width = 1136
     Height = 255
     Anchors = [akLeft, akTop, akRight, akBottom]
     Caption = 'Panel1'
     TabOrder = 4
+    ExplicitWidth = 1132
+    ExplicitHeight = 254
     object Splitter1: TSplitter
       Left = 465
       Top = 1
@@ -324,18 +324,61 @@ object FormRealTime: TFormRealTime
       ActivePage = tsTemplate
       Align = alLeft
       TabOrder = 0
+      ExplicitHeight = 252
       object tsTemplate: TTabSheet
         Caption = 'Template'
-        object memoTemplate: TMemo
+        object Panel2: TPanel
           Left = 0
           Top = 0
           Width = 456
           Height = 225
           Align = alClient
-          ScrollBars = ssBoth
+          BevelOuter = bvNone
+          Caption = 'Panel2'
           TabOrder = 0
-          WantTabs = True
-          OnChange = memoTemplateChange
+          ExplicitLeft = 56
+          ExplicitWidth = 185
+          ExplicitHeight = 41
+          object memoTemplate: TMemo
+            Left = 0
+            Top = 17
+            Width = 456
+            Height = 208
+            Align = alClient
+            ScrollBars = ssBoth
+            TabOrder = 0
+            WantTabs = True
+            OnChange = memoTemplateChange
+            OnKeyUp = memoTemplateKeyUp
+            OnMouseDown = memoTemplateMouseDown
+            ExplicitTop = 0
+            ExplicitHeight = 225
+          end
+          object Panel3: TPanel
+            Left = 0
+            Top = 0
+            Width = 456
+            Height = 17
+            Align = alTop
+            Caption = 'Panel3'
+            ShowCaption = False
+            TabOrder = 1
+            object lblPosition: TLabel
+              AlignWithMargins = True
+              Left = 4
+              Top = 4
+              Width = 448
+              Height = 17
+              Align = alTop
+              Alignment = taRightJustify
+              AutoSize = False
+              Caption = '(Line: 1, Position: 1)'
+              Transparent = False
+              ExplicitLeft = 0
+              ExplicitTop = 0
+              ExplicitWidth = 456
+            end
+          end
         end
       end
       object tsPrettyPrint: TTabSheet
@@ -358,17 +401,19 @@ object FormRealTime: TFormRealTime
     object pcOutput: TPageControl
       Left = 468
       Top = 1
-      Width = 482
+      Width = 667
       Height = 253
       ActivePage = tsWebBrowser
       Align = alClient
       TabOrder = 1
+      ExplicitWidth = 663
+      ExplicitHeight = 252
       object tsOutput: TTabSheet
         Caption = 'Output'
         object memoOutput: TMemo
           Left = 0
           Top = 0
-          Width = 474
+          Width = 659
           Height = 225
           Align = alClient
           Lines.Strings = (
@@ -384,16 +429,14 @@ object FormRealTime: TFormRealTime
         object WebBrowser1: TWebBrowser
           Left = 0
           Top = 0
-          Width = 474
+          Width = 659
           Height = 225
           Align = alClient
           TabOrder = 0
-          ExplicitLeft = 1
-          ExplicitTop = -92
-          ExplicitWidth = 433
-          ExplicitHeight = 265
+          ExplicitWidth = 655
+          ExplicitHeight = 224
           ControlData = {
-            4C000000FD300000411700000000000000000000000000000000000000000000
+            4C0000001C440000411700000000000000000000000000000000000000000000
             000000004C000000000000000000000001000000E0D057007335CF11AE690800
             2B2E126208000000000000004C0000000114020000000000C000000000000046
             8000000000000000000000000000000000000000000000000000000000000000
@@ -405,10 +448,12 @@ object FormRealTime: TFormRealTime
   object gbOptions: TGroupBox
     Left = 483
     Top = 49
-    Width = 385
+    Width = 670
     Height = 145
+    Anchors = [akLeft, akTop, akRight]
     Caption = 'Context Options'
     TabOrder = 5
+    ExplicitWidth = 666
     object cbConvertTabsToSpaces: TCheckBox
       Left = 18
       Top = 23
@@ -521,6 +566,60 @@ object FormRealTime: TFormRealTime
       Caption = 'Auto Evaluate'
       TabOrder = 11
       OnClick = cbConvertTabsToSpacesClick
+    end
+    object cmbCustomScriptTags: TComboBox
+      Left = 408
+      Top = 45
+      Width = 81
+      Height = 21
+      Style = csDropDownList
+      ItemIndex = 0
+      TabOrder = 12
+      Text = '<% %>'
+      OnChange = cmbCustomScriptTagsChange
+      Items.Strings = (
+        '<% %>'
+        '{{ }}'
+        '<+ +>'
+        '{+ +}'
+        '{% %}'
+        '<< >>')
+    end
+    object cbOptimiseTemplate: TCheckBox
+      Left = 384
+      Top = 92
+      Width = 159
+      Height = 17
+      Caption = 'Optimise Template'
+      TabOrder = 13
+      OnClick = cbOptimiseTemplateClick
+    end
+    object cbUseCustomScriptTags: TCheckBox
+      Left = 384
+      Top = 24
+      Width = 97
+      Height = 17
+      Caption = 'Script Tags'
+      TabOrder = 14
+      OnClick = cbUseCustomScriptTagsClick
+    end
+    object cbFlattenTemplate: TCheckBox
+      Left = 384
+      Top = 69
+      Width = 153
+      Height = 17
+      Caption = 'Flatten Template'
+      TabOrder = 15
+      OnClick = cbFlattenTemplateClick
+    end
+    object cbShowWhitespace: TCheckBox
+      Left = 384
+      Top = 115
+      Width = 159
+      Height = 17
+      Caption = 'Show Whitespace'
+      TabOrder = 16
+      OnClick = cbShowWhitespaceClick
     end
   end
   object GroupBox1: TGroupBox

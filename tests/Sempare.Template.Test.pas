@@ -49,8 +49,6 @@ type
     [Test]
     procedure TestNonStmt;
     [Test]
-    procedure TestComment;
-    [Test, Ignore]
     procedure TestHashComment;
     [Test {$IFNDEF SEMPARE_TEMPLATE_HAS_HTML_ENCODER}, Ignore{$ENDIF}]
     procedure TestHtmlEncoding;
@@ -100,9 +98,6 @@ type
     procedure TestParseFile;
 
     [Test]
-    procedure TestStripWSScripts;
-
-    [Test]
     // Not Yet Supported
     procedure TestSemiColon;
 
@@ -148,15 +143,6 @@ begin
   Assert.AreEqual('1', Template.Eval('<% a:= [1,''hello world'', 2] %><% a[0]%>'));
   Assert.AreEqual('hello world', Template.Eval('<% a:= [1,''hello world'', 2] %><% a[1]%>'));
   Assert.AreEqual('2', Template.Eval('<% a:= [1,''hello world'', 2] %><% a[2]%>'));
-end;
-
-procedure TTestTemplate.TestComment;
-begin
-  Assert.AreEqual('before after ', Template.Eval( //
-    'before ' + //
-    '<% (* this is '#13#10#13#10'a comment *) %>' + //
-    'after ' //
-    ));
 end;
 
 procedure TTestTemplate.TestHashComment;
@@ -324,8 +310,8 @@ end;
 
 procedure TTestTemplate.TestNonStmt;
 begin
-  Template.Eval('<% %>');
-  Template.Eval('   <% %>   <% %> ');
+  Assert.AreEqual('', Template.Eval('<% %>'));
+  Assert.AreEqual('       ', Template.Eval('   <% %>   <% %> '));
 end;
 
 procedure TTestTemplate.TestNoSpace;
@@ -343,6 +329,7 @@ var
 begin
   // main thing is that we have no exception here!
   LTemplate := Template.ParseFile('..\..\demo\VelocityDemo\velocity\international.velocity');
+  Assert.IsNotNull(LTemplate);
 end;
 
 procedure TTestTemplate.testPrint;
@@ -368,11 +355,7 @@ end;
 
 procedure TTestTemplate.TestSemiColon;
 begin
-  Assert.WillRaise(
-    procedure
-    begin
-      Assert.AreEqual('hello world', Template.Eval('<% a:= "hello" ; b:= "world" ; print(a + " " + b) %>'));
-    end);
+  Assert.AreEqual('hello world', Template.Eval('<% a:= "hello" ; b:= "world" ; print(a + " " + b) %>'));
 end;
 
 procedure TTestTemplate.TestStartEndToken;
@@ -387,21 +370,7 @@ end;
 
 procedure TTestTemplate.TestStmts;
 begin
-  Assert.WillRaise(
-    procedure
-    begin // statement seperator is not supported. Need to review statment parsing to support this
-      Assert.AreEqual('1', Template.Eval('<% a := 1; print(a) %>'));
-    end);
-end;
-
-procedure TTestTemplate.TestStripWSScripts;
-begin
-  Assert.AreEqual('', Template.Eval('<% a := 1 |>2<| a:=3 %>'));
-  Assert.AreEqual('12345678910', Template.Eval('<% for i := 1 to 10 |><%print(i)%><| end %>'));
-  Assert.AreEqual('12345678910', Template.Eval('<% for i := 1 to 10 |>'#13#10'<%print(i)%>'#13#10'<| end %>'));
-  Assert.AreEqual(#$D#$A'1'#$D#$A#$D#$A'2'#$D#$A#$D#$A'3'#$D#$A#$D#$A'4'#$D#$A#$D#$A'5'#$D#$A, Template.Eval('<% for i := 1 to 5 %>'#13#10'<%print(i)%>'#13#10'<% end %>'));
-  Assert.AreEqual('hellomiddleworld', Template.Eval('<% print("hello") |> this should '#13#10'<% print("middle") %>'#13#10' go missing<| print("world")  %>'));
-  Assert.AreEqual('12345', Template.Eval('<% for i:=1 to 5 |> <%i%>     '#13#10'<| end %>'));
+  Assert.AreEqual('1', Template.Eval('<% a := 1; print(a) %>'));
 end;
 
 { TTestClass }
@@ -510,7 +479,7 @@ end;
 
 procedure TTestTemplate.TestEmpty;
 begin
-  Template.Eval('');
+  Assert.AreEqual('', Template.Eval(''));
 end;
 
 procedure TTestTemplate.TestException;

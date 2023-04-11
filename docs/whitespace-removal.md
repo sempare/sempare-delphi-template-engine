@@ -8,6 +8,22 @@ v1.7.0 introduces some new concepts is still experimental and will change slight
 
 Removing whitespace is a tricky problem in templates. In the template engine, attempts have been made to address this in a number of ways. 
 
+
+
+
+     1          2
+    <% if a = 1 -%>
+       a
+       b
+    <% end %>
+    
+    
+2... when a newline is reached, action is applied to everything to the left
+1... from the newline, the action is applied
+    
+    
+
+
 ### Using script tag hints
 
 Scripts start with <% and close with %>. These tags may have additional hints to assist with the removal of whitespace.
@@ -17,6 +33,7 @@ Scripts start with <% and close with %>. These tags may have additional hints to
 | - | Removes whitespace only.  |
 | + | Removes whitespace as well as a newline, but leaves one space.  |
 | * | Removes whitespace as well as a newline.  |
+| _ | Remove only indent level |
 
 #### Using -
 

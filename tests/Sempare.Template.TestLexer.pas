@@ -154,6 +154,7 @@ begin
     symbol := Lexer.GetToken;
     if symbol.Token = VsEOF then
       break;
+    Assert.AreNotEqual(VsEOF, symbol.Token);
     val := '';
     if supports(symbol, ITemplateValueSymbol, vs) then
     begin

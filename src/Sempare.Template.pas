@@ -59,6 +59,9 @@ const
   eoRaiseErrorWhenVariableNotFound = TTemplateEvaluationOption.eoRaiseErrorWhenVariableNotFound;
   eoReplaceNewline = TTemplateEvaluationOption.eoReplaceNewline;
   eoStripEmptyLines = TTemplateEvaluationOption.eoStripEmptyLines;
+  eoFlattenTemplate = TTemplateEvaluationOption.eoFlattenTemplate;
+  eoOptimiseTemplate = TTemplateEvaluationOption.eoOptimiseTemplate;
+
   tlsLoadResource = Sempare.Template.TemplateRegistry.tlsLoadResource;
   tlsLoadFile = Sempare.Template.TemplateRegistry.tlsLoadFile;
   tlsLoadCustom = Sempare.Template.TemplateRegistry.tlsLoadCustom;
@@ -89,10 +92,10 @@ type
 {$ENDIF}
 {$ENDIF}
   public
-    class function Context(const AOptions: TTemplateEvaluationOptions = []): ITemplateContext; inline; static;
+    class function Context(const AOptions: TTemplateEvaluationOptions = [eoOptimiseTemplate]): ITemplateContext; inline; static;
     class function Parser(const AContext: ITemplateContext): ITemplateParser; overload; inline; static;
     class function Parser(): ITemplateParser; overload; inline; static;
-    class function PrettyPrint(ATemplate: ITemplate): string; inline; static;
+    class function PrettyPrint(const ATemplate: ITemplate): string; inline; static;
 
     // EVAL output to stream
 
@@ -235,7 +238,7 @@ begin
   exit(CreateTemplateParser(Context));
 end;
 
-class function Template.PrettyPrint(ATemplate: ITemplate): string;
+class function Template.PrettyPrint(const ATemplate: ITemplate): string;
 var
   LVisitor: ITemplateVisitor;
   LTemplateVisitor: TPrettyPrintTemplateVisitor;

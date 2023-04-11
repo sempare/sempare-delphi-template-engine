@@ -1,4 +1,4 @@
- (*%*************************************************************************************************
+(*%*************************************************************************************************
  *                 ___                                                                              *
  *                / __|  ___   _ __    _ __   __ _   _ _   ___                                      *
  *                \__ \ / -_) | '  \  | '_ \ / _` | | '_| / -_)                                     *
@@ -6,7 +6,7 @@
  *                                    |_|                                                           *
  ****************************************************************************************************
  *                                                                                                  *
- *                        Sempare Templating Engine                                                 *
+ *                          Sempare Template Engine                                                 *
  *                                                                                                  *
  *                                                                                                  *
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
@@ -30,7 +30,7 @@
  * limitations under the License.                                                                   *
  *                                                                                                  *
  *************************************************************************************************%*)
- program Sempare.Template.Tester;
+program Sempare.Template.Tester;
 
 {$IFNDEF TESTINSIGHT}
 {$APPTYPE CONSOLE}
@@ -61,12 +61,13 @@ uses
   Sempare.Template.TestFunctions in 'tests\Sempare.Template.TestFunctions.pas';
 
 var
-  runner : ITestRunner;
-  results : IRunResults;
-  logger : ITestLogger;
-  nunitLogger : ITestLogger;
+  runner: ITestRunner;
+  results: IRunResults;
+  logger: ITestLogger;
+  nunitLogger: ITestLogger;
+
 begin
-  ReportMemoryLeaksOnShutdown:=true;
+  ReportMemoryLeaksOnShutdown := true;
 {$IFDEF TESTINSIGHT}
   TestInsight.DUnitX.RunRegisteredTests;
   exit;

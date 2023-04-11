@@ -55,10 +55,11 @@ type
 
   TStripAction = ( //
     saWhitespace, //
-    saWhitespaceAndNL, //
-    saWhitespaceAndNLButOne, //
-    saNone //
+    saNL, //
+    saKeepOneSpace //
     );
+
+  TStripActionSet = set of TStripAction;
 
   TTemplateSymbol = ( //
     // general parsing
@@ -85,6 +86,7 @@ type
     vsInclude, //
     vsRequire, //
     vsIgnoreNL, //
+    vsIgnoreWS, //
     vsOffset, //
     vsStep, //
     vsLimit, //
@@ -145,8 +147,13 @@ type
     vsSemiColon, //
 
     vsExtends, //
-    vsBlock //
+    vsBlock, //
+
+    vsNewLine, //
+    vsWhiteSpace //
     );
+
+  TTemplateSymbolSet = set of TTemplateSymbol;
 
   IPosition = interface
     ['{2F087E1F-42EE-44D4-B928-047AA1788F50}']
@@ -165,12 +172,11 @@ type
     ['{3EC6C60C-164F-4BF5-AF2E-8F3CFC30C594}']
     function GetPosition: IPosition;
     function GetToken: TTemplateSymbol;
-    function GetStripAction: TStripAction;
+    function GetStripActions: TStripActionSet;
     procedure SetToken(const AToken: TTemplateSymbol);
-    function StripWS: boolean;
     property Token: TTemplateSymbol read GetToken write SetToken;
     property Position: IPosition read GetPosition;
-    property StripAction: TStripAction read GetStripAction;
+    property StripActions: TStripActionSet read GetStripActions;
   end;
 
   ITemplateVisitor = interface;
@@ -195,6 +201,8 @@ type
   IStmt = interface(ITemplateVisitorHost)
     ['{6D37028E-A0C0-41F1-8A59-EDC0C9ADD9C7}']
     function Flatten: TArray<IStmt>;
+    function GetHasEnd: boolean;
+    property HasEnd: boolean read GetHasEnd;
   end;
 
   IDebugStmt = interface(IStmt)
@@ -203,20 +211,26 @@ type
     property Stmt: IStmt read GetStmt;
   end;
 
+  TParserOption = (poAllowEnd, poAllowElse, poAllowElIf, poHasElse, poInLoop, poStripNL, poStripWS);
+  TParserOptions = set of TParserOption;
+
   ITemplate = interface(ITemplateVisitorHost)
     ['{93AAB971-5B4B-4959-93F2-6C7DAE15C91B}']
     function GetItem(const AOffset: integer): IStmt;
     function GetCount: integer;
     function GetLastItem: IStmt;
-    procedure Optimise;
+    procedure FlattenTemplate;
+    procedure OptimiseTemplate(const AOptions: TParserOptions);
     property Items[const AOffset: integer]: IStmt read GetItem;
     property Count: integer read GetCount;
     property LastItem: IStmt read GetLastItem;
   end;
 
+  TAddLocation = (alLast, alBeforeNL, alAfterNL);
+
   ITemplateAdd = interface(ITemplate)
     ['{64465D68-0E9D-479F-9EF3-A30E75967809}']
-    procedure Add(const AItem: IStmt);
+    procedure Add(const AItem: IStmt; const AAddLocation: TAddLocation = alLast);
   end;
 
   IBlockStmt = interface;
@@ -243,14 +257,20 @@ type
     ['{FB4CC3AB-BFEC-4189-B555-153DDA490D15}']
   end;
 
-  TStripDirection = (sdLeft, sdRight);
+  TStripDirection = (sdEnd, sdLeft, sdRight, sdBeforeNewLine, sdAfterNewLine);
 
   IStripStmt = interface(IStmt)
     ['{3313745B-D635-4453-9808-660DC462E15C}']
     function GetDirection: TStripDirection;
-    function GetAction: TStripAction;
+    function GetAction: TStripActionSet;
+    function GetHasEnd: boolean;
+    procedure SetHasEnd(const AHasEnd: boolean);
+    function GetIndent: string;
+    procedure SetIndent(const AIndent: string);
     property Direction: TStripDirection read GetDirection;
-    property Action: TStripAction read GetAction;
+    property Action: TStripActionSet read GetAction;
+    property HasEnd: boolean read GetHasEnd write SetHasEnd;
+    property Indent: string read GetIndent write SetIndent;
   end;
 
   ICompositeStmt = interface(IStmt)
@@ -423,6 +443,14 @@ type
     property Value: TValue read GetValue;
   end;
 
+  INewLineExpr = interface(IValueExpr)
+    ['{A140C174-1C92-4C4C-AD8C-5A46066B2338}']
+  end;
+
+  IWhitespaceExpr = interface(IValueExpr)
+    ['{65ACCA2B-B671-42E9-8ED4-179B11C36AA0}']
+  end;
+
   IVariableExpr = interface(IExpr)
     ['{AE35E829-A756-4A1C-9F41-01CF3DD34096}']
     function GetVariable: string;
@@ -515,6 +543,8 @@ type
     procedure Visit(const AExpr: IBinopExpr); overload;
     procedure Visit(const AExpr: IUnaryExpr); overload;
     procedure Visit(const AExpr: IVariableExpr); overload;
+    procedure Visit(const AExpr: IWhitespaceExpr); overload;
+    procedure Visit(const AExpr: INewLineExpr); overload;
     procedure Visit(const AExpr: IValueExpr); overload;
     procedure Visit(const AExpr: ITernaryExpr); overload;
     procedure Visit(const AExpr: IArrayExpr); overload;
@@ -559,15 +589,33 @@ type
   end;
 
 const
-  StripDirectionStr: array [TStripDirection] of string = ('sdLeft', 'sdRight');
+  StripDirectionStr: array [TStripDirection] of string = ( //
+    'sdEnd', 'sdLeft', 'sdRight', 'sdBeforeNewLine', 'sdAfterNewLine');
 
   StripActionStr: array [TStripAction] of string = ( //
     'saWhitespace', //
-    'saWhitespaceAndNL', //
-    'saWhitespaceAndNLButOne', //
-    'saNone' //
+    'saNL', //
+    'saKeepOneSpace' //
     );
 
+type
+  TStringActionsHelper = record helper for TStripActionSet
+    function ToString: string;
+  end;
+
 implementation
+
+function TStringActionsHelper.ToString: string;
+var
+  LAction: TStripAction;
+begin
+  result := '';
+  for LAction in self do
+  begin
+    if result.Length > 0 then
+      result := result + ',';
+    result := result + StripActionStr[LAction];
+  end;
+end;
 
 end.
