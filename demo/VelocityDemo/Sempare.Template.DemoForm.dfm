@@ -306,8 +306,8 @@ object FormRealTime: TFormRealTime
     Anchors = [akLeft, akTop, akRight, akBottom]
     Caption = 'Panel1'
     TabOrder = 4
-    ExplicitWidth = 1122
-    ExplicitHeight = 222
+    ExplicitWidth = 1132
+    ExplicitHeight = 254
     object Splitter1: TSplitter
       Left = 465
       Top = 1
@@ -324,20 +324,20 @@ object FormRealTime: TFormRealTime
       ActivePage = tsTemplate
       Align = alLeft
       TabOrder = 0
-      ExplicitHeight = 220
+      ExplicitHeight = 252
       object tsTemplate: TTabSheet
         Caption = 'Template'
         object memoTemplate: TMemo
           Left = 0
           Top = 0
-          Width = 448
-          Height = 212
+          Width = 456
+          Height = 225
           Align = alClient
           ScrollBars = ssBoth
           TabOrder = 0
           WantTabs = True
           OnChange = memoTemplateChange
-          ExplicitHeight = 179
+          ExplicitHeight = 224
         end
       end
       object tsPrettyPrint: TTabSheet
@@ -346,8 +346,8 @@ object FormRealTime: TFormRealTime
         object memoPrettyPrint: TMemo
           Left = 0
           Top = 0
-          Width = 448
-          Height = 212
+          Width = 456
+          Height = 225
           Align = alClient
           Lines.Strings = (
             'memoPrettyPrint')
@@ -365,15 +365,15 @@ object FormRealTime: TFormRealTime
       ActivePage = tsWebBrowser
       Align = alClient
       TabOrder = 1
-      ExplicitWidth = 653
-      ExplicitHeight = 220
+      ExplicitWidth = 663
+      ExplicitHeight = 252
       object tsOutput: TTabSheet
         Caption = 'Output'
         object memoOutput: TMemo
           Left = 0
           Top = 0
-          Width = 651
-          Height = 212
+          Width = 659
+          Height = 225
           Align = alClient
           Lines.Strings = (
             'Memo1')
@@ -388,14 +388,14 @@ object FormRealTime: TFormRealTime
         object WebBrowser1: TWebBrowser
           Left = 0
           Top = 0
-          Width = 651
-          Height = 212
+          Width = 659
+          Height = 225
           Align = alClient
           TabOrder = 0
-          ExplicitWidth = 637
-          ExplicitHeight = 179
+          ExplicitWidth = 655
+          ExplicitHeight = 224
           ControlData = {
-            4C000000A4210000F50A00000000000000000000000000000000000000000000
+            4C0000001C440000411700000000000000000000000000000000000000000000
             000000004C000000000000000000000001000000E0D057007335CF11AE690800
             2B2E126208000000000000004C0000000114020000000000C000000000000046
             8000000000000000000000000000000000000000000000000000000000000000
@@ -412,7 +412,7 @@ object FormRealTime: TFormRealTime
     Anchors = [akLeft, akTop, akRight]
     Caption = 'Context Options'
     TabOrder = 5
-    ExplicitWidth = 656
+    ExplicitWidth = 666
     object cbConvertTabsToSpaces: TCheckBox
       Left = 18
       Top = 23
@@ -527,15 +527,15 @@ object FormRealTime: TFormRealTime
       OnClick = cbConvertTabsToSpacesClick
     end
     object cmbCustomScriptTags: TComboBox
-      Left = 400
-      Top = 39
-      Width = 145
+      Left = 408
+      Top = 45
+      Width = 81
       Height = 21
       Style = csDropDownList
       ItemIndex = 0
       TabOrder = 12
       Text = '<% %>'
-      OnChange = cbUseCustomScriptTagsClick
+      OnChange = cmbCustomScriptTagsChange
       Items.Strings = (
         '<% %>'
         '{{ }}'
@@ -545,9 +545,9 @@ object FormRealTime: TFormRealTime
         '<< >>')
     end
     object cbOptimiseTemplate: TCheckBox
-      Left = 386
+      Left = 384
       Top = 92
-      Width = 97
+      Width = 159
       Height = 17
       Caption = 'Optimise Template'
       TabOrder = 13
@@ -564,12 +564,21 @@ object FormRealTime: TFormRealTime
     end
     object cbFlattenTemplate: TCheckBox
       Left = 384
-      Top = 72
-      Width = 97
+      Top = 69
+      Width = 153
       Height = 17
       Caption = 'Flatten Template'
       TabOrder = 15
       OnClick = cbFlattenTemplateClick
+    end
+    object cbShowWhitespace: TCheckBox
+      Left = 384
+      Top = 115
+      Width = 159
+      Height = 17
+      Caption = 'Show Whitespace'
+      TabOrder = 16
+      OnClick = cbShowWhitespaceClick
     end
   end
   object GroupBox1: TGroupBox

@@ -99,6 +99,7 @@ type
     cbOptimiseTemplate: TCheckBox;
     cbUseCustomScriptTags: TCheckBox;
     cbFlattenTemplate: TCheckBox;
+    cbShowWhitespace: TCheckBox;
     procedure cbConvertTabsToSpacesClick(Sender: TObject);
     procedure cbStripRecurringSpacesClick(Sender: TObject);
     procedure cbTrimLinesClick(Sender: TObject);
@@ -122,6 +123,8 @@ type
     procedure cbUseCustomScriptTagsClick(Sender: TObject);
     procedure cbOptimiseTemplateClick(Sender: TObject);
     procedure cbFlattenTemplateClick(Sender: TObject);
+    procedure cmbCustomScriptTagsChange(Sender: TObject);
+    procedure cbShowWhitespaceClick(Sender: TObject);
   private
     { Private declarations }
     FEncoding: TEncoding;
@@ -133,6 +136,8 @@ type
     procedure GridPropsToContext;
     procedure WriteTmpHtml;
     procedure SetOption(const AEnable: boolean; const AOption: TTemplateEvaluationOption);
+    procedure SetScriptTags(const AIdx: Integer);
+
   public
     { Public declarations }
     procedure OnException(Sender: TObject; E: Exception);
@@ -262,6 +267,8 @@ end;
 procedure TFormRealTime.cbOptimiseTemplateClick(Sender: TObject);
 begin
   SetOption(cbOptimiseTemplate.Checked, eoOptimiseTemplate);
+  if cbOptimiseTemplate.Checked then
+    cbFlattenTemplate.Checked := true;
 end;
 
 procedure TFormRealTime.cbRaiseErrorWhenVariableNotFoundClick(Sender: TObject);
@@ -286,40 +293,10 @@ end;
 
 procedure TFormRealTime.cbUseCustomScriptTagsClick(Sender: TObject);
 begin
-  cbUseCustomScriptTags.Checked := true;
-
-  case cmbCustomScriptTags.ItemIndex of
-    1:
-      begin
-        FContext.StartToken := '{{';
-        FContext.EndToken := '}}';
-      end;
-    2:
-      begin
-        FContext.StartToken := '<+';
-        FContext.EndToken := '+>';
-      end;
-    3:
-      begin
-        FContext.StartToken := '{+';
-        FContext.EndToken := '+}';
-      end;
-    4:
-      begin
-        FContext.StartToken := '{%';
-        FContext.EndToken := '%}';
-      end;
-    5:
-      begin
-        FContext.StartToken := '<<';
-        FContext.EndToken := '>>';
-      end;
+  if cbUseCustomScriptTags.Checked then
+    SetScriptTags(cmbCustomScriptTags.ItemIndex)
   else
-    begin
-      FContext.StartToken := '<%';
-      FContext.EndToken := '%>';
-    end;
-  end;
+    SetScriptTags(0);
 end;
 
 procedure TFormRealTime.cbUseHtmlBRClick(Sender: TObject);
@@ -329,6 +306,13 @@ begin
   else
     FContext.NewLine := #13#10;
   SetOption(cbUseHtmlBR.Checked, eoReplaceNewline);
+end;
+
+procedure TFormRealTime.cmbCustomScriptTagsChange(Sender: TObject);
+begin
+  cbUseCustomScriptTags.Checked := true;
+  SetScriptTags(cmbCustomScriptTags.ItemIndex);
+  Process;
 end;
 
 procedure TFormRealTime.cbSetEncodingClick(Sender: TObject);
@@ -347,6 +331,11 @@ begin
   else
     FEncoding := TEncoding.UTF8WithoutBOM;
   Process;
+end;
+
+procedure TFormRealTime.cbShowWhitespaceClick(Sender: TObject);
+begin
+  SetOption(cbShowWhitespace.Checked, eoShowWhitespace);
 end;
 
 procedure TFormRealTime.FormCreate(Sender: TObject);
@@ -497,6 +486,42 @@ begin
   else
     FContext.Options := FContext.Options - [AOption];
   Process;
+end;
+
+procedure TFormRealTime.SetScriptTags(const AIdx: Integer);
+begin
+  case AIdx of
+    1:
+      begin
+        FContext.StartToken := '{{';
+        FContext.EndToken := '}}';
+      end;
+    2:
+      begin
+        FContext.StartToken := '<+';
+        FContext.EndToken := '+>';
+      end;
+    3:
+      begin
+        FContext.StartToken := '{+';
+        FContext.EndToken := '+}';
+      end;
+    4:
+      begin
+        FContext.StartToken := '{%';
+        FContext.EndToken := '%}';
+      end;
+    5:
+      begin
+        FContext.StartToken := '<<';
+        FContext.EndToken := '>>';
+      end;
+  else
+    begin
+      FContext.StartToken := '<%';
+      FContext.EndToken := '%>';
+    end;
+  end;
 end;
 
 procedure TFormRealTime.WriteTmpHtml;
