@@ -49,8 +49,6 @@ type
     [Test]
     procedure TestNonStmt;
     [Test]
-    procedure TestComment;
-    [Test, Ignore]
     procedure TestHashComment;
     [Test {$IFNDEF SEMPARE_TEMPLATE_HAS_HTML_ENCODER}, Ignore{$ENDIF}]
     procedure TestHtmlEncoding;
@@ -145,15 +143,6 @@ begin
   Assert.AreEqual('1', Template.Eval('<% a:= [1,''hello world'', 2] %><% a[0]%>'));
   Assert.AreEqual('hello world', Template.Eval('<% a:= [1,''hello world'', 2] %><% a[1]%>'));
   Assert.AreEqual('2', Template.Eval('<% a:= [1,''hello world'', 2] %><% a[2]%>'));
-end;
-
-procedure TTestTemplate.TestComment;
-begin
-  Assert.AreEqual('before after ', Template.Eval( //
-    'before ' + //
-    '<% (* this is '#13#10#13#10'a comment *) %>' + //
-    'after ' //
-    ));
 end;
 
 procedure TTestTemplate.TestHashComment;

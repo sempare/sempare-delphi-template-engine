@@ -402,15 +402,7 @@ begin
         ',':
           exit(SimpleToken(vsComma));
         '(':
-          begin
-            if not Expecting('*') then
-              exit(SimpleToken(vsOpenRoundBracket));
-            SwallowInput;
-            while not FLookahead.Eof and not((FCurrent.Input = '*') and Expecting(')')) do
-              SwallowInput;
-            SwallowInput;
-            exit(SimpleToken(vsComment));
-          end;
+          exit(SimpleToken(vsOpenRoundBracket));
         ')':
           exit(SimpleToken(vsCloseRoundBracket));
         '[':
@@ -596,6 +588,15 @@ begin
     begin
       Result := ValueToken(vsText);
       case FLookahead.Input of
+        '#':
+          begin
+            SwallowInput;
+            while not FLookahead.Eof and not((FCurrent.Input = FEndScript[1]) and Expecting(FEndScript[2])) do
+              SwallowInput;
+            SwallowInput;
+            FNextToken.enqueue(SimpleToken(vsComment));
+            exit;
+          end;
         // '_':
         // LState := TStripAction.saUnindent;
         '-':

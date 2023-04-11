@@ -1050,6 +1050,10 @@ begin
     begin
       LStmt := nil;
       case LSymbol.Token of
+        vsComment:
+          begin
+            FLookahead := FLexer.GetToken;
+          end;
         vsWhiteSpace, vsNewLine, vsText:
           begin
             LStmt := AddPrintStmt;
