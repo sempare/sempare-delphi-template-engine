@@ -91,7 +91,7 @@ type
     class constructor Create; overload;
   private
     FReader: TStreamReader;
-    FNextToken: ITemplateSymbol;
+    FNextToken: TQueue<ITemplateSymbol>;
     FStream: TStream;
     FLine: integer;
     FPos: integer;
@@ -127,14 +127,14 @@ type
     FToken: TTemplateSymbol;
     FPosition: IPosition;
     FStripWS: Boolean;
-    FStripAction: TStripAction;
+    FStripActions: TStripActionSet;
     function GetPosition: IPosition;
   public
-    constructor Create(const APosition: IPosition; const AToken: TTemplateSymbol; const AStripWS: Boolean = false; const AStripAction: TStripAction = saNone);
+    constructor Create(const APosition: IPosition; const AToken: TTemplateSymbol; const AStripWS: Boolean = false; const AStripActions: TStripActionSet = []);
     procedure SetToken(const AToken: TTemplateSymbol);
     function GetToken: TTemplateSymbol;
     function StripWS: Boolean;
-    function GetStripAction: TStripAction;
+    function GetStripActions: TStripActionSet;
   end;
 
   TTemplateValueSymbol = class(TSimpleTemplateSymbol, ITemplateValueSymbol)
@@ -165,6 +165,7 @@ begin
   FReader := TStreamReader.Create(AStream, AContext.Encoding, false, 4096);
   FPrevLineOffset := -1;
   FLineOffset := 0;
+  FNextToken := TQueue<ITemplateSymbol>.Create;
   FOptions := AContext.Options;
   FStartScript := AContext.StartToken;
   FEndScript := AContext.EndToken;
@@ -193,6 +194,7 @@ end;
 
 destructor TTemplateLexer.Destroy;
 begin
+  FNextToken.Free;
   FAccumulator.Free;
   FReader.Free;
   if FManageStream then
@@ -258,12 +260,12 @@ var
       exit(TPosition.Create(FFilename, LLine, LPosition));
   end;
 
-  function SimpleToken(const ASymbol: TTemplateSymbol; const AStripWS: Boolean = false; const AStripAction: TStripAction = saNone; const AGetInput: Boolean = True): ITemplateSymbol;
+  function SimpleToken(const ASymbol: TTemplateSymbol; const AStripWS: Boolean = false; const AStripActions: TStripActionSet = []; const AGetInput: Boolean = True): ITemplateSymbol;
   var
     LPosition: IPosition;
   begin
     LPosition := MakePosition;
-    Result := TSimpleTemplateSymbol.Create(LPosition, ASymbol, AStripWS, AStripAction);
+    Result := TSimpleTemplateSymbol.Create(LPosition, ASymbol, AStripWS, AStripActions);
     if AGetInput then
       GetInput;
   end;
@@ -308,9 +310,9 @@ var
     exit(ValueToken(vsString));
   end;
 
-  function isEndOfScript(const ALastChar: char; out aResult: ITemplateSymbol; const AStripAction: TStripAction): Boolean;
+  function isEndOfScript(const ALastChar: char; out aResult: ITemplateSymbol; const AStripActions: TStripActionSet): Boolean;
 
-    function CheckEnd(const ACurrent, ANext: char; const AStripAction: TStripAction; const AGetInput: Boolean = false): Boolean;
+    function CheckEnd(const ACurrent, ANext: char; const AStripActions: TStripActionSet; const AGetInput: Boolean = false): Boolean;
     begin
       if CharInSet(ACurrent, [FEndScript[1], FEndStripScript[1]]) then
       begin
@@ -321,16 +323,16 @@ var
         if ANext = LEndExpect then
         begin
           LEndStripWS := ACurrent = FEndStripScript[1];
-          if (AStripAction = saNone) or AGetInput then
+          if (AStripActions = []) or AGetInput then
             GetInput;
           if FAccumulator.length > 0 then
           begin
             aResult := ValueToken(vsText);
-            FNextToken := SimpleToken(VsEndScript, LEndStripWS, AStripAction);
+            FNextToken.enqueue(SimpleToken(VsEndScript, LEndStripWS, AStripActions));
           end
           else
           begin
-            aResult := SimpleToken(VsEndScript, LEndStripWS, AStripAction);
+            aResult := SimpleToken(VsEndScript, LEndStripWS, AStripActions);
           end;
           FState := SText;
           exit(True);
@@ -342,16 +344,16 @@ var
   var
     LGetInput: Boolean;
   begin
-    LGetInput := AStripAction <> saNone;
+    LGetInput := AStripActions <> [];
     if LGetInput then
     begin
       GetInput;
-      Result := CheckEnd(ALastChar, FCurrent.Input, AStripAction);
+      Result := CheckEnd(ALastChar, FCurrent.Input, AStripActions);
       if Result then
         exit;
-      exit(CheckEnd(FCurrent.Input, FLookahead.Input, AStripAction, True));
+      exit(CheckEnd(FCurrent.Input, FLookahead.Input, AStripActions, True));
     end;
-    exit(CheckEnd(FCurrent.Input, FLookahead.Input, saNone));
+    exit(CheckEnd(FCurrent.Input, FLookahead.Input, []));
   end;
 
 begin
@@ -434,24 +436,24 @@ begin
           exit(SimpleToken(vsQUESTION));
         '+':
           begin
-            if isEndOfScript('+', Result, TStripAction.saWhitespaceAndNLButOne) then
+            if isEndOfScript('+', Result, [saWhitespace, saNL, saKeepOneSpace]) then
               exit
             else
-              exit(SimpleToken(vsPLUS, false, saNone, false));
+              exit(SimpleToken(vsPLUS, false, [], false));
           end;
         '-':
           begin
-            if isEndOfScript('-', Result, TStripAction.saWhitespace) then
+            if isEndOfScript('-', Result, [saWhitespace]) then
               exit
             else
-              exit(SimpleToken(vsMinus, false, saNone, false));
+              exit(SimpleToken(vsMinus, false, [], false));
           end;
         '*':
           begin
-            if isEndOfScript('*', Result, TStripAction.saWhitespaceAndNL) then
+            if isEndOfScript('*', Result, [saWhitespace, saNL]) then
               exit
             else
-              exit(SimpleToken(vsMULT, false, saNone, false));
+              exit(SimpleToken(vsMULT, false, [], false));
           end;
         '/':
           exit(SimpleToken(vsSLASH));
@@ -502,7 +504,7 @@ begin
             exit(SimpleToken(vsCOLON));
       else
         begin
-          if isEndOfScript(#0, Result, TStripAction.saNone) then
+          if isEndOfScript(#0, Result, []) then
             exit;
         end;
       end;
@@ -513,7 +515,7 @@ begin
   if FAccumulator.length > 0 then
   begin
     Result := ValueToken(vsText);
-    FNextToken := SimpleToken(vsEOF);
+    FNextToken.enqueue(SimpleToken(vsEOF));
   end
   else
     exit(SimpleToken(vsEOF));
@@ -524,7 +526,7 @@ var
   LLine: integer;
   LPosition: integer;
   LIsStartStripWSToken: Boolean;
-  LState: TStripAction;
+  LState: TStripActionSet;
 
   function MakePosition: IPosition;
   begin
@@ -534,12 +536,12 @@ var
       exit(TPosition.Create(FFilename, LLine, LPosition));
   end;
 
-  function SimpleToken(const ASymbol: TTemplateSymbol; const AStripWS: Boolean = false; const AStripAction: TStripAction = saNone): ITemplateSymbol;
+  function SimpleToken(const ASymbol: TTemplateSymbol; const AStripWS: Boolean = false; const AStripActions: TStripActionSet = []): ITemplateSymbol;
   var
     LPosition: IPosition;
   begin
     LPosition := MakePosition;
-    Result := TSimpleTemplateSymbol.Create(LPosition, ASymbol, AStripWS, AStripAction);
+    Result := TSimpleTemplateSymbol.Create(LPosition, ASymbol, AStripWS, AStripActions);
     GetInput;
   end;
 
@@ -577,7 +579,7 @@ var
       lstr := AFinal(FAccumulator.ToString);
       FAccumulator.Clear;
       FAccumulator.Append(lstr);
-      FNextToken := ValueToken(vsNewLine, false);
+      FNextToken.enqueue(ValueToken(AToken, false));
     end
     else
     begin
@@ -585,7 +587,7 @@ var
       lstr := AFinal(FAccumulator.ToString);
       FAccumulator.Clear;
       FAccumulator.Append(lstr);
-      ASymbol := ValueToken(vsNewLine, false);
+      ASymbol := ValueToken(AToken, false);
     end;
     exit(True);
   end;
@@ -606,18 +608,18 @@ begin
         // '_':
         // LState := TStripAction.saUnindent;
         '-':
-          LState := TStripAction.saWhitespace;
+          LState := [saWhitespace];
         '+':
-          LState := TStripAction.saWhitespaceAndNLButOne;
+          LState := [saWhitespace, saNL, saKeepOneSpace];
         '*':
-          LState := TStripAction.saWhitespaceAndNL;
+          LState := [saWhitespace, saNL];
       else
-        LState := TStripAction.saNone;
+        LState := [];
       end;
-      if LState <> TStripAction.saNone then
+      if LState <> [] then
         GetInput;
       FState := SScript;
-      FNextToken := SimpleToken(VsStartScript, LIsStartStripWSToken, LState);
+      FNextToken.enqueue(SimpleToken(VsStartScript, LIsStartStripWSToken, LState));
       exit();
     end;
 
@@ -675,7 +677,7 @@ begin
   if FAccumulator.length > 0 then
   begin
     Result := ValueToken(vsText);
-    FNextToken := SimpleToken(vsEOF);
+    FNextToken.enqueue(SimpleToken(vsEOF));
   end
   else
     exit(SimpleToken(vsEOF));
@@ -683,11 +685,9 @@ end;
 
 function TTemplateLexer.GetToken: ITemplateSymbol;
 begin
-  if FNextToken <> nil then
+  if FNextToken.count > 0 then
   begin
-    Result := FNextToken;
-    FNextToken := nil;
-    exit;
+    exit(FNextToken.dequeue);
   end;
   case FState of
     SText:
@@ -704,11 +704,11 @@ begin
   GetInput;
 end;
 
-{ TSimpleMustacheToken }
+{ TSimpleTemplateSymbol }
 
-constructor TSimpleTemplateSymbol.Create(const APosition: IPosition; const AToken: TTemplateSymbol; const AStripWS: Boolean; const AStripAction: TStripAction);
+constructor TSimpleTemplateSymbol.Create(const APosition: IPosition; const AToken: TTemplateSymbol; const AStripWS: Boolean; const AStripActions: TStripActionSet);
 begin
-  FStripAction := AStripAction;
+  FStripActions := AStripActions;
   FToken := AToken;
   FPosition := APosition;
   FStripWS := AStripWS;
@@ -719,9 +719,9 @@ begin
   exit(FPosition);
 end;
 
-function TSimpleTemplateSymbol.GetStripAction: TStripAction;
+function TSimpleTemplateSymbol.GetStripActions: TStripActionSet;
 begin
-  exit(FStripAction);
+  exit(FStripActions);
 end;
 
 function TSimpleTemplateSymbol.GetToken: TTemplateSymbol;
@@ -739,7 +739,7 @@ begin
   exit(FStripWS);
 end;
 
-{ TStringMustacheToken }
+{ TTemplateValueSymbol }
 
 constructor TTemplateValueSymbol.Create(const APosition: IPosition; const AToken: TTemplateSymbol; const AString: string);
 begin

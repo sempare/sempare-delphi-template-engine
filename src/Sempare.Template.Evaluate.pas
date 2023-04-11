@@ -54,29 +54,6 @@ type
   TLoopOption = (coContinue, coBreak);
   TLoopOptions = set of TLoopOption;
 
-  TNewLineStreamWriter = class(TStreamWriter)
-  private
-    FOptions: TTemplateEvaluationOptions;
-    FNL: string;
-    FBuffer: TStringBuilder;
-    FIgnoreNewline: boolean;
-    FStartOfLine: boolean;
-    FLastChar: char;
-    FTrimLines: boolean;
-    FStripRecurringNL: boolean;
-    FRemoveEmpty: boolean;
-    FLastNL: boolean;
-    FStripStmt: IStripStmt;
-    procedure TrimEndOfLine;
-    procedure TrimLast;
-    procedure DoWrite();
-  public
-    constructor Create(const AStream: TStream; const AEncoding: TEncoding; const ANL: string; const AOptions: TTemplateEvaluationOptions);
-    destructor Destroy; override;
-    procedure Write(const AString: string); override;
-    procedure Handle(const AStmt: IStripStmt);
-    property IgnoreNewLine: boolean read FIgnoreNewline write FIgnoreNewline;
-  end;
 
   TEvaluationTemplateVisitor = class(TBaseTemplateVisitor, IEvaluationTemplateVisitor)
   private
@@ -85,7 +62,6 @@ type
     FEvalStack: TStack<TValue>;
     FStream: TStream;
     FStreamWriter: TStreamWriter;
-    FIsNLStreamWriter: boolean;
     FLoopOptions: TLoopOptions;
     FContext: ITemplateContext;
     FEvaluationContext: ITemplateEvaluationContext;
@@ -674,8 +650,6 @@ begin
   FStream := AStream;
 
   FStreamWriter := FContext.StreamWriterProvider(FStream, FContext);
-  FIsNLStreamWriter := FStreamWriter is TNewLineStreamWriter;
-
   FEvalStack := TStack<TValue>.Create;
   FStackFrames := TObjectStack<TStackFrame>.Create;
   FStackFrames.push(AStackFrame);
@@ -911,17 +885,7 @@ procedure TEvaluationTemplateVisitor.Visit(const AStmt: IPrintStmt);
 begin
   if HasBreakOrContinue then
     exit;
-  if supports(AStmt.Expr, INewlineExpr) then
-  begin
-  //  FStreamWriter.Write('[beforenl]');
-  end;
   FStreamWriter.Write(EvalExprAsString(AStmt.Expr));
-  if supports(AStmt.Expr, INewlineExpr) then
-  begin
-   // FStreamWriter.Write('[afternl]');
-
-  end;
-
 end;
 
 function CastArg(const AValue: TValue; const AType: TRttiType; const AContext: ITemplateContext): TValue;
@@ -1088,25 +1052,8 @@ begin
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AStmt: IProcessTemplateStmt);
-var
-  LPrevNewLineState: boolean;
-  LSWriter: TNewLineStreamWriter;
 begin
-  if FIsNLStreamWriter then
-  begin
-    LSWriter := TNewLineStreamWriter(FStreamWriter);
-    LPrevNewLineState := LSWriter.IgnoreNewLine;
-    try
-      LSWriter.IgnoreNewLine := not AStmt.AllowNewLine;
-      AcceptVisitor(AStmt.Container, self);
-    finally
-      LSWriter.IgnoreNewLine := LPrevNewLineState;
-    end;
-  end
-  else
-  begin
-    AcceptVisitor(AStmt.Container, self);
-  end;
+  AcceptVisitor(AStmt.Container, self);
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AStmt: IDefineTemplateStmt);
@@ -1185,14 +1132,8 @@ begin
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AStmt: IStripStmt);
-var
-  LSWriter: TNewLineStreamWriter;
 begin
-  if FIsNLStreamWriter then
-  begin
-    LSWriter := TNewLineStreamWriter(FStreamWriter);
-    LSWriter.Handle(AStmt);
-  end;
+  // do nothing
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AStmt: ICompositeStmt);
@@ -1264,184 +1205,4 @@ begin
     LBlocks.Free;
   end;
 end;
-
-{ TNewLineStreamWriter }
-
-constructor TNewLineStreamWriter.Create(const AStream: TStream; const AEncoding: TEncoding; const ANL: string; const AOptions: TTemplateEvaluationOptions);
-begin
-  inherited Create(AStream, AEncoding);
-  FBuffer := TStringBuilder.Create;
-  FOptions := AOptions;
-  FNL := ANL;
-  FStartOfLine := true;
-  FLastChar := #0;
-  FTrimLines := eoTrimLines in FOptions;
-  FRemoveEmpty := eoStripEmptyLines in FOptions;
-  FStripRecurringNL := eoStripRecurringNewlines in FOptions;
-  FLastNL := true;
-end;
-
-destructor TNewLineStreamWriter.Destroy;
-begin
-  TrimEndOfLine();
-  if FBuffer.length > 0 then
-    DoWrite;
-  FBuffer.Free;
-  inherited;
-end;
-
-procedure TNewLineStreamWriter.DoWrite();
-begin
-  inherited write(FBuffer.ToString());
-  FBuffer.clear;
-end;
-{$WARN WIDECHAR_REDUCED OFF}
-
-const
-  STRIP_CHARS: array [TStripAction] of set of char = ( //
-    [' ', #9], //             saWhitespace
-    // [' ', #9],        //   saUnindent
-    [' ', #9, #13, #10], //   saWhitespaceAndNL
-    [' ', #9, #13, #10], //   saWhitespaceAndNLButOne
-    [] //                     saNone
-    );
-{$WARN WIDECHAR_REDUCED ON}
-
-procedure TNewLineStreamWriter.Handle(const AStmt: IStripStmt);
-var
-  LStripped: boolean;
-begin
-  if AStmt.Action = saNone then
-  begin
-    FStripStmt := nil;
-    exit;
-  end;
-  if AStmt.Direction = sdLeft then
-  begin
-    LStripped := false;
-    while (FBuffer.length > 0) and charinset(FBuffer.Chars[FBuffer.length - 1], STRIP_CHARS[AStmt.Action]) do
-    begin
-      FBuffer.length := FBuffer.length - 1;
-      LStripped := true;
-    end;
-    if LStripped and (AStmt.Action = saWhitespaceAndNLButOne) then
-    begin
-      FBuffer.Append(' ');
-    end;
-  end
-  else
-  begin
-    FStripStmt := AStmt;
-  end;
-end;
-
-procedure TNewLineStreamWriter.TrimEndOfLine;
-begin
-  if eoTrimLines in FOptions then
-  begin
-    while (FBuffer.length >= 1) and IsWhitespace(FBuffer.Chars[FBuffer.length - 1]) do
-      FBuffer.length := FBuffer.length - 1;
-  end;
-end;
-
-procedure TNewLineStreamWriter.TrimLast;
-begin
-  if (FBuffer.length >= 1) then
-  begin
-    FBuffer.length := FBuffer.length - 1;
-    if FBuffer.length = 0 then
-      FLastChar := #0
-    else
-      FLastChar := FBuffer.Chars[FBuffer.length - 1];
-    FStartOfLine := FBuffer.length = 0;
-  end;
-end;
-
-procedure TNewLineStreamWriter.Write(const AString: string);
-var
-  LChar: char;
-  LIdx: integer;
-  LHasLooped: boolean;
-  LProcessed: integer;
-  LStripAction: TStripAction;
-begin
-  LIdx := 1;
-  if assigned(FStripStmt) then
-  begin
-    LStripAction := FStripStmt.Action;
-    LHasLooped := false;
-    LProcessed := 0;
-    while LIdx <= length(AString) do
-    begin
-      LChar := AString[LIdx];
-      if charinset(LChar, STRIP_CHARS[LStripAction]) then
-      begin
-        inc(LIdx);
-        LHasLooped := true;
-        if LChar = #10 then
-        begin
-          FStripStmt := nil;
-          break;
-        end;
-        continue;
-      end
-      else
-      begin
-        FStripStmt := nil;
-        break;
-      end;
-      inc(LProcessed);
-    end;
-    if LHasLooped then
-    begin
-      if assigned(FStripStmt) and (LProcessed = length(AString)) then
-        exit;
-      if LStripAction = saWhitespaceAndNLButOne then
-      begin
-        FBuffer.Append(' ');
-      end;
-    end;
-  end;
-  for LIdx := LIdx to length(AString) do
-  begin
-    LChar := AString[LIdx];
-    if IsWhitespace(LChar) and FStartOfLine and FTrimLines then
-    begin
-      FLastChar := LChar;
-      continue;
-    end;
-    if IsNewline(LChar) then
-    begin
-      if IsCR(FLastChar) then
-      begin
-        TrimLast;
-      end;
-      if FTrimLines then
-      begin
-        TrimEndOfLine;
-      end;
-
-      if not FIgnoreNewline then
-      begin
-        if not FStripRecurringNL or not IsNewline(FLastChar) then
-        begin
-          if not FRemoveEmpty or not FLastNL then
-          begin
-            FBuffer.Append(FNL);
-            FLastNL := true;
-          end;
-          FStartOfLine := true;
-        end;
-      end;
-    end
-    else
-    begin
-      FBuffer.Append(LChar);
-      FLastNL := false;
-      FStartOfLine := false;
-    end;
-    FLastChar := LChar;
-  end;
-end;
-
 end.

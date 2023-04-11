@@ -71,9 +71,11 @@ type
   TTemplate = class(TInterfacedObject, ITemplate, ITemplateAdd, ITemplateVisitorHost)
   private
     FPosition: IPosition;
-    FArray: TArray<IStmt>;
-    function Flatten: TArray<IStmt>;
-    procedure Optimise;
+    FArray: TList<IStmt>;
+
+    // function Flatten: TArray<IStmt>;
+    procedure FlattenTemplate;
+    procedure OptimiseTemplate;
     function GetFilename: string;
     procedure SetFilename(const AFilename: string);
     function GetLine: integer;
@@ -82,12 +84,18 @@ type
     procedure SetPos(const Apos: integer);
     function GetItem(const AOffset: integer): IStmt;
     function GetCount: integer;
-    procedure Add(const AItem: IStmt);
+    function IsPrintExpr(const AStmt: IStmt; const ASymExpr: TGuid): boolean;
+    function IsPrintNewlineExpr(const AStmt: IStmt): boolean;
+    function IsPrintWhitespaceExpr(const AStmt: IStmt): boolean;
+    function IsStripStmt(const AStmt: IStmt; out AStripStmt: IStripStmt): boolean;
+
+    procedure Add(const AItem: IStmt; const AAddLocation: TAddLocation = alLast);
     function GetLastItem: IStmt;
     procedure Accept(const AVisitor: ITemplateVisitor);
 
   public
-    constructor Create();
+    constructor Create;
+    destructor Destroy; override;
   end;
 
   TAbstractBase = class abstract(TInterfacedObject, IPositional, ITemplateVisitorHost)
@@ -200,18 +208,18 @@ type
   TStripStmt = class(TAbstractStmt, IStripStmt)
   private
     FDirection: TStripDirection;
-    FAction: TStripAction;
+    FAction: TStripActionSet;
     FHasEnd: boolean;
     FIndent: string;
     function GetIndent: string;
     procedure SetIndent(const AIndent: string);
     function GetDirection: TStripDirection;
-    function GetAction: TStripAction;
+    function GetAction: TStripActionSet;
     function GetHasEnd: boolean; override;
     procedure SetHasEnd(const AHasEnd: boolean);
     procedure Accept(const AVisitor: ITemplateVisitor); override;
   public
-    constructor Create(const ADirection: TStripDirection; const AAction: TStripAction);
+    constructor Create(const ADirection: TStripDirection; const AAction: TStripActionSet);
   end;
 
   TCompositeStmt = class(TAbstractStmt, ICompositeStmt)
@@ -519,6 +527,13 @@ type
   TParserOption = (poAllowEnd, poAllowElse, poAllowElIf, poHasElse, poInLoop, poStripWS);
   TParserOptions = set of TParserOption;
 
+  TStripActionStackItem = record
+
+    BeforeNLStripActions: TStripActionSet;
+    AfterNLStripActions: TStripActionSet;
+    constructor Create(const ABeforeNLStripActions: TStripActionSet; const AAfterNLStripActions: TStripActionSet);
+  end;
+
   TTemplateParser = class(TInterfacedObject, ITemplateParser)
   private
     FContext: ITemplateContext;
@@ -526,23 +541,32 @@ type
     FLexer: ITemplateLexer;
     FContainerStack: TStack<ITemplate>;
     FOptions: TParserOptions;
-    FStripAction: TStripAction;
+
+    FBeforeNLStripActions: TStripActionSet;
+    FAfterNLStripActions: TStripActionSet;
+    FStripActionsStack: TStack<TStripActionStackItem>;
+
+    function IsNLStmt(const AStmt: IStmt): boolean;
+
+    procedure PushStripAction(const AContainer: ITemplate; const ABeforeNLStripActions: TStripActionSet; const AAfterNLStripActions: TStripActionSet);
+    procedure PopStripAction;
+
     function PushContainer: ITemplate;
     function PopContainer: ITemplate;
     function CurrentContainer: ITemplate;
-
     function lookaheadValue: string;
     function MatchValues(const ASymbols: TTemplateSymbolSet; out ASymbol: TTemplateSymbol): string;
     function MatchValue(const ASymbol: TTemplateSymbol): string;
     procedure Match(ASymbol: ITemplateSymbol); overload; inline;
-    function Match(const ASymbol: TTemplateSymbol): TStripAction; overload;
+    function Match(const ASymbol: TTemplateSymbol): TStripActionSet; overload;
     function MatchNumber(const ASymbol: TTemplateSymbol): extended;
     procedure MatchClosingBracket(const AExpect: TTemplateSymbol);
-    function AddStripStmt(const AStmt: IStmt; const AStripAction: TStripAction; const ADirection: TStripDirection): IStmt;
-    function AddEndStripStmt(const ATemplate: ITemplate; const AStripAction: TStripAction): ITemplate;
+    function AddStripStmt(const AStmt: IStmt; const AStripActions: TStripActionSet; const ADirection: TStripDirection): IStmt; overload;
+    function AddStripStmt(const ATemplate: ITemplate; const AStripActions: TStripActionSet; const ADirection: TStripDirection): ITemplate; overload;
   private
     function RuleStmts(Container: ITemplate; const AEndToken: TTemplateSymbolSet): TTemplateSymbol;
     function RuleStmt: IStmt;
+
     function RuleIgnoreNewline: IStmt;
     function RuleCommentStmt: IStmt;
     function RuleIdStmt: IStmt;
@@ -585,7 +609,7 @@ type
     function Parse(const AStream: TStream; const AManagedStream: boolean): ITemplate;
   end;
 
-function Flatten(const AStmts: TArray<IStmt>): TArray<IStmt>;
+function Flatten(const AStmts: TList<IStmt>): TArray<IStmt>;
 var
   LStmt: IStmt;
   LFlattenedStmts: TList<IStmt>;
@@ -610,7 +634,8 @@ begin
   begin
     if assigned(LTemplate) then
     begin
-      LTemplate.Optimise;
+      LTemplate.FlattenTemplate;
+      LTemplate.OptimiseTemplate;
     end;
   end;
 end;
@@ -702,6 +727,15 @@ begin
     exit(vsComma);
 end;
 
+function TTemplateParser.IsNLStmt(const AStmt: IStmt): boolean;
+var
+  LPrintStmt: IPrintStmt;
+begin
+  if not supports(AStmt, IPrintStmt, LPrintStmt) then
+    exit(false);
+  exit(supports(LPrintStmt.Expr, INewLineExpr));
+end;
+
 procedure TTemplateParser.MatchClosingBracket(const AExpect: TTemplateSymbol);
 begin
   assert(AExpect in [vsCloseRoundBracket, vsCloseSquareBracket]);
@@ -710,32 +744,37 @@ begin
   Match(AExpect);
 end;
 
-function TTemplateParser.AddEndStripStmt(const ATemplate: ITemplate; const AStripAction: TStripAction): ITemplate;
+function TTemplateParser.AddStripStmt(const ATemplate: ITemplate; const AStripActions: TStripActionSet; const ADirection: TStripDirection): ITemplate;
 var
   LAdd: ITemplateAdd;
+  LStmt: IStripStmt;
 begin
-  if AStripAction = saNone then
+  if AStripActions = [] then
     exit(ATemplate);
   result := ATemplate;
-  supports(result, ITemplateAdd, LAdd);
-  LAdd.Add(TStripStmt.Create(sdRight, AStripAction));
+  LStmt := TStripStmt.Create(ADirection, AStripActions);
+
+  if supports(ATemplate, ITemplateAdd, LAdd) then
+    LAdd.Add(LStmt);
+
 end;
 
-function TTemplateParser.AddStripStmt(const AStmt: IStmt; const AStripAction: TStripAction; const ADirection: TStripDirection): IStmt;
+function TTemplateParser.AddStripStmt(const AStmt: IStmt; const AStripActions: TStripActionSet; const ADirection: TStripDirection): IStmt;
 var
   LStripStmt: IStripStmt;
 begin
-  if AStripAction = saNone then
-    exit(AStmt)
-  else
-  begin
-    LStripStmt := TStripStmt.Create(ADirection, AStripAction);
-    LStripStmt.HasEnd := AStmt.HasEnd;
-    if ADirection = sdLeft then
-    begin
+  if AStripActions = [] then
+    exit(AStmt);
+
+  LStripStmt := TStripStmt.Create(ADirection, AStripActions);
+  if AStmt = nil then
+    exit(LStripStmt);
+  LStripStmt.HasEnd := AStmt.HasEnd;
+
+  case ADirection of
+    sdLeft, sdAfterNewLine:
       exit(TCompositeStmt.Create(LStripStmt, AStmt));
-    end
-    else
+    sdRight, sdBeforeNewLine:
       exit(TCompositeStmt.Create(AStmt, LStripStmt));
   end;
 end;
@@ -745,6 +784,8 @@ begin
   FOptions := [];
   FContext := AContext;
   FContainerStack := TStack<ITemplate>.Create;
+  FStripActionsStack := TStack<TStripActionStackItem>.Create;
+  PushStripAction(nil, [], []);
 end;
 
 const
@@ -758,19 +799,31 @@ var
   LContainerAdd: ITemplateAdd;
   LOptions: IPreserveValue<TParserOptions>;
   LSymbol: ITemplateSymbol;
-  LEndStripAction: TStripAction;
-  LStripAction: TStripAction;
+  LBeforeNLStripActions: TStripActionSet;
+  LAfterNLStripActions: TStripActionSet;
 begin
   LOptions := Preserve.Value<TParserOptions>(FOptions, FOptions + [poAllowElse, poAllowEnd, poAllowElIf]);
   LSymbol := FLookahead;
-  LStripAction := FStripAction;
+
+  LAfterNLStripActions := FAfterNLStripActions;
   Match(vsIF);
   LConditionalExpr := RuleExpression;
-  LEndStripAction := Match(vsEndScript);
+  LBeforeNLStripActions := Match(vsEndScript);
+
   // create new container for true condition
   PushContainer;
   LTrueContainer := self.CurrentContainer;
+
+  PushStripAction(LTrueContainer, LBeforeNLStripActions, LAfterNLStripActions);
+
+  // AddStripStmt(LTrueContainer, LAfterNLStripActions, sdAfterNewLine);
+
   RuleStmts(LTrueContainer, IF_ELIF_END);
+
+  PopStripAction();
+
+  // AddStripStmt(LTrueContainer, LAfterNLStripActions, sdLeft);
+
   PopContainer;
   PushContainer;
   LFalseContainer := self.CurrentContainer;
@@ -786,7 +839,18 @@ begin
   begin
     Match(vsElse);
     Match(vsEndScript);
+
+    PushStripAction(LFalseContainer, LBeforeNLStripActions, LAfterNLStripActions);
+
+
+    // AddStripStmt(LFalseContainer, LAfterNLStripActions, sdAfterNewLine);
+
     RuleStmts(LFalseContainer, [vsEND]);
+
+    PopStripAction();
+
+    // AddStripStmt(LFalseContainer, LBeforeNLStripActions, sdBeforeNewLine);
+
   end;
   PopContainer;
   Match(vsEND);
@@ -799,8 +863,8 @@ begin
       exit(TProcessTemplateStmt.Create(LSymbol.Position, LFalseContainer))
   end;
   result := TIfStmt.Create(LSymbol.Position, LConditionalExpr, LTrueContainer, LFalseContainer);
-  if LStripAction <> saNone then
-    result := AddStripStmt(result, saNone, sdEnd);
+  result := AddStripStmt(result, LBeforeNLStripActions, sdRight);
+  result := AddStripStmt(result, LAfterNLStripActions, sdLeft);
 end;
 
 function TTemplateParser.RuleIgnoreNewline: IStmt;
@@ -808,22 +872,30 @@ var
   LSymbol: ITemplateSymbol;
   LContainerTemplate: ITemplate;
   LOptions: IPreserveValue<TParserOptions>;
-  LStripAction: TStripAction;
-  LEndStripAction: TStripAction;
+  LBeforeNLStripActions: TStripActionSet;
+  LAfterNLStripActions: TStripActionSet;
 begin
   LOptions := Preserve.Value<TParserOptions>(FOptions, FOptions + [poAllowEnd]);
   LSymbol := FLookahead;
+  LAfterNLStripActions := FAfterNLStripActions;
   Match(vsIgnoreNL);
-  LStripAction := Match(vsEndScript);
+  LBeforeNLStripActions := Match(vsEndScript);
+
   PushContainer;
   LContainerTemplate := CurrentContainer;
-  AddEndStripStmt(LContainerTemplate, LStripAction);
+
+  PushStripAction(LContainerTemplate, LBeforeNLStripActions, LAfterNLStripActions);
+
   RuleStmts(LContainerTemplate, [vsEND]);
+
+  AddStripStmt(LContainerTemplate, LBeforeNLStripActions, sdBeforeNewLine);
+
   Match(vsEND);
-  LEndStripAction := Match(vsEndScript);
+  Match(vsEndScript);
   PopContainer;
   result := TProcessTemplateStmt.Create(LSymbol.Position, LContainerTemplate, false);
-  result := AddStripStmt(result, LEndStripAction, sdRight);
+  result := AddStripStmt(result, LBeforeNLStripActions, sdRight);
+  result := AddStripStmt(result, LAfterNLStripActions, sdLeft);
 end;
 
 function TTemplateParser.RuleIncludeStmt: IStmt;
@@ -833,9 +905,11 @@ var
   LScopeExpr: IExpr;
   LContainerTemplate: TTemplate;
   LValueSeparator: TTemplateSymbol;
-  LStripAction: TStripAction;
+  LBeforeNLStripActions: TStripActionSet;
+  LAfterNLStripActions: TStripActionSet;
 begin
   LSymbol := FLookahead;
+  LAfterNLStripActions := FAfterNLStripActions;
   Match(vsInclude);
   Match(vsOpenRoundBracket);
   LIncludeExpr := RuleExpression;
@@ -846,7 +920,7 @@ begin
     LScopeExpr := RuleExpression;
   end;
   MatchClosingBracket(vsCloseRoundBracket);
-  LStripAction := Match(vsEndScript);
+  LBeforeNLStripActions := Match(vsEndScript);
   if LScopeExpr <> nil then
   begin
     LContainerTemplate := TTemplate.Create();
@@ -857,13 +931,14 @@ begin
   begin
     result := TIncludeStmt.Create(LSymbol.Position, LIncludeExpr);
   end;
-  result := AddStripStmt(result, LStripAction, sdRight);
+  result := AddStripStmt(result, LBeforeNLStripActions, sdRight);
+  result := AddStripStmt(result, LAfterNLStripActions, sdLeft);
 end;
 
 function TTemplateParser.RuleRequireStmt: IStmt;
 var
   LSymbol: ITemplateSymbol;
-  LStripAction: TStripAction;
+  LStripAction: TStripActionSet;
 begin
   LSymbol := FLookahead;
   Match(vsRequire);
@@ -871,7 +946,7 @@ begin
   result := TRequireStmt.Create(LSymbol.Position, self.RuleExprList());
   MatchClosingBracket(vsCloseRoundBracket);
   LStripAction := Match(vsEndScript);
-  result := AddStripStmt(result, LStripAction, sdRight);
+  // result := AddStripStmt(result, LStripAction, sdBeforeNewLine);
 end;
 
 function TTemplateParser.RuleMethodExpr(AExpr: IExpr; AMethodExpr: IExpr): IExpr;
@@ -891,6 +966,7 @@ var
   LSymbol: ITemplateSymbol;
   LLoop: boolean;
   LEndToken: TTemplateSymbolSet;
+  LIsNLStmt: boolean;
 
   function AddPrintStmt: IStmt;
   var
@@ -932,7 +1008,7 @@ begin
     end;
     LStmt := nil;
     case LSymbol.Token of
-      vsNewLine, vsText:
+      vsWhiteSpace, vsNewLine, vsText:
         begin
           if poStripWS in FOptions then
             SkipStmt
@@ -950,8 +1026,17 @@ begin
     end;
     if (LStmt <> nil) and not supports(LStmt, IElseStmt) then
     begin
+      LIsNLStmt := IsNLStmt(LStmt);
+      if LIsNLStmt then
+        AddStripStmt(LParentContainer, FStripActionsStack.peek.BeforeNLStripActions, sdBeforeNewLine);
       LParentContainer.Add(LStmt);
+      if LIsNLStmt then
+        AddStripStmt(LParentContainer, FStripActionsStack.peek.AfterNLStripActions, sdAfterNewLine);
     end;
+  end;
+  if vsEND in AEndToken then
+  begin
+    PopStripAction;
   end;
 end;
 
@@ -961,25 +1046,32 @@ var
   LSymbol: ITemplateSymbol;
   LOptions: IPreserveValue<TParserOptions>;
   LContainer: ITemplate;
-  LStripAction: TStripAction;
-  LEndStripAction: TStripAction;
+  LBeforeNLStripActions: TStripActionSet;
+  LAfterNLStripActions: TStripActionSet;
 begin
   LOptions := Preserve.Value<TParserOptions>(FOptions, FOptions + [poAllowEnd]);
   LSymbol := FLookahead;
-  LStripAction := FStripAction;
+  LAfterNLStripActions := FAfterNLStripActions;
   Match(vsTemplate);
   LExpr := RuleExpression;
-  LEndStripAction := Match(vsEndScript);
+  LBeforeNLStripActions := Match(vsEndScript);
   PushContainer;
   LContainer := CurrentContainer;
+
+  PushStripAction(LContainer, LBeforeNLStripActions, LAfterNLStripActions);
+
   RuleStmts(CurrentContainer, [vsEND]);
+
+  AddStripStmt(LContainer, LBeforeNLStripActions, sdBeforeNewLine);
+
   Match(vsEND);
   Match(vsEndScript);
   PopContainer;
   result := TDefineTemplateStmt.Create(LSymbol.Position, LExpr, LContainer);
-  if LStripAction <> saNone then
-    result := AddStripStmt(result, saNone, sdEnd);
-  LContainer.Optimise;
+  result := AddStripStmt(result, LBeforeNLStripActions, sdRight);
+  result := AddStripStmt(result, LAfterNLStripActions, sdLeft);
+  LContainer.FlattenTemplate;
+  LContainer.OptimiseTemplate;
 end;
 
 function TTemplateParser.RuleSignedFactor: IExpr;
@@ -1070,12 +1162,10 @@ end;
 function TTemplateParser.RuleStmt: IStmt;
 var
   LSymbol: ITemplateSymbol;
-  LStripAction: TStripAction;
 begin
   result := nil;
   LSymbol := FLookahead;
-  LStripAction := Match(vsStartScript);
-  FStripAction := LStripAction;
+  FAfterNLStripActions := Match(vsStartScript);
   case FLookahead.Token of
     vsEndScript:
       result := RuleNoopStmt;
@@ -1122,7 +1212,6 @@ begin
   begin
     result := TDebugStmt.Create(result);
   end;
-  result := AddStripStmt(result, LStripAction, sdLeft);
 end;
 
 function TTemplateParser.RuleVariable: IExpr;
@@ -1195,97 +1284,115 @@ var
   LSymbol: ITemplateSymbol;
   LOptions: IPreserveValue<TParserOptions>;
   LContainer: ITemplate;
-  LStripAction: TStripAction;
-  LEndStripAction: TStripAction;
+  LBeforeNLStripActions: TStripActionSet;
+  LAfterNLStripActions: TStripActionSet;
 begin
   LOptions := Preserve.Value<TParserOptions>(FOptions, FOptions + [poAllowEnd]);
   LSymbol := FLookahead;
-  LStripAction := FStripAction;
+  LAfterNLStripActions := FAfterNLStripActions;
   Match(vsBlock);
   LName := RuleExpression;
-  LEndStripAction := Match(vsEndScript);
+  LBeforeNLStripActions := Match(vsEndScript);
   PushContainer;
   LContainer := CurrentContainer;
+
+  PushStripAction(LContainer, LBeforeNLStripActions, LAfterNLStripActions);
+
   RuleStmts(LContainer, [vsEND]);
+
+  AddStripStmt(LContainer, LBeforeNLStripActions, sdBeforeNewLine);
+
   Match(vsEND);
   Match(vsEndScript);
   PopContainer;
   result := TBlockStmt.Create(LSymbol.Position, LName, LContainer);
-  if LStripAction <> saNone then
-    result := AddStripStmt(result, saNone, sdEnd);
-  LContainer.Optimise;
+  result := AddStripStmt(result, LBeforeNLStripActions, sdRight);
+  result := AddStripStmt(result, LAfterNLStripActions, sdLeft);
+  LContainer.FlattenTemplate;
+  LContainer.OptimiseTemplate;
 end;
 
 function TTemplateParser.RuleNoopStmt: IStmt;
 var
   LSymbol: ITemplateSymbol;
-  LStripAction: TStripAction;
+  LStripAction: TStripActionSet;
 begin
   LSymbol := FLookahead;
   LStripAction := Match(vsEndScript);
   result := TNoopStmt.Create(LSymbol.Position);
-  result := AddStripStmt(result, LStripAction, sdRight);
+  // result := AddStripStmt(result, LStripAction, sdBeforeNewLine);
 end;
 
 function TTemplateParser.RuleBreakStmt: IStmt;
 var
   LSymbol: ITemplateSymbol;
-  LStripAction: TStripAction;
+  LBeforeNLStripActions: TStripActionSet;
+  LAfterNLStripActions: TStripActionSet;
 begin
   LSymbol := FLookahead;
+  LAfterNLStripActions := FAfterNLStripActions;
   Match(vsBreak);
-  LStripAction := Match(vsEndScript);
+  LBeforeNLStripActions := Match(vsEndScript);
   if not(poInLoop in FOptions) then
     RaiseError(LSymbol.Position, SContinueShouldBeInALoop);
   result := TBreakStmt.Create(LSymbol.Position);
-  result := AddStripStmt(result, LStripAction, sdRight);
+  result := AddStripStmt(result, LBeforeNLStripActions, sdRight);
+  result := AddStripStmt(result, LAfterNLStripActions, sdLeft);
 end;
 
 function TTemplateParser.RuleCommentStmt: IStmt;
 var
   LSymbol: ITemplateSymbol;
-  LStartStripAction: TStripAction;
-  LStripAction: TStripAction;
+  LBeforeNLStripActions: TStripActionSet;
+  LAfterNLStripActions: TStripActionSet;
 begin
   LSymbol := FLookahead;
-  LStartStripAction := Match(vsComment);
-  LStripAction := Match(vsEndScript);
+  LAfterNLStripActions := FAfterNLStripActions;
+  Match(vsComment);
+  LBeforeNLStripActions := Match(vsEndScript);
   result := TCommentStmt.Create(LSymbol.Position);
-  result := AddStripStmt(result, LStartStripAction, sdLeft);
-  result := AddStripStmt(result, LStripAction, sdRight);
+  result := AddStripStmt(result, LBeforeNLStripActions, sdRight);
+  result := AddStripStmt(result, LAfterNLStripActions, sdLeft);
 end;
 
 function TTemplateParser.RuleContinueStmt: IStmt;
 var
   LSymbol: ITemplateSymbol;
-  LStripAction: TStripAction;
+  LBeforeNLStripActions: TStripActionSet;
+  LAfterNLStripActions: TStripActionSet;
 begin
   LSymbol := FLookahead;
+  LAfterNLStripActions := FAfterNLStripActions;
   Match(vsContinue);
-  LStripAction := Match(vsEndScript);
+  LBeforeNLStripActions := Match(vsEndScript);
   if not(poInLoop in FOptions) then
     RaiseError(LSymbol.Position, SContinueShouldBeInALoop);
   result := TContinueStmt.Create(LSymbol.Position);
-  result := AddStripStmt(result, LStripAction, sdRight);
+  result := AddStripStmt(result, LBeforeNLStripActions, sdRight);
+  result := AddStripStmt(result, LAfterNLStripActions, sdLeft);
 end;
 
 function TTemplateParser.RuleCycleStmt: IStmt;
 var
   LSymbol: ITemplateSymbol;
   LListExpr: IExprList;
-  LStripAction: TStripAction;
+  LBeforeNLStripActions: TStripActionSet;
+  LAfterNLStripActions: TStripActionSet;
 begin
   LSymbol := FLookahead;
+  LAfterNLStripActions := FAfterNLStripActions;
+
   Match(vsCycle);
   Match(vsOpenRoundBracket);
 
   LListExpr := RuleExprList();
 
   MatchClosingBracket(vsCloseRoundBracket);
-  LStripAction := Match(vsEndScript);
+  LBeforeNLStripActions := Match(vsEndScript);
 
   result := TCycleStmt.Create(LSymbol.Position, LListExpr);
-  result := AddStripStmt(result, LStripAction, sdRight);
+  result := AddStripStmt(result, LBeforeNLStripActions, sdRight);
+  result := AddStripStmt(result, LAfterNLStripActions, sdLeft);
 end;
 
 function TTemplateParser.RuleElIfStmt: IStmt;
@@ -1295,10 +1402,16 @@ var
   LFalseContainer: ITemplate;
   LOptions: IPreserveValue<TParserOptions>;
   LSymbol: ITemplateSymbol;
+  LBeforeNLStripActions: TStripActionSet;
+  LAfterNLStripActions: TStripActionSet;
 begin
   LSymbol := FLookahead;
   if not(poAllowElIf in FOptions) then
     RaiseError(LSymbol.Position, SElIfExpected);
+
+  LBeforeNLStripActions := FStripActionsStack.peek.BeforeNLStripActions;
+  LAfterNLStripActions := FStripActionsStack.peek.AfterNLStripActions;
+
   LOptions := Preserve.Value<TParserOptions>(FOptions, FOptions + [poAllowElse, poHasElse, poAllowEnd]);
   Match(vsELIF);
   LConditionExpr := RuleExpression;
@@ -1306,7 +1419,14 @@ begin
   // create new container for true condition
   PushContainer;
   LTrueContainer := self.CurrentContainer;
+
+  PushStripAction(LTrueContainer, LBeforeNLStripActions, LAfterNLStripActions);
+
   RuleStmts(LTrueContainer, IF_ELIF_END);
+  PopStripAction;
+
+  AddStripStmt(LTrueContainer, LBeforeNLStripActions, sdBeforeNewLine);
+
   PopContainer;
   if FLookahead.Token = vsElse then
   begin
@@ -1314,7 +1434,13 @@ begin
     Match(vsEndScript);
     PushContainer;
     LFalseContainer := self.CurrentContainer;
+
+    PushStripAction(LFalseContainer, LBeforeNLStripActions, LAfterNLStripActions);
+
     RuleStmts(LFalseContainer, [vsEND, vsELIF]);
+
+    AddStripStmt(LFalseContainer, LBeforeNLStripActions, sdBeforeNewLine);
+
     PopContainer;
   end;
   if (eoEvalEarly in FContext.Options) and IsValue(LConditionExpr) then
@@ -1325,6 +1451,8 @@ begin
       exit(TProcessTemplateStmt.Create(LSymbol.Position, LFalseContainer))
   end;
   result := TIfStmt.Create(LSymbol.Position, LConditionExpr, LTrueContainer, LFalseContainer);
+  result := AddStripStmt(result, LBeforeNLStripActions, sdRight);
+  result := AddStripStmt(result, LAfterNLStripActions, sdLeft);
 end;
 
 function TTemplateParser.RuleEndStmt: IStmt;
@@ -1466,8 +1594,8 @@ var
   LOnBegin, LOnEnd, LOnLoop, LOnEmpty, LBetweenItem: ITemplate;
   LPrevSymbol, LBlockSymbol: TTemplateSymbol;
   i: integer;
-  LStripAction: TStripAction;
-  LEndStripAction: TStripAction;
+  LBeforeNLStripActions: TStripActionSet;
+  LAfterNLStripActions: TStripActionSet;
 
   procedure ResolveTemplate(const ASymbol: TTemplateSymbol);
   begin
@@ -1498,7 +1626,7 @@ var
 begin
   LSymbol := FLookahead;
   LOptions := Preserve.Value<TParserOptions>(FOptions, FOptions + [poInLoop, poAllowEnd]);
-  LStripAction := FStripAction;
+  LAfterNLStripActions := FAfterNLStripActions;
   Match(vsFor);
   LId := MatchValue(vsID);
   if FLookahead.Token in [vsIn, vsOf] then
@@ -1542,7 +1670,7 @@ begin
     end;
   end;
 
-  LEndStripAction := Match(vsEndScript);
+  LBeforeNLStripActions := Match(vsEndScript);
   LBlockSymbol := vsInvalid;
   LPrevSymbol := vsInvalid;
   i := 0;
@@ -1554,7 +1682,13 @@ begin
     end;
     PushContainer;
     LContainerTemplate := CurrentContainer;
+
+    PushStripAction(LContainerTemplate, LBeforeNLStripActions, LAfterNLStripActions);
+
     LBlockSymbol := RuleStmts(LContainerTemplate, ONFIRST_ONEND_ONLOOP_ELSE);
+
+    AddStripStmt(LContainerTemplate, LBeforeNLStripActions, sdBeforeNewLine);
+
     PopContainer;
     if (i mod 2 = 0) then
     begin
@@ -1573,8 +1707,8 @@ begin
     result := TForInStmt.Create(LSymbol.Position, LId, LForOp, LRangeExpr, LOffsetExpr, LLimitExpr, LOnLoop, LOnBegin, LOnEnd, LOnEmpty, LBetweenItem)
   else
     result := TForRangeStmt.Create(LSymbol.Position, LId, LForOp, LLowValueExpr, LHighValueExpr, LStep, LOnLoop, LOnBegin, LOnEnd, LOnEmpty, LBetweenItem);
-  if LStripAction <> saNone then
-    result := AddStripStmt(result, saNone, sdEnd);
+  result := AddStripStmt(result, LBeforeNLStripActions, sdRight);
+  result := AddStripStmt(result, LAfterNLStripActions, sdLeft);
   Optimise(ArrayOfTemplate([LOnLoop, LOnBegin, LOnEnd, LOnEmpty, LBetweenItem]));
 end;
 
@@ -1595,21 +1729,29 @@ function TTemplateParser.RuleIdStmt: IStmt;
 var
   LSymbol: ITemplateSymbol;
   LExpr: IExpr;
-  LStripAction: TStripAction;
+  LBeforeNLStripActions: TStripActionSet;
+  LAfterNLStripActions: TStripActionSet;
 begin
   LSymbol := FLookahead;
   LExpr := RuleVariable;
+  LAfterNLStripActions := FAfterNLStripActions;
   if FLookahead.Token = vsCOLONEQ then
   begin
     result := RuleAssignStmt(LExpr);
   end
-  else
+  else if FLookahead.Token = vsEndScript then
   begin
     LExpr := TEncodeExpr.Create(LSymbol.Position, LExpr);
     result := RulePrintStmtVariable(LExpr);
+  end
+  else
+  begin
+    RaiseError(LSymbol.Position, format(SParsingErrorExpecting, ['variable reference, function call or assignment']));
+
   end;
-  LStripAction := Match(vsEndScript);
-  result := AddStripStmt(result, LStripAction, sdRight);
+  LBeforeNLStripActions := Match(vsEndScript);
+  result := AddStripStmt(result, LBeforeNLStripActions, sdRight);
+  result := AddStripStmt(result, LAfterNLStripActions, sdLeft);
 end;
 
 function TTemplateParser.RuleWhileStmt: IStmt;
@@ -1622,8 +1764,8 @@ var
   LOnBegin, LOnEnd, LOnLoop, LOnEmpty, LBetweenItem: ITemplate;
   LPrevSymbol, LBlockSymbol: TTemplateSymbol;
   i: integer;
-  LStripAction: TStripAction;
-  LEndStripAction: TStripAction;
+  LBeforeNLStripActions: TStripActionSet;
+  LAfterNLStripActions: TStripActionSet;
   procedure ResolveTemplate(const ASymbol: TTemplateSymbol);
   begin
     case ASymbol of
@@ -1653,7 +1795,7 @@ var
 begin
   LSymbol := FLookahead;
   LOptions := Preserve.Value<TParserOptions>(FOptions, FOptions + [poInLoop, poAllowEnd]);
-  LStripAction := FStripAction;
+  LAfterNLStripActions := FAfterNLStripActions;
   Match(vsWhile);
   LCondition := RuleExpression;
   while FLookahead.Token in [vsOffset, vsLimit] do
@@ -1671,7 +1813,7 @@ begin
         end;
     end;
   end;
-  LEndStripAction := Match(vsEndScript);
+  LBeforeNLStripActions := Match(vsEndScript);
   LBlockSymbol := vsInvalid;
   LPrevSymbol := vsInvalid;
   i := 0;
@@ -1683,7 +1825,13 @@ begin
     end;
     PushContainer;
     LContainerTemplate := CurrentContainer;
+
+    PushStripAction(LContainerTemplate, LBeforeNLStripActions, LAfterNLStripActions);
+
     LBlockSymbol := RuleStmts(LContainerTemplate, ONFIRST_ONEND_ONLOOP_ELSE);
+
+    AddStripStmt(LContainerTemplate, LBeforeNLStripActions, sdBeforeNewLine);
+
     PopContainer;
     if (i mod 2 = 0) then
     begin
@@ -1702,8 +1850,8 @@ begin
     result := nil
   else
     result := TWhileStmt.Create(LSymbol.Position, LCondition, LOffsetExpr, LLimitExpr, LOnLoop, LOnBegin, LOnEnd, LOnEmpty, LBetweenItem);
-  if LStripAction <> saNone then
-    result := AddStripStmt(result, saNone, sdEnd);
+  result := AddStripStmt(result, LBeforeNLStripActions, sdRight);
+  result := AddStripStmt(result, LAfterNLStripActions, sdLeft);
   Optimise(ArrayOfTemplate([LOnLoop, LOnBegin, LOnEnd, LOnEmpty, LBetweenItem]));
 end;
 
@@ -1713,41 +1861,53 @@ var
   LSymbol: ITemplateSymbol;
   LOptions: IPreserveValue<TParserOptions>;
   LContainer: ITemplate;
-  LStripAction: TStripAction;
-  LEndStripAction: TStripAction;
+  LBeforeNLStripActions: TStripActionSet;
+  LAfterNLStripActions: TStripActionSet;
 begin
   LOptions := Preserve.Value<TParserOptions>(FOptions, FOptions + [poAllowEnd]);
   LSymbol := FLookahead;
-  LStripAction := FStripAction;
+  LAfterNLStripActions := FAfterNLStripActions;
   Match(vsWith);
   LExpr := RuleExpression;
-  LEndStripAction := Match(vsEndScript);
+  LBeforeNLStripActions := Match(vsEndScript);
   PushContainer;
   LContainer := CurrentContainer;
+
+  PushStripAction(LContainer, LBeforeNLStripActions, LAfterNLStripActions);
+
   RuleStmts(LContainer, [vsEND]);
+
+  AddStripStmt(LContainer, LBeforeNLStripActions, sdBeforeNewLine);
+
   Match(vsEND);
   Match(vsEndScript);
   PopContainer;
   result := TWithStmt.Create(LSymbol.Position, LExpr, LContainer);
-  if LStripAction <> saNone then
-    result := AddStripStmt(result, saNone, sdEnd);
-  LContainer.Optimise;
+  result := AddStripStmt(result, LBeforeNLStripActions, sdRight);
+  result := AddStripStmt(result, LAfterNLStripActions, sdLeft);
+  LContainer.FlattenTemplate;
+  LContainer.OptimiseTemplate;
 end;
 
 function TTemplateParser.RulePrintStmt: IStmt;
 var
   LSymbol: ITemplateSymbol;
   LExpr: IExpr;
-  LStripAction: TStripAction;
+  LBeforeNLStripActions: TStripActionSet;
+  LAfterNLStripActions: TStripActionSet;
 begin
   LSymbol := FLookahead;
+  LAfterNLStripActions := FAfterNLStripActions;
   Match(vsPrint);
   Match(vsOpenRoundBracket);
   LExpr := RuleExpression;
+
   MatchClosingBracket(vsCloseRoundBracket);
-  LStripAction := Match(vsEndScript);
+  LBeforeNLStripActions := Match(vsEndScript);
   result := TPrintStmt.Create(LSymbol.Position, LExpr);
-  result := AddStripStmt(result, LStripAction, sdRight);
+
+  result := AddStripStmt(result, LBeforeNLStripActions, sdRight);
+  result := AddStripStmt(result, LAfterNLStripActions, sdLeft);
 end;
 
 function TTemplateParser.RulePrintStmtVariable(AExpr: IExpr): IStmt;
@@ -1781,12 +1941,19 @@ end;
 function TTemplateParser.RuleExprStmt: IStmt;
 var
   LSymbol: ITemplateSymbol;
-  LStripAction: TStripAction;
+  LExpr: IExpr;
+  LBeforeNLStripActions: TStripActionSet;
+  LAfterNLStripActions: TStripActionSet;
 begin
   LSymbol := FLookahead;
-  result := RulePrintStmtVariable(TEncodeExpr.Create(LSymbol.Position, RuleExpression));
-  LStripAction := Match(vsEndScript);
-  result := AddStripStmt(result, LStripAction, sdRight);
+  LAfterNLStripActions := FAfterNLStripActions;
+
+  LExpr := RuleExpression;
+  result := RulePrintStmtVariable(TEncodeExpr.Create(LSymbol.Position, LExpr));
+  LBeforeNLStripActions := Match(vsEndScript);
+
+  result := AddStripStmt(result, LBeforeNLStripActions, sdRight);
+  result := AddStripStmt(result, LAfterNLStripActions, sdLeft);
 end;
 
 function TTemplateParser.RuleExtendsStmt: IStmt;
@@ -1797,12 +1964,14 @@ var
   LOptions: IPreserveValue<TParserOptions>;
   LContainer: ITemplate;
   LContainerTemplate: TTemplate;
-  LStripAction: TStripAction;
-  LEndStripAction: TStripAction;
+  LBeforeNLStripActions: TStripActionSet;
+  LAfterNLStripActions: TStripActionSet;
 begin
   LOptions := Preserve.Value<TParserOptions>(FOptions, FOptions + [poAllowEnd]);
   LSymbol := FLookahead;
-  LStripAction := FStripAction;
+
+  LAfterNLStripActions := FAfterNLStripActions;
+
   Match(vsExtends);
   Match(vsOpenRoundBracket);
   LName := RuleExpression;
@@ -1812,10 +1981,16 @@ begin
     LScopeExpr := RuleExpression;
   end;
   Match(vsCloseRoundBracket);
-  LEndStripAction := Match(vsEndScript); // we don't care about the strip action on this as content is ignored inside an extends block
+  LBeforeNLStripActions := Match(vsEndScript); // we don't care about the strip action on this as content is ignored inside an extends block
   PushContainer;
   LContainer := CurrentContainer;
+
+  PushStripAction(LContainer, LBeforeNLStripActions, LAfterNLStripActions);
+
   RuleStmts(LContainer, [vsEND]);
+
+  AddStripStmt(LContainer, LBeforeNLStripActions, sdBeforeNewLine);
+
   Match(vsEND);
   Match(vsEndScript);
   PopContainer;
@@ -1829,21 +2004,23 @@ begin
   begin
     result := TExtendsStmt.Create(LSymbol.Position, LName, LContainer);
   end;
-  if LStripAction <> saNone then
-    result := AddStripStmt(result, saNone, sdEnd);
-  LContainer.Optimise;
+  result := AddStripStmt(result, LBeforeNLStripActions, sdRight);
+  result := AddStripStmt(result, LAfterNLStripActions, sdLeft);
+  LContainer.FlattenTemplate;
+  LContainer.OptimiseTemplate;
 end;
 
 function TTemplateParser.CurrentContainer: ITemplate;
 begin
   if FContainerStack.Count <> 0 then
-    exit(FContainerStack.Peek)
+    exit(FContainerStack.peek)
   else
     exit(nil);
 end;
 
 destructor TTemplateParser.Destroy;
 begin
+  FStripActionsStack.Free;
   FContainerStack.Free;
   inherited;
 end;
@@ -1856,12 +2033,12 @@ begin
   exit(val.Value)
 end;
 
-function TTemplateParser.Match(const ASymbol: TTemplateSymbol): TStripAction;
+function TTemplateParser.Match(const ASymbol: TTemplateSymbol): TStripActionSet;
 var
   LSymbol: ITemplateSymbol;
 begin
   LSymbol := FLookahead;
-  result := TStripAction.saNone;
+  result := [];
   if ASymbol = FLookahead.Token then
   begin
     if LSymbol.StripWS then
@@ -1874,8 +2051,16 @@ begin
       end;
     end;
     case ASymbol of
-      vsStartScript, vsEndScript:
-        result := LSymbol.StripAction;
+      vsStartScript:
+        begin
+          result := LSymbol.StripActions;
+          FAfterNLStripActions := result;
+        end;
+      vsEndScript:
+        begin
+          result := LSymbol.StripActions;
+          FBeforeNLStripActions := result;
+        end;
     end;
     FLookahead := FLexer.GetToken;
     exit;
@@ -1935,7 +2120,10 @@ begin
     RuleStmts(result, []);
   end;
   Match(vsEOF);
-  result.Optimise;
+  if eoFlattenTemplate in FContext.Options then
+    result.FlattenTemplate;
+  if eoOptimiseTemplate in FContext.Options then
+    result.OptimiseTemplate;
   if eoPrettyPrint in FContext.Options then
     FContext.PrettyPrintOutput(Template.PrettyPrint(result));
 end;
@@ -1943,13 +2131,48 @@ end;
 function TTemplateParser.PopContainer: ITemplate;
 begin
   result := CurrentContainer;
-  FContainerStack.Pop;
+  FContainerStack.pop;
+end;
+
+procedure TTemplateParser.PopStripAction;
+begin
+  FStripActionsStack.pop;
 end;
 
 function TTemplateParser.PushContainer: ITemplate;
 begin
   result := CurrentContainer;
-  FContainerStack.Push(TTemplate.Create());
+  FContainerStack.push(TTemplate.Create());
+end;
+
+procedure TTemplateParser.PushStripAction(const AContainer: ITemplate; const ABeforeNLStripActions, AAfterNLStripActions: TStripActionSet);
+var
+  LTop: TStripActionStackItem;
+  LBeforeNLStripActions, LAfterNLStripActions: TStripActionSet;
+begin
+  if FStripActionsStack.Count = 0 then
+  begin
+    LBeforeNLStripActions := ABeforeNLStripActions;
+    LAfterNLStripActions := AAfterNLStripActions;
+  end
+  else
+  begin
+    LTop := FStripActionsStack.peek;
+
+    LBeforeNLStripActions := ABeforeNLStripActions;
+    LAfterNLStripActions := AAfterNLStripActions;
+
+    if LBeforeNLStripActions = [] then
+      LBeforeNLStripActions := LTop.BeforeNLStripActions;
+
+    if LAfterNLStripActions = [] then
+      LAfterNLStripActions := LTop.AfterNLStripActions;
+  end;
+  FStripActionsStack.push(TStripActionStackItem.Create(LBeforeNLStripActions, LAfterNLStripActions));
+
+  if assigned(AContainer) then
+    AddStripStmt(AContainer, LAfterNLStripActions, sdAfterNewLine);
+
 end;
 
 { TValueExpr }
@@ -2244,28 +2467,48 @@ begin
   end;
 end;
 
-procedure TTemplate.Add(const AItem: IStmt);
+procedure TTemplate.Add(const AItem: IStmt; const AAddLocation: TAddLocation);
 var
+  i: integer;
   LOffset: integer;
 begin
-  LOffset := length(FArray);
-  setlength(FArray, LOffset + 1);
-  FArray[LOffset] := AItem;
+  LOffset := 0;
+  if AAddLocation in [alAfterNL, alBeforeNL] then
+  begin
+    if AAddLocation = alAfterNL then
+      LOffset := 1;
+    for i := 0 to FArray.Count - 1 do
+    begin
+      if IsPrintNewlineExpr(FArray[i]) then
+      begin
+        FArray.insert(i + LOffset, AItem);
+        exit;
+      end;
+    end;
+  end;
+  FArray.Add(AItem);
 end;
 
 constructor TTemplate.Create;
 begin
   FPosition := TPosition.Create('', 1, 1);
+  FArray := TList<IStmt>.Create;
 end;
 
-function TTemplate.Flatten: TArray<IStmt>;
+destructor TTemplate.Destroy;
 begin
-  result := Sempare.Template.Parser.Flatten(FArray);
+  FArray.Free;
+  inherited;
 end;
+{
+  function TTemplate.Flatten: TArray<IStmt>;
+  begin
+  exit(Sempare.Template.Parser.Flatten(FArray));
+  end; }
 
 function TTemplate.GetCount: integer;
 begin
-  exit(length(FArray));
+  exit(FArray.Count);
 end;
 
 function TTemplate.GetFilename: string;
@@ -2291,31 +2534,166 @@ begin
   exit(FPosition.pos);
 end;
 
-procedure TTemplate.Optimise;
+function TTemplate.IsPrintExpr(const AStmt: IStmt; const ASymExpr: TGuid): boolean;
+var
+  LPrintStmt: IPrintStmt;
+begin
+  if not supports(AStmt, IPrintStmt, LPrintStmt) then
+    exit(false);
 
-  function Strip(const AArray: TArray<IStmt>): TArray<IStmt>;
-  var
-    LStmt: IStmt;
-    LStmts: TList<IStmt>;
+  exit(supports(LPrintStmt.Expr, ASymExpr));
+end;
+
+function TTemplate.IsPrintNewlineExpr(const AStmt: IStmt): boolean;
+begin
+  exit(IsPrintExpr(AStmt, INewLineExpr));
+end;
+
+function TTemplate.IsPrintWhitespaceExpr(const AStmt: IStmt): boolean;
+begin
+  exit(IsPrintExpr(AStmt, IWhitespaceExpr));
+end;
+
+function TTemplate.IsStripStmt(const AStmt: IStmt; out AStripStmt: IStripStmt): boolean;
+begin
+  exit(supports(AStmt, IStripStmt, AStripStmt));
+end;
+
+function IsAny(const AStmt: IStmt; const AGuids: array of TGuid): boolean;
+var
+  LGuid: TGuid;
+begin
+  for LGuid in AGuids do
   begin
-    LStmts := TList<IStmt>.Create;
-    try
-      for LStmt in AArray do
+    if supports(AStmt, LGuid) then
+      exit(true);
+  end;
+  exit(false);
+end;
+
+procedure TTemplate.FlattenTemplate;
+var
+  LStmt: IStmt;
+  LStmts: TList<IStmt>;
+  // i: integer;
+  // j: integer;
+  // LScanStmt: IStripStmt;
+  // LReviewStmt: IStmt;
+
+begin
+  LStmts := TList<IStmt>.Create;
+  try
+    for LStmt in FArray do
+    begin
+      if IsAny(LStmt, [IEndStmt, ICommentStmt, IElseStmt, INoopStmt]) then
       begin
-        if supports(LStmt, IEndStmt) or supports(LStmt, ICommentStmt) or supports(LStmt, IElseStmt) or supports(LStmt, INoopStmt) then
-        begin
-          continue;
-        end;
-        LStmts.Add(LStmt);
+        continue;
       end;
-      exit(LStmts.ToArray);
-    finally
-      LStmts.Free;
+      LStmts.AddRange(LStmt.Flatten);
+    end;
+    FArray.Clear;
+    FArray.AddRange(LStmts);
+  finally
+    LStmts.Free;
+  end;
+end;
+
+procedure TTemplate.OptimiseTemplate;
+var
+  LStmt: IStmt;
+  LStmts: TList<IStmt>;
+  i: integer;
+  j: integer;
+  LScanStmt: IStripStmt;
+  LReviewStmt: IStmt;
+
+  function CanStrip(const AAction: TStripActionSet; const AStmt: IStmt): boolean;
+  begin
+    exit((saNL in AAction) and IsPrintNewlineExpr(AStmt) or //
+      (saWhitespace in AAction) and IsPrintWhitespaceExpr(AStmt));
+
+  end;
+  function KeepSpaceIfRequired(const AAction: TStripActionSet): IStmt;
+  begin
+    if saKeepOneSpace in LScanStmt.Action then
+    begin
+      exit(TPrintStmt.Create(nil, TWhitespaceExpr.Create(nil, ' ')));
+    end
+    else
+    begin
+      exit(nil);
     end;
   end;
 
 begin
-  FArray := Strip(Flatten);
+  LStmts := TList<IStmt>.Create;
+  try
+    for LStmt in FArray do
+    begin
+      if IsAny(LStmt, [IEndStmt, ICommentStmt, IElseStmt, INoopStmt]) then
+      begin
+        continue;
+      end;
+      LStmts.AddRange(LStmt);
+    end;
+    FArray.Clear;
+    FArray.AddRange(LStmts);
+
+    i := 0;
+    while i <= FArray.Count - 1 do
+    begin
+      LStmt := FArray[i];
+      if IsStripStmt(LStmt, LScanStmt) then
+      begin
+        case LScanStmt.Direction of
+          sdBeforeNewLine, sdLeft:
+            begin
+              j := i - 1;
+              while j >= 0 do
+              begin
+                LReviewStmt := FArray[j];
+                if CanStrip(LScanStmt.Action, LReviewStmt) then
+                begin
+                  FArray[j] := nil;
+                end
+                else
+                  break;
+                dec(j);
+              end;
+              FArray[i] := KeepSpaceIfRequired(LScanStmt.Action);
+            end;
+          sdAfterNewLine, sdRight:
+            begin
+              j := i + 1;
+              while j <= FArray.Count - 1 do
+              begin
+                LReviewStmt := FArray[j];
+                if CanStrip(LScanStmt.Action, LReviewStmt) then
+                begin
+                  FArray[j] := nil;
+                end
+                else
+                  break;
+                inc(j);
+              end;
+              FArray[i] := KeepSpaceIfRequired(LScanStmt.Action);
+            end;
+        end;
+      end;
+      inc(i);
+    end;
+    LStmts.Clear;
+    for LStmt in FArray do
+    begin
+      if LStmt <> nil then
+        LStmts.Add(LStmt);
+    end;
+    FArray.Clear;
+    FArray.AddRange(LStmts);
+  finally
+    LStmts.Free;
+  end;
+  FArray.Capacity := FArray.Count;
 end;
 
 procedure TTemplate.SetFilename(const AFilename: string);
@@ -2807,12 +3185,16 @@ end;
 
 function TCompositeStmt.Flatten: TArray<IStmt>;
 var
-  LStmts: TArray<IStmt>;
+  LStmts: TList<IStmt>;
 begin
-  setlength(LStmts, 2);
-  LStmts[0] := FFirstStmt;
-  LStmts[1] := FSecondStmt;
-  exit(Sempare.Template.Parser.Flatten(LStmts));
+  LStmts := TList<IStmt>.Create;
+  try
+    LStmts.Add(FFirstStmt);
+    LStmts.Add(FSecondStmt);
+    exit(Sempare.Template.Parser.Flatten(LStmts));
+  finally
+    LStmts.Free;
+  end;
 end;
 
 function TCompositeStmt.GetFirstStmt: IStmt;
@@ -2832,13 +3214,13 @@ begin
   AVisitor.Visit(self);
 end;
 
-constructor TStripStmt.Create(const ADirection: TStripDirection; const AAction: TStripAction);
+constructor TStripStmt.Create(const ADirection: TStripDirection; const AAction: TStripActionSet);
 begin
   FDirection := ADirection;
   FAction := AAction;
 end;
 
-function TStripStmt.GetAction: TStripAction;
+function TStripStmt.GetAction: TStripActionSet;
 begin
   exit(FAction);
 end;
@@ -2983,6 +3365,14 @@ end;
 constructor TWhitespaceExpr.Create(const APosition: IPosition; const AValue: TValue);
 begin
   inherited Create(APosition, AValue);
+end;
+
+{ TStripActionStackItem }
+
+constructor TStripActionStackItem.Create(const ABeforeNLStripActions, AAfterNLStripActions: TStripActionSet);
+begin
+  BeforeNLStripActions := ABeforeNLStripActions;
+  AfterNLStripActions := AAfterNLStripActions;
 end;
 
 initialization
