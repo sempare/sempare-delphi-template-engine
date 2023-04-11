@@ -366,11 +366,7 @@ end;
 
 procedure TTestTemplate.TestSemiColon;
 begin
-  Assert.WillRaise(
-    procedure
-    begin
-      Assert.AreEqual('hello world', Template.Eval('<% a:= "hello" ; b:= "world" ; print(a + " " + b) %>'));
-    end);
+  Assert.AreEqual('hello world', Template.Eval('<% a:= "hello" ; b:= "world" ; print(a + " " + b) %>'));
 end;
 
 procedure TTestTemplate.TestStartEndToken;
@@ -385,11 +381,7 @@ end;
 
 procedure TTestTemplate.TestStmts;
 begin
-  Assert.WillRaise(
-    procedure
-    begin // statement seperator is not supported. Need to review statment parsing to support this
-      Assert.AreEqual('1', Template.Eval('<% a := 1; print(a) %>'));
-    end);
+  Assert.AreEqual('1', Template.Eval('<% a := 1; print(a) %>'));
 end;
 
 { TTestClass }
