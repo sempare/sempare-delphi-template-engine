@@ -95,6 +95,10 @@ type
     GroupBox1: TGroupBox;
     butEval: TButton;
     cbAutoEvaluate: TCheckBox;
+    cmbCustomScriptTags: TComboBox;
+    cbOptimiseTemplate: TCheckBox;
+    cbUseCustomScriptTags: TCheckBox;
+    cbFlattenTemplate: TCheckBox;
     procedure cbConvertTabsToSpacesClick(Sender: TObject);
     procedure cbStripRecurringSpacesClick(Sender: TObject);
     procedure cbTrimLinesClick(Sender: TObject);
@@ -115,6 +119,9 @@ type
     procedure butSaveAsClick(Sender: TObject);
     procedure FormResize(Sender: TObject);
     procedure butEvalClick(Sender: TObject);
+    procedure cbUseCustomScriptTagsClick(Sender: TObject);
+    procedure cbOptimiseTemplateClick(Sender: TObject);
+    procedure cbFlattenTemplateClick(Sender: TObject);
   private
     { Private declarations }
     FEncoding: TEncoding;
@@ -233,6 +240,11 @@ begin
   SetOption(cbEvalVarsEarly.Checked, eoEvalVarsEarly);
 end;
 
+procedure TFormRealTime.cbFlattenTemplateClick(Sender: TObject);
+begin
+  SetOption(cbFlattenTemplate.Checked, eoFlattenTemplate);
+end;
+
 function DefaultEncoder(const AValue: string): string;
 begin
   exit(AValue);
@@ -245,6 +257,11 @@ begin
   else
     FContext.VariableEncoder := DefaultEncoder;
   Process;
+end;
+
+procedure TFormRealTime.cbOptimiseTemplateClick(Sender: TObject);
+begin
+  SetOption(cbOptimiseTemplate.Checked, eoOptimiseTemplate);
 end;
 
 procedure TFormRealTime.cbRaiseErrorWhenVariableNotFoundClick(Sender: TObject);
@@ -265,6 +282,44 @@ end;
 procedure TFormRealTime.cbTrimLinesClick(Sender: TObject);
 begin
   SetOption(cbTrimLines.Checked, eoTrimLines);
+end;
+
+procedure TFormRealTime.cbUseCustomScriptTagsClick(Sender: TObject);
+begin
+  cbUseCustomScriptTags.Checked := true;
+
+  case cmbCustomScriptTags.ItemIndex of
+    1:
+      begin
+        FContext.StartToken := '{{';
+        FContext.EndToken := '}}';
+      end;
+    2:
+      begin
+        FContext.StartToken := '<+';
+        FContext.EndToken := '+>';
+      end;
+    3:
+      begin
+        FContext.StartToken := '{+';
+        FContext.EndToken := '+}';
+      end;
+    4:
+      begin
+        FContext.StartToken := '{%';
+        FContext.EndToken := '%}';
+      end;
+    5:
+      begin
+        FContext.StartToken := '<<';
+        FContext.EndToken := '>>';
+      end;
+  else
+    begin
+      FContext.StartToken := '<%';
+      FContext.EndToken := '%>';
+    end;
+  end;
 end;
 
 procedure TFormRealTime.cbUseHtmlBRClick(Sender: TObject);
@@ -301,7 +356,7 @@ begin
   properties.Cells[0, 1] := 'name';
   properties.Cells[1, 1] := 'world';
   FEncoding := TEncoding.UTF8WithoutBOM;
-  FTemplate := Template.Parse('');
+  FTemplate := Template.Parse(FContext, '');
   properties.Cells[0, 0] := 'Variable';
   properties.Cells[1, 0] := 'Value';
   memoOutput.Lines.Text := '';
@@ -313,6 +368,8 @@ begin
 {$ENDIF}
   cbHtml.Checked := true;
   cbUseHtmlBR.Checked := true;
+  cbFlattenTemplate.Checked := true;
+  cbOptimiseTemplate.Checked := true;
   WebBrowser1.Enabled := true;
   pcTemplate.ActivePageIndex := 0;
   pcOutput.ActivePageIndex := 0;
@@ -405,7 +462,7 @@ begin
   if not Finit then
     exit;
   GridPropsToContext;
-    LPrettyOk := false;
+  LPrettyOk := false;
   try
     memoPrettyPrint.Lines.Text := Sempare.Template.Template.PrettyPrint(FTemplate);
     LPrettyOk := true;
