@@ -1,5 +1,6 @@
 program Sempare.Template.RCGenerator;
 
+{$I 'Sempare.Template.Compiler.inc'}
 {$APPTYPE CONSOLE}
 {$R *.res}
 
@@ -59,12 +60,13 @@ type
   TData = record
     Files: TList<string>;
   end;
+  TUseStream = {$IFDEF SUPPORT_BUFFERED_STREAM}TBufferedFileStream{$ELSE}TFileStream{$ENDIF};
 var
-  LStream: TBufferedFileStream;
+  LStream: TUseStream;
   LData: TData;
 begin
   LData.Files := AFiles;
-  LStream := TBufferedFileStream.Create(AFilename, fmCreate);
+  LStream := TUseStream.Create(AFilename, fmCreate);
   try
     TTemplateRegistry.Instance.Eval(LStream, 'sempare_template_rcgenerator_tpl', LData)
   finally
@@ -84,6 +86,7 @@ var
   LExt: TList<string>;
   LFiles: TList<string>;
   i: integer;
+  LLoadStrategy : TTemplateLoadStrategy;
 begin
   if ParamCount < 2 then
   begin
@@ -101,7 +104,8 @@ begin
   LFiles := nil;
   LExt := nil;
 
-  TTemplateRegistry.Instance.LoadStrategy := [tlsLoadResource];
+  LLoadStrategy := [tlsLoadResource];
+  TTemplateRegistry.Instance.LoadStrategy := LLoadStrategy;
   TTemplateRegistry.Instance.Context.Functions.AddFunctions(THelperClass);
 
   try

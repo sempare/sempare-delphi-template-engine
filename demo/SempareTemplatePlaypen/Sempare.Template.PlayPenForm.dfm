@@ -430,7 +430,6 @@ object FormTemplateEnginePlaypen: TFormTemplateEnginePlaypen
           Height = 225
           Align = alClient
           TabOrder = 0
-          SelectedEngine = EdgeIfAvailable
           ExplicitWidth = 655
           ExplicitHeight = 224
           ControlData = {
