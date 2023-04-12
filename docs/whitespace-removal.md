@@ -4,24 +4,13 @@ Copyright (c) 2019-2023 [Sempare Limited](http://www.sempare.ltd)
 
 ## Whitespace Removal
 
-v1.7.0 introduces some new concepts is still experimental and will change slightly. The new behaviour that will be provided in an v1.7.1 is described in the 'general notes' below.
+Removing whitespace is a tricky problem in templates. In the template engine, attempts have been made to address this in a number of ways.
 
-Removing whitespace is a tricky problem in templates. In the template engine, attempts have been made to address this in a number of ways. 
+There are statements such as __ignorenl__ and __ignorews__ which allow for new lines and whitespaces to be stripped respectively. 
 
+Further, on the context, there are various options: __eoStripRecurringNewlines__, __eoTrimLines__, __eoStripRecurringSpaces__ and __eoConvertTabsToSpaces__.
 
-
-
-     1          2
-    <% if a = 1 -%>
-       a
-       b
-    <% end %>
-    
-    
-2... when a newline is reached, action is applied to everything to the left
-1... from the newline, the action is applied
-    
-    
+Below are some other ways in which hints can be provided to help trip whitespace and newlines.
 
 
 ### Using script tag hints
@@ -33,7 +22,6 @@ Scripts start with <% and close with %>. These tags may have additional hints to
 | - | Removes whitespace only.  |
 | + | Removes whitespace as well as a newline, but leaves one space.  |
 | * | Removes whitespace as well as a newline.  |
-| _ | Remove only indent level |
 
 #### Using -
 
@@ -117,7 +105,6 @@ This is important to appreciate especially when dealing with looping.
 
 - If you want to remove a script block from the output, use <%- *%>
 - Use the template engine demo to play to see how it behaves.
-- In v1.7.1, the basics described above will remain, however, in the case of script tags that have an end, the stripping action hints will be applied across all lines in the contained block.
 
 e.g.
 ```
@@ -126,7 +113,7 @@ e.g.
 ••••<% end %>••••<NL>
 ```
 
-The above example illustrates what we will be doing in an upcoming release. Rather than having to apply the hinting at each level, the hinting will
+The above example illustrates what happens in a script block. Rather than having to apply the hinting at each level, the hinting will
 be applied to all lines within the block.
 
 Thus the above would result in the following if the cond is true:
