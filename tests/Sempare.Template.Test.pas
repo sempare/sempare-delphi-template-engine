@@ -232,7 +232,7 @@ begin
   Assert.AreEqual(LString, LResult);
 
   LString := '<% ignorenl %>' + LString + '<%end%>';
-  LResult := Template.Eval(LString, [eoAllowIgnoreNL]);
+  LResult := Template.Eval(LString);
   Assert.AreEqual('hello world', LResult);
 end;
 
@@ -261,7 +261,7 @@ begin
   Assert.AreEqual(LString, LResult);
 
   LString := '<% ignorenl %>' + LString + '<%end%>';
-  LResult := Template.Eval(LString, [eoAllowIgnoreNL]);
+  LResult := Template.Eval(LString, []);
   Assert.AreEqual('<table><tr><td>col1</td><td>col2</td></tr></table>', LResult);
 end;
 
