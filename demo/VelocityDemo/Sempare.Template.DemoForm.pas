@@ -340,7 +340,11 @@ end;
 
 procedure TFormRealTime.cbShowWhitespaceClick(Sender: TObject);
 begin
-  SetOption(cbShowWhitespace.Checked, eoShowWhitespace);
+  if cbShowWhitespace.Checked then
+    FContext.WhitespaceChar := #183
+  else
+    FContext.WhitespaceChar := ' ';
+  Process;
 end;
 
 procedure TFormRealTime.FormCreate(Sender: TObject);
