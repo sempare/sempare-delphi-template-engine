@@ -71,6 +71,8 @@ type
     procedure TestIfDict;
     [Test{$IFNDEF SEMPARE_TEMPLATE_FIREDAC}, Ignore {$ENDIF}]
     procedure TestIfDataSet;
+    [Test]
+    procedure TestElIf2;
   end;
 
 implementation
@@ -300,6 +302,24 @@ begin
   r.other := false;
   Assert.AreEqual('three', trim(Template.Eval(T, r)));
 
+end;
+
+procedure TTestTemplateIf.TestElIf2;
+var
+  LTemplate: ITemplate;
+begin
+  LTemplate := Template.parse('<% i := num(_)%>' + //
+    '<% if i = 42 %>42' + //
+    '<% elif i = 43 %>43' + //
+    '<% elif i = 44 %>44' + //
+    '<% else %>other' + //
+    '<% end %>');
+  Assert.AreEqual('other', Template.Eval(LTemplate, 1));
+  Assert.AreEqual('other', Template.Eval(LTemplate, 41));
+  Assert.AreEqual('42', Template.Eval(LTemplate, 42));
+  Assert.AreEqual('43', Template.Eval(LTemplate, 43));
+  Assert.AreEqual('44', Template.Eval(LTemplate, 44));
+  Assert.AreEqual('other', Template.Eval(LTemplate, 45));
 end;
 
 initialization

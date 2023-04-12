@@ -54,7 +54,6 @@ type
   TLoopOption = (coContinue, coBreak);
   TLoopOptions = set of TLoopOption;
 
-
   TEvaluationTemplateVisitor = class(TBaseTemplateVisitor, IEvaluationTemplateVisitor)
   private
     FStopWatch: TStopWatch;
@@ -372,6 +371,7 @@ begin
     if not EvalExprAsBoolean(AStmt.Condition) or (coBreak in FLoopOptions) then
       break;
     CheckRunTime(AStmt);
+    FStackFrames.peek[LOOP_IDX_NAME] := i;
     if (LOffset = -1) or (i >= LOffset) then
     begin
       if LFirst then
@@ -835,6 +835,8 @@ var
   LVariable: string;
   LValue: TValue;
 begin
+  if HasBreakOrContinue then
+    exit;
   LVariable := AStmt.variable;
   LValue := EvalExpr(AStmt.Expr);
   FStackFrames.peek[LVariable] := LValue;
@@ -1080,6 +1082,8 @@ var
   LInputType: string;
   LIndex: integer;
 begin
+  if HasBreakOrContinue then
+    exit;
   LInputType := GRttiContext.GetType(FStackFrames.peek['_'].TypeInfo).Name.ToLower;
   LExprs := ExprListArgs(AStmt.exprlist);
   if length(LExprs) = 0 then
@@ -1109,18 +1113,25 @@ procedure TEvaluationTemplateVisitor.Visit(const AStmt: ICycleStmt);
 var
   LStackFrame: TStackFrame;
   LValue: TValue;
+  LInt: int64;
 begin
+  if HasBreakOrContinue then
+    exit;
   try
     LStackFrame := FStackFrames.peek;
     LValue := LStackFrame[LOOP_IDX_NAME];
   except
     RaiseErrorRes(AStmt, @SCycleStatementMustBeInALoop);
   end;
-  FStreamWriter.Write(EvalExprAsString(AStmt.List[LValue.AsInt64 mod AStmt.List.Count]));
+  LInt := AsInt(LValue, FContext);
+  LInt := LInt mod AStmt.List.Count;
+  FStreamWriter.Write(EvalExprAsString(AStmt.List[LInt]));
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AStmt: IDebugStmt);
 begin
+  if HasBreakOrContinue then
+    exit;
   try
     AcceptVisitor(AStmt.Stmt, self);
   except
@@ -1138,6 +1149,8 @@ end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AStmt: ICompositeStmt);
 begin
+  if HasBreakOrContinue then
+    exit;
   AcceptVisitor(AStmt.FirstStmt, self);
   AcceptVisitor(AStmt.SecondStmt, self);
 end;
@@ -1205,4 +1218,5 @@ begin
     LBlocks.Free;
   end;
 end;
+
 end.

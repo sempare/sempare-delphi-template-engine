@@ -543,7 +543,7 @@ type
     procedure PopStripAction;
 
     function PushContainer(const ABeforeNLStripActions, AAfterNLStripActions: TStripActionSet): ITemplate;
-    procedure PopContainer;
+    function PopContainer: ITemplate;
 
     function CurrentContainer: ITemplate;
     function LookaheadValue: string;
@@ -565,7 +565,7 @@ type
     // helper rules
     function RuleIgnoreOption(const ASymbol: TTemplateSymbol; const AOption: TParserOption): IStmt;
     function RuleExprList(const AEndToken: TTemplateSymbol = vsCloseRoundBracket): IExprList;
-    function RuleElIfStmt: IStmt;
+    function RuleElIfStmt(out AFalseContainer: ITemplate): IStmt;
     function RulePrintStmtVariable(AExpr: IExpr): IStmt; overload;
     function RuleAssignStmt(ASymbol: IExpr): IStmt;
     function RuleEndStmt: IStmt;
@@ -889,6 +889,8 @@ var
   LConditionalExpr: IExpr;
   LTrueContainer: ITemplate;
   LFalseContainer: ITemplate;
+  LLastContainer: ITemplate;
+  LLastElifContainer: ITemplate;
   LOptions: IPreserveValue<TParserOptions>;
   LSymbol: ITemplateSymbol;
   LBeforeNLStripActions: TStripActionSet;
@@ -909,12 +911,16 @@ begin
   RuleStmts(LTrueContainer, [vsELIF, vsElse, vsEND]);
 
   PopContainer;
+
   LFalseContainer := PushContainer(LBeforeNLStripActions, LAfterNLStripActions);
+  LLastContainer := LFalseContainer;
+
   if FLookahead.Token = vsELIF then
   begin
     while (FLookahead.Token = vsELIF) do
     begin
-      AddStmt(LFalseContainer, RuleElIfStmt());
+      AddStmt(LLastContainer, RuleElIfStmt(LLastElifContainer));
+      LLastContainer := LLastElifContainer;
     end;
   end
   else if FLookahead.Token = vsElse then
@@ -932,10 +938,10 @@ begin
     LBeforeNLStripActions := LEndStripActions;
 
   try
-    if LTrueContainer.Count = 0 then
+    if assigned(LTrueContainer) and (LTrueContainer.Count = 0) then
       LTrueContainer := nil;
 
-    if LFalseContainer.Count = 0 then
+    if assigned(LFalseContainer) and (LFalseContainer.Count = 0) then
       LFalseContainer := nil;
 
     if not assigned(LTrueContainer) and not assigned(LFalseContainer) then
@@ -1516,7 +1522,7 @@ begin
   exit(WrapWithStripStmt(result, LBeforeNLStripActions, LAfterNLStripActions));
 end;
 
-function TTemplateParser.RuleElIfStmt: IStmt;
+function TTemplateParser.RuleElIfStmt(out AFalseContainer: ITemplate): IStmt;
 var
   LConditionExpr: IExpr;
   LTrueContainer: ITemplate;
@@ -1543,25 +1549,20 @@ begin
   RuleStmts(LTrueContainer, [vsELIF, vsElse, vsEND]);
 
   PopContainer;
+
+  LFalseContainer := PushContainer(LBeforeNLStripActions, LAfterNLStripActions);
+
   if FLookahead.Token = vsElse then
   begin
     Match(vsElse);
     MatchEndOfScript;
-    LFalseContainer := PushContainer(LBeforeNLStripActions, LAfterNLStripActions);
 
     RuleStmts(LFalseContainer, [vsEND, vsELIF]);
-
-    PopContainer;
   end;
+  PopContainer;
 
-  if LTrueContainer.Count = 0 then
-    LTrueContainer := nil;
-
-  if LFalseContainer.Count = 0 then
-    LFalseContainer := nil;
-
-  if not assigned(LTrueContainer) and not assigned(LFalseContainer) then
-    exit(nil);
+  // don't optimise to remove containers as we need them potentially for the elif
+  AFalseContainer := LFalseContainer;
 
   try
     if (eoEvalEarly in FContext.Options) and IsValue(LConditionExpr) then
@@ -2294,19 +2295,17 @@ begin
     FContext.PrettyPrintOutput(Template.PrettyPrint(result));
 end;
 
-procedure TTemplateParser.PopContainer;
-var
-  LTemplate: ITemplate;
+function TTemplateParser.PopContainer: ITemplate;
 begin
-  LTemplate := FContainerStack.pop;
-  AddStripStmt(LTemplate, FStripActionsStack.peek.AfterNLStripActions, sdLeft);
+  result := FContainerStack.pop;
+  AddStripStmt(result, FStripActionsStack.peek.AfterNLStripActions, sdLeft);
   PopStripAction();
 
   if (eoFlattenTemplate in FContext.Options) or (eoOptimiseTemplate in FContext.Options) then
-    LTemplate.FlattenTemplate;
+    result.FlattenTemplate;
 
   if eoOptimiseTemplate in FContext.Options then
-    LTemplate.OptimiseTemplate(FOptions);
+    result.OptimiseTemplate(FOptions);
 end;
 
 procedure TTemplateParser.PopStripAction;

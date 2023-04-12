@@ -14,24 +14,29 @@ Copyright (c) 2019-2023 [Sempare Limited](http://www.sempare.ltd)
 - [Reusing Templates](#Reusing_Templates)
 - [Dynamic Template Resolution](#Dynamic_Template_Resolution)
 - [Ignoring Whitespace With Multi-Line Statements](#Ignoring_Whitespace_With_Multi_Line_Statements)
+- [Embed exceptions in output](#Embed_exceptions_in_output)
 - [Options](#Options)
 - [Decimal Separators](#Decimal_Separators)
 - [Value Separators](#Value_Separators)
+- [Customise Whitespace](#Custom_Whitespace)
+- [Customise Newline](#Custom_Newline)
 
-# Overview
+<a name="Overview"><h3>Overview</h3></a>
 
 Configuration is done through the context. If you want to rely on the defaults, many of the eval methods don't require a context to be explictly provided and they will create create a default context for use.
 ```
     var ctx := Template.Context();
 ```
-### Text encoding
+
+<a name="Text_encoding"><h3>Text encoding</h3></a>
 
 The default default encoding is ASCII. You can change this to UTF8 as follows:
 ```
 var ctx := Template.Context;
 ctx.Encoding := TEncoding.UTF8;
 ```
-### HTML Variable Encoding
+
+<a name="HTML_Variable_Encoding"><h3>HTML Variable Encoding</h3></a>
 Call UseHtmlVariableEncoder on a context:
 ```
 ctx.UseHtmlVariableEncoder;
@@ -52,20 +57,25 @@ begin
 end;
 ```
 
-### Custom Variable Encoding
+<a name="Custom_Variable_Encoding"><h3>Custom Variable Encoding</h3></a>
+
 Above was an example of HTML encoding. You can create custom encoding mechanism by setting VariableEncoder on a context.
 
 ```
 type
   TTemplateEncodeFunction = reference to function(const AArg : string): string;
 ```
-### Setting a maximum runtime
+
+<a name="Setting_a_maximum_runtime"><h3>Setting a maximum runtime</h3></a>
+
 ```
   var ctx := Template.Context();
   ctx.MaxRunTimeMs = 5;
   // ...
 ```
-### Customise the start and end script tokens
+
+<a name="Customise_the_start_and_end_script_tokens"><h3>Customise the start and end script tokens</h3></a>
+
 You may want to change from using '<%' and '%>' to something else by updating the _StartToken_ and _EndToken_ on the context.
 ```
 begin
@@ -75,20 +85,25 @@ begin
   Assert.IsEqual('hello', Template.Eval(ctx, '{{ if true }}hello{{else}}bye{{end}}'));
 end;
 ```
-### Custom Variables
+
+<a name="Custom_Variables"><h3>Custom Variables</h3></a>
+
 If there are variables that should be set by default when using a template, they can
 be propulated in the context as illustrated:
 ```
 ctx.Variable['company'] := 'Sempare Limited'; 
 ```
-### Reusing Templates
+
+<a name="Reusing_Templates"><h3>Reusing Templates</h3></a>
+
 Using the _include()_ statement, you can reference precompiled templates that are registered on the context:
 
 ```
 ctx.RegisterTemplate('header', Template.Parse('<% title %>')) 
 ctx.RegisterTemplate('footer', Template.Parse('Copyright (c) <% year %> <% company %>')) 
 ```
-### Dynamic Template Resolution
+
+<a name="Dynamic_Template_Resolution"><h3>Dynamic Template Resolution</h3></a>
 
 Templates don't need to be located in a single template. They can also be resolved dynamically using the TemplateResolver method on the context.
 Templates could be loaded from file, resources or urls are per your requirements.
@@ -100,7 +115,7 @@ begin
 end;
 ```
 
-### Ignoring Whitespace With Multi-Line Statements
+<a name="Ignoring_Whitespace_With_Multi_Line_Statements"><h3>Ignoring Whitespace With Multi-Line Statements</h3></a>
 
 You may have a template something like:
 ```
@@ -128,7 +143,7 @@ begin
 end;
 ```
 
-### Embed exceptions in output
+<a name="Embed_exceptions_in_output"><h3>Embed exceptions in output</h3></a>
 
 Exceptions are normally raised. However, they can be logged in the output with the following configuration.
 ```
@@ -136,7 +151,7 @@ var ctx := Template.Context([eoEmbedException]);
 ctx.DebugErrorFormat := '<b>Error:</b> <i>%s</i>';
 ```
 
-### Options
+<a name="Options"><h3>Options</h3></a>
 
 The template engine allows for the following options:
 - eoEmbedException
@@ -159,12 +174,10 @@ The template engine allows for the following options:
   - strip newlines that recurr
 - eoTrimLines
   - trim whitespace from start and end of lines
-- eoStripEmptyLines
-  - strip any empty lines
 - eoPrettyPrint
   - use to review the parsed structure. output is to the console.
 
-### Decimal Separators
+<a name="Decimal_Separators"><h3>Decimal Separators</h3></a>
 
 Numbers are commonly formatted using comma and decimal point. e.g. 123.45
 
@@ -174,7 +187,7 @@ In order to accomodate this, the context configuration has a DecimalSeparator. T
 
 The DecimalSeparator may be set to '.' or ','. 
 
-### Value Separators
+<a name="Value_Separators"><h3>Value Separators</h3></a>
 
 The ValueSeparator may be set to ',' or ';'. It must be explicity set.
 
@@ -189,4 +202,25 @@ When the DecimalSeparator is ',', then the ValueSeparator becomes ';' as illustr
 However, the following does work:
 ```
 <% Add(1,23 , 4,56) %>
+```
+
+<a name="Custom_Whitespace"><h3>Custom Whitespace</h3></a>
+
+You can provide overrides as required. e.g.
+
+```
+var ctx := Template.Context();
+ctx.NewLine := #13#10;
+ctx.NewLine := #10;
+ctx.NewLine := '<br>'#13#10;
+```
+
+<a name="Custom_Newline"><h3>Custom Newline</h3></a>
+
+You can provide overrides as required. e.g.
+
+```
+var ctx := Template.Context();
+ctx.WhitespaceChar := #32;
+ctx.WhitespaceChar := #183;
 ```

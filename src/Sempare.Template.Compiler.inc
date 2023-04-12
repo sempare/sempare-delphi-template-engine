@@ -34,7 +34,7 @@
 // -----------------------------------------------
 
 // Uncomment the following to confirm the license conditions
-{$DEFINE SEMPARE_TEMPLATE_CONFIRM_LICENSE}
+// {$DEFINE SEMPARE_TEMPLATE_CONFIRM_LICENSE}
  
 // -----------------------------------------------
 {$IF CompilerVersion >= 25} // from XE4 onwards

@@ -188,7 +188,7 @@ procedure TTestNewLineOption.TestIgnoreWS;
 begin
   Assert.AreEqual(#13#10, Template.Eval('<% ignorews %>    '#13#10'<%end%>'));
   Assert.AreEqual(' '#13#10' ', Template.Eval(' <% ignorews %>    '#13#10'<%end%> '));
-  Assert.AreEqual('  ', Template.Eval(' <% ignorenl ; ignorews %>    '#13#10'<% end; end%> '));
+  Assert.AreEqual('  ', Template.Eval(' <% ignorenl ; ignorews %>    '#13#10'<% end; end %> '));
 end;
 
 procedure TTestNewLineOption.TestNewLine;

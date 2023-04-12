@@ -31,6 +31,7 @@ Open Source: https://github.com/sempare/sempare-delphi-template-engine
   - [Expressions](./docs/expressions.md)
   - [Builtin functions](./docs/builtin-functions.md)
   - [Builtin variables](./docs/builtin-variables.md)
+  - [Comments](./docs/comments.md)
 - [Template Registry](./docs/template-registry.md)
 - Customisation
   - [Custom functions](./docs/custom-functions.md)
@@ -100,10 +101,7 @@ There are a few ways to get started quickly.
    - [WebBroker](https://docwiki.embarcadero.com/RADStudio/Alexandria/en/Creating_WebBroker_Applications) [Demo](https://github.com/sempare/sempare-delphi-template-engine/tree/main/demo/WebBrokerStandalone)
    - [Horse](https://github.com/hashload/horse) [Demo](https://github.com/sempare/sempare-delphi-template-engine-horse-demo)
 
-[Try the demo](./demo/VelocityDemo/README.md) if you want to dive in quick and play with the template engine.
-
-Quick tutorials on [You Tube](https://www.youtube.com/playlist?list=PLjjz4SuVScHreGKEInvrjPtLPMBU6l130). 
-The playlist has a few videos that are very short (most less than a minute - blink and they are done). You can drag the slider in the videos if you miss something or refer to the rest of the documentation. 
+[Try the demo](./demo//SempareTemplatePlaypen/README.md) if you want to dive in quick and play with the template engine.
 
 <a name="Features"><h2>Features</h3></a>
 - statements
@@ -194,11 +192,11 @@ Open __Sempare.Template.Engine.Group.groupproj__ which will include:
      
 - __Sempare.Template.Tester.dproj__
 
-   160+ unit tests
+   180+ unit tests
 
-- __demo\VelocityDemo\Sempare.Template.Demo.dproj__
+- __demo\SempareTemplatePlaypen\Sempare.TemplateEngine.Playpen.dproj__
 
-   The velocity real-time demo.   
+   The Sempare Template Playpen demo which provides a rich experience for testing the various template language features.
    
 <a name="Feedback"><h2>Feedback</h3></a>
 

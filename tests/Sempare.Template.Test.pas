@@ -118,6 +118,9 @@ type
 
     [Test]
     procedure TestDecimalEncodingErrorWithListsDefaultValueSeparator;
+
+    [Test]
+    procedure TestVersionPresent;
   end;
 
 type
@@ -328,7 +331,7 @@ var
   LTemplate: ITemplate;
 begin
   // main thing is that we have no exception here!
-  LTemplate := Template.ParseFile('..\..\demo\VelocityDemo\velocity\international.velocity');
+  LTemplate := Template.ParseFile('..\..\demo\SempareTemplatePlaypen\templates\international.tpl');
   Assert.IsNotNull(LTemplate);
 end;
 
@@ -563,6 +566,11 @@ begin
     begin // expects  abc
       Assert.AreEqual('', Template.Eval(LCtx, '<% abc %>'));
     end);
+end;
+
+procedure TTestTemplate.TestVersionPresent;
+begin
+  Assert.IsNotEmpty(Template.Version);
 end;
 
 initialization
