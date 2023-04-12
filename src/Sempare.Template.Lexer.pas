@@ -639,12 +639,12 @@ begin
       function(const c: char; out aResult: string): Boolean
       begin
         if (eoConvertTabsToSpaces in FOptions) and (c = #9) then
-          aResult := ' '
+          aResult := FContext.WhitespaceChar
         else
           aResult := c;
 
-        if eoShowWhitespace in FOptions then
-          aResult := #183;
+        if c = #32 then
+          aResult := FContext.WhitespaceChar;
 
         exit(True);
       end,
