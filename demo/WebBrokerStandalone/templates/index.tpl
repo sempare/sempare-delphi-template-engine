@@ -16,7 +16,7 @@
                 <p><b>This</b> is the <b><% include('resolve_current_demo') %> Demo</b>.<p>
                 <p>Also have a look at other demos, such as:
                         <% for demo of _ %>
-                                <li><a href="<% demo.FrameworkUrl %>"><% demo.Name %></a> <a target="_blank" href="<% demo.Url %>">Demo</a><% if demo.Current %> <b>(Current)</b><% end %>
+                                <li><a target="_blank" href="<% demo.FrameworkUrl %>"><% demo.Name %></a> <a target="_blank" href="<% demo.Url %>">Demo</a><% if demo.Current %> <b>(Current)</b><% end %>
                         <% onbegin %>
                             <ul>
                         <% onend %>

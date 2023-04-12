@@ -34,6 +34,7 @@ unit Sempare.Template.Util;
 
 interface
 
+{$I 'Sempare.Template.Compiler.inc'}
 // This is copied from Sempare.Boot.Common.PreserveValue to make standalone.
 
 type
@@ -77,12 +78,12 @@ function GetTestTimeTollerance(const ANativeTime, AHypervisorTime: double): doub
 
 implementation
 
-{$IF defined(WIN32) or defined(WIN64)}
+{$IFDEF MSWINDOWS}
 
 uses
   SysUtils,
   WinAPI.Windows,
-{$IFDEF SUPPORT_WIN_REGISTRY}Win.{$ENDIF}Registry;
+{$IFDEF SUPPORT_WIN_REGISTRY}System.Win.Registry{$ELSE}Registry{$ENDIF};
 
 var
   GVmwareResolved: boolean;
@@ -183,7 +184,7 @@ end;
 
 initialization
 
-{$IF defined(WIN32) or defined(WIN64)}
+{$IFDEF MSWINDOWS}
   GVmwareResolved := False;
 GIsUnderVmware := IsRunningUnderVMWare;
 {$ENDIF}

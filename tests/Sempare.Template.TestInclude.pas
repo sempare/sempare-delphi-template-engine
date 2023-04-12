@@ -93,6 +93,9 @@ type
     [Test]
     procedure TestNestedBody2;
 
+    [Test]
+    procedure TestExtractBlocks;
+
   end;
 
 implementation
@@ -828,6 +831,24 @@ begin
 
   Assert.AreEqual('          hello123     hello', Template.Eval(LTemplate, 'hello123'));
   Assert.AreEqual('          hello456     hello', Template.Eval(LTemplate, 'hello456'));
+end;
+
+procedure TTestTemplateInclude.TestExtractBlocks;
+var
+  LBlocks: TDictionary<string, ITemplate>;
+  LTemplate: ITemplate;
+begin
+  LTemplate := Template.parse('<% block "content" %>i am content<% end %><% block "footer" %>i am footer<% end %>');
+  LBlocks := TDictionary<string, ITemplate>.create;
+  try
+    Template.ExtractBlocks(LTemplate, LBlocks);
+    Assert.IsTrue(LBlocks.ContainsKey('content'));
+    Assert.IsTrue(LBlocks.ContainsKey('footer'));
+    Assert.AreEqual('i am content', Template.Eval(LBlocks['content']));
+    Assert.AreEqual('i am footer', Template.Eval(LBlocks['footer']));
+  finally
+    LBlocks.Free;
+  end;
 end;
 
 initialization

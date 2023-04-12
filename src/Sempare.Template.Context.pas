@@ -77,7 +77,6 @@ type
     eoRaiseErrorWhenVariableNotFound, //
     eoAllowIgnoreNL, //
     eoStripEmptyLines, //
-    eoShowWhitespace, //
     eoFlattenTemplate, //
     eoOptimiseTemplate //
     );
@@ -160,8 +159,12 @@ type
     procedure SetPrettyPrintOutput(const APrettyPrintOutput: TPrettyPrintOutput);
     function GetPrettyPrintOutput: TPrettyPrintOutput;
 
+    function GetWhitespace: char;
+    procedure SetWhiteSpace(const AWS: char);
+
     property Functions: ITemplateFunctions read GetFunctions write SetFunctions;
     property NewLine: string read GetNewLine write SetNewLine;
+    property WhitespaceChar: char read GetWhitespace write SetWhiteSpace;
     property TemplateResolver: TTemplateResolver read GetTemplateResolver write SetTemplateResolver;
     property MaxRunTimeMs: integer read GetMaxRunTimeMs write SetMaxRunTimeMs;
     property VariableEncoder: TTemplateEncodeFunction read GetVariableEncoder write SetVariableEncoder;
@@ -260,6 +263,7 @@ type
     FFormatSettings: TFormatSettings;
     FDebugFormat: string;
     FPrettyPrintOutput: TPrettyPrintOutput;
+    FWhiteSpace: char;
   public
     constructor Create(const AOptions: TTemplateEvaluationOptions);
     destructor Destroy; override;
@@ -334,6 +338,10 @@ type
 
     function GetDebugErrorFormat: string;
     procedure SetDebugErrorFormat(const AFormat: string);
+
+    function GetWhitespace: char;
+    procedure SetWhiteSpace(const AWS: char);
+
   end;
 
 function CreateTemplateContext(const AOptions: TTemplateEvaluationOptions): ITemplateContext;
@@ -388,6 +396,7 @@ begin
   FVariables.Items['NL'] := #10;
   FVariables.Items['CRNL'] := #13#10;
   FVariables.Items['TAB'] := #9;
+  FWhiteSpace := #32;
   FFormatSettings := TFormatSettings.Create;
   SetDecimalSeparator(FFormatSettings.DecimalSeparator);
   FDebugFormat := FNewLine + FNewLine + 'ERROR: %s' + FNewLine + FNewLine;
@@ -493,6 +502,11 @@ end;
 function TTemplateContext.GetVariables: ITemplateVariables;
 begin
   exit(FVariables);
+end;
+
+function TTemplateContext.GetWhitespace: char;
+begin
+  exit(FWhiteSpace);
 end;
 
 procedure TTemplateContext.RemoveBlock(const AName: string);
@@ -622,6 +636,11 @@ end;
 procedure TTemplateContext.SetVariableEncoder(const AEncoder: TTemplateEncodeFunction);
 begin
   FVariableEncoder := AEncoder;
+end;
+
+procedure TTemplateContext.SetWhiteSpace(const AWS: char);
+begin
+  FWhiteSpace := AWS;
 end;
 
 procedure TTemplateContext.StartEvaluation;

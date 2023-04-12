@@ -83,10 +83,6 @@ type
     procedure SetPos(const Apos: integer);
     function GetItem(const AOffset: integer): IStmt;
     function GetCount: integer;
-    function IsPrintExpr(const AStmt: IStmt; const ASymExpr: TGuid): boolean;
-    function IsPrintNewlineExpr(const AStmt: IStmt): boolean;
-    function IsPrintWhitespaceExpr(const AStmt: IStmt): boolean;
-    function IsStripStmt(const AStmt: IStmt; out AStripStmt: IStripStmt): boolean;
 
     procedure Add(const AItem: IStmt; const AAddLocation: TAddLocation = alLast);
     function GetLastItem: IStmt;
@@ -543,8 +539,6 @@ type
     FAfterNLStripActions: TStripActionSet;
     FStripActionsStack: TStack<TStripActionStackItem>;
 
-    function IsNLorWSStmt(const AStmt: IStmt; out AIsWS: boolean): boolean;
-
     procedure PushStripAction(const AContainer: ITemplate; const ABeforeNLStripActions: TStripActionSet; const AAfterNLStripActions: TStripActionSet);
     procedure PopStripAction;
 
@@ -552,7 +546,7 @@ type
     procedure PopContainer;
 
     function CurrentContainer: ITemplate;
-    function lookaheadValue: string;
+    function LookaheadValue: string;
     function MatchValues(const ASymbols: TTemplateSymbolSet; out ASymbol: TTemplateSymbol): string;
     function MatchValue(const ASymbol: TTemplateSymbol): string;
     procedure Match(ASymbol: ITemplateSymbol); overload; inline;
@@ -613,6 +607,90 @@ type
     destructor Destroy; override;
     function Parse(const AStream: TStream; const AManagedStream: boolean): ITemplate;
   end;
+
+function IsPrintNLOrWhitespaceExpr(const AStmt: IStmt; out ANL: boolean): boolean;
+var
+  LPrintStmt: IPrintStmt;
+  LExpr: IExpr;
+begin
+  if not supports(AStmt, IPrintStmt, LPrintStmt) then
+    exit(false);
+
+  LExpr := LPrintStmt.Expr;
+  if supports(LExpr, INewLineExpr) then
+  begin
+    ANL := true;
+    exit(true);
+  end;
+  if supports(LExpr, IWhitespaceExpr) then
+  begin
+    ANL := false;
+    exit(true);
+  end;
+  exit(false);
+end;
+
+function IsPrintTextExpr(const AStmt: IStmt; out AStr: string): boolean;
+var
+  LPrintStmt: IPrintStmt;
+  LVal: IValueExpr;
+begin
+  if not supports(AStmt, IPrintStmt, LPrintStmt) then
+    exit(false);
+  if supports(LPrintStmt.Expr, IValueExpr, LVal) and isStrLike(LVal.Value) then
+  begin
+    AStr := LVal.Value.asString;
+    exit(true);
+  end;
+  exit(false);
+end;
+
+function IsStripStmt(const AStmt: IStmt; out AStripStmt: IStripStmt): boolean;
+begin
+  exit(supports(AStmt, IStripStmt, AStripStmt));
+end;
+
+function IsAny(const AStmt: IStmt; const AGuids: array of TGuid): boolean;
+var
+  LGuid: TGuid;
+begin
+  for LGuid in AGuids do
+  begin
+    if supports(AStmt, LGuid) then
+      exit(true);
+  end;
+  exit(false);
+end;
+
+function IsPrintExpr(const AStmt: IStmt; const ASymExpr: TGuid): boolean;
+var
+  LPrintStmt: IPrintStmt;
+begin
+  if not supports(AStmt, IPrintStmt, LPrintStmt) then
+    exit(false);
+
+  exit(supports(LPrintStmt.Expr, ASymExpr));
+end;
+
+function IsPrintWhitespaceExpr(const AStmt: IStmt): boolean;
+begin
+  exit(IsPrintExpr(AStmt, IWhitespaceExpr));
+end;
+
+function IsPrintNewlineExpr(const AStmt: IStmt): boolean;
+begin
+  exit(IsPrintExpr(AStmt, INewLineExpr));
+end;
+
+function IsNLorWSStmt(const AStmt: IStmt; out AIsWS: boolean): boolean;
+var
+  LPrintStmt: IPrintStmt;
+begin
+  if not supports(AStmt, IPrintStmt, LPrintStmt) then
+    exit(false);
+  AIsWS := supports(LPrintStmt.Expr, IWhitespaceExpr);
+  exit(AIsWS or supports(LPrintStmt.Expr, INewLineExpr));
+end;
 
 function Flatten(const AStmts: TList<IStmt>): TArray<IStmt>;
 var
@@ -732,16 +810,6 @@ begin
     exit(vsSemiColon)
   else
     exit(vsComma);
-end;
-
-function TTemplateParser.IsNLorWSStmt(const AStmt: IStmt; out AIsWS: boolean): boolean;
-var
-  LPrintStmt: IPrintStmt;
-begin
-  if not supports(AStmt, IPrintStmt, LPrintStmt) then
-    exit(false);
-  AIsWS := supports(LPrintStmt.Expr, IWhitespaceExpr);
-  exit(AIsWS or supports(LPrintStmt.Expr, INewLineExpr));
 end;
 
 procedure TTemplateParser.MatchClosingBracket(const AExpect: TTemplateSymbol);
@@ -2105,7 +2173,7 @@ begin
   inherited;
 end;
 
-function TTemplateParser.lookaheadValue: string;
+function TTemplateParser.LookaheadValue: string;
 var
   val: ITemplateValueSymbol;
 begin
@@ -2175,7 +2243,7 @@ begin
   if FLookahead.Token in ASymbols then
   begin
     ASymbol := FLookahead.Token;
-    result := lookaheadValue;
+    result := LookaheadValue;
     FLookahead := FLexer.GetToken;
     exit;
   end;
@@ -2189,7 +2257,7 @@ begin
   LSymbol := FLookahead;
   if ASymbol = FLookahead.Token then
   begin
-    result := lookaheadValue;
+    result := LookaheadValue;
 
     FLookahead := FLexer.GetToken;
     exit;
@@ -2635,43 +2703,6 @@ begin
   exit(FPosition.pos);
 end;
 
-function TTemplate.IsPrintExpr(const AStmt: IStmt; const ASymExpr: TGuid): boolean;
-var
-  LPrintStmt: IPrintStmt;
-begin
-  if not supports(AStmt, IPrintStmt, LPrintStmt) then
-    exit(false);
-
-  exit(supports(LPrintStmt.Expr, ASymExpr));
-end;
-
-function TTemplate.IsPrintNewlineExpr(const AStmt: IStmt): boolean;
-begin
-  exit(IsPrintExpr(AStmt, INewLineExpr));
-end;
-
-function TTemplate.IsPrintWhitespaceExpr(const AStmt: IStmt): boolean;
-begin
-  exit(IsPrintExpr(AStmt, IWhitespaceExpr));
-end;
-
-function TTemplate.IsStripStmt(const AStmt: IStmt; out AStripStmt: IStripStmt): boolean;
-begin
-  exit(supports(AStmt, IStripStmt, AStripStmt));
-end;
-
-function IsAny(const AStmt: IStmt; const AGuids: array of TGuid): boolean;
-var
-  LGuid: TGuid;
-begin
-  for LGuid in AGuids do
-  begin
-    if supports(AStmt, LGuid) then
-      exit(true);
-  end;
-  exit(false);
-end;
-
 procedure TTemplate.FlattenTemplate;
 var
   LStmt: IStmt;
@@ -2704,14 +2735,15 @@ var
   LReviewStmt: IStmt;
 
   function CanStrip(const AAction: TStripActionSet; const AStmt: IStmt): boolean;
+  var
+    LIsNL: boolean;
   begin
-    if IsPrintNewlineExpr(AStmt) then
+    if IsPrintNLOrWhitespaceExpr(AStmt, LIsNL) then
     begin
-      exit(saNL in AAction);
-    end;
-    if IsPrintWhitespaceExpr(AStmt) then
-    begin
-      exit(saWhitespace in AAction);
+      if LIsNL then
+        exit(saNL in AAction)
+      else
+        exit(saWhitespace in AAction);
     end;
     if supports(AStmt, IStripStmt) then
       exit(true);
@@ -2728,6 +2760,102 @@ var
       exit(nil);
     end;
   end;
+  procedure Scan(const ADelta: integer; const ATest: TPredicate<integer>);
+  begin
+    j := i + ADelta;
+    while ATest(j) do
+    begin
+      LReviewStmt := FArray[j];
+      if CanStrip(LScanStmt.Action, LReviewStmt) then
+      begin
+        FArray[j] := nil;
+      end
+      else
+        break;
+      j := j + ADelta;
+    end;
+    FArray[i] := KeepSpaceIfRequired(LScanStmt.Action);
+  end;
+
+  procedure ScanLeft;
+  begin
+    Scan(-1,
+      function(v: integer): boolean
+      begin
+        exit(v >= 0);
+      end);
+  end;
+  procedure ScanRight;
+  begin
+    Scan(1,
+      function(v: integer): boolean
+      begin
+        exit(v <= FArray.Count - 1);
+      end);
+  end;
+
+  procedure StripNilStmts;
+  var
+    LStmt: IStmt;
+  begin
+    LStmts.Clear;
+    for LStmt in FArray do
+    begin
+      if LStmt <> nil then
+        LStmts.Add(LStmt);
+    end;
+    FArray.Clear;
+    FArray.AddRange(LStmts);
+  end;
+
+  function JoinTextStmts: boolean;
+  var
+    LSB: TStringBuilder;
+    LStr: string;
+    LJoin: boolean;
+  begin
+    result := false;
+    LSB := TStringBuilder.Create;
+    try
+      i := 0;
+      while i <= FArray.Count - 1 do
+      begin
+        LStmt := FArray[i];
+        if IsPrintTextExpr(LStmt, LStr) then
+        begin
+          LSB.Clear;
+          LSB.append(LStr);
+          j := i + 1;
+          LJoin := false;
+          while j <= FArray.Count - 1 do
+          begin
+            LReviewStmt := FArray[j];
+            if IsPrintTextExpr(LReviewStmt, LStr) then
+            begin
+              LJoin := true;
+              result := true;
+              FArray[j] := nil;
+              LSB.append(LStr);
+            end
+            else
+            begin
+              break;
+            end;
+            inc(j);
+          end;
+          if LJoin then
+          begin
+            FArray[i] := TPrintStmt.Create(nil, TValueExpr.Create(nil, LSB.tostring));
+            i := j + 1;
+            continue;
+          end;
+        end;
+        inc(i);
+      end;
+    finally
+      LSB.Free;
+    end;
+  end;
 
 begin
   LStmts := TList<IStmt>.Create;
@@ -2740,49 +2868,16 @@ begin
       begin
         case LScanStmt.Direction of
           sdBeforeNewLine, sdLeft:
-            begin
-              j := i - 1;
-              while j >= 0 do
-              begin
-                LReviewStmt := FArray[j];
-                if CanStrip(LScanStmt.Action, LReviewStmt) then
-                begin
-                  FArray[j] := nil;
-                end
-                else
-                  break;
-                dec(j);
-              end;
-              FArray[i] := KeepSpaceIfRequired(LScanStmt.Action);
-            end;
+            ScanLeft;
           sdAfterNewLine, sdRight:
-            begin
-              j := i + 1;
-              while j <= FArray.Count - 1 do
-              begin
-                LReviewStmt := FArray[j];
-                if CanStrip(LScanStmt.Action, LReviewStmt) then
-                begin
-                  FArray[j] := nil;
-                end
-                else
-                  break;
-                inc(j);
-              end;
-              FArray[i] := KeepSpaceIfRequired(LScanStmt.Action);
-            end;
+            ScanRight;
         end;
       end;
       inc(i);
     end;
-    LStmts.Clear;
-    for LStmt in FArray do
-    begin
-      if LStmt <> nil then
-        LStmts.Add(LStmt);
-    end;
-    FArray.Clear;
-    FArray.AddRange(LStmts);
+    StripNilStmts;
+    if JoinTextStmts then
+      StripNilStmts;
   finally
     LStmts.Free;
   end;
