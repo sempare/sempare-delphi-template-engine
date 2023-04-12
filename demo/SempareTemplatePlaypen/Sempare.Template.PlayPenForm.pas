@@ -316,7 +316,8 @@ begin
     // or else it does not shutdown properly
     LActivePage := pcOutput.ActivePage;
     pcOutput.ActivePage := tsWebBrowser;
-    pcOutput.ActivePage := LActivePage;
+    if not cbHtml.Checked then
+      pcOutput.ActivePage := LActivePage;
   except
     on E: Exception do
       memoOutput.Lines.Text := E.Message;
