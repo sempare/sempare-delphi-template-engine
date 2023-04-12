@@ -105,11 +105,12 @@ type
   TTemplateRegistry = class
   strict private
     class var FTemplateRegistry: TTemplateRegistry;
+    class var FLock: TCriticalSection;
   private
     class procedure Initialize;
     class procedure Finalize;
+    class function GetInstance: TTemplateRegistry; static;
   strict private
-    FLock: TCriticalSection;
     FTemplates: TDictionary<string, ITemplate>;
     FContext: ITemplateContext;
     FLoadStrategy: TArray<TTemplateLoadStrategy>;
@@ -126,9 +127,7 @@ type
     FNameContextResolver: TTemplateNameContextResolver;
     FExceptionLogger: TTempateLogException;
     FLogger: TTempateLogMessage;
-
     procedure Refresh;
-
     procedure SetRefreshIntervalS(const Value: integer);
     procedure SetAutomaticRefresh(const Value: boolean);
     procedure SetLoadStrategy(const Value: TArray<TTemplateLoadStrategy>);
@@ -152,7 +151,7 @@ type
     function Eval<T>(const ATemplateName: string; const AData: T): string; overload;
     function Eval(const ATemplateName: string): string; overload;
 
-    class property Instance: TTemplateRegistry read FTemplateRegistry;
+    class property Instance: TTemplateRegistry read GetInstance;
 
     property Context: ITemplateContext read FContext;
     property ResourceNameResolver: TTemplateNameResolver read FResourceNameResolver write FResourceNameResolver;
@@ -182,13 +181,14 @@ uses
 { TTemplateRegistry }
 
 constructor TTemplateRegistry.Create;
+{$IFDEF DEBUG}
 var
   LPath: string;
+{$ENDIF}
 begin
   FShutdown := TEvent.Create;
   FThreadDone := TEvent.Create;
 
-  FLock := TCriticalSection.Create;
   FTemplates := TDictionary<string, ITemplate>.Create;
   FContext := Template.Context([eoEmbedException]);
 
@@ -236,18 +236,15 @@ begin
 {$ENDIF}
 end;
 
-class procedure TTemplateRegistry.Initialize;
-begin
-  FTemplateRegistry := TTemplateRegistry.Create;
-end;
-
 destructor TTemplateRegistry.Destroy;
 begin
-  FShutdown.SetEvent;
-  FThreadDone.WaitFor();
+  if FThread <> nil then
+  begin
+    FShutdown.SetEvent;
+    FThreadDone.WaitFor();
+  end;
   FThreadDone.Free;
   FShutdown.Free;
-  FLock.Free;
   FTemplates.Free;
   inherited;
 end;
@@ -255,6 +252,21 @@ end;
 class procedure TTemplateRegistry.Finalize;
 begin
   FTemplateRegistry.Free;
+  FLock.Free;
+end;
+
+class function TTemplateRegistry.GetInstance: TTemplateRegistry;
+begin
+  if assigned(FTemplateRegistry) then
+    exit(FTemplateRegistry);
+  FLock.Acquire;
+  try
+    if not assigned(FTemplateRegistry) then
+      FTemplateRegistry := TTemplateRegistry.Create;
+  finally
+    FLock.release;
+  end;
+  exit(FTemplateRegistry);
 end;
 
 function TTemplateRegistry.GetTemplate(const ATemplateName: string): ITemplate;
@@ -350,7 +362,7 @@ begin
     if FTemplates.TryGetValue(ATemplateName, result) then
       exit;
   finally
-    FLock.Release;
+    FLock.release;
   end;
   result := nil;
   setlength(LExts, 2);
@@ -380,8 +392,13 @@ begin
   try
     FTemplates.Add(ATemplateName, result);
   finally
-    FLock.Release;
+    FLock.release;
   end;
+end;
+
+class procedure TTemplateRegistry.Initialize;
+begin
+  FLock := TCriticalSection.Create;
 end;
 
 procedure TTemplateRegistry.Log(const AMsg: string; const AArgs: array of const);
@@ -463,7 +480,7 @@ begin
       end;
     end;
   finally
-    FLock.Release;
+    FLock.release;
   end;
 end;
 
@@ -474,7 +491,7 @@ begin
     FContext.RemoveTemplate(ATemplateName);
     FTemplates.Remove(ATemplateName);
   finally
-    FLock.Release;
+    FLock.release;
   end;
 end;
 
@@ -510,6 +527,7 @@ begin
   begin
     FShutdown.SetEvent;
     FThreadDone.WaitFor();
+    FThread := nil;
   end;
 end;
 
