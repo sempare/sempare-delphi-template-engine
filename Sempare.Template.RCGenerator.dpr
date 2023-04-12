@@ -60,6 +60,7 @@ type
   TData = record
     Files: TList<string>;
   end;
+
   TUseStream = {$IFDEF SUPPORT_BUFFERED_STREAM}TBufferedFileStream{$ELSE}TFileStream{$ENDIF};
 var
   LStream: TUseStream;
@@ -74,9 +75,8 @@ begin
   end;
 end;
 
-const
-  DEFAULT_EXTS: TArray<string> //
-    = ['.bmp', '.gif', '.ico', '.jpg', '.jpeg', '.png', '.tpl', '.wbmp', '.webp'];
+var
+  DEFAULT_EXTS: array [0 .. 8] of string;
 
 procedure main;
 var
@@ -86,7 +86,7 @@ var
   LExt: TList<string>;
   LFiles: TList<string>;
   i: integer;
-  LLoadStrategy : TArray<TTemplateLoadStrategy>;
+  LLoadStrategy: TArray<TTemplateLoadStrategy>;
 begin
   if ParamCount < 2 then
   begin
@@ -98,6 +98,17 @@ begin
     writeln('');
     exit;
   end;
+
+  DEFAULT_EXTS[0] := '.bmp';
+  DEFAULT_EXTS[1] := '.gif';
+  DEFAULT_EXTS[2] := '.ico';
+  DEFAULT_EXTS[3] := '.jpg';
+  DEFAULT_EXTS[4] := '.jpeg';
+  DEFAULT_EXTS[5] := '.png';
+  DEFAULT_EXTS[6] := '.tpl';
+  DEFAULT_EXTS[7] := '.wbmp';
+  DEFAULT_EXTS[8] := '.webp';
+
   LRCFilename := TPath.GetFullPath(ParamStr(1));
   LTemplatePath := TPath.GetFullPath(ParamStr(2));
   LTempalteRelPath := TPath.GetDirectoryName(LRCFilename);
@@ -145,7 +156,7 @@ var
 begin
   result := AName;
   LParts := result.Split([TPath.DirectorySeparatorChar]);
-  delete(LParts, 0, 1);
+  LParts := copy(LParts, 1);
   result := string.Join(TPath.DirectorySeparatorChar, LParts);
   result := result.ToLower;
   result := result.Replace('.', '_', [rfReplaceAll]);
