@@ -1,11 +1,13 @@
 program Sempare.Template.RCGenerator;
 
+{$I 'Sempare.Template.Compiler.inc'}
 {$APPTYPE CONSOLE}
 {$R *.res}
 
 uses
   Sempare.Template,
   System.Generics.Collections,
+  System.Types, // for inline hint
   System.Classes,
   System.IOUtils,
   System.SysUtils;
@@ -59,12 +61,14 @@ type
   TData = record
     Files: TList<string>;
   end;
+
+  TUseStream = {$IFDEF SUPPORT_BUFFERED_STREAM}TBufferedFileStream{$ELSE}TFileStream{$ENDIF};
 var
-  LStream: TBufferedFileStream;
+  LStream: TUseStream;
   LData: TData;
 begin
   LData.Files := AFiles;
-  LStream := TBufferedFileStream.Create(AFilename, fmCreate);
+  LStream := TUseStream.Create(AFilename, fmCreate);
   try
     TTemplateRegistry.Instance.Eval(LStream, 'sempare_template_rcgenerator_tpl', LData)
   finally
@@ -72,9 +76,8 @@ begin
   end;
 end;
 
-const
-  DEFAULT_EXTS: TArray<string> //
-    = ['.bmp', '.gif', '.ico', '.jpg', '.jpeg', '.png', '.tpl', '.wbmp', '.webp'];
+var
+  DEFAULT_EXTS: array [0 .. 8] of string;
 
 procedure main;
 var
@@ -84,6 +87,7 @@ var
   LExt: TList<string>;
   LFiles: TList<string>;
   i: integer;
+  LLoadStrategy: TArray<TTemplateLoadStrategy>;
 begin
   if ParamCount < 2 then
   begin
@@ -95,13 +99,26 @@ begin
     writeln('');
     exit;
   end;
+
+  DEFAULT_EXTS[0] := '.bmp';
+  DEFAULT_EXTS[1] := '.gif';
+  DEFAULT_EXTS[2] := '.ico';
+  DEFAULT_EXTS[3] := '.jpg';
+  DEFAULT_EXTS[4] := '.jpeg';
+  DEFAULT_EXTS[5] := '.png';
+  DEFAULT_EXTS[6] := '.tpl';
+  DEFAULT_EXTS[7] := '.wbmp';
+  DEFAULT_EXTS[8] := '.webp';
+
   LRCFilename := TPath.GetFullPath(ParamStr(1));
   LTemplatePath := TPath.GetFullPath(ParamStr(2));
   LTempalteRelPath := TPath.GetDirectoryName(LRCFilename);
   LFiles := nil;
   LExt := nil;
 
-  TTemplateRegistry.Instance.LoadStrategy := [tlsLoadResource];
+  SetLength(LLoadStrategy, 1);
+  LLoadStrategy[0] := tlsLoadResource;
+  TTemplateRegistry.Instance.LoadStrategy := LLoadStrategy;
   TTemplateRegistry.Instance.Context.Functions.AddFunctions(THelperClass);
 
   try
@@ -140,9 +157,8 @@ var
 begin
   result := AName;
   LParts := result.Split([TPath.DirectorySeparatorChar]);
-  delete(LParts, 0, 1);
-  result := string.Join(TPath.DirectorySeparatorChar, LParts);
-  result := result.ToLower;
+  result := string.Join(TPath.DirectorySeparatorChar, LParts, 1, length(LParts));
+  result := result.ToUpper;
   result := result.Replace('.', '_', [rfReplaceAll]);
 end;
 

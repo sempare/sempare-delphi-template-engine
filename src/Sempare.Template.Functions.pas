@@ -208,6 +208,8 @@ type
     class function Base64Decode(const AStr: string): string; static;
     class function HtmlUnescape(const AStr: string): string; static;
     class function HtmlEscape(const AStr: string): string; static;
+{$ENDIF}
+{$IFDEF SUPPORT_URL_FORM_ENCODING}
     class function UrlDecode(const AStr: string): string; static;
     class function FormDecode(const AStr: string): string; static;
 {$ENDIF}
@@ -569,13 +571,8 @@ class function TInternalFuntions.FmtDt(const AFormat: string; const ADateTime: T
 begin
   exit(FormatDateTime(AFormat, ADateTime));
 end;
-{$IFDEF SUPPORT_ENCODING}
 
-class function TInternalFuntions.HtmlEscape(const AStr: string): string;
-begin
-  exit(TNetEncoding.HTML.Encode(AStr));
-end;
-
+{$IFDEF SUPPORT_URL_FORM_ENCODING}
 class function TInternalFuntions.FormDecode(const AStr: string): string;
 begin
   exit(TNetEncoding.URL.FormDecode(AStr));
@@ -584,6 +581,14 @@ end;
 class function TInternalFuntions.UrlDecode(const AStr: string): string;
 begin
   exit(TNetEncoding.URL.UrlDecode(AStr));
+end;
+{$ENDIF}
+
+{$IFDEF SUPPORT_ENCODING}
+
+class function TInternalFuntions.HtmlEscape(const AStr: string): string;
+begin
+  exit(TNetEncoding.HTML.Encode(AStr));
 end;
 
 class function TInternalFuntions.HtmlUnescape(const AStr: string): string;

@@ -194,9 +194,9 @@ Open __Sempare.Template.Engine.Group.groupproj__ which will include:
 
    180+ unit tests
 
-- __demo\SempareTemplatePlaypen\Sempare.TemplateEngine.Playpen.dproj__
+- __demo\SempareTemplatePlayground\Sempare.TemplateEngine.Playground.dproj__
 
-   The Sempare Template Playpen demo which provides a rich experience for testing the various template language features.
+   The Sempare Template Playground demo which provides a rich experience for testing the various template language features.
    
 <a name="Feedback"><h2>Feedback</h3></a>
 

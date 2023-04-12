@@ -30,18 +30,18 @@
  * limitations under the License.                                                                   *
  *                                                                                                  *
  *************************************************************************************************%*)
-program Sempare.TemplateEngine.Playpen;
+program Sempare.TemplateEngine.Playground;
 
 uses
   Vcl.Forms,
-  Sempare.Template.PlaypenForm in 'Sempare.Template.PlaypenForm.pas' {FormTemplateEnginePlaypen};
+  Sempare.Template.PlaygroundForm in 'Sempare.Template.PlaygroundForm.pas' {FormTemplateEnginePlayground};
 
 {$R *.res}
 
 begin
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
-  Application.CreateForm(TFormTemplateEnginePlaypen, FormTemplateEnginePlaypen);
-  Application.OnException := FormTemplateEnginePlaypen.OnException;
+  Application.CreateForm(TFormTemplateEnginePlayground, FormTemplateEnginePlayground);
+  Application.OnException := FormTemplateEnginePlayground.OnException;
   Application.Run;
 end.

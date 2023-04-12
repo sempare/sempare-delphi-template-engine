@@ -3,7 +3,7 @@
         <ProjectGuid>{76CD4008-92F4-4F03-9F1D-F54D67F99789}</ProjectGuid>
         <ProjectVersion>19.5</ProjectVersion>
         <FrameworkType>VCL</FrameworkType>
-        <MainSource>Sempare.TemplateEngine.Playpen.dpr</MainSource>
+        <MainSource>Sempare.TemplateEngine.Playground.dpr</MainSource>
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Debug</Config>
         <Platform Condition="'$(Platform)'==''">Win32</Platform>
@@ -57,7 +57,7 @@
         <Icon_MainIcon>$(BDS)\bin\delphi_PROJECTICON.ico</Icon_MainIcon>
         <UWP_DelphiLogo44>$(BDS)\bin\Artwork\Windows\UWP\delphi_UwpDefault_44.png</UWP_DelphiLogo44>
         <UWP_DelphiLogo150>$(BDS)\bin\Artwork\Windows\UWP\delphi_UwpDefault_150.png</UWP_DelphiLogo150>
-        <SanitizedProjectName>Sempare_TemplateEngine_Playpen</SanitizedProjectName>
+        <SanitizedProjectName>Sempare_TemplateEngine_Playground</SanitizedProjectName>
         <DCC_UnitSearchPath>..\..\src;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
@@ -102,8 +102,8 @@
         <DelphiCompile Include="$(MainSource)">
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
-        <DCCReference Include="Sempare.Template.PlaypenForm.pas">
-            <Form>FormTemplateEnginePlaypen</Form>
+        <DCCReference Include="Sempare.Template.PlaygroundForm.pas">
+            <Form>FormTemplateEnginePlayground</Form>
         </DCCReference>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
@@ -123,14 +123,14 @@
         <BorlandProject>
             <Delphi.Personality>
                 <Source>
-                    <Source Name="MainSource">Sempare.TemplateEngine.Playpen.dpr</Source>
+                    <Source Name="MainSource">Sempare.TemplateEngine.Playground.dpr</Source>
                 </Source>
                 <Excluded_Packages/>
             </Delphi.Personality>
             <Deployment Version="4">
-                <DeployFile LocalName="Win32\Debug\Sempare.TemplateEngine.Playpen.exe" Configuration="Debug" Class="ProjectOutput">
+                <DeployFile LocalName="Win32\Debug\Sempare.TemplateEngine.Playground.exe" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Win32">
-                        <RemoteName>Sempare_TemplateEngine_Playpen.exe</RemoteName>
+                        <RemoteName>Sempare_TemplateEngine_Playground.exe</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>

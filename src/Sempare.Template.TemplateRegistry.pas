@@ -173,6 +173,7 @@ uses
   Sempare.Template.ResourceStrings,
   Sempare.Template,
 {$IFDEF DEBUG}
+  Sempare.Template.Common, // for inline hint
   Sempare.Template.PrettyPrint,
 {$ENDIF}
   System.IOUtils,
@@ -196,7 +197,7 @@ begin
 
   FResourceNameResolver := function(const AName: string; const AContext: TArray<string>): string
     begin
-      exit(AName.ToLower.Replace('.', '_', [rfReplaceAll]));
+      exit(AName.ToUpper.Replace('.', '_', [rfReplaceAll]));
     end;
 
   FFileNameResolver := function(const AName: string; const AContext: TArray<string>): string

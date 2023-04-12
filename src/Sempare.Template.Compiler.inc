@@ -72,6 +72,7 @@
 // -----------------------------------------------
 {$IF CompilerVersion >= 31}  // from Delphi 10.1 Berlin onwards
 {$DEFINE SUPPORT_BUFFERED_STREAM}
+{$DEFINE SUPPORT_URL_FORM_ENCODING}
 {$ENDIF}
 // -----------------------------------------------
 {$IF CompilerVersion >= 33}  // from Delphi 10.3 Rio onwards
