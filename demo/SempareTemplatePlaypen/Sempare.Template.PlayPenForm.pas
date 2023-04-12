@@ -316,7 +316,8 @@ begin
     // or else it does not shutdown properly
     LActivePage := pcOutput.ActivePage;
     pcOutput.ActivePage := tsWebBrowser;
-    pcOutput.ActivePage := LActivePage;
+    if not cbHtml.Checked then
+      pcOutput.ActivePage := LActivePage;
   except
     on E: Exception do
       memoOutput.Lines.Text := E.Message;
@@ -377,7 +378,7 @@ begin
 
   memoTemplate.Text := '<% template("local_template") %> Hello <% name %><br> <% end %> ' + #13#10 + //
     '  ' + #13#10 + //
-    ' Welcome to the Sempare Template Engine demo project. ' + #13#10 + //
+    ' Welcome to the <i>Sempare Template Engine</i> <b><% SEMPARE_TEMPLATE_ENGINE_VERSION %></b> playpen project. ' + #13#10 + //
     '  ' + #13#10 + //
     ' You can prototype and test templates here.<p> ' + #13#10 + //
     '  ' + #13#10 + //

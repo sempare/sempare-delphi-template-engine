@@ -34,7 +34,7 @@ program Sempare.TemplateEngine.Playpen;
 
 uses
   Vcl.Forms,
-  Sempare.Template.DemoForm in 'Sempare.Template.DemoForm.pas' {FormTemplateEnginePlaypen};
+  Sempare.Template.PlaypenForm in 'Sempare.Template.PlaypenForm.pas' {FormTemplateEnginePlaypen};
 
 {$R *.res}
 

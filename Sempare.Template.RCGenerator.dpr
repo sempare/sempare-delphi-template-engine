@@ -74,7 +74,7 @@ end;
 
 const
   DEFAULT_EXTS: TArray<string> //
-    = ['.ico', '.png', '.jpg', '.jpeg', '.webp', '.tpl', '.bmp', '.gif', '.wbmp'];
+    = ['.bmp', '.gif', '.ico', '.jpg', '.jpeg', '.png', '.tpl', '.wbmp', '.webp'];
 
 procedure main;
 var
@@ -101,7 +101,7 @@ begin
   LFiles := nil;
   LExt := nil;
 
-  TTemplateRegistry.Instance.LoadStrategy := tlsLoadResource;
+  TTemplateRegistry.Instance.LoadStrategy := [tlsLoadResource];
   TTemplateRegistry.Instance.Context.Functions.AddFunctions(THelperClass);
 
   try

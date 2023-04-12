@@ -110,6 +110,9 @@ procedure RaiseErrorRes(const APositional: IPosition; const ResStringRec: PResSt
 
 implementation
 
+uses
+  Sempare.Template;
+
 procedure AcceptVisitor(const ATemplate: ITemplate; const AVisitor: ITemplateVisitor); overload;
 begin
   if not assigned(ATemplate) then
@@ -228,6 +231,11 @@ end;
 procedure TTemplateVariables.Clear;
 begin
   FVariables.Clear;
+  self['SEMPARE_TEMPLATE_ENGINE_VERSION'] := Template.Version;
+  self['CR'] := #13;
+  self['NL'] := #10;
+  self['CRNL'] := #13#10;
+  self['TAB'] := #9;
 end;
 
 function TTemplateVariables.ContainsKey(const AKey: string): boolean;
@@ -238,6 +246,7 @@ end;
 constructor TTemplateVariables.Create;
 begin
   FVariables := TDictionary<string, TTemplateValue>.Create;
+  Clear;
 end;
 
 destructor TTemplateVariables.Destroy;
