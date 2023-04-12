@@ -39,6 +39,7 @@ interface
 uses
   System.Classes,
   System.SysUtils,
+  System.Generics.Collections,
   Sempare.Template.Common,
   Sempare.Template.Context,
   Sempare.Template.AST,
@@ -138,6 +139,7 @@ type
 
     class procedure ExtractReferences(const ATemplate: ITemplate; out AVariables: TArray<string>; out AFunctions: TArray<string>); static;
 
+    class procedure ExtractBlocks(const ATemplate: ITemplate; var ABlocks: TDictionary<string, ITemplate>); static;
   end;
 
   TEncodingHelper = class helper for TEncoding
@@ -153,8 +155,10 @@ uses
   VCL.Dialogs,
 {$ENDIF}
 {$ENDIF}
+  System.Rtti,
   Sempare.Template.Evaluate,
   Sempare.Template.VariableExtraction,
+  Sempare.Template.BlockResolver,
   Sempare.Template.PrettyPrint;
 
 type
@@ -363,6 +367,35 @@ var
 begin
   LTemplate := Template.Parse(AContext, ATemplate);
   exit(Eval(AContext, LTemplate, AValue));
+end;
+
+class procedure Template.ExtractBlocks(const ATemplate: ITemplate; var ABlocks: TDictionary<string, ITemplate>);
+type
+  TEmpty = record
+  end;
+var
+  LStringStream: TStringStream;
+  LContext: ITemplateContext;
+  LEvalVisitor: IEvaluationTemplateVisitor;
+  LVisitor: IBlockResolverVisitor;
+  LName: string;
+  LEmpty: TEmpty;
+begin
+  assert(ATemplate <> nil);
+  assert(ABlocks <> nil);
+  LStringStream := nil;
+  try
+    LStringStream := TStringStream.Create;
+    LContext := Template.Context();
+    LEvalVisitor := TEvaluationTemplateVisitor.Create(LContext, TValue.From<TEmpty>(LEmpty), LStringStream);
+    LVisitor := TBlockResolverVisitor.Create(LEvalVisitor, ATemplate);
+    for LName in LVisitor.GetBlockNames do
+    begin
+      ABlocks.Add(LName, LVisitor.GetBlock(LName).Container);
+    end;
+  finally
+    LStringStream.Free;
+  end;
 end;
 
 class procedure Template.ExtractReferences(const ATemplate: ITemplate; out AVariables: TArray<string>; out AFunctions: TArray<string>);
