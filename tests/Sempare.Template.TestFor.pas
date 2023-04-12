@@ -213,6 +213,10 @@ begin
 
   Assert.AreEqual('1 2 1 ', //
     Template.Eval('<% for i in [ 1, 2, 3] %><% cycle(''1'',''2'') %> <% end %>'));
+
+  Assert.AreEqual('odd-row even-row odd-row ', //
+    Template.Eval('<% i := 0; while true ; if i = 3; break; end; cycle ("odd-row ","even-row "); i:=i+1; end; %>'));
+
 end;
 
 procedure TTestTemplateFor.TestForIn;

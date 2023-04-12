@@ -436,16 +436,22 @@ begin
           end;
         '/':
           exit(SimpleToken(vsSLASH));
+        '!':
+          if Expecting('=') then
+          begin
+            SwallowInput;
+            exit(SimpleToken(vsNotEQ));
+          end;
         '<':
           if Expecting('>') then
           begin
             SwallowInput;
-            exit(SimpleToken(vsNotEQ))
+            exit(SimpleToken(vsNotEQ));
           end
           else if Expecting('=') then
           begin
             SwallowInput;
-            exit(SimpleToken(vsLTE))
+            exit(SimpleToken(vsLTE));
           end
           else
             exit(SimpleToken(vsLT));
@@ -453,7 +459,7 @@ begin
           if Expecting('=') then
           begin
             SwallowInput;
-            exit(SimpleToken(vsGTE))
+            exit(SimpleToken(vsGTE));
           end
           else
             exit(SimpleToken(vsGT));
