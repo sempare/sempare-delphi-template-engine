@@ -156,9 +156,8 @@ var
 begin
   result := AName;
   LParts := result.Split([TPath.DirectorySeparatorChar]);
-  LParts := copy(LParts, 1);
-  result := string.Join(TPath.DirectorySeparatorChar, LParts);
-  result := result.ToLower;
+  result := string.Join(TPath.DirectorySeparatorChar, LParts, 1, length(LParts));
+  result := result.ToUpper;
   result := result.Replace('.', '_', [rfReplaceAll]);
 end;
 

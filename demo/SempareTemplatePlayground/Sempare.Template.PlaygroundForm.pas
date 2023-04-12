@@ -30,7 +30,7 @@
  * limitations under the License.                                                                   *
  *                                                                                                  *
  *************************************************************************************************%*)
-unit Sempare.Template.PlayPenForm;
+unit Sempare.Template.PlaygroundForm;
 
 interface
 
@@ -58,7 +58,7 @@ uses
   Vcl.Imaging.pngimage;
 
 type
-  TFormTemplateEnginePlaypen = class(TForm)
+  TFormTemplateEnginePlayground = class(TForm)
     memoOutput: TMemo;
     memoTemplate: TMemo;
     cbStripRecurringSpaces: TCheckBox;
@@ -149,7 +149,7 @@ type
   end;
 
 var
-  FormTemplateEnginePlaypen: TFormTemplateEnginePlaypen;
+  FormTemplateEnginePlayground: TFormTemplateEnginePlayground;
 
 implementation
 
@@ -159,7 +159,7 @@ uses
 
 {$R *.dfm}
 
-procedure TFormTemplateEnginePlaypen.butClearClick(Sender: TObject);
+procedure TFormTemplateEnginePlayground.butClearClick(Sender: TObject);
 var
   LIdx: Integer;
 begin
@@ -174,12 +174,12 @@ begin
   Eval;
 end;
 
-procedure TFormTemplateEnginePlaypen.butEvalClick(Sender: TObject);
+procedure TFormTemplateEnginePlayground.butEvalClick(Sender: TObject);
 begin
   Eval;
 end;
 
-procedure TFormTemplateEnginePlaypen.butOpenClick(Sender: TObject);
+procedure TFormTemplateEnginePlayground.butOpenClick(Sender: TObject);
 begin
   OpenDialog1.DefaultExt := '.template';
   OpenDialog1.Filter := '*.template';
@@ -194,7 +194,7 @@ begin
   end;
 end;
 
-procedure TFormTemplateEnginePlaypen.butSaveAsClick(Sender: TObject);
+procedure TFormTemplateEnginePlayground.butSaveAsClick(Sender: TObject);
 begin
   SaveDialog1.DefaultExt := '.template';
   SaveDialog1.Filter := '*.template';
@@ -210,7 +210,7 @@ begin
   end;
 end;
 
-procedure TFormTemplateEnginePlaypen.butSaveClick(Sender: TObject);
+procedure TFormTemplateEnginePlayground.butSaveClick(Sender: TObject);
 begin
   if FFilename = '' then
     exit;
@@ -218,22 +218,22 @@ begin
   butSave.Enabled := false;
 end;
 
-procedure TFormTemplateEnginePlaypen.cbConvertTabsToSpacesClick(Sender: TObject);
+procedure TFormTemplateEnginePlayground.cbConvertTabsToSpacesClick(Sender: TObject);
 begin
   SetOption(cbConvertTabsToSpaces.Checked, eoConvertTabsToSpaces);
 end;
 
-procedure TFormTemplateEnginePlaypen.cbEvalEarlyClick(Sender: TObject);
+procedure TFormTemplateEnginePlayground.cbEvalEarlyClick(Sender: TObject);
 begin
   SetOption(cbEvalEarly.Checked, eoEvalEarly);
 end;
 
-procedure TFormTemplateEnginePlaypen.cbEvalVarsEarlyClick(Sender: TObject);
+procedure TFormTemplateEnginePlayground.cbEvalVarsEarlyClick(Sender: TObject);
 begin
   SetOption(cbEvalVarsEarly.Checked, eoEvalVarsEarly);
 end;
 
-procedure TFormTemplateEnginePlaypen.cbFlattenTemplateClick(Sender: TObject);
+procedure TFormTemplateEnginePlayground.cbFlattenTemplateClick(Sender: TObject);
 begin
   SetOption(cbFlattenTemplate.Checked, eoFlattenTemplate);
 end;
@@ -243,7 +243,7 @@ begin
   exit(AValue);
 end;
 
-procedure TFormTemplateEnginePlaypen.cbHtmlClick(Sender: TObject);
+procedure TFormTemplateEnginePlayground.cbHtmlClick(Sender: TObject);
 begin
   if cbHtml.Checked then
     FContext.UseHtmlVariableEncoder
@@ -252,34 +252,34 @@ begin
   Eval;
 end;
 
-procedure TFormTemplateEnginePlaypen.cbOptimiseTemplateClick(Sender: TObject);
+procedure TFormTemplateEnginePlayground.cbOptimiseTemplateClick(Sender: TObject);
 begin
   SetOption(cbOptimiseTemplate.Checked, eoOptimiseTemplate);
   if cbOptimiseTemplate.Checked then
     cbFlattenTemplate.Checked := true;
 end;
 
-procedure TFormTemplateEnginePlaypen.cbRaiseErrorWhenVariableNotFoundClick(Sender: TObject);
+procedure TFormTemplateEnginePlayground.cbRaiseErrorWhenVariableNotFoundClick(Sender: TObject);
 begin
   SetOption(cbRaiseErrorWhenVariableNotFound.Checked, eoRaiseErrorWhenVariableNotFound);
 end;
 
-procedure TFormTemplateEnginePlaypen.cbStripRecurringNewlinesClick(Sender: TObject);
+procedure TFormTemplateEnginePlayground.cbStripRecurringNewlinesClick(Sender: TObject);
 begin
   SetOption(cbStripRecurringNewlines.Checked, eoStripRecurringNewlines);
 end;
 
-procedure TFormTemplateEnginePlaypen.cbStripRecurringSpacesClick(Sender: TObject);
+procedure TFormTemplateEnginePlayground.cbStripRecurringSpacesClick(Sender: TObject);
 begin
   SetOption(cbStripRecurringSpaces.Checked, eoStripRecurringSpaces);
 end;
 
-procedure TFormTemplateEnginePlaypen.cbTrimLinesClick(Sender: TObject);
+procedure TFormTemplateEnginePlayground.cbTrimLinesClick(Sender: TObject);
 begin
   SetOption(cbTrimLines.Checked, eoTrimLines);
 end;
 
-procedure TFormTemplateEnginePlaypen.cbUseCustomScriptTagsClick(Sender: TObject);
+procedure TFormTemplateEnginePlayground.cbUseCustomScriptTagsClick(Sender: TObject);
 begin
   if cbUseCustomScriptTags.Checked then
     SetScriptTags(cmbCustomScriptTags.ItemIndex)
@@ -287,7 +287,7 @@ begin
     SetScriptTags(0);
 end;
 
-procedure TFormTemplateEnginePlaypen.cbUseHtmlBRClick(Sender: TObject);
+procedure TFormTemplateEnginePlayground.cbUseHtmlBRClick(Sender: TObject);
 begin
   if cbUseHtmlBR.Checked then
     FContext.NewLine := '<br>'#13#10
@@ -295,14 +295,14 @@ begin
     FContext.NewLine := #13#10;
 end;
 
-procedure TFormTemplateEnginePlaypen.cmbCustomScriptTagsChange(Sender: TObject);
+procedure TFormTemplateEnginePlayground.cmbCustomScriptTagsChange(Sender: TObject);
 begin
   cbUseCustomScriptTags.Checked := true;
   SetScriptTags(cmbCustomScriptTags.ItemIndex);
   Eval;
 end;
 
-procedure TFormTemplateEnginePlaypen.Eval;
+procedure TFormTemplateEnginePlayground.Eval;
 var
   LActivePage: TTabSheet;
 begin
@@ -324,7 +324,7 @@ begin
   end;
 end;
 
-procedure TFormTemplateEnginePlaypen.cbSetEncodingClick(Sender: TObject);
+procedure TFormTemplateEnginePlayground.cbSetEncodingClick(Sender: TObject);
 begin
   if cbSetEncoding.Checked then
   begin
@@ -342,7 +342,7 @@ begin
   Eval;
 end;
 
-procedure TFormTemplateEnginePlaypen.cbShowWhitespaceClick(Sender: TObject);
+procedure TFormTemplateEnginePlayground.cbShowWhitespaceClick(Sender: TObject);
 begin
   if cbShowWhitespace.Checked then
     FContext.WhitespaceChar := #183
@@ -351,7 +351,7 @@ begin
   Eval;
 end;
 
-procedure TFormTemplateEnginePlaypen.FormCreate(Sender: TObject);
+procedure TFormTemplateEnginePlayground.FormCreate(Sender: TObject);
 begin
   FContext := Template.Context();
   FContext.Variable['name'] := 'world';
@@ -424,13 +424,13 @@ begin
   Finit := true;
 end;
 
-procedure TFormTemplateEnginePlaypen.FormResize(Sender: TObject);
+procedure TFormTemplateEnginePlayground.FormResize(Sender: TObject);
 begin
   if width < 1000 then
     width := 1000;
 end;
 
-procedure TFormTemplateEnginePlaypen.GridPropsToContext;
+procedure TFormTemplateEnginePlayground.GridPropsToContext;
 var
   LIdx: Integer;
   LKey, LValue: string;
@@ -446,7 +446,7 @@ begin
   end;
 end;
 
-procedure TFormTemplateEnginePlaypen.memoTemplateChange(Sender: TObject);
+procedure TFormTemplateEnginePlayground.memoTemplateChange(Sender: TObject);
 begin
   if not cbAutoEvaluate.Checked then
     exit;
@@ -458,21 +458,21 @@ begin
   exit(format('(Line: %d, Position: %d)   ', [AMemo.CaretPos.Y + 1, AMemo.CaretPos.X + 1]));
 end;
 
-procedure TFormTemplateEnginePlaypen.memoTemplateKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+procedure TFormTemplateEnginePlayground.memoTemplateKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
   lblPosition.Caption := GetRowCol(memoTemplate);
 end;
 
-procedure TFormTemplateEnginePlaypen.memoTemplateMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+procedure TFormTemplateEnginePlayground.memoTemplateMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   lblPosition.Caption := GetRowCol(memoTemplate);
 end;
 
-procedure TFormTemplateEnginePlaypen.OnException(Sender: TObject; E: Exception);
+procedure TFormTemplateEnginePlayground.OnException(Sender: TObject; E: Exception);
 begin
 end;
 
-procedure TFormTemplateEnginePlaypen.Process;
+procedure TFormTemplateEnginePlayground.Process;
 var
   LPrettyOk: boolean;
 begin
@@ -495,19 +495,19 @@ begin
   WriteTmpHtml;
 end;
 
-procedure TFormTemplateEnginePlaypen.propertiesGetEditText(Sender: TObject; ACol, ARow: Integer; var Value: string);
+procedure TFormTemplateEnginePlayground.propertiesGetEditText(Sender: TObject; ACol, ARow: Integer; var Value: string);
 begin
   if cbAutoEvaluate.Checked then
     Eval;
 end;
 
-procedure TFormTemplateEnginePlaypen.propertiesSetEditText(Sender: TObject; ACol, ARow: Integer; const Value: string);
+procedure TFormTemplateEnginePlayground.propertiesSetEditText(Sender: TObject; ACol, ARow: Integer; const Value: string);
 begin
   if cbAutoEvaluate.Checked then
     Eval;
 end;
 
-procedure TFormTemplateEnginePlaypen.SetOption(const AEnable: boolean; const AOption: TTemplateEvaluationOption);
+procedure TFormTemplateEnginePlayground.SetOption(const AEnable: boolean; const AOption: TTemplateEvaluationOption);
 begin
   if AEnable then
     FContext.Options := FContext.Options + [AOption]
@@ -516,7 +516,7 @@ begin
   Eval;
 end;
 
-procedure TFormTemplateEnginePlaypen.SetScriptTags(const AIdx: Integer);
+procedure TFormTemplateEnginePlayground.SetScriptTags(const AIdx: Integer);
 begin
   case AIdx of
     1:
@@ -552,7 +552,7 @@ begin
   end;
 end;
 
-procedure TFormTemplateEnginePlaypen.WriteTmpHtml;
+procedure TFormTemplateEnginePlayground.WriteTmpHtml;
 var
   url: string;
 begin

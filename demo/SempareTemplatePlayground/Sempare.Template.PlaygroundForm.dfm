@@ -1,7 +1,7 @@
-object FormTemplateEnginePlaypen: TFormTemplateEnginePlaypen
+object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
   Left = 0
   Top = 0
-  Caption = 'Sempare Template Engine Playpen'
+  Caption = 'Sempare Template Engine Playground'
   ClientHeight = 487
   ClientWidth = 1176
   Color = clBtnFace
@@ -251,9 +251,9 @@ object FormTemplateEnginePlaypen: TFormTemplateEnginePlaypen
   object lblTitle: TLabel
     Left = 122
     Top = 8
-    Width = 471
+    Width = 518
     Height = 33
-    Caption = 'Sempare Template Engine Playpen'
+    Caption = 'Sempare Template Engine Playground'
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
     Font.Height = -27
