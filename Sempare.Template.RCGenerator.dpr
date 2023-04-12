@@ -86,7 +86,7 @@ var
   LExt: TList<string>;
   LFiles: TList<string>;
   i: integer;
-  LLoadStrategy : TTemplateLoadStrategy;
+  LLoadStrategy : TArray<TTemplateLoadStrategy>;
 begin
   if ParamCount < 2 then
   begin
@@ -104,7 +104,8 @@ begin
   LFiles := nil;
   LExt := nil;
 
-  LLoadStrategy := [tlsLoadResource];
+  SetLength(LLoadStrategy, 1);
+  LLoadStrategy[0] := tlsLoadResource;
   TTemplateRegistry.Instance.LoadStrategy := LLoadStrategy;
   TTemplateRegistry.Instance.Context.Functions.AddFunctions(THelperClass);
 
