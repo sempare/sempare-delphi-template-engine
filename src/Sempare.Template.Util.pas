@@ -78,7 +78,7 @@ function GetTestTimeTollerance(const ANativeTime, AHypervisorTime: double): doub
 
 implementation
 
-{$IF defined(MSWINDOWS)}
+{$IFDEF MSWINDOWS}
 
 uses
   SysUtils,
@@ -184,7 +184,7 @@ end;
 
 initialization
 
-{$IF defined(WIN32) or defined(WIN64)}
+{$IFDEF MSWINDOWS}
   GVmwareResolved := False;
 GIsUnderVmware := IsRunningUnderVMWare;
 {$ENDIF}
