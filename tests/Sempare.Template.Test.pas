@@ -118,6 +118,9 @@ type
 
     [Test]
     procedure TestDecimalEncodingErrorWithListsDefaultValueSeparator;
+
+    [Test]
+    procedure TestVersionPresent;
   end;
 
 type
@@ -563,6 +566,11 @@ begin
     begin // expects  abc
       Assert.AreEqual('', Template.Eval(LCtx, '<% abc %>'));
     end);
+end;
+
+procedure TTestTemplate.TestVersionPresent;
+begin
+  Assert.IsNotEmpty(Template.Version);
 end;
 
 initialization

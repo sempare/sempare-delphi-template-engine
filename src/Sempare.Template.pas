@@ -83,6 +83,7 @@ type
   TTempateLogMessage = Sempare.Template.TemplateRegistry.TTempateLogMessage;
 
   Template = class
+{$INCLUDE 'Sempare.Template.Version.inc'}
 {$IFNDEF SEMPARE_TEMPLATE_CONFIRM_LICENSE}
 {$IFDEF MSWINDOWS}
   private
@@ -138,6 +139,8 @@ type
     class procedure ExtractReferences(const ATemplate: ITemplate; out AVariables: TArray<string>; out AFunctions: TArray<string>); static;
 
     class procedure ExtractBlocks(const ATemplate: ITemplate; var ABlocks: TDictionary<string, ITemplate>); static;
+
+    class function Version(): string; static;
   end;
 
   TEncodingHelper = class helper for TEncoding
@@ -251,6 +254,11 @@ begin
   LVisitor := LTemplateVisitor;
   AcceptVisitor(ATemplate, LVisitor);
   exit(LTemplateVisitor.ToString);
+end;
+
+class function Template.Version: string;
+begin
+  exit(format('%d.%d.%d', [MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION]));
 end;
 
 class procedure Template.Eval(const AContext: ITemplateContext; const ATemplate: string; const AStream: TStream);
