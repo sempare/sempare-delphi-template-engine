@@ -68,21 +68,30 @@ type
     eoEvalVarsEarly, //
     eoStripRecurringNewlines, //
     eoTrimLines, //
-    eoReplaceNewline, //
     eoEmbedException, //
     eoPrettyPrint, //
     eoStripRecurringSpaces, //
     eoConvertTabsToSpaces, //
     eoNoDefaultFunctions, //
     eoRaiseErrorWhenVariableNotFound, //
-    eoAllowIgnoreNL, //
-    eoStripEmptyLines, //
-    eoInternalUseNewLine //
+    eoFlattenTemplate, //
+    eoOptimiseTemplate //
     );
 
   TTemplateEvaluationOptions = set of TTemplateEvaluationOption;
 
+  TPrettyPrintOutput = reference to procedure(const APrettyPrint: string);
   TTemplateResolver = reference to function(const AContext: ITemplateContext; const AName: string): ITemplate;
+
+  ITemplateEvaluationContext = interface
+    ['{FCE6891F-3D39-4CC4-8ADB-024D843C7770}']
+    function TryGetBlock(const AName: string; out ABlock: IBlockStmt): boolean;
+    procedure AddBlock(const AName: string; const ABlock: IBlockStmt);
+    procedure RemoveBlock(const AName: string);
+
+    procedure StartEvaluation;
+    procedure EndEvaluation;
+  end;
 
   ITemplateContext = interface
     ['{979D955C-B4BD-46BB-9430-1E74CBB999D4}']
@@ -90,6 +99,7 @@ type
     function TryGetTemplate(const AName: string; out ATemplate: ITemplate): boolean;
     function GetTemplate(const AName: string): ITemplate;
     procedure SetTemplate(const AName: string; const ATemplate: ITemplate);
+    procedure RemoveTemplate(const AName: string);
 
     function GetTemplateResolver: TTemplateResolver;
     procedure SetTemplateResolver(const AResolver: TTemplateResolver);
@@ -143,8 +153,15 @@ type
     function GetDebugErrorFormat: string;
     procedure SetDebugErrorFormat(const AFormat: string);
 
+    procedure SetPrettyPrintOutput(const APrettyPrintOutput: TPrettyPrintOutput);
+    function GetPrettyPrintOutput: TPrettyPrintOutput;
+
+    function GetWhitespace: char;
+    procedure SetWhiteSpace(const AWS: char);
+
     property Functions: ITemplateFunctions read GetFunctions write SetFunctions;
     property NewLine: string read GetNewLine write SetNewLine;
+    property WhitespaceChar: char read GetWhitespace write SetWhiteSpace;
     property TemplateResolver: TTemplateResolver read GetTemplateResolver write SetTemplateResolver;
     property MaxRunTimeMs: integer read GetMaxRunTimeMs write SetMaxRunTimeMs;
     property VariableEncoder: TTemplateEncodeFunction read GetVariableEncoder write SetVariableEncoder;
@@ -164,6 +181,7 @@ type
     property FormatSettings: TFormatSettings read GetFormatSettings;
     property DebugErrorFormat: string read GetDebugErrorFormat write SetDebugErrorFormat;
     property StreamWriterProvider: TStreamWriterProvider read GetStreamWriterProvider write SetStreamWriterProvider;
+    property PrettyPrintOutput: TPrettyPrintOutput read GetPrettyPrintOutput write SetPrettyPrintOutput;
   end;
 
   ITemplateContextForScope = interface
@@ -186,7 +204,7 @@ var
   GDefaultEncoding: TEncoding;
   GUTF8WithoutPreambleEncoding: TUTF8WithoutPreambleEncoding;
   GStreamWriterProvider: TStreamWriterProvider;
-
+  GPrettyPrintOutput: TPrettyPrintOutput;
   GDefaultOpenStripWSTag: string = '<|';
   GDefaultCloseWSTag: string = '|>';
 
@@ -207,8 +225,20 @@ uses
   Sempare.Template.ResourceStrings;
 
 type
+  TEvaluationContext = class
+  private
+    FBlocks: TObjectDictionary<string, TStack<IBlockStmt>>;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    function TryGetBlock(const AName: string; out ABlock: IBlockStmt): boolean;
+    procedure AddBlock(const AName: string; const ABlock: IBlockStmt);
+    procedure RemoveBlock(const AName: string);
+  end;
 
-  TTemplateContext = class(TInterfacedObject, ITemplateContext, ITemplateContextForScope)
+  TTemplateContext = class(TInterfacedObject, ITemplateContext, ITemplateContextForScope, ITemplateEvaluationContext)
+  private
+    class threadvar FEvaluationContext: TEvaluationContext;
   private
     FTemplateResolver: TTemplateResolver;
     FTemplates: TDictionary<string, ITemplate>;
@@ -229,9 +259,21 @@ type
     FValueSeparator: char;
     FFormatSettings: TFormatSettings;
     FDebugFormat: string;
+    FPrettyPrintOutput: TPrettyPrintOutput;
+    FWhiteSpace: char;
   public
     constructor Create(const AOptions: TTemplateEvaluationOptions);
     destructor Destroy; override;
+
+    function TryGetBlock(const AName: string; out ABlock: IBlockStmt): boolean;
+    procedure AddBlock(const AName: string; const ABlock: IBlockStmt);
+    procedure RemoveBlock(const AName: string);
+
+    procedure SetPrettyPrintOutput(const APrettyPrintOutput: TPrettyPrintOutput);
+    function GetPrettyPrintOutput: TPrettyPrintOutput;
+
+    procedure StartEvaluation;
+    procedure EndEvaluation;
 
     function GetEncoding: TEncoding;
     procedure SetEncoding(const AEncoding: TEncoding);
@@ -239,6 +281,7 @@ type
     function TryGetTemplate(const AName: string; out ATemplate: ITemplate): boolean;
     function GetTemplate(const AName: string): ITemplate;
     procedure SetTemplate(const AName: string; const ATemplate: ITemplate);
+    procedure RemoveTemplate(const AName: string);
 
     function GetTemplateResolver: TTemplateResolver;
     procedure SetTemplateResolver(const AResolver: TTemplateResolver);
@@ -292,6 +335,10 @@ type
 
     function GetDebugErrorFormat: string;
     procedure SetDebugErrorFormat(const AFormat: string);
+
+    function GetWhitespace: char;
+    procedure SetWhiteSpace(const AWS: char);
+
   end;
 
 function CreateTemplateContext(const AOptions: TTemplateEvaluationOptions): ITemplateContext;
@@ -311,6 +358,13 @@ begin
   end;
 end;
 
+procedure TTemplateContext.AddBlock(const AName: string; const ABlock: IBlockStmt);
+begin
+  if not assigned(FEvaluationContext) then
+    exit;
+  FEvaluationContext.AddBlock(AName, ABlock);
+end;
+
 procedure TTemplateContext.ApplyTo(const AScope: TStackFrame);
 var
   LPair: TPair<string, TValue>;
@@ -321,8 +375,9 @@ end;
 
 constructor TTemplateContext.Create(const AOptions: TTemplateEvaluationOptions);
 begin
-  FOptions := AOptions;
+  FOptions := AOptions + [eoFlattenTemplate, eoOptimiseTemplate];
   FMaxRuntimeMs := GDefaultRuntimeMS;
+  FPrettyPrintOutput := GPrettyPrintOutput;
   SetEncoding(GDefaultEncoding);
   FStartToken := GDefaultOpenTag;
   FEndToken := GDefaultCloseTag;
@@ -334,10 +389,7 @@ begin
   FLock := TCriticalSection.Create;
   FNewLine := GNewLine;
   FStreamWriterProvider := GStreamWriterProvider;
-  FVariables.Items['CR'] := #13;
-  FVariables.Items['NL'] := #10;
-  FVariables.Items['CRNL'] := #13#10;
-  FVariables.Items['TAB'] := #9;
+  FWhiteSpace := #32;
   FFormatSettings := TFormatSettings.Create;
   SetDecimalSeparator(FFormatSettings.DecimalSeparator);
   FDebugFormat := FNewLine + FNewLine + 'ERROR: %s' + FNewLine + FNewLine;
@@ -350,6 +402,18 @@ begin
   FFunctions := nil;
   FLock.Free;
   inherited;
+end;
+
+procedure TTemplateContext.EndEvaluation;
+begin
+  FreeAndNil(FEvaluationContext);
+end;
+
+function TTemplateContext.TryGetBlock(const AName: string; out ABlock: IBlockStmt): boolean;
+begin
+  if not assigned(FEvaluationContext) then
+    exit(false);
+  exit(FEvaluationContext.TryGetBlock(AName, ABlock));
 end;
 
 function TTemplateContext.TryGetFunction(const AName: string; out AFunction: TArray<TRttiMethod>): boolean;
@@ -408,6 +472,11 @@ begin
   exit(FOptions);
 end;
 
+function TTemplateContext.GetPrettyPrintOutput: TPrettyPrintOutput;
+begin
+  result := FPrettyPrintOutput;
+end;
+
 function TTemplateContext.GetVariable(const AName: string): TValue;
 begin
   FLock.Enter;
@@ -426,6 +495,28 @@ end;
 function TTemplateContext.GetVariables: ITemplateVariables;
 begin
   exit(FVariables);
+end;
+
+function TTemplateContext.GetWhitespace: char;
+begin
+  exit(FWhiteSpace);
+end;
+
+procedure TTemplateContext.RemoveBlock(const AName: string);
+begin
+  if not assigned(FEvaluationContext) then
+    exit;
+  FEvaluationContext.RemoveBlock(AName);
+end;
+
+procedure TTemplateContext.RemoveTemplate(const AName: string);
+begin
+  FLock.Enter;
+  try
+    FTemplates.Remove(AName);
+  finally
+    FLock.Leave;
+  end;
 end;
 
 function TTemplateContext.GetScriptEndStripToken: string;
@@ -502,12 +593,18 @@ end;
 procedure TTemplateContext.SetNewLine(const ANewLine: string);
 begin
   FNewLine := ANewLine;
-  include(FOptions, eoInternalUseNewLine);
 end;
 
 procedure TTemplateContext.SetOptions(const AOptions: TTemplateEvaluationOptions);
 begin
   FOptions := AOptions;
+  if eoOptimiseTemplate in FOptions then
+    include(FOptions, eoFlattenTemplate);
+end;
+
+procedure TTemplateContext.SetPrettyPrintOutput(const APrettyPrintOutput: TPrettyPrintOutput);
+begin
+  FPrettyPrintOutput := APrettyPrintOutput;
 end;
 
 procedure TTemplateContext.SetValueSeparator(const ASeparator: char);
@@ -532,6 +629,16 @@ end;
 procedure TTemplateContext.SetVariableEncoder(const AEncoder: TTemplateEncodeFunction);
 begin
   FVariableEncoder := AEncoder;
+end;
+
+procedure TTemplateContext.SetWhiteSpace(const AWS: char);
+begin
+  FWhiteSpace := AWS;
+end;
+
+procedure TTemplateContext.StartEvaluation;
+begin
+  FEvaluationContext := TEvaluationContext.Create;
 end;
 
 procedure TTemplateContext.SetScriptEndStripToken(const Value: string);
@@ -571,7 +678,7 @@ begin
     result := FTemplates.TryGetValue(AName, ATemplate);
     if result then
       exit(true);
-    if not Assigned(FTemplateResolver) then
+    if not assigned(FTemplateResolver) then
       exit(false);
     ATemplate := FTemplateResolver(self, AName);
     if ATemplate = nil then
@@ -618,7 +725,51 @@ begin
   setlength(result, 0);
 end;
 
-{ TNoEncoding }
+{ TEvaluationContext }
+
+procedure TEvaluationContext.AddBlock(const AName: string; const ABlock: IBlockStmt);
+var
+  LStack: TStack<IBlockStmt>;
+begin
+  if not FBlocks.TryGetValue(AName, LStack) then
+  begin
+    LStack := TStack<IBlockStmt>.Create;
+    FBlocks.AddOrSetValue(AName, LStack);
+  end;
+  LStack.Push(ABlock)
+end;
+
+constructor TEvaluationContext.Create;
+begin
+  FBlocks := TObjectDictionary < string, TStack < IBlockStmt >>.Create([doOwnsValues]);
+end;
+
+destructor TEvaluationContext.Destroy;
+begin
+  FBlocks.Free;
+  inherited;
+end;
+
+procedure TEvaluationContext.RemoveBlock(const AName: string);
+var
+  LStack: TStack<IBlockStmt>;
+begin
+  if not FBlocks.TryGetValue(AName, LStack) then
+    exit;
+  LStack.pop;
+  if LStack.Count = 0 then
+    FBlocks.Remove(AName);
+end;
+
+function TEvaluationContext.TryGetBlock(const AName: string; out ABlock: IBlockStmt): boolean;
+var
+  LStack: TStack<IBlockStmt>;
+begin
+  if not FBlocks.TryGetValue(AName, LStack) then
+    exit(false);
+  ABlock := LStack.Peek;
+  exit(true);
+end;
 
 initialization
 
@@ -628,10 +779,11 @@ GUTF8WithoutPreambleEncoding := TUTF8WithoutPreambleEncoding.Create;
 GDefaultEncoding := TEncoding.UTF8WithoutBOM;
 GStreamWriterProvider := function(const AStream: TStream; AContext: ITemplateContext): TStreamWriter
   begin
-    if (eoTrimLines in AContext.Options) or (eoStripRecurringNewlines in AContext.Options) or (eoAllowIgnoreNL in AContext.Options) or (eoInternalUseNewLine in AContext.Options) then
-      exit(TNewLineStreamWriter.Create(AStream, AContext.Encoding, AContext.NewLine, AContext.Options))
-    else
-      exit(TStreamWriter.Create(AStream, AContext.Encoding));
+    exit(TStreamWriter.Create(AStream, AContext.Encoding, 4096));
+  end;
+
+GPrettyPrintOutput := procedure(const APrettyPrint: string)
+  begin
   end;
 
 finalization

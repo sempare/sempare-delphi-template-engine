@@ -45,7 +45,11 @@ type
   TTestTemplate = class
   public
     [Test]
-    procedure TestComment;
+    procedure TestEmpty;
+    [Test]
+    procedure TestNonStmt;
+    [Test]
+    procedure TestHashComment;
     [Test {$IFNDEF SEMPARE_TEMPLATE_HAS_HTML_ENCODER}, Ignore{$ENDIF}]
     procedure TestHtmlEncoding;
     [Test]
@@ -68,8 +72,7 @@ type
     procedure TestVariableNotFoundException;
     [Test]
     procedure TestArray;
-    [Test, Ignore]
-    // This is ignored because this is a potential future feature that is not currently supported.
+    [Test]
     procedure TestStmts;
     [Test]
     procedure TestRequire;
@@ -95,9 +98,6 @@ type
     procedure TestParseFile;
 
     [Test]
-    procedure TestStripWSScripts;
-
-    [Test]
     // Not Yet Supported
     procedure TestSemiColon;
 
@@ -118,6 +118,9 @@ type
 
     [Test]
     procedure TestDecimalEncodingErrorWithListsDefaultValueSeparator;
+
+    [Test]
+    procedure TestVersionPresent;
   end;
 
 type
@@ -145,11 +148,11 @@ begin
   Assert.AreEqual('2', Template.Eval('<% a:= [1,''hello world'', 2] %><% a[2]%>'));
 end;
 
-procedure TTestTemplate.TestComment;
+procedure TTestTemplate.TestHashComment;
 begin
   Assert.AreEqual('before after ', Template.Eval( //
     'before ' + //
-    '<% (* this is '#13#10#13#10'a comment *) %>' + //
+    '<%#  this is '#13#10#13#10'a comment  %>' + //
     'after ' //
     ));
 end;
@@ -232,7 +235,7 @@ begin
   Assert.AreEqual(LString, LResult);
 
   LString := '<% ignorenl %>' + LString + '<%end%>';
-  LResult := Template.Eval(LString, [eoAllowIgnoreNL]);
+  LResult := Template.Eval(LString);
   Assert.AreEqual('hello world', LResult);
 end;
 
@@ -261,19 +264,20 @@ begin
   Assert.AreEqual(LString, LResult);
 
   LString := '<% ignorenl %>' + LString + '<%end%>';
-  LResult := Template.Eval(LString, [eoAllowIgnoreNL]);
+  LResult := Template.Eval(LString, []);
   Assert.AreEqual('<table><tr><td>col1</td><td>col2</td></tr></table>', LResult);
 end;
 
 procedure TTestTemplate.TestList;
+type
+  TContainer = record
+    data: TObjectList<TTestClass>;
+  end;
+
 var
   LList: TObjectList<TTestClass>;
-  LContainer: record data: TObjectList<TTestClass>;
-end;
-LEmptyContainer:
-record data: TObjectList<TTestClass>;
-end;
-
+  LContainer: TContainer;
+  LEmptyContainer: TContainer;
 begin
   LList := TObjectList<TTestClass>.Create();
   try
@@ -307,6 +311,12 @@ begin
   Assert.AreEqual('a value', r.Val);
 end;
 
+procedure TTestTemplate.TestNonStmt;
+begin
+  Assert.AreEqual('', Template.Eval('<% %>'));
+  Assert.AreEqual('       ', Template.Eval('   <% %>   <% %> '));
+end;
+
 procedure TTestTemplate.TestNoSpace;
 var
   ctx: ITemplateContext;
@@ -321,7 +331,8 @@ var
   LTemplate: ITemplate;
 begin
   // main thing is that we have no exception here!
-  LTemplate := Template.ParseFile('..\..\demo\VelocityDemo\velocity\international.velocity');
+  LTemplate := Template.ParseFile('..\..\demo\SempareTemplatePlayground\templates\international.tpl');
+  Assert.IsNotNull(LTemplate);
 end;
 
 procedure TTestTemplate.testPrint;
@@ -347,11 +358,7 @@ end;
 
 procedure TTestTemplate.TestSemiColon;
 begin
-  Assert.WillRaise(
-    procedure
-    begin
-      Assert.AreEqual('hello world', Template.Eval('<% a:= "hello" ; b:= "world" ; print(a + " " + b) %>'));
-    end);
+  Assert.AreEqual('hello world', Template.Eval('<% a:= "hello" ; b:= "world" ; print(a + " " + b) %>'));
 end;
 
 procedure TTestTemplate.TestStartEndToken;
@@ -367,16 +374,6 @@ end;
 procedure TTestTemplate.TestStmts;
 begin
   Assert.AreEqual('1', Template.Eval('<% a := 1; print(a) %>'));
-end;
-
-procedure TTestTemplate.TestStripWSScripts;
-begin
-  Assert.AreEqual('', Template.Eval('<% a := 1 |>2<| a:=3 %>'));
-  Assert.AreEqual('12345678910', Template.Eval('<% for i := 1 to 10 |><%print(i)%><| end %>'));
-  Assert.AreEqual('12345678910', Template.Eval('<% for i := 1 to 10 |>'#13#10'<%print(i)%>'#13#10'<| end %>'));
-  Assert.AreEqual(#$D#$A'1'#$D#$A#$D#$A'2'#$D#$A#$D#$A'3'#$D#$A#$D#$A'4'#$D#$A#$D#$A'5'#$D#$A, Template.Eval('<% for i := 1 to 5 %>'#13#10'<%print(i)%>'#13#10'<% end %>'));
-  Assert.AreEqual('hellomiddleworld', Template.Eval('<% print("hello") |> this should '#13#10'<% print("middle") %>'#13#10' go missing<| print("world")  %>'));
-  Assert.AreEqual('12345', Template.Eval('<% for i:=1 to 5 |> <%i%>     '#13#10'<| end %>'));
 end;
 
 { TTestClass }
@@ -483,6 +480,11 @@ begin
   raise Exception.Create(AValue);
 end;
 
+procedure TTestTemplate.TestEmpty;
+begin
+  Assert.AreEqual('', Template.Eval(''));
+end;
+
 procedure TTestTemplate.TestException;
 var
   LContext: ITemplateContext;
@@ -564,6 +566,11 @@ begin
     begin // expects  abc
       Assert.AreEqual('', Template.Eval(LCtx, '<% abc %>'));
     end);
+end;
+
+procedure TTestTemplate.TestVersionPresent;
+begin
+  Assert.IsNotEmpty(Template.Version);
 end;
 
 initialization

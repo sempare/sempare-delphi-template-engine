@@ -53,6 +53,14 @@ type
     boEQ, boNotEQ, boLT, boLTE, boGT, boGTE, // comparison
     boIN);
 
+  TStripAction = ( //
+    saWhitespace, //
+    saNL, //
+    saKeepOneSpace //
+    );
+
+  TStripActionSet = set of TStripAction;
+
   TTemplateSymbol = ( //
     // general parsing
     vsInvalid, //
@@ -78,6 +86,7 @@ type
     vsInclude, //
     vsRequire, //
     vsIgnoreNL, //
+    vsIgnoreWS, //
     vsOffset, //
     vsStep, //
     vsLimit, //
@@ -135,8 +144,16 @@ type
 
     // for expression list
     vsComma, //
-    vsSemiColon //
+    vsSemiColon, //
+
+    vsExtends, //
+    vsBlock, //
+
+    vsNewLine, //
+    vsWhiteSpace //
     );
+
+  TTemplateSymbolSet = set of TTemplateSymbol;
 
   IPosition = interface
     ['{2F087E1F-42EE-44D4-B928-047AA1788F50}']
@@ -155,13 +172,15 @@ type
     ['{3EC6C60C-164F-4BF5-AF2E-8F3CFC30C594}']
     function GetPosition: IPosition;
     function GetToken: TTemplateSymbol;
+    function GetStripActions: TStripActionSet;
     procedure SetToken(const AToken: TTemplateSymbol);
-    function StripWS: boolean;
     property Token: TTemplateSymbol read GetToken write SetToken;
     property Position: IPosition read GetPosition;
+    property StripActions: TStripActionSet read GetStripActions;
   end;
 
   ITemplateVisitor = interface;
+  IEvaluationTemplateVisitor = interface;
 
   IPositional = interface
     ['{DFA45EC1-7F39-4FB2-9894-8BD8D4ABA975}']
@@ -169,17 +188,21 @@ type
     property Position: IPosition read GetPosition;
   end;
 
-  ITemplateVisitorHost = interface
+  ITemplateVisitorHost = interface(IPosition)
     ['{BB5F2BF7-390D-4E20-8FD2-DB7609519143}']
     procedure Accept(const AVisitor: ITemplateVisitor);
+
   end;
 
-  IExpr = interface
+  IExpr = interface(ITemplateVisitorHost)
     ['{8C539211-ED84-4963-B894-C569C2F7B2FE}']
   end;
 
-  IStmt = interface
+  IStmt = interface(ITemplateVisitorHost)
     ['{6D37028E-A0C0-41F1-8A59-EDC0C9ADD9C7}']
+    function Flatten: TArray<IStmt>;
+    function GetHasEnd: boolean;
+    property HasEnd: boolean read GetHasEnd;
   end;
 
   IDebugStmt = interface(IStmt)
@@ -188,23 +211,74 @@ type
     property Stmt: IStmt read GetStmt;
   end;
 
-  ITemplate = interface
+  TParserOption = (poAllowEnd, poAllowElse, poAllowElIf, poHasElse, poInLoop, poStripNL, poStripWS);
+  TParserOptions = set of TParserOption;
+
+  ITemplate = interface(ITemplateVisitorHost)
     ['{93AAB971-5B4B-4959-93F2-6C7DAE15C91B}']
-    function GetItem(const AOffset: integer): ITemplateVisitorHost;
+    function GetItem(const AOffset: integer): IStmt;
     function GetCount: integer;
-    function GetLastItem: ITemplateVisitorHost;
-    property Items[const AOffset: integer]: ITemplateVisitorHost read GetItem;
+    function GetLastItem: IStmt;
+    procedure FlattenTemplate;
+    procedure OptimiseTemplate(const AOptions: TParserOptions);
+    property Items[const AOffset: integer]: IStmt read GetItem;
     property Count: integer read GetCount;
-    property LastItem: ITemplateVisitorHost read GetLastItem;
+    property LastItem: IStmt read GetLastItem;
   end;
+
+  TAddLocation = (alLast, alBeforeNL, alAfterNL);
 
   ITemplateAdd = interface(ITemplate)
     ['{64465D68-0E9D-479F-9EF3-A30E75967809}']
-    procedure Add(const AItem: ITemplateVisitorHost);
+    procedure Add(const AItem: IStmt; const AAddLocation: TAddLocation = alLast);
+  end;
+
+  IBlockStmt = interface;
+
+  IExtendsStmt = interface(IStmt)
+    ['{220D7E83-280D-454B-BA60-622C97EBE131}']
+    function GetName: IExpr;
+    function NameAsString(const AEvalVisitor: IEvaluationTemplateVisitor): string;
+    function GetBlockContainer: ITemplate;
+    property Name: IExpr read GetName;
+    property BlockContainer: ITemplate read GetBlockContainer;
+  end;
+
+  IBlockStmt = interface(IStmt)
+    ['{EBAC38C4-9790-4D7C-844C-BE7C94E7C822}']
+    function GetName: IExpr;
+    function NameAsString(const AEvalVisitor: IEvaluationTemplateVisitor): string;
+    function GetContainer: ITemplate;
+    property Name: IExpr read GetName;
+    property Container: ITemplate read GetContainer;
   end;
 
   IContinueStmt = interface(IStmt)
     ['{FB4CC3AB-BFEC-4189-B555-153DDA490D15}']
+  end;
+
+  TStripDirection = (sdEnd, sdLeft, sdRight, sdBeforeNewLine, sdAfterNewLine);
+
+  IStripStmt = interface(IStmt)
+    ['{3313745B-D635-4453-9808-660DC462E15C}']
+    function GetDirection: TStripDirection;
+    function GetAction: TStripActionSet;
+    function GetHasEnd: boolean;
+    procedure SetHasEnd(const AHasEnd: boolean);
+    function GetIndent: string;
+    procedure SetIndent(const AIndent: string);
+    property Direction: TStripDirection read GetDirection;
+    property Action: TStripActionSet read GetAction;
+    property HasEnd: boolean read GetHasEnd write SetHasEnd;
+    property Indent: string read GetIndent write SetIndent;
+  end;
+
+  ICompositeStmt = interface(IStmt)
+    ['{790FB188-9763-401F-A0B1-FC9CCF4EF18D}']
+    function GetFirstStmt: IStmt;
+    function GetSecondStmt: IStmt;
+    property FirstStmt: IStmt read GetFirstStmt;
+    property SecondStmt: IStmt read GetSecondStmt;
   end;
 
   IEndStmt = interface(IStmt)
@@ -213,6 +287,10 @@ type
 
   IElseStmt = interface(IStmt)
     ['{C82384C1-73D8-47D8-8A8C-068BA613FDD8}']
+  end;
+
+  INoopStmt = interface(IStmt)
+    ['{0F11CAFA-E6FB-487E-95F4-B9E96BA2F175}']
   end;
 
   IBreakStmt = interface(IStmt)
@@ -290,11 +368,11 @@ type
 
   ILoopStmt = interface(IStmt)
     ['{D6C26A41-3250-4EB9-A776-8952DE3931BD}']
-    function GetOnFirstContainer: ITemplate;
+    function GetOnBeginContainer: ITemplate;
     function GetOnEndContainer: ITemplate;
     function GetOnEmptyContainer: ITemplate;
     function GetBetweenItemContainer: ITemplate;
-    property OnFirstContainer: ITemplate read GetOnFirstContainer;
+    property OnBeginContainer: ITemplate read GetOnBeginContainer;
     property OnEndContainer: ITemplate read GetOnEndContainer;
     property OnEmptyContainer: ITemplate read GetOnEmptyContainer;
     property BetweenItemsContainer: ITemplate read GetBetweenItemContainer;
@@ -363,6 +441,14 @@ type
     ['{69D51BDD-C007-4ECE-926D-146CD1CD26D0}']
     function GetValue: TValue;
     property Value: TValue read GetValue;
+  end;
+
+  INewLineExpr = interface(IValueExpr)
+    ['{A140C174-1C92-4C4C-AD8C-5A46066B2338}']
+  end;
+
+  IWhitespaceExpr = interface(IValueExpr)
+    ['{65ACCA2B-B671-42E9-8ED4-179B11C36AA0}']
   end;
 
   IVariableExpr = interface(IExpr)
@@ -447,7 +533,7 @@ type
     function GetUnaryOp: TUnaryOp;
     function GetExpr: IExpr;
     property UnaryOp: TUnaryOp read GetUnaryOp;
-    property Condition: IExpr read GetExpr;
+    property Expr: IExpr read GetExpr;
   end;
 
   ITemplateVisitor = interface
@@ -457,6 +543,8 @@ type
     procedure Visit(const AExpr: IBinopExpr); overload;
     procedure Visit(const AExpr: IUnaryExpr); overload;
     procedure Visit(const AExpr: IVariableExpr); overload;
+    procedure Visit(const AExpr: IWhitespaceExpr); overload;
+    procedure Visit(const AExpr: INewLineExpr); overload;
     procedure Visit(const AExpr: IValueExpr); overload;
     procedure Visit(const AExpr: ITernaryExpr); overload;
     procedure Visit(const AExpr: IArrayExpr); overload;
@@ -483,8 +571,51 @@ type
     procedure Visit(const AStmt: IWithStmt); overload;
     procedure Visit(const AStmt: ICycleStmt); overload;
     procedure Visit(const AStmt: IDebugStmt); overload;
+    procedure Visit(const AStmt: IBlockStmt); overload;
+    procedure Visit(const AStmt: IExtendsStmt); overload;
+    procedure Visit(const AStmt: ICompositeStmt); overload;
+    procedure Visit(const AStmt: IStripStmt); overload;
+  end;
+
+  IEvaluationTemplateVisitor = interface(ITemplateVisitor)
+    ['{D7993669-463E-4DBD-ACA2-76A7A6FF059A}']
+    function EvalExpr(const AExpr: IExpr): TValue;
+    function EvalExprAsString(const AExpr: IExpr): string;
+    function EvalExprAsInt(const AExpr: IExpr): int64;
+    function EvalExprAsNum(const AExpr: IExpr): extended;
+    function EvalExprAsBoolean(const AExpr: IExpr): boolean;
+    function ResolveTemplate(const AExpr: IExpr): ITemplate;
+    procedure VisitStmt(const AStmt: IStmt);
+  end;
+
+const
+  StripDirectionStr: array [TStripDirection] of string = ( //
+    'sdEnd', 'sdLeft', 'sdRight', 'sdBeforeNewLine', 'sdAfterNewLine');
+
+  StripActionStr: array [TStripAction] of string = ( //
+    'saWhitespace', //
+    'saNL', //
+    'saKeepOneSpace' //
+    );
+
+type
+  TStringActionsHelper = record helper for TStripActionSet
+    function ToString: string;
   end;
 
 implementation
+
+function TStringActionsHelper.ToString: string;
+var
+  LAction: TStripAction;
+begin
+  result := '';
+  for LAction in self do
+  begin
+    if result.Length > 0 then
+      result := result + ',';
+    result := result + StripActionStr[LAction];
+  end;
+end;
 
 end.

@@ -39,9 +39,11 @@ interface
 uses
   System.Classes,
   System.SysUtils,
+  System.Generics.Collections,
   Sempare.Template.Common,
   Sempare.Template.Context,
   Sempare.Template.AST,
+  Sempare.Template.TemplateRegistry,
   Sempare.Template.Parser;
 
 const
@@ -56,8 +58,12 @@ const
   eoEmbedException = TTemplateEvaluationOption.eoEmbedException;
   eoPrettyPrint = TTemplateEvaluationOption.eoPrettyPrint;
   eoRaiseErrorWhenVariableNotFound = TTemplateEvaluationOption.eoRaiseErrorWhenVariableNotFound;
-  eoReplaceNewline = TTemplateEvaluationOption.eoReplaceNewline;
-  eoStripEmptyLines = TTemplateEvaluationOption.eoStripEmptyLines;
+  eoFlattenTemplate = TTemplateEvaluationOption.eoFlattenTemplate;
+  eoOptimiseTemplate = TTemplateEvaluationOption.eoOptimiseTemplate;
+
+  tlsLoadResource = Sempare.Template.TemplateRegistry.tlsLoadResource;
+  tlsLoadFile = Sempare.Template.TemplateRegistry.tlsLoadFile;
+  tlsLoadCustom = Sempare.Template.TemplateRegistry.tlsLoadCustom;
 
 type
   TTemplateEvaluationOptions = Sempare.Template.Context.TTemplateEvaluationOptions;
@@ -70,20 +76,26 @@ type
   TTemplateEncodeFunction = Sempare.Template.Common.TTemplateEncodeFunction;
   ITemplateVariables = Sempare.Template.Common.ITemplateVariables;
   TUTF8WithoutPreambleEncoding = Sempare.Template.Context.TUTF8WithoutPreambleEncoding;
+  TTemplateRegistry = Sempare.Template.TemplateRegistry.TTemplateRegistry;
+  TTemplateLoadStrategy = Sempare.Template.TemplateRegistry.TTemplateLoadStrategy;
+  TSempareServerPages = TTemplateRegistry;
+  ETemplateNotResolved = Sempare.Template.TemplateRegistry.ETemplateNotResolved;
+  TTempateLogMessage = Sempare.Template.TemplateRegistry.TTempateLogMessage;
 
   Template = class
+{$INCLUDE 'Sempare.Template.Version.inc'}
 {$IFNDEF SEMPARE_TEMPLATE_CONFIRM_LICENSE}
 {$IFDEF MSWINDOWS}
   private
     class var FLicenseShown: boolean;
-    class constructor Create;
+    class procedure Initialize;
 {$ENDIF}
 {$ENDIF}
   public
-    class function Context(const AOptions: TTemplateEvaluationOptions = []): ITemplateContext; inline; static;
+    class function Context(const AOptions: TTemplateEvaluationOptions = [eoOptimiseTemplate]): ITemplateContext; inline; static;
     class function Parser(const AContext: ITemplateContext): ITemplateParser; overload; inline; static;
     class function Parser(): ITemplateParser; overload; inline; static;
-    class function PrettyPrint(ATemplate: ITemplate): string; inline; static;
+    class function PrettyPrint(const ATemplate: ITemplate): string; inline; static;
 
     // EVAL output to stream
 
@@ -126,6 +138,9 @@ type
 
     class procedure ExtractReferences(const ATemplate: ITemplate; out AVariables: TArray<string>; out AFunctions: TArray<string>); static;
 
+    class procedure ExtractBlocks(const ATemplate: ITemplate; var ABlocks: TDictionary<string, ITemplate>); static;
+
+    class function Version(): string; static;
   end;
 
   TEncodingHelper = class helper for TEncoding
@@ -141,8 +156,10 @@ uses
   VCL.Dialogs,
 {$ENDIF}
 {$ENDIF}
+  System.Rtti,
   Sempare.Template.Evaluate,
   Sempare.Template.VariableExtraction,
+  Sempare.Template.BlockResolver,
   Sempare.Template.PrettyPrint;
 
 type
@@ -168,8 +185,7 @@ end;
 
 class procedure Template.Eval<T>(const AContext: ITemplateContext; const ATemplate: ITemplate; const AValue: T; const AStream: TStream);
 var
-  LValue: TTemplateValue;
-  LTemplateVisitor: ITemplateVisitor;
+  LTemplateVisitor: IEvaluationTemplateVisitor;
 begin
 {$IFNDEF SEMPARE_TEMPLATE_CONFIRM_LICENSE}
 {$IFDEF MSWINDOWS}
@@ -179,16 +195,13 @@ begin
       'Thank you for trying the Sempare Template Engine.'#13#10#13#10 + //
       'To supress this message, set the conditional define SEMPARE_TEMPLATE_CONFIRM_LICENSE in the project options.'#13#10#13#10 + //
       'Please remember the library is dual licensed. You are free to use it under the GPL or you can support the project to keep it alive as per:'#13#10#13#10 + //
-      'https://github.com/sempare/sempare-delphi-template-engine/blob/master/docs/commercial.license.md' //
+      'https://github.com/sempare/sempare-delphi-template-engine/blob/main/docs/commercial.license.md' //
       );
     FLicenseShown := true;
   end;
 {$ENDIF}
 {$ENDIF}
-  LValue := TTemplateValue.From<T>(AValue);
-  if typeinfo(T) = typeinfo(TTemplateValue) then
-    LValue := LValue.AsType<TTemplateValue>();
-  LTemplateVisitor := TEvaluationTemplateVisitor.Create(AContext, LValue, AStream);
+  LTemplateVisitor := TEvaluationTemplateVisitor.Create(AContext, TTemplateValue.From<T>(AValue), AStream);
   AcceptVisitor(ATemplate, LTemplateVisitor);
 end;
 
@@ -230,15 +243,22 @@ begin
   exit(CreateTemplateParser(Context));
 end;
 
-class function Template.PrettyPrint(ATemplate: ITemplate): string;
+class function Template.PrettyPrint(const ATemplate: ITemplate): string;
 var
   LVisitor: ITemplateVisitor;
   LTemplateVisitor: TPrettyPrintTemplateVisitor;
 begin
+  if not assigned(ATemplate) then
+    exit('');
   LTemplateVisitor := TPrettyPrintTemplateVisitor.Create();
   LVisitor := LTemplateVisitor;
   AcceptVisitor(ATemplate, LVisitor);
   exit(LTemplateVisitor.ToString);
+end;
+
+class function Template.Version: string;
+begin
+  exit(format('%d.%d.%d', [MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION]));
 end;
 
 class procedure Template.Eval(const AContext: ITemplateContext; const ATemplate: string; const AStream: TStream);
@@ -355,6 +375,35 @@ begin
   exit(Eval(AContext, LTemplate, AValue));
 end;
 
+class procedure Template.ExtractBlocks(const ATemplate: ITemplate; var ABlocks: TDictionary<string, ITemplate>);
+type
+  TEmpty = record
+  end;
+var
+  LStringStream: TStringStream;
+  LContext: ITemplateContext;
+  LEvalVisitor: IEvaluationTemplateVisitor;
+  LVisitor: IBlockResolverVisitor;
+  LName: string;
+  LEmpty: TEmpty;
+begin
+  assert(ATemplate <> nil);
+  assert(ABlocks <> nil);
+  LStringStream := nil;
+  try
+    LStringStream := TStringStream.Create;
+    LContext := Template.Context();
+    LEvalVisitor := TEvaluationTemplateVisitor.Create(LContext, TValue.From<TEmpty>(LEmpty), LStringStream);
+    LVisitor := TBlockResolverVisitor.Create(LEvalVisitor, ATemplate);
+    for LName in LVisitor.GetBlockNames do
+    begin
+      ABlocks.Add(LName, LVisitor.GetBlock(LName).Container);
+    end;
+  finally
+    LStringStream.Free;
+  end;
+end;
+
 class procedure Template.ExtractReferences(const ATemplate: ITemplate; out AVariables: TArray<string>; out AFunctions: TArray<string>);
 var
   LVisitor: ITemplateVisitor;
@@ -370,7 +419,7 @@ end;
 {$IFNDEF SEMPARE_TEMPLATE_CONFIRM_LICENSE}
 {$IFDEF MSWINDOWS}
 
-class constructor Template.Create;
+class procedure Template.Initialize;
 begin
   FLicenseShown := false;
 end;
@@ -397,6 +446,12 @@ end;
 initialization
 
 GEmpty := TObject.Create;
+
+{$IFNDEF SEMPARE_TEMPLATE_CONFIRM_LICENSE}
+{$IFDEF MSWINDOWS}
+Template.Initialize;
+{$ENDIF}
+{$ENDIF}
 
 finalization
 

@@ -34,6 +34,7 @@ unit Sempare.Template.Util;
 
 interface
 
+{$I 'Sempare.Template.Compiler.inc'}
 // This is copied from Sempare.Boot.Common.PreserveValue to make standalone.
 
 type
@@ -73,15 +74,66 @@ type
     procedure NoReset(const AValue: T); overload;
   end;
 
+function GetTestTimeTollerance(const ANativeTime, AHypervisorTime: double): double;
+
 implementation
 
+{$IFDEF MSWINDOWS}
+
+uses
+  SysUtils,
+  WinAPI.Windows,
+{$IFDEF SUPPORT_WIN_REGISTRY}System.Win.Registry{$ELSE}Registry{$ENDIF};
+
+var
+  GVmwareResolved: boolean;
+  GIsUnderVmware: boolean;
+
+function IsRunningUnderVMWare: boolean;
+var
+  Reg: TRegistry;
+begin
+  if GVmwareResolved then
+  begin
+    exit(GIsUnderVmware);
+  end;
+  Result := False;
+  Reg := TRegistry.Create;
+  try
+    Reg.RootKey := HKEY_LOCAL_MACHINE;
+    if Reg.OpenKeyReadOnly('\HARDWARE\DESCRIPTION\System\BIOS') then
+    begin
+      if Pos('VMware', Reg.ReadString('SystemProductName')) > 0 then
+        Result := True;
+      Reg.CloseKey;
+    end;
+  finally
+    Reg.Free;
+  end;
+  GIsUnderVmware := Result;
+end;
+
+function GetTestTimeTollerance(const ANativeTime, AHypervisorTime: double): double;
+begin
+  if IsRunningUnderVMWare then
+    exit(AHypervisorTime)
+  else
+    exit(ANativeTime);
+end;
+{$ELSE}
+
+function GetTestTimeTollerance(const ANativeTime, AHypervisorTime: double): double;
+begin
+  exit(AHypervisorTime)
+end;
+{$ENDIF}
 { TPreserveValue<T> }
 
 constructor TPreserveValue<T>.Create(var AValue: T);
 begin
   FOldValue := AValue;
   FValuePtr := @AValue;
-  FReset := true;
+  FReset := True;
 end;
 
 constructor TPreserveValue<T>.Create(var AValue: T; const NewValue: T);
@@ -115,7 +167,7 @@ end;
 
 procedure TPreserveValue<T>.NoReset;
 begin
-  FReset := false;
+  FReset := False;
 end;
 
 { Preseve }
@@ -129,5 +181,12 @@ class function Preserve.Value<T>(var AValue: T; const NewValue: T): IPreserveVal
 begin
   exit(TPreserveValue<T>.Create(AValue, NewValue));
 end;
+
+initialization
+
+{$IFDEF MSWINDOWS}
+  GVmwareResolved := False;
+GIsUnderVmware := IsRunningUnderVMWare;
+{$ENDIF}
 
 end.

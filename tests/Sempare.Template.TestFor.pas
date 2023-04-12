@@ -213,6 +213,10 @@ begin
 
   Assert.AreEqual('1 2 1 ', //
     Template.Eval('<% for i in [ 1, 2, 3] %><% cycle(''1'',''2'') %> <% end %>'));
+
+  Assert.AreEqual('odd-row even-row odd-row ', //
+    Template.Eval('<% i := 0; while true ; if i = 3; break; end; cycle ("odd-row ","even-row "); i:=i+1; end; %>'));
+
 end;
 
 procedure TTestTemplateFor.TestForIn;
@@ -426,17 +430,18 @@ end;
 
 procedure TTestTemplateFor.TestSimpleFor;
 begin
-  Template.parse('before <% for a := 1 to 10 %> after <% end %> ');
+  Assert.AreEqual('before            after', Template.Eval('before <% for a := 1 to 10 %> <% end %> after'));
 end;
 
 procedure TTestTemplateFor.TestSimpleForDownTo;
 begin
-  Template.parse('before <% for a := 1 downto 10 %> after <% end %> ');
+  Assert.AreEqual('before  after', Template.Eval('before <% for a := 1 downto 10 %> <% end %> after'));
+  Assert.AreEqual('before            after', Template.Eval('before <% for a := 10 downto 1 %> <% end %> after'));
 end;
 
 procedure TTestTemplateFor.TestSimpleForin;
 begin
-  Template.parse('before <% for a in b %> pre <% a %> post  <% end %> ');
+  Assert.IsNotNull(Template.parse('before <% for a in b %> pre <% a %> post  <% end %> '));
 end;
 
 type

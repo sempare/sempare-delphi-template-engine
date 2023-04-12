@@ -8,10 +8,13 @@ The commercial license for Sempare Template Engine for Delphi gives you the righ
 - use the component and source code on all development systems used by the developer
 - sell any number of applications in any quantity without any additional run-time fees required
 
-A commercial licence is sold per developer developing applications that use Sempare Template Engine for Delphi. 
-The initial cost is $70 per developer and includes first year of support. For support thereafter, at your discretion, 
-a support fee of $30 per developer per year would be appreciated (the cost of a few cups of coffee). Please contact us 
-for site license pricing.
+If you have obtained a site license, the license applies to all users in your organisation.
+
+The Sempare Template Engine may NOT be included or distributed as part of another commercial library or framework without approval / commercial review.
+
+A commercial licence is licensed per developer developing applications that use Sempare Template Engine for Delphi. 
+The initial license fee is $70 per developer and includes first year of support. For support thereafter, at your discretion, 
+a support fee of $30 per developer per year would be appreciated. The initial site licensing fee is $1,500 and the annual site support licensing fee is $500.
 
 Please send an e-mail to info@sempare.ltd to request an invoice which will contain the bank details.
 
@@ -26,5 +29,17 @@ USE THIS SOFTWARE, EVEN IF SEMPARE LIMITED HAS BEEN ADVISED OF THE POSSIBILITY O
 TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL SEMPARE LIMITED BE LIABLE FOR ANY 
 CONSEQUENTIAL, INCIDENTAL, DIRECT, INDIRECT, SPECIAL, PUNITIVE, OR OTHER DAMAGES WHATSOEVER, INCLUDING BUT NOT 
 LIMITED TO DAMAGES OR LOSS OF BUSINESS PROFITS, BUSINESS INTERRUPTION, LOSS OF BUSINESS INFORMATION, OR OTHER 
-PECUNIARY LOSS, EVEN IF SEMPARE LIMITED HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. 
+PECUNIARY LOSS, EVEN IF SEMPARE LIMITED HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+# Stripe Payment links
+
+The following payment links allow you to quickly subscribe. Please note that the initial license and support links are seperate.
+- [Initial License Fee](https://buy.stripe.com/aEU7t61N88pffQIdQQ)
+- [Annual Support License Fee](https://buy.stripe.com/00g8xa4ZkbBr480145)
+
+The following payment links are available for site licenses. Please note that the initial license and support links are seperate.
+- [Initial Site License Fee](https://buy.stripe.com/eVa00E77s7lbfQIaEG)
+- [Annual Support License Fee](https://buy.stripe.com/6oE14I4Zk6h7fQI003)
+
+Please send an e-mail to info@sempare.ltd to request an invoice which will contain alternative payment details.
 

@@ -115,6 +115,18 @@ type
     procedure HtmlEscape;
     [Test]
     procedure HtmlUnescape;
+    [Test]
+    procedure TestMin;
+    [Test]
+    procedure TestMax;
+    [Test]
+    procedure TestAbs;
+    [Test]
+    procedure TestIsObject;
+    [Test]
+    procedure TestIsRecord;
+    [Test]
+    procedure TestIsEmpty;
   end;
 
 type
@@ -131,6 +143,7 @@ uses
 {$ENDIF}
   System.SysUtils,
   System.Rtti,
+  System.Generics.Collections,
   Sempare.Template.Functions,
   Sempare.Template.Context,
   Sempare.Template,
@@ -278,7 +291,10 @@ begin
 end;
 
 procedure TFunctionTest.TestChrOrd;
+var
+  LCtx: ITemplateContext;
 begin
+  LCtx := Template.Context();
   Assert.AreEqual(#10, Template.Eval('<% chr(10) %>'));
   Assert.AreEqual(#9, Template.Eval('<% chr(9) %>'));
   Assert.AreEqual('200', Template.Eval('<% ord(chr(200)) %>'));
@@ -391,7 +407,10 @@ begin
 end;
 
 procedure TFunctionTest.TestPadding;
+var
+  LCtx: ITemplateContext;
 begin
+  LCtx := Template.Context();
   Assert.AreEqual('   123', Template.Eval('<% padleft(123, 6) %>'));
   Assert.AreEqual('000123', Template.Eval('<% padleft(123, 6, "0") %>'));
   Assert.AreEqual('123   ', Template.Eval('<% padright(123, 6) %>'));
@@ -506,6 +525,59 @@ end;
 procedure TFunctionTest.TestUppercase;
 begin
   Assert.AreEqual('HELLO', Template.Eval('<% uppercase(''HeLlo'') %>'));
+end;
+
+procedure TFunctionTest.TestMin;
+begin
+  Assert.AreEqual('1', Template.Eval('<% min(1,2) %>'));
+end;
+
+procedure TFunctionTest.TestMax;
+begin
+  Assert.AreEqual('2', Template.Eval('<% max(1,2) %>'));
+end;
+
+procedure TFunctionTest.TestAbs;
+begin
+  Assert.AreEqual('123.45', Template.Eval('<% abs(-123.45) %>'));
+  Assert.AreEqual('123.45', Template.Eval('<% abs(123.45) %>'));
+end;
+
+procedure TFunctionTest.TestIsRecord;
+var
+  LRecord: record end;
+  LObject: TObject;
+begin
+  LObject := TObject.Create;
+  Assert.AreEqual('true', Template.Eval('<% isrecord(_) %>', LRecord));
+  Assert.AreEqual('false', Template.Eval('<% isrecord(_) %>', LObject));
+  LObject.Free;
+end;
+
+procedure TFunctionTest.TestIsObject;
+var
+  LRecord: record end;
+  LObject: TObject;
+begin
+  LObject := TObject.Create;
+  Assert.AreEqual('false', Template.Eval('<% isobject(_) %>', LRecord));
+  Assert.AreEqual('true', Template.Eval('<% isobject(_) %>', LObject));
+  LObject.Free;
+end;
+
+procedure TFunctionTest.TestIsEmpty;
+var
+  LEmpty: TList<string>;
+  LNonEmpty: TList<string>;
+begin
+  LEmpty := TList<string>.Create;
+  LNonEmpty := TList<string>.Create;
+  LNonEmpty.Add('value');
+
+  Assert.AreEqual('true', Template.Eval('<% isempty(_) %>', LEmpty));
+  Assert.AreEqual('false', Template.Eval('<% isempty(_) %>', LNonEmpty));
+  LEmpty.Free;
+  LNonEmpty.Free;
 end;
 
 initialization

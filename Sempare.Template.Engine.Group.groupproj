@@ -9,7 +9,13 @@
         <Projects Include="Sempare.Template.Tester.dproj">
             <Dependencies>Sempare.Template.Pkg.dproj</Dependencies>
         </Projects>
-        <Projects Include="demo\VelocityDemo\Sempare.Template.Demo.dproj">
+        <Projects Include="demo\WebBrokerStandalone\WebBrokerStandalone8080.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Sempare.Template.RCGenerator.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="demo\SempareTemplatePlayground\Sempare.TemplateEngine.Playground.dproj">
             <Dependencies/>
         </Projects>
     </ItemGroup>
@@ -38,23 +44,41 @@
     <Target Name="Sempare_Template_Tester:Make" DependsOnTargets="Sempare.Template.Pkg:Make">
         <MSBuild Projects="Sempare.Template.Tester.dproj" Targets="Make"/>
     </Target>
-    <Target Name="Sempare_Template_Demo">
-        <MSBuild Projects="demo\VelocityDemo\Sempare.Template.Demo.dproj"/>
+    <Target Name="WebBrokerStandalone8080">
+        <MSBuild Projects="demo\WebBrokerStandalone\WebBrokerStandalone8080.dproj"/>
     </Target>
-    <Target Name="Sempare_Template_Demo:Clean">
-        <MSBuild Projects="demo\VelocityDemo\Sempare.Template.Demo.dproj" Targets="Clean"/>
+    <Target Name="WebBrokerStandalone8080:Clean">
+        <MSBuild Projects="demo\WebBrokerStandalone\WebBrokerStandalone8080.dproj" Targets="Clean"/>
     </Target>
-    <Target Name="Sempare_Template_Demo:Make">
-        <MSBuild Projects="demo\VelocityDemo\Sempare.Template.Demo.dproj" Targets="Make"/>
+    <Target Name="WebBrokerStandalone8080:Make">
+        <MSBuild Projects="demo\WebBrokerStandalone\WebBrokerStandalone8080.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Sempare_Template_RCGenerator">
+        <MSBuild Projects="Sempare.Template.RCGenerator.dproj"/>
+    </Target>
+    <Target Name="Sempare_Template_RCGenerator:Clean">
+        <MSBuild Projects="Sempare.Template.RCGenerator.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="Sempare_Template_RCGenerator:Make">
+        <MSBuild Projects="Sempare.Template.RCGenerator.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Sempare_TemplateEngine_Playground">
+        <MSBuild Projects="demo\SempareTemplatePlayground\Sempare.TemplateEngine.Playground.dproj"/>
+    </Target>
+    <Target Name="Sempare_TemplateEngine_Playground:Clean">
+        <MSBuild Projects="demo\SempareTemplatePlayground\Sempare.TemplateEngine.Playground.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="Sempare_TemplateEngine_Playground:Make">
+        <MSBuild Projects="demo\SempareTemplatePlayground\Sempare.TemplateEngine.Playground.dproj" Targets="Make"/>
     </Target>
     <Target Name="Build">
-        <CallTarget Targets="Sempare_Template_Pkg;Sempare_Template_Tester;Sempare_Template_Demo"/>
+        <CallTarget Targets="Sempare_Template_Pkg;Sempare_Template_Tester;WebBrokerStandalone8080;Sempare_Template_RCGenerator;Sempare_TemplateEngine_Playground"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="Sempare_Template_Pkg:Clean;Sempare_Template_Tester:Clean;Sempare_Template_Demo:Clean"/>
+        <CallTarget Targets="Sempare_Template_Pkg:Clean;Sempare_Template_Tester:Clean;WebBrokerStandalone8080:Clean;Sempare_Template_RCGenerator:Clean;Sempare_TemplateEngine_Playground:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="Sempare_Template_Pkg:Make;Sempare_Template_Tester:Make;Sempare_Template_Demo:Make"/>
+        <CallTarget Targets="Sempare_Template_Pkg:Make;Sempare_Template_Tester:Make;WebBrokerStandalone8080:Make;Sempare_Template_RCGenerator:Make;Sempare_TemplateEngine_Playground:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

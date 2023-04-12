@@ -1,4 +1,4 @@
- (*%*************************************************************************************************
+(*%**************************************************************************************************
  *                 ___                                                                              *
  *                / __|  ___   _ __    _ __   __ _   _ _   ___                                      *
  *                \__ \ / -_) | '  \  | '_ \ / _` | | '_| / -_)                                     *
@@ -6,13 +6,13 @@
  *                                    |_|                                                           *
  ****************************************************************************************************
  *                                                                                                  *
- *                        Sempare Templating Engine                                                 *
+ *                          Sempare Template Engine                                                 *
  *                                                                                                  *
  *                                                                                                  *
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
  ****************************************************************************************************
  *                                                                                                  *
- * Copyright (c) 2019-2021 Sempare Limited                                                          * 
+ * Copyright (c) 2019-2023 Sempare Limited                                                          *
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
@@ -61,9 +61,11 @@ package Sempare.Template.Pkg;
 
 requires
   rtl,
-  dbrtl;
+  dbrtl,
+  vcl;
 
 contains
+  Sempare.Template.BlockResolver in 'src\Sempare.Template.BlockResolver.pas',
   Sempare.Template.Visitor in 'src\Sempare.Template.Visitor.pas',
   Sempare.Template.Util in 'src\Sempare.Template.Util.pas',
   Sempare.Template.StackFrame in 'src\Sempare.Template.StackFrame.pas',
@@ -79,6 +81,7 @@ contains
   Sempare.Template in 'src\Sempare.Template.pas',
   Sempare.Template.JSON in 'src\Sempare.Template.JSON.pas',
   Sempare.Template.ResourceStrings in 'src\Sempare.Template.ResourceStrings.pas',
-  Sempare.Template.VariableExtraction in 'src\Sempare.Template.VariableExtraction.pas';
+  Sempare.Template.VariableExtraction in 'src\Sempare.Template.VariableExtraction.pas',
+  Sempare.Template.TemplateRegistry in 'src\Sempare.Template.TemplateRegistry.pas';
 
 end.

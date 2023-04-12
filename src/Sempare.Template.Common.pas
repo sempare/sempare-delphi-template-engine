@@ -96,16 +96,11 @@ type
     property Variables[const AKey: string]: TTemplateValue read GetItem write SetItem; default;
   end;
 
-function AsVisitorHost(const ATemplate: ITemplate): ITemplateVisitorHost; inline; overload;
-function AsVisitorHost(const AExpr: IExpr): ITemplateVisitorHost; inline; overload;
-function AsVisitorHost(const AStmt: IStmt): ITemplateVisitorHost; inline; overload;
-
 procedure AcceptVisitor(const ATemplate: ITemplate; const AVisitor: ITemplateVisitor); inline; overload;
 procedure AcceptVisitor(const AExpr: IExpr; const AVisitor: ITemplateVisitor); inline; overload;
 procedure AcceptVisitor(const AStmt: IStmt; const AVisitor: ITemplateVisitor); inline; overload;
+procedure AcceptVisitor(const AExpr: IExprList; const AVisitor: ITemplateVisitor); inline; overload;
 
-function Position(const AStmt: IStmt): IPosition; inline; overload;
-function Position(const AExpr: IExpr): IPosition; inline; overload;
 function Position(const APositional: IPosition): string; inline; overload;
 
 procedure RaiseError(const APositional: IPosition; const AFormat: string; const AArgs: array of const); overload;
@@ -115,59 +110,40 @@ procedure RaiseErrorRes(const APositional: IPosition; const ResStringRec: PResSt
 
 implementation
 
-function AsVisitorHost(const ATemplate: ITemplate): ITemplateVisitorHost; overload;
-begin
-  ATemplate.QueryInterface(ITemplateVisitorHost, result);
-end;
-
-function AsVisitorHost(const AExpr: IExpr): ITemplateVisitorHost;
-begin
-  AExpr.QueryInterface(ITemplateVisitorHost, result);
-end;
-
-function AsVisitorHost(const AStmt: IStmt): ITemplateVisitorHost;
-begin
-  AStmt.QueryInterface(ITemplateVisitorHost, result);
-end;
+uses
+  Sempare.Template;
 
 procedure AcceptVisitor(const ATemplate: ITemplate; const AVisitor: ITemplateVisitor); overload;
-var
-  LHost: ITemplateVisitorHost;
 begin
-  LHost := AsVisitorHost(ATemplate);
-  LHost.Accept(AVisitor);
+  if not assigned(ATemplate) then
+    exit;
+  ATemplate.Accept(AVisitor);
 end;
 
 procedure AcceptVisitor(const AExpr: IExpr; const AVisitor: ITemplateVisitor);
-var
-  LHost: ITemplateVisitorHost;
 begin
-  LHost := AsVisitorHost(AExpr);
-  LHost.Accept(AVisitor);
+  if not assigned(AExpr) then
+    exit;
+  AExpr.Accept(AVisitor);
 end;
 
 procedure AcceptVisitor(const AStmt: IStmt; const AVisitor: ITemplateVisitor);
-var
-  LHost: ITemplateVisitorHost;
 begin
-  LHost := AsVisitorHost(AStmt);
-  LHost.Accept(AVisitor);
+  if not assigned(AStmt) then
+    exit;
+  AStmt.Accept(AVisitor);
 end;
 
-function Position(const AStmt: IStmt): IPosition; overload;
+procedure AcceptVisitor(const AExpr: IExprList; const AVisitor: ITemplateVisitor);
 var
-  LSymbol: IPositional;
+  i: integer;
 begin
-  AStmt.QueryInterface(IPositional, LSymbol);
-  exit(LSymbol.Position);
-end;
-
-function Position(const AExpr: IExpr): IPosition; overload;
-var
-  LSymbol: IPositional;
-begin
-  AExpr.QueryInterface(IPositional, LSymbol);
-  exit(LSymbol.Position);
+  if not assigned(AExpr) then
+    exit;
+  for i := 0 to AExpr.Count - 1 do
+  begin
+    AExpr[i].Accept(AVisitor);
+  end;
 end;
 
 function Position(const APositional: IPosition): string; overload;
@@ -255,6 +231,11 @@ end;
 procedure TTemplateVariables.Clear;
 begin
   FVariables.Clear;
+  self['SEMPARE_TEMPLATE_ENGINE_VERSION'] := Template.Version;
+  self['CR'] := #13;
+  self['NL'] := #10;
+  self['CRNL'] := #13#10;
+  self['TAB'] := #9;
 end;
 
 function TTemplateVariables.ContainsKey(const AKey: string): boolean;
@@ -265,6 +246,7 @@ end;
 constructor TTemplateVariables.Create;
 begin
   FVariables := TDictionary<string, TTemplateValue>.Create;
+  Clear;
 end;
 
 destructor TTemplateVariables.Destroy;

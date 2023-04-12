@@ -74,6 +74,7 @@ resourcestring
   SDecimalSeparatorMustBeACommaOrFullStop = 'Decimal separator must be a comma or a full stop';
   STooManyParameters = 'Too many parameters';
   SInvalidCharacterDetected = 'Invalid character detected';
+  SRefreshTooFrequent = 'Template refresh too frequent';
 
 implementation
 

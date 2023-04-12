@@ -43,12 +43,6 @@ type
   TTestNewLineOption = class
   public
     [Test]
-    procedure TestRecurringSpaces;
-    [Test]
-    procedure TestRecurringNLAndSpaces;
-    [Test]
-    procedure TestRecurringOnlyNL;
-    [Test]
     procedure TestNewLine;
     [Test]
     procedure TestNewLineWithCustomStreamWriter;
@@ -57,9 +51,21 @@ type
     [Test]
     procedure TestNL;
     [Test]
-    procedure RemoveEmptyAndStripLines;
+    procedure TestIgnoreWS;
     [Test]
-    procedure RemoveEmptyLines;
+    procedure TestStripLeft;
+    [Test]
+    procedure TestStripRight;
+    [Test]
+    procedure TestStripRecurringSpacesOption;
+    [Test]
+    procedure TestStripRecurringNewlineOption;
+    [Test]
+    procedure TestTrimLinesOption;
+    [Test]
+    procedure TestTabsToSpacesOption;
+    [Test]
+    procedure TestWhitespaceReplacement;
   end;
 
 implementation
@@ -122,125 +128,67 @@ begin
   Assert.AreEqual('hello'#13#10#13#10, s);
 end;
 
-procedure TTestNewLineOption.TestRecurringNLAndSpaces;
-var
-  s: TStringStream;
-  w: TNewLineStreamWriter;
-  str: string;
+procedure TTestNewLineOption.TestStripLeft;
 begin
-  s := TStringStream.Create;
-  w := TNewLineStreamWriter.Create(s, TEncoding.ASCII, #10, [eoTrimLines, eoStripRecurringNewlines]);
-  try
-    w.Write(#10#10#10#10#10'     hello     '#10#10#10#10'    world   '#10#10#10#10);
-  finally
-    w.Free;
-    str := s.datastring;
-    Assert.AreEqual(#10'hello'#10'world'#10, str);
-    s.Free;
-  end;
+  Assert.AreEqual('begin'#13#10'x  '#13#10'end', Template.Eval('begin'#13#10'   <%- "x" %>  '#13#10'end'));
+  Assert.AreEqual('begin x  '#13#10'end', Template.Eval('begin'#13#10'   <%+ "x" %>  '#13#10'end'));
+  Assert.AreEqual('beginx  '#13#10'end', Template.Eval('begin'#13#10'   <%* "x" %>  '#13#10'end'));
 end;
 
-procedure TTestNewLineOption.TestRecurringOnlyNL;
+procedure TTestNewLineOption.TestStripRecurringNewlineOption;
 var
-  s: TStringStream;
-  w: TNewLineStreamWriter;
-  str: string;
+  LCtx: ITemplateContext;
 begin
-  s := TStringStream.Create;
-  w := TNewLineStreamWriter.Create(s, TEncoding.ASCII, #10, [eoStripRecurringNewlines]);
-  try
-    w.Write(#10#10#10#10#10'     hello     '#10#10#10#10'    world   '#10#10#10#10);
-  finally
-    w.Free;
-    str := s.datastring;
-    Assert.AreEqual(#10'     hello     '#10'    world   '#10, str);
-    s.Free;
-  end;
+  LCtx := Template.Context([eoStripRecurringNewlines]);
+  Assert.AreEqual('abc'#13#10'text'#13#10'text'#13#10'end', Template.Eval(LCtx, 'abc'#13#10#13#10#13#10'text'#13#10#13#10'text'#13#10'end'));
 end;
 
-procedure TTestNewLineOption.TestRecurringSpaces;
+procedure TTestNewLineOption.TestStripRecurringSpacesOption;
 var
-  s: TStringStream;
-  w: TNewLineStreamWriter;
-  s2: string;
+  LCtx: ITemplateContext;
 begin
-  s := TStringStream.Create;
-  w := TNewLineStreamWriter.Create(s, TEncoding.ASCII, #10, []);
-  try
-    w.Write('  '#10#10'  '#10#10);
-  finally
-    w.Free;
-    s2 := s.datastring;
-    Assert.AreEqual('  '#10#10'  '#10#10, s2);
-    s.Free;
-  end;
-  s := TStringStream.Create;
-  w := TNewLineStreamWriter.Create(s, TEncoding.ASCII, #10, [eoTrimLines]);
-  try
-    w.Write('  '#10#10'  '#10#10);
-  finally
-    w.Free;
-    s2 := s.datastring;
-    Assert.AreEqual(''#10#10''#10#10, s2);
-    s.Free;
-  end;
-
-  s := TStringStream.Create;
-  w := TNewLineStreamWriter.Create(s, TEncoding.ASCII, #10, []);
-  try
-    w.Write('     hello     '#10#10'    world   ');
-  finally
-    w.Free;
-    s2 := s.datastring;
-    Assert.AreEqual('     hello     '#10#10'    world   ', s2);
-    s.Free;
-  end;
-  s := TStringStream.Create;
-  w := TNewLineStreamWriter.Create(s, TEncoding.ASCII, #10, [eoTrimLines]);
-  try
-    w.Write('     hello     '#10#10'    world   ');
-  finally
-    w.Free;
-    s2 := s.datastring;
-    Assert.AreEqual('hello'#10#10'world', s2);
-    s.Free;
-  end;
+  LCtx := Template.Context([eoStripRecurringSpaces]);
+  Assert.AreEqual('abc text text end', Template.Eval(LCtx, 'abc   text  text end'));
 end;
 
-procedure TTestNewLineOption.RemoveEmptyAndStripLines;
-var
-  s: TStringStream;
-  w: TNewLineStreamWriter;
-  str: string;
+procedure TTestNewLineOption.TestStripRight;
 begin
-  s := TStringStream.Create;
-  w := TNewLineStreamWriter.Create(s, TEncoding.ASCII, #10, [eoStripEmptyLines, eoTrimLines]);
-  try
-    w.Write(#10#10#10#10#10'     hello     '#10#10#10#10'    world   '#10#10#10#10);
-  finally
-    w.Free;
-    str := s.datastring;
-    Assert.AreEqual('hello'#10'world'#10, str);
-    s.Free;
-  end;
+  Assert.AreEqual('begin'#13#10'   x'#13#10'end', Template.Eval('begin'#13#10'   <% "x" -%>  '#13#10'end'));
+  Assert.AreEqual('begin'#13#10'   x end', Template.Eval('begin'#13#10'   <% "x" +%>  '#13#10'end'));
+  Assert.AreEqual('begin'#13#10'   xend', Template.Eval('begin'#13#10'   <% "x" *%>  '#13#10'end'));
 end;
 
-procedure TTestNewLineOption.RemoveEmptyLines;
+procedure TTestNewLineOption.TestTabsToSpacesOption;
 var
-  s: TStringStream;
-  w: TNewLineStreamWriter;
-  str: string;
+  LCtx: ITemplateContext;
 begin
-  s := TStringStream.Create;
-  w := TNewLineStreamWriter.Create(s, TEncoding.ASCII, #10, [eoStripEmptyLines]);
-  try
-    w.Write(#10#10#10#10#10'     hello     '#10#10#10#10'    world   '#10#10#10#10);
-  finally
-    w.Free;
-    str := s.datastring;
-    Assert.AreEqual('     hello     '#10'    world   '#10, str);
-    s.Free;
-  end;
+  LCtx := Template.Context([eoConvertTabsToSpaces]);
+  Assert.AreEqual('abc text  text', Template.Eval(LCtx, 'abc'#9'text'#9#9'text'));
+end;
+
+procedure TTestNewLineOption.TestTrimLinesOption;
+var
+  LCtx: ITemplateContext;
+begin
+  LCtx := Template.Context([eoTrimLines]);
+  Assert.AreEqual('abc1'#13#10'test2'#13#10'test3'#13#10, Template.Eval(LCtx, '    '#9'abc1'#9#13#10'    '#9'test2 '#9#13#10'    '#9'test3 '#9#13#10));
+end;
+
+procedure TTestNewLineOption.TestWhitespaceReplacement;
+var
+  LCtx: ITemplateContext;
+begin
+  LCtx := Template.Context();
+  Assert.AreEqual('  x  ', Template.Eval(LCtx, '  x  '));
+  LCtx.WhitespaceChar := #183;
+  Assert.AreEqual(#183#183'x'#183#183, Template.Eval(LCtx, '  x  '));
+end;
+
+procedure TTestNewLineOption.TestIgnoreWS;
+begin
+  Assert.AreEqual(#13#10, Template.Eval('<% ignorews %>    '#13#10'<%end%>'));
+  Assert.AreEqual(' '#13#10' ', Template.Eval(' <% ignorews %>    '#13#10'<%end%> '));
+  Assert.AreEqual('  ', Template.Eval(' <% ignorenl ; ignorews %>    '#13#10'<% end; end %> '));
 end;
 
 procedure TTestNewLineOption.TestNewLine;
