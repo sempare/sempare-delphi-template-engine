@@ -58,8 +58,6 @@ const
   eoEmbedException = TTemplateEvaluationOption.eoEmbedException;
   eoPrettyPrint = TTemplateEvaluationOption.eoPrettyPrint;
   eoRaiseErrorWhenVariableNotFound = TTemplateEvaluationOption.eoRaiseErrorWhenVariableNotFound;
-  eoReplaceNewline = TTemplateEvaluationOption.eoReplaceNewline;
-  eoStripEmptyLines = TTemplateEvaluationOption.eoStripEmptyLines;
   eoFlattenTemplate = TTemplateEvaluationOption.eoFlattenTemplate;
   eoOptimiseTemplate = TTemplateEvaluationOption.eoOptimiseTemplate;
 

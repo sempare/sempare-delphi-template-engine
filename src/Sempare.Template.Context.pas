@@ -68,15 +68,12 @@ type
     eoEvalVarsEarly, //
     eoStripRecurringNewlines, //
     eoTrimLines, //
-    eoReplaceNewline, //
     eoEmbedException, //
     eoPrettyPrint, //
     eoStripRecurringSpaces, //
     eoConvertTabsToSpaces, //
     eoNoDefaultFunctions, //
     eoRaiseErrorWhenVariableNotFound, //
-    eoAllowIgnoreNL, //
-    eoStripEmptyLines, //
     eoFlattenTemplate, //
     eoOptimiseTemplate //
     );

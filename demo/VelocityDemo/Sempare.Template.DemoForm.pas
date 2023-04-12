@@ -310,7 +310,6 @@ begin
     FContext.NewLine := '<br>'#13#10
   else
     FContext.NewLine := #13#10;
-  SetOption(cbUseHtmlBR.Checked, eoReplaceNewline);
 end;
 
 procedure TFormRealTime.cmbCustomScriptTagsChange(Sender: TObject);
