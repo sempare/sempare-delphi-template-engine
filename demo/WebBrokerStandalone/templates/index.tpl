@@ -8,10 +8,11 @@
         <%- block 'body' *%>
                 <div>
                 <img style="height: 45px; vertical-align: middle" src="https://www.sempare.ltd/assets/img/sempare-logo.png">
-                <h1 style="display:inline; vertical-align: middle">Welcome to the Sempare Template Engine <% include('resolve_current_demo') %> Demo</h1>
+                <h1 style="display:inline; vertical-align: middle">Welcome to the <i>Sempare Template Engine Version</i> <% include('resolve_current_demo') %> Demo</h1>
                 </div>
                 <h1>Documentation</h1>
-                For more documentation on the Sempare Template Engine, please review the <a target="_blank" href="https://github.com/sempare/sempare-delphi-template-engine">GitHub repository</a>.
+                <p>For more documentation on the <i>Sempare Template Engine Version</i>, please review the <a target="_blank" href="https://github.com/sempare/sempare-delphi-template-engine">GitHub repository</a>.</p>
+                <p>This demo is using <i>Sempare Template Engine Version</i> <b><% SEMPARE_TEMPLATE_ENGINE_VERSION %></b>.</p>
                 <h1>Demos</h1>
                 <p><b>This</b> is the <b><% include('resolve_current_demo') %> Demo</b>.<p>
                 <p>Also have a look at other demos, such as:
