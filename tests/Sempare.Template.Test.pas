@@ -331,7 +331,7 @@ var
   LTemplate: ITemplate;
 begin
   // main thing is that we have no exception here!
-  LTemplate := Template.ParseFile('..\..\demo\SempareTemplatePlaypen\templates\international.tpl');
+  LTemplate := Template.ParseFile('..\..\demo\SempareTemplatePlayground\templates\international.tpl');
   Assert.IsNotNull(LTemplate);
 end;
 

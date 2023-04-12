@@ -173,6 +173,7 @@ uses
   Sempare.Template.ResourceStrings,
   Sempare.Template,
 {$IFDEF DEBUG}
+  Sempare.Template.Common, // for inline hint
   Sempare.Template.PrettyPrint,
 {$ENDIF}
   System.IOUtils,

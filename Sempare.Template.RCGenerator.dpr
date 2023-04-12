@@ -7,6 +7,7 @@ program Sempare.Template.RCGenerator;
 uses
   Sempare.Template,
   System.Generics.Collections,
+  System.Types, // for inline hint
   System.Classes,
   System.IOUtils,
   System.SysUtils;
