@@ -264,13 +264,12 @@ begin
     if not assigned(FTemplateRegistry) then
       FTemplateRegistry := TTemplateRegistry.Create;
   finally
-    FLock.release;
+    FLock.Release;
   end;
   exit(FTemplateRegistry);
 end;
 
 function TTemplateRegistry.GetTemplate(const ATemplateName: string): ITemplate;
-
 var
   LNameContext: TArray<string>;
   LExts: TArray<string>;
@@ -362,7 +361,7 @@ begin
     if FTemplates.TryGetValue(ATemplateName, result) then
       exit;
   finally
-    FLock.release;
+    FLock.Release;
   end;
   result := nil;
   setlength(LExts, 2);
@@ -392,7 +391,7 @@ begin
   try
     FTemplates.Add(ATemplateName, result);
   finally
-    FLock.release;
+    FLock.Release;
   end;
 end;
 
@@ -480,7 +479,7 @@ begin
       end;
     end;
   finally
-    FLock.release;
+    FLock.Release;
   end;
 end;
 
@@ -491,7 +490,7 @@ begin
     FContext.RemoveTemplate(ATemplateName);
     FTemplates.Remove(ATemplateName);
   finally
-    FLock.release;
+    FLock.Release;
   end;
 end;
 
