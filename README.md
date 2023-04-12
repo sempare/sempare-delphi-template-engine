@@ -31,6 +31,7 @@ Open Source: https://github.com/sempare/sempare-delphi-template-engine
   - [Expressions](./docs/expressions.md)
   - [Builtin functions](./docs/builtin-functions.md)
   - [Builtin variables](./docs/builtin-variables.md)
+  - [Comments](./docs/comments.md)
 - [Template Registry](./docs/template-registry.md)
 - Customisation
   - [Custom functions](./docs/custom-functions.md)
