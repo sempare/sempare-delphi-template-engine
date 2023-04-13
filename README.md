@@ -142,7 +142,7 @@ Tests currently run using the DUnitX TestFramework.
 
 An attempt has been made not to use the latest features to ease backward compatability. The following versions have been tested:
 
-- Delphi XE 4 to XE 9
+- Delphi XE 4 to XE 8
 - Delphi 10.0 Seatle
 - Delphi 10.1 Berlin
 - Delphi 10.2 Tokyo
