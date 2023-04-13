@@ -13,7 +13,6 @@ Copyright (c) 2019-2023 [Sempare Limited](http://www.sempare.ltd)
 - [Custom Variables](#Custom_Variables)
 - [Reusing Templates](#Reusing_Templates)
 - [Dynamic Template Resolution](#Dynamic_Template_Resolution)
-- [Ignoring Whitespace With Multi-Line Statements](#Ignoring_Whitespace_With_Multi_Line_Statements)
 - [Embed exceptions in output](#Embed_exceptions_in_output)
 - [Options](#Options)
 - [Decimal Separators](#Decimal_Separators)
@@ -112,34 +111,6 @@ Templates could be loaded from file, resources or urls are per your requirements
 ctx.TemplateResolver = function(const AContext : ITemplate; const AName : string) : ITemplate
 begin
    result := Template.parse('some template loaded from file...');
-end;
-```
-
-<a name="Ignoring_Whitespace_With_Multi_Line_Statements"><h3>Ignoring Whitespace With Multi-Line Statements</h3></a>
-
-You may have a template something like:
-```
-	<% for i:=1 to 10 %>
-	<% i %>
-	<% end %>
-```
-
-Now it may be apparent that there will be a lot of newlines. You can minimise this using <| and |> statement start and end tokens.
-```
-	<% for i:=1 to 10 |>  this will be ignored
-	   as will this <| print(i) |> and this
-	and this<| end %>
-```
-
-The start/end statement tokens can be changed using the Context.StartStripToken and Context.EndStripToken
-
-e.g.
-```
-begin
-  var ctx := Template.Context;
-  ctx.StartStripToken := '{~';
-  ctx.EndStripToken := '~}';
-  Assert.IsEqual('hello', Template.Eval(ctx, '{{ print('start') ~}ignore me{~ print('end') }}'));
 end;
 ```
 
