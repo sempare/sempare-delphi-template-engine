@@ -1347,6 +1347,7 @@ var
   LSymbol: ITemplateSymbol;
   LExpr: IExpr;
   LDone: boolean;
+  LDeref: TValue;
 begin
   LDone := false;
   LSymbol := FLookahead;
@@ -1368,9 +1369,14 @@ begin
           Match(vsOpenSquareBracket);
           LExpr := self.RuleExpression;
           if (eoEvalVarsEarly in FContext.Options) and IsValue(result) and IsValue(LExpr) then
-            result := TValueExpr.Create(LSymbol.Position, deref(LSymbol.Position, AsValue(result), AsValue(LExpr), eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext))
+          begin
+            LDeref := Deref(LSymbol.Position, AsValue(result), AsValue(LExpr), eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext);
+            result := TValueExpr.Create(LSymbol.Position, LDeref);
+          end
           else
+          begin
             result := TVariableDerefExpr.Create(LSymbol.Position, dtArray, result, LExpr);
+          end;
           Match(vsCloseSquareBracket);
         end;
       vsDOT:
@@ -1382,9 +1388,14 @@ begin
           else
           begin
             if (eoEvalVarsEarly in FContext.Options) and IsValue(result) and IsValue(LExpr) then
-              result := TValueExpr.Create(LSymbol.Position, deref(LSymbol.Position, AsValue(result), AsValue(LExpr), eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext))
+            begin
+              LDeref := Deref(LSymbol.Position, AsValue(result), AsValue(LExpr), eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext);
+              result := TValueExpr.Create(LSymbol.Position, LDeref);
+            end
             else
+            begin
               result := TVariableDerefExpr.Create(LSymbol.Position, dtObject, result, LExpr);
+            end;
           end;
         end;
     else
