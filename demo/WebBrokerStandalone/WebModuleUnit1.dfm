@@ -1,4 +1,5 @@
 object WebModule1: TWebModule1
+  OnCreate = WebModuleCreate
   Actions = <
     item
       Default = True
