@@ -110,6 +110,14 @@ type
     class procedure Initialize;
     class procedure Finalize;
     class function GetInstance: TTemplateRegistry; static;
+    function GetResourceName(const AName, AExt: string): string;
+    function GetFilename(const AName, AExt: string): string;
+    function LoadResource(const AName: string; const AContext: TTemplateValue): ITemplate;
+    function LoadFile(const AName: string; const AContext: TTemplateValue): ITemplate;
+    function LoadCustom(const AName: string; const AContext: TTemplateValue): ITemplate;
+  private type
+    TGetName = function(const AName, AExt: string): string of object;
+    TLoadTemplate = function(const AName: string; const AContext: TTemplateValue): ITemplate of object;
   strict private
     FTemplates: TDictionary<string, ITemplate>;
     FContext: ITemplateContext;
@@ -127,6 +135,9 @@ type
     FCustomTemplateLoader: TTemplateResolverWithContext;
     FExceptionLogger: TTempateLogException;
     FLogger: TTempateLogMessage;
+    FLoadMethods: array [TTemplateLoadStrategy] of TLoadTemplate;
+    FGetNames: array [TTemplateLoadStrategy] of TGetName;
+
     procedure Refresh;
     procedure SetRefreshIntervalS(const Value: integer);
     procedure SetAutomaticRefresh(const Value: boolean);
@@ -188,7 +199,10 @@ uses
   System.IOUtils,
   System.DateUtils;
 
-{ TTemplateRegistry }
+const
+  CLoadStrategy: array [TTemplateLoadStrategy] of string = ('resource', 'file', 'custom');
+
+  { TTemplateRegistry }
 
 procedure TTemplateRegistry.ClearTemplates;
 begin
@@ -246,6 +260,14 @@ begin
     begin
       exit(GetTemplate(AName, AResolveContext));
     end;
+
+  FLoadMethods[tlsLoadResource] := LoadResource;
+  FLoadMethods[tlsLoadFile] := LoadFile;
+  FLoadMethods[tlsLoadCustom] := LoadCustom;
+
+  FGetNames[tlsLoadResource] := GetResourceName;
+  FGetNames[tlsLoadFile] := GetFilename;
+  FGetNames[tlsLoadCustom] := GetResourceName;
 
 {$IFDEF DEBUG}
   setlength(FLoadStrategy, 2);
@@ -367,96 +389,76 @@ begin
   exit(GetTemplate(ATemplateName, nil));
 end;
 
+function TTemplateRegistry.GetResourceName(const AName: string; const AExt: string): string;
+begin
+  exit(FResourceNameResolver(AName + AExt));
+end;
+
+function TTemplateRegistry.GetFilename(const AName, AExt: string): string;
+begin
+  exit(FFileNameResolver(AName + AExt));
+end;
+
+function TTemplateRegistry.LoadResource(const AName: string; const AContext: TTemplateValue): ITemplate;
+begin
+  exit(TResourceTemplate.Create(FContext, AName));
+end;
+
+function TTemplateRegistry.LoadFile(const AName: string; const AContext: TTemplateValue): ITemplate;
+begin
+  exit(TFileTemplate.Create(FContext, AName));
+end;
+
+function TTemplateRegistry.LoadCustom(const AName: string; const AContext: TTemplateValue): ITemplate;
+begin
+  exit(FCustomTemplateLoader(FContext, AName, AContext));
+end;
+
 function TTemplateRegistry.GetTemplate(const ATemplateName: string; const AContext: TTemplateValue): ITemplate;
+
 type
   TTwoStrings = array [0 .. 1] of string;
 
-  function LoadFromResource(const ATemplateName: string; const AExts: TTwoStrings; out ATemplate: ITemplate): boolean;
+var
+  LExts: TTwoStrings;
+  LTemplateName: string;
+
+  function LoadTemplate(const ALoadStrategy: TTemplateLoadStrategy; out ATemplate: ITemplate): boolean;
   var
     LName: string;
     LExt: integer;
   begin
     ATemplate := nil;
-    for LExt := low(AExts) to high(AExts) do
+    for LExt := low(LExts) to high(LExts) do
     begin
-      LName := FResourceNameResolver(ATemplateName + AExts[LExt]);
+      LName := FGetNames[ALoadStrategy](ATemplateName, LExts[LExt]);
       try
-        ATemplate := TResourceTemplate.Create(FContext, LName);
-        Log('Loaded template from resource: %s', [LName]);
+        ATemplate := FLoadMethods[ALoadStrategy](LName, AContext);
+        Log('Loaded template from %s: %s', [CLoadStrategy[ALoadStrategy], LName]);
         exit(true);
       except
+        on e: ETemplateEvaluationError do
+        begin
+          LogException(e);
+          exit(true);
+        end;
         on e: Exception do
-          if LExt = high(AExts) then
+        begin
+          if LExt = high(LExts) then
           begin
             LogException(e);
           end;
-      end;
-    end;
-    exit(false);
-  end;
-
-  function LoadFromFile(const ATemplateName: string; const AExts: TTwoStrings; out ATemplate: ITemplate): boolean;
-  var
-    LName: string;
-    LExt: integer;
-  begin
-    result := false;
-    ATemplate := nil;
-    for LExt := low(AExts) to high(AExts) do
-    begin
-      LName := FFileNameResolver(ATemplateName + AExts[LExt]);
-      if TFile.Exists(LName) then
-      begin
-        try
-          ATemplate := TFileTemplate.Create(FContext, LName);
-          Log('Loaded template from file: %s', [LName]);
-          exit(true);
-        except
-          on e: Exception do
-            if LExt = high(AExts) then
-            begin
-              LogException(e);
-            end;
         end;
       end;
     end;
-  end;
-
-  function LoadFromCustom(const ATemplateName: string; const AExts: TTwoStrings; out ATemplate: ITemplate): boolean;
-  var
-    LName: string;
-    LExt: integer;
-  begin
-    result := false;
-    ATemplate := nil;
-    if not assigned(FCustomTemplateLoader) then
-    begin
-      exit;
-    end;
-
-    for LExt := low(AExts) to high(AExts) do
-    begin
-      try
-        LName := FResourceNameResolver(ATemplateName + AExts[LExt]);
-        ATemplate := FCustomTemplateLoader(FContext, LName, AContext);
-        Log('Loaded template from custom loader: %s', [LName]);
-        exit(true);
-      except
-        on e: Exception do
-          if LExt = high(AExts) then
-          begin
-            LogException(e);
-          end;
-      end;
-    end;
+    exit(false);
   end;
 
 var
   LLoadStrategy: TTemplateLoadStrategy;
   LFound: boolean;
   LTemplateAttempts: TTwoStrings;
-  LExts: TTwoStrings;
-  LTemplateName: string;
+
 begin
   if assigned(FContextNameResolver) then
     LTemplateName := FContextNameResolver(ATemplateName, AContext)
@@ -469,7 +471,6 @@ begin
   LExts[0] := FTemplateFileExt;
   LExts[1] := '';
 
-  LFound := false;
   for LLoadStrategy in TTemplateRegistry.Instance.LoadStrategy do
   begin
     for LTemplateName in LTemplateAttempts do
@@ -487,31 +488,10 @@ begin
         FLock.Release;
       end;
 
-      case LLoadStrategy of
-        tlsLoadResource:
-          begin
-            LFound := LoadFromResource(LTemplateName, LExts, result);
-            if LFound then
-            begin
-              break;
-            end;
-          end;
-        tlsLoadFile:
-          begin
-            LFound := LoadFromFile(LTemplateName, LExts, result);
-            if LFound then
-            begin
-              break;
-            end;
-          end;
-        tlsLoadCustom:
-          begin
-            LFound := LoadFromCustom(LTemplateName, LExts, result);
-            if LFound then
-            begin
-              break;
-            end;
-          end;
+      LFound := LoadTemplate(LLoadStrategy, result);
+      if LFound then
+      begin
+        break;
       end;
 
       if LFound or (LTemplateAttempts[1] = LTemplateName) then
