@@ -120,6 +120,24 @@ type
     class function Eval(const AContext: ITemplateContext; const ATemplate: string): string; overload; static;
     class function Eval(const AContext: ITemplateContext; const ATemplate: ITemplate): string; overload; static;
 
+    // TEMPLATE REGISTRY
+
+    class function Resolver(): TTemplateRegistry; static; inline;
+
+    class procedure Resolve<T>(const AOutputStream: TStream; const ATemplateName: string; const AData: T); overload; static;
+    class function Resolve<T>(const ATemplateName: string; const AData: T): string; overload; static;
+
+    class procedure Resolve(const AOutputStream: TStream; const ATemplateName: string); overload; static;
+    class function Resolve(const ATemplateName: string): string; overload; static;
+
+    // with context
+
+    class procedure ResolveWithContext<T, TContext>(const AOutputStream: TStream; const ATemplateName: string; const AData: T; const AContext: TContext); overload; static;
+    class function ResolveWithContext<T, TContext>(const ATemplateName: string; const AData: T; const AContext: TContext): string; overload; static;
+
+    class procedure ResolveWithContext<TContext>(const AOutputStream: TStream; const ATemplateName: string; const AContext: TContext); overload; static;
+    class function ResolveWithContext<TContext>(const ATemplateName: string; const AContext: TContext): string; overload; static;
+
     // PARSING
 
     // string operations
@@ -254,6 +272,51 @@ begin
   LVisitor := LTemplateVisitor;
   AcceptVisitor(ATemplate, LVisitor);
   exit(LTemplateVisitor.ToString);
+end;
+
+class function Template.Resolve(const ATemplateName: string): string;
+begin
+  exit(Resolver.Eval(ATemplateName));
+end;
+
+class procedure Template.Resolve(const AOutputStream: TStream; const ATemplateName: string);
+begin
+  Resolver.Eval(AOutputStream, ATemplateName);
+end;
+
+class function Template.Resolve<T>(const ATemplateName: string; const AData: T): string;
+begin
+  exit(Resolver.Eval(ATemplateName, AData));
+end;
+
+class function Template.Resolver: TTemplateRegistry;
+begin
+  exit(TTemplateRegistry.Instance);
+end;
+
+class procedure Template.Resolve<T>(const AOutputStream: TStream; const ATemplateName: string; const AData: T);
+begin
+  Resolver.Eval(AOutputStream, ATemplateName, AData);
+end;
+
+class procedure Template.ResolveWithContext<T, TContext>(const AOutputStream: TStream; const ATemplateName: string; const AData: T; const AContext: TContext);
+begin
+  Resolver.EvalWithContext(AOutputStream, ATemplateName, AData, AContext);
+end;
+
+class function Template.ResolveWithContext<T, TContext>(const ATemplateName: string; const AData: T; const AContext: TContext): string;
+begin
+  exit(Resolver.EvalWithContext(ATemplateName, AData, AContext));
+end;
+
+class function Template.ResolveWithContext<TContext>(const ATemplateName: string; const AContext: TContext): string;
+begin
+  exit(Resolver.EvalWithContext(ATemplateName, AContext));
+end;
+
+class procedure Template.ResolveWithContext<TContext>(const AOutputStream: TStream; const ATemplateName: string; const AContext: TContext);
+begin
+  Resolver.EvalWithContext(AOutputStream, ATemplateName, AContext);
 end;
 
 class function Template.Version: string;
