@@ -24,6 +24,9 @@ var
 implementation
 
 uses
+  System.Rtti,
+  IdHTTPWebBrokerBridge,
+  IdCustomHTTPServer,
   DynForm,
   Sempare.Template;
 
@@ -39,6 +42,20 @@ type
     constructor Create(const AName: String; const AFrameworkUrl, AUrl: string; const ACurrent: Boolean = false);
   end;
 
+  // This is a workaround to get AcceptLanguage as the TIdHTTPAppRequest does not expose headerss
+function GetAcceptLanguage(const Req: TWebRequest): string;
+var
+  LContext: TRttiContext;
+  LRttiType: TRttiType;
+  LField: TRttiField;
+  LRequestInfo: TIdHTTPRequestInfo;
+begin
+  LRttiType := LContext.GetType(TIdHTTPAppRequest);
+  LField := LRttiType.GetField('FRequestInfo');
+  LRequestInfo := LField.GetValue(Req).AsType<TIdHTTPRequestInfo>;
+  exit(LRequestInfo.AcceptLanguage);
+end;
+
 procedure TWebModule1.WebModule1IndexHandlerAction(Sender: TObject; Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
 var
   LDemos: TArray<TDemo>;
@@ -53,9 +70,16 @@ end;
 procedure TWebModule1.WebModuleCreate(Sender: TObject);
 begin
   Template.Resolver.ContextNameResolver := function(const AName: string; const AContext: TTemplateValue): string
+    var
+      LLang: string;
+      LReq: TWebRequest;
     begin
-      // try resolve german if available
-      exit(AName + '_de');
+      LReq := AContext.AsType<TWebRequest>;
+      LLang := GetAcceptLanguage(LReq).Substring(0, 2);
+      if LLang.IsEmpty then
+        exit(AName)
+      else
+        exit(AName + '_' + LLang);
     end;
 end;
 
