@@ -63,7 +63,7 @@ begin
   setlength(LDemos, 2);
   LDemos[0] := TDemo.Create('Web Broker', 'https://docwiki.embarcadero.com/RADStudio/Alexandria/en/Creating_WebBroker_Applications', 'https://github.com/sempare/sempare-delphi-template-engine/tree/main/demo/WebBrokerStandalone', true);
   LDemos[1] := TDemo.Create('Horse', 'https://github.com/HashLoad/horse', 'https://github.com/sempare/sempare-delphi-template-engine-horse-demo');
-  Response.Content := Template.ResolveWithContext('index', LDemos, Request);
+  Response.Content := Template.ResolveWithContext('index', Request, LDemos);
   Handled := true;
 end;
 
@@ -103,7 +103,7 @@ begin
   LTemplateData.Fields[2] := TField.Create('Email', 'email', 'TEmail');
   setlength(LTemplateData.Buttons, 1);
   LTemplateData.Buttons[0] := TButton.Create('Submit', 'submit');
-  Response.Content := Template.ResolveWithContext('dynform', LTemplateData, Request);
+  Response.Content := Template.ResolveWithContext('dynform', Request, LTemplateData);
   Handled := true;
 end;
 
@@ -120,7 +120,7 @@ begin
     LFormData.firstname := Params.Values['firstname'];
     LFormData.lastname := Params.Values['lastname'];
     LFormData.email := Params.Values['email'];
-    Response.Content := Template.ResolveWithContext('submitted', LFormData, Request);
+    Response.Content := Template.ResolveWithContext('submitted', Request, LFormData);
   finally
     Params.Free;
   end;
