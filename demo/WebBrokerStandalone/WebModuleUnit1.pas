@@ -11,6 +11,7 @@ type
     procedure WebModule1FormInputAction(Sender: TObject; Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
     procedure WebModule1FormInputHandlerAction(Sender: TObject; Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
     procedure WebModule1ErrorHandlerAction(Sender: TObject; Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
+    procedure WebModuleCreate(Sender: TObject);
   private
     { Private declarations }
   public
@@ -45,13 +46,22 @@ begin
   setlength(LDemos, 2);
   LDemos[0] := TDemo.Create('Web Broker', 'https://docwiki.embarcadero.com/RADStudio/Alexandria/en/Creating_WebBroker_Applications', 'https://github.com/sempare/sempare-delphi-template-engine/tree/main/demo/WebBrokerStandalone', true);
   LDemos[1] := TDemo.Create('Horse', 'https://github.com/HashLoad/horse', 'https://github.com/sempare/sempare-delphi-template-engine-horse-demo');
-  Response.Content := TTemplateRegistry.Instance.Eval('index', LDemos);
+  Response.Content := Template.ResolveWithContext('index', LDemos, Request);
   Handled := true;
+end;
+
+procedure TWebModule1.WebModuleCreate(Sender: TObject);
+begin
+  Template.Resolver.ContextNameResolver := function(const AName: string; const AContext: TTemplateValue): string
+    begin
+      // try resolve german if available
+      exit(AName + '_de');
+    end;
 end;
 
 procedure TWebModule1.WebModule1ErrorHandlerAction(Sender: TObject; Request: TWebRequest; Response: TWebResponse; var Handled: Boolean);
 begin
-  Response.Content := TTemplateRegistry.Instance.Eval('error404');
+  Response.Content := Template.ResolveWithContext('error404', Request);
   Response.StatusCode := 404;
   Handled := true;
 end;
@@ -69,7 +79,7 @@ begin
   LTemplateData.Fields[2] := TField.Create('Email', 'email', 'TEmail');
   setlength(LTemplateData.Buttons, 1);
   LTemplateData.Buttons[0] := TButton.Create('Submit', 'submit');
-  Response.Content := TTemplateRegistry.Instance.Eval('dynform', LTemplateData);
+  Response.Content := Template.ResolveWithContext('dynform', LTemplateData, Request);
   Handled := true;
 end;
 
@@ -86,7 +96,7 @@ begin
     LFormData.firstname := Params.Values['firstname'];
     LFormData.lastname := Params.Values['lastname'];
     LFormData.email := Params.Values['email'];
-    Response.Content := TTemplateRegistry.Instance.Eval('submitted', LFormData);
+    Response.Content := Template.ResolveWithContext('submitted', LFormData, Request);
   finally
     Params.Free;
   end;
