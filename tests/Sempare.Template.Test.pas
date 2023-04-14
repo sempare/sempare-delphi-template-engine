@@ -121,6 +121,10 @@ type
 
     [Test]
     procedure TestVersionPresent;
+
+    [Test]
+    procedure TestTemplateAPI;
+
   end;
 
 type
@@ -132,8 +136,11 @@ type
 implementation
 
 uses
+  System.Classes,
   System.SysUtils,
+  System.IOUtils,
   System.Generics.Collections,
+  Sempare.Template.Parser,
   Sempare.Template.Util,
   Sempare.Template.Functions,
   Sempare.Template.Context,
@@ -400,6 +407,286 @@ begin
   Assert.AreEqual(' hello world', Template.Eval(ctx, #9' hello '#9'  world'));
 end;
 
+procedure TTestTemplate.TestTemplateAPI;
+
+  function EvalStream(AEval: TProc<TStream>): string;
+  var
+    LStream: TStringStream;
+  begin
+    LStream := TStringStream.Create();
+    try
+      AEval(LStream);
+      exit(LStream.DataString);
+    finally
+      LStream.free;
+    end;
+  end;
+
+var
+  LContext: ITemplateContext;
+  LParser: ITemplateParser;
+  LTemplate: ITemplate;
+  LTemplateRegistry: TTemplateRegistry;
+  LStream: TStringStream;
+  LPath: string;
+  LVariables: TArray<string>;
+  LFunctions: TArray<string>;
+  LBlocks: TDictionary<string, ITemplate>;
+begin
+  LContext := Template.Context();
+  Assert.IsNotNull(LContext);
+  LParser := Template.Parser(LContext);
+  Assert.IsNotNull(LParser);
+  LParser := Template.Parser();
+  Assert.IsNotNull(LParser);
+  LTemplate := Template.Parse('<% "test" %>');
+  Assert.AreEqual('<% print(Encode(''test'')) %>'#$D#$A, Template.PrettyPrint(LTemplate));
+
+  // class procedure Eval(const ATemplate: string; const AStream: TStream; const AOptions: TTemplateEvaluationOptions = []); overload; static;
+  Assert.AreEqual('test', EvalStream(
+    procedure(AStream: TStream)
+    begin
+      Template.Eval('<% "test" %>', AStream);
+    end));
+
+  // class procedure Eval<T>(const ATemplate: string; const AValue: T; const AStream: TStream; const AOptions: TTemplateEvaluationOptions = []); overload; static;
+  Assert.AreEqual('test', EvalStream(
+    procedure(AStream: TStream)
+    begin
+      Template.Eval('<% _ %>', 'test', AStream);
+    end));
+
+  // class procedure Eval<T>(const ATemplate: ITemplate; const AValue: T; const AStream: TStream; const AOptions: TTemplateEvaluationOptions = []); overload; static;
+  LTemplate := Template.Parse('<% _ %>');
+  Assert.AreEqual('test', EvalStream(
+    procedure(AStream: TStream)
+    begin
+      Template.Eval(LTemplate, 'test', AStream);
+    end));
+
+  // class procedure Eval(const ATemplate: ITemplate; const AStream: TStream; const AOptions: TTemplateEvaluationOptions = []); overload; static;
+  LTemplate := Template.Parse('<% "test" %>');
+  Assert.AreEqual('test', EvalStream(
+    procedure(AStream: TStream)
+    begin
+      Template.Eval(LTemplate, AStream);
+    end));
+
+  LContext := Template.Context();
+  LContext.Variable['var'] := 'hello';
+
+  // class procedure Eval<T>(const AContext: ITemplateContext; const ATemplate: ITemplate; const AValue: T; const AStream: TStream); overload; static;
+  LTemplate := Template.Parse('<% var %> <% _ %>');
+  Assert.AreEqual('hello world', EvalStream(
+    procedure(AStream: TStream)
+    begin
+      Template.Eval(LContext, LTemplate, 'world', AStream);
+    end));
+
+  // class procedure Eval<T>(const AContext: ITemplateContext; const ATemplate: string; const AValue: T; const AStream: TStream); overload; static;
+  Assert.AreEqual('hello world', EvalStream(
+    procedure(AStream: TStream)
+    begin
+      Template.Eval(LContext, '<% var %> <% _ %>', 'world', AStream);
+    end));
+
+  // class procedure Eval(const AContext: ITemplateContext; const ATemplate: string; const AStream: TStream); overload; static;
+  Assert.AreEqual('hello world', EvalStream(
+    procedure(AStream: TStream)
+    begin
+      Template.Eval(LContext, '<% "hello world" %>', AStream);
+    end));
+
+  // class procedure Eval(const AContext: ITemplateContext; const ATemplate: ITemplate; const AStream: TStream); overload; static;
+  LTemplate := Template.Parse('<% var %>');
+  Assert.AreEqual('hello', EvalStream(
+    procedure(AStream: TStream)
+    begin
+      Template.Eval(LContext, LTemplate, AStream);
+    end));
+
+  LContext := Template.Context();
+  LContext.TemplateResolverWithContext := function(const AContext: ITemplateContext; const AName: string; const AResolveContext: TTemplateValue): ITemplate
+    begin
+      exit(Template.Parse(AName));
+    end;
+
+  // class procedure EvalWithContext(const AContext: ITemplateContext; const ATemplate: ITemplate; const AResolveContext: TTemplateValue; const AValue: TTemplateValue; const AStream: TStream); overload; static;
+  LTemplate := Template.Parse('<% include("hello") %> <% _ %>');
+  Assert.AreEqual('hello world', EvalStream(
+    procedure(AStream: TStream)
+    begin
+      Template.EvalWithContext(LContext, LTemplate, 'hello', 'world', AStream);
+    end));
+
+  // class function EvalWithContext(const AContext: ITemplateContext; const ATemplate: ITemplate; const AResolveContext: TTemplateValue; const AValue: TTemplateValue): string; overload; static;
+  Assert.AreEqual('hello world', Template.EvalWithContext(LContext, LTemplate, 'hello', 'world'));
+
+  // class function Eval(const ATemplate: string; const AOptions: TTemplateEvaluationOptions = []): string; overload; static;
+  Assert.AreEqual('hello world', Template.Eval('<% "hello world" %>'));
+
+  // class function Eval<T>(const ATemplate: string; const AValue: T; const AOptions: TTemplateEvaluationOptions = []): string; overload; static;
+  Assert.AreEqual('hello world', Template.Eval('<% _ %>', 'hello world'));
+
+  // class function Eval<T>(const ATemplate: ITemplate; const AValue: T; const AOptions: TTemplateEvaluationOptions = []): string; overload; static;
+  LTemplate := Template.Parse('<% _ %>');
+  Assert.AreEqual('hello world', Template.Eval(LTemplate, 'hello world'));
+
+  // class function Eval(const ATemplate: ITemplate; const AOptions: TTemplateEvaluationOptions = []): string; overload; static;
+  LTemplate := Template.Parse('<% "hello world" %>');
+  Assert.AreEqual('hello world', Template.Eval(LTemplate));
+
+  // ---
+
+  LContext := Template.Context();
+  LContext.Variable['var'] := 'hello';
+
+  // class function Eval<T>(const AContext: ITemplateContext; const ATemplate: ITemplate; const AValue: T): string; overload; static;
+  LTemplate := Template.Parse('<% var %> <% _ %>');
+  Assert.AreEqual('hello world', Template.Eval(LContext, LTemplate, 'world'));
+
+  // class function Eval<T>(const AContext: ITemplateContext; const ATemplate: string; const AValue: T): string; overload; static;
+  Assert.AreEqual('hello world', Template.Eval(LContext, '<% var %> <% _ %>', 'world'));
+
+  // class function Eval(const AContext: ITemplateContext; const ATemplate: string): string; overload; static;
+  Assert.AreEqual('hello world', Template.Eval(LContext, '<% var %> world'));
+
+  // class function Eval(const AContext: ITemplateContext; const ATemplate: ITemplate): string; overload; static;
+  LTemplate := Template.Parse('<% "hello world" %>');
+  Assert.AreEqual('hello world', Template.Eval(LTemplate));
+
+  // class function Resolver(): TTemplateRegistry; static; inline;
+  LTemplateRegistry := Template.Resolver;
+  Assert.IsNotNull(LTemplateRegistry);
+
+  LTemplate := Template.Parse('<% _ %>');
+  Template.Resolver.Context.SetTemplate('test', LTemplate);
+
+  //  class procedure Resolve<T>(const ATemplateName: string; const AData: T; const AOutputStream: TStream); overload; static;
+  Assert.AreEqual('hello world', EvalStream(
+    procedure(AOutputStream: TStream)
+    begin
+      Template.Resolve('test', 'hello world', AOutputStream);
+    end));
+
+  // class function Resolve<T>(const ATemplateName: string; const AData: T): string; overload; static;
+  Assert.AreEqual('hello world', Template.Resolve('test', 'hello world'));
+
+  // class procedure Resolve(const ATemplateName: string; const AOutputStream: TStream); overload; static;
+  LTemplate := Template.Parse('<% "hello world" %>');
+  Template.Resolver.Context.SetTemplate('test', LTemplate);
+  Assert.AreEqual('hello world', EvalStream(
+    procedure(AOutputStream: TStream)
+    begin
+      Template.Resolve('test', AOutputStream);
+    end));
+
+  // class function Resolve(const ATemplateName: string): string; overload; static;
+  Assert.AreEqual('hello world', Template.Resolve('test'));
+
+  // ----
+
+  Template.Resolver.Context.ClearTemplates;
+  Template.Resolver.ClearTemplates;
+
+  Template.Resolver.ContextNameResolver := function(const AName: string; const AContext: TTemplateValue): string
+    begin
+      exit(AName + AContext.AsString);
+    end;
+
+  LTemplate := Template.Parse('<% _ %>');
+  Template.Resolver.Context.SetTemplate('test', LTemplate);
+
+  //  class procedure ResolveWithContext<T, TContext>(const ATemplateName: string; const AContext: TContext; const AData: T; const AOutputStream: TStream); overload; static;
+  Assert.AreEqual('hello world', EvalStream(
+    procedure(AOutputStream: TStream)
+    begin
+      Template.ResolveWithContext('te', 'st', 'hello world', AOutputStream);
+    end));
+
+  // class function ResolveWithContext<T, TContext>(const ATemplateName: string; const AContext: TContext; const AData: T): string; overload; static;
+  Assert.AreEqual('hello world', Template.ResolveWithContext('te', 'st', 'hello world'));
+
+  // class procedure ResolveWithContext<TContext>(const ATemplateName: string; const AContext: TContext; const AOutputStream: TStream); overload; static;
+  LTemplate := Template.Parse('<% "hello world" %>');
+  Template.Resolver.Context.SetTemplate('test', LTemplate);
+  Assert.AreEqual('hello world', EvalStream(
+    procedure(AOutputStream: TStream)
+    begin
+      Template.ResolveWithContext('te', 'st', AOutputStream);
+    end));
+
+  //  class function ResolveWithContext<TContext>(const ATemplateName: string; const AContext: TContext): string; overload; static;
+  LTemplate := Template.Parse('hello <% "world" %>');
+  Template.Resolver.Context.SetTemplate('test', LTemplate);
+
+  Assert.AreEqual('hello world', Template.ResolveWithContext('te', 'st'));
+
+  // ---
+  // class function Version(): string; static;
+  Assert.IsNotEmpty(Template.Version);
+
+  // class function Parse(const AString: string): ITemplate; overload; static;
+  LTemplate := Template.Parse('<% _ %>');
+  Assert.AreEqual('<% print(Encode(_)) %>'#$D#$A, Template.PrettyPrint(LTemplate));
+
+  // class function Parse(const AContext: ITemplateContext; const AString: string): ITemplate; overload; static;
+  LContext := Template.Context([eoEvalVarsEarly]);
+  LContext.Variable['var'] := 'test';
+  LTemplate := Template.Parse(LContext, '<% var %>');
+  Assert.AreEqual('<% print(Encode(''test'')) %>'#$D#$A, Template.PrettyPrint(LTemplate));
+
+  // class function Parse(const AStream: TStream; const AManagedStream: boolean = true): ITemplate; overload; static;
+  LStream := TStringStream.Create('hello world');
+  LTemplate := Template.Parse(LStream);
+  Assert.AreEqual('<% print(''hello world'') %>'#13#10, Template.PrettyPrint(LTemplate));
+
+  // class function Parse(const AContext: ITemplateContext; const AStream: TStream; const AManagedStream: boolean = true): ITemplate; overload; static;
+  LContext := Template.Context([eoEvalVarsEarly]);
+  LContext.Variable['test'] := 'hello world';
+  LStream := TStringStream.Create('<% test %>');
+  LTemplate := Template.Parse(LContext, LStream);
+  Assert.AreEqual('<% print(Encode(''hello world'')) %>'#13#10, Template.PrettyPrint(LTemplate));
+
+  // class function ParseFile(const AFile: string): ITemplate; overload; static;
+  LPath := TPath.GetTempFileName;
+  try
+    TFile.WriteAllText(LPath, 'hello world');
+    LTemplate := Template.ParseFile(LContext, LPath);
+    Assert.AreEqual('<% print(''hello world'') %>'#13#10, Template.PrettyPrint(LTemplate));
+
+    // class function ParseFile(const AContext: ITemplateContext; const AFile: string): ITemplate; overload; static;
+    TFile.WriteAllText(LPath, '<% test %>');
+    LTemplate := Template.ParseFile(LContext, LPath);
+    Assert.AreEqual('<% print(Encode(''hello world'')) %>'#13#10, Template.PrettyPrint(LTemplate));
+
+  finally
+    TFile.Delete(LPath);
+  end;
+
+  //  class procedure ExtractReferences(const ATemplate: ITemplate; out AVariables: TArray<string>; out AFunctions: TArray<string>); static;
+
+  LTemplate := Template.Parse('<% if x = 1 ; print(trim(var)); end %>');
+  Template.ExtractReferences(LTemplate, LVariables, LFunctions);
+  Assert.AreEqual(2, length(LVariables));
+  Assert.AreEqual('x', LVariables[0]);
+  Assert.AreEqual('var', LVariables[1]);
+  Assert.AreEqual(1, length(LFunctions));
+  Assert.AreEqual('Trim', LFunctions[0]);
+
+  //   class procedure ExtractBlocks(const ATemplate: ITemplate; var ABlocks: TDictionary<string, ITemplate>); static;
+  LTemplate := Template.Parse('<% block "header" %>header<% end %><% block "footer" %>footer<% end %>');
+  LBlocks := TDictionary<string, ITemplate>.Create;
+  try
+    Template.ExtractBlocks(LTemplate, LBlocks);
+    Assert.AreEqual(2, LBlocks.Count);
+    Assert.IsTrue(LBlocks.ContainsKey('header'));
+    Assert.IsTrue(LBlocks.ContainsKey('footer'));
+  finally
+    LBlocks.free;
+  end;
+end;
+
 procedure TTestTemplate.TestDecimalEncodingErrorWithLists;
 var
   ctx: ITemplateContext;
@@ -464,7 +751,7 @@ begin
   ctx := Template.Context;
   ctx.TemplateResolver := function(const AContext: ITemplateContext; const ATemplate: string): ITemplate
     begin
-      exit(Template.parse(AContext, '_' + ATemplate + '_'));
+      exit(Template.Parse(AContext, '_' + ATemplate + '_'));
     end;
   Assert.AreEqual('_abc__def__abc_', Template.Eval(ctx, '<% include(''abc'') %><% include(''def'') %><% include(''abc'') %>'));
 end;
@@ -506,7 +793,7 @@ var
   LFunctions: TArray<string>;
   LTemplate: ITemplate;
 begin
-  LTemplate := Template.parse('<% v1 %> <% for i in _ %> <% x := substr("abc",1,2) %> <% end %> <% firstname %> <% lastname %>');
+  LTemplate := Template.Parse('<% v1 %> <% for i in _ %> <% x := substr("abc",1,2) %> <% end %> <% firstname %> <% lastname %>');
   Template.ExtractReferences(LTemplate, LVariables, LFunctions);
   Assert.AreEqual(4, integer(length(LVariables)));
   Assert.AreEqual('v1', LVariables[0]);

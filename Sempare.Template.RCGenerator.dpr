@@ -70,7 +70,7 @@ begin
   LData.Files := AFiles;
   LStream := TUseStream.Create(AFilename, fmCreate);
   try
-    TTemplateRegistry.Instance.Eval(LStream, 'sempare_template_rcgenerator_tpl', LData)
+    TTemplateRegistry.Instance.Eval('sempare_template_rcgenerator_tpl', LData, LStream);
   finally
     LStream.Free;
   end;

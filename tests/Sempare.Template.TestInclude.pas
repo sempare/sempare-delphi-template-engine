@@ -882,11 +882,11 @@ begin
     end;
 
   Assert.AreEqual('hello world', Template.Resolve('index', 'world'));
-  Assert.AreEqual('hello world', Template.ResolveWithContext('index', 'world', 'en')); // not found and should default to 'index'
-  Assert.AreEqual('hello world', Template.ResolveWithContext('index', 'world', 'af')); // not found and should default to 'index'
-  Assert.AreEqual('hola world', Template.ResolveWithContext('index', 'world', 'es'));
-  Assert.AreEqual('hallo world', Template.ResolveWithContext('index', 'world', 'de'));
-  Assert.AreEqual('你好 world', Template.ResolveWithContext('index', 'world', 'zh'));
+  Assert.AreEqual('hello world', Template.ResolveWithContext('index', 'en', 'world')); // not found and should default to 'index'
+  Assert.AreEqual('hello world', Template.ResolveWithContext('index', 'af', 'world')); // not found and should default to 'index'
+  Assert.AreEqual('hola world', Template.ResolveWithContext('index', 'es', 'world'));
+  Assert.AreEqual('hallo world', Template.ResolveWithContext('index', 'de', 'world'));
+  Assert.AreEqual('你好 world', Template.ResolveWithContext('index', 'zh', 'world'));
 
 end;
 

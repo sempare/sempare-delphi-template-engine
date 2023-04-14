@@ -66,6 +66,7 @@ type
     FEvaluationContext: ITemplateEvaluationContext;
     FAllowRootDeref: boolean;
     FLocalTemplates: TDictionary<string, ITemplate>;
+    FResolveContext: TTemplateValue;
 
     function HasBreakOrContinue: boolean; inline;
     function EncodeVariable(const AValue: TValue): TValue;
@@ -82,8 +83,8 @@ type
     function ResolveTemplate(const AExpr: IExpr): ITemplate; overload;
     function ResolveTemplate(const APosition: IPosition; const AName: string): ITemplate; overload;
   public
-    constructor Create(const AContext: ITemplateContext; const AValue: TValue; const AStream: TStream); overload;
-    constructor Create(const AContext: ITemplateContext; const AStackFrame: TStackFrame; const AStream: TStream); overload;
+    constructor Create(const AContext: ITemplateContext; const AResolveContext: TTemplateValue; const AValue: TValue; const AStream: TStream); overload;
+    constructor Create(const AContext: ITemplateContext; const AResolveContext: TTemplateValue; const AStackFrame: TStackFrame; const AStream: TStream); overload;
     destructor Destroy; override;
     procedure Visit(const AExpr: IBinopExpr); overload; override;
     procedure Visit(const AExpr: IUnaryExpr); overload; override;
@@ -158,9 +159,9 @@ end;
 
 { TEvaluationTemplateVisitor }
 
-constructor TEvaluationTemplateVisitor.Create(const AContext: ITemplateContext; const AValue: TValue; const AStream: TStream);
+constructor TEvaluationTemplateVisitor.Create(const AContext: ITemplateContext; const AResolveContext: TTemplateValue; const AValue: TValue; const AStream: TStream);
 begin
-  Create(AContext, TStackFrame.Create(AValue, nil), AStream);
+  Create(AContext, AResolveContext, TStackFrame.Create(AValue, nil), AStream);
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AExpr: IValueExpr);
@@ -302,6 +303,8 @@ procedure TEvaluationTemplateVisitor.Visit(const AExpr: IVariableExpr);
 var
   LStackFrame: TStackFrame;
   LValue: TValue;
+  LDeref: TValue;
+  LDerefed: boolean;
 begin
   if FAllowRootDeref then
   begin
@@ -310,7 +313,9 @@ begin
     if LValue.IsEmpty then
     begin
       try
-        LValue := Deref(AExpr, LStackFrame.Root, AExpr.variable, eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext);
+        LDeref := Deref(AExpr, LStackFrame.Root, AExpr.variable, eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext, LDerefed);
+        if LDerefed then
+          LValue := LDeref;
       except
         on e: exception do
         begin
@@ -630,11 +635,12 @@ begin
     RaiseError(APosition, SMaxRuntimeOfMsHasBeenExceeded, [FContext.MaxRunTimeMs]);
 end;
 
-constructor TEvaluationTemplateVisitor.Create(const AContext: ITemplateContext; const AStackFrame: TStackFrame; const AStream: TStream);
+constructor TEvaluationTemplateVisitor.Create(const AContext: ITemplateContext; const AResolveContext: TTemplateValue; const AStackFrame: TStackFrame; const AStream: TStream);
 var
   LApply: ITemplateContextForScope;
 begin
   inherited Create();
+  FResolveContext := AResolveContext;
   FAllowRootDeref := true;
   FStopWatch := TStopWatch.Create;
   FStopWatch.Start;
@@ -1011,7 +1017,7 @@ end;
 
 function TEvaluationTemplateVisitor.ResolveTemplate(const APosition: IPosition; const AName: string): ITemplate;
 begin
-  if not FLocalTemplates.TryGetValue(AName, result) and not FContext.TryGetTemplate(AName, result) then
+  if not FLocalTemplates.TryGetValue(AName, result) and not FContext.TryGetTemplate(AName, result, FResolveContext) then
   begin
     RaiseErrorRes(APosition, @STemplateNotFound, [AName]);
   end;
@@ -1097,8 +1103,13 @@ begin
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AExpr: IArrayExpr);
+var
+  LArray: TArray<TValue>;
+  LArrayValue: TValue;
 begin
-  FEvalStack.push(TValue.From < TArray < TValue >> (ExprListArgs(AExpr.exprlist)));
+  LArray := ExprListArgs(AExpr.exprlist);
+  LArrayValue := TValue.From < TArray < TValue >> (LArray);
+  FEvalStack.push(LArrayValue);
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AExpr: ITernaryExpr);

@@ -103,6 +103,7 @@ type
     function GetTemplate(const AName: string): ITemplate;
     procedure SetTemplate(const AName: string; const ATemplate: ITemplate);
     procedure RemoveTemplate(const AName: string);
+    procedure ClearTemplates();
 
     function GetTemplateResolver: TTemplateResolver; overload;
     procedure SetTemplateResolver(const AResolver: TTemplateResolver); overload;
@@ -290,6 +291,7 @@ type
     function GetTemplate(const AName: string): ITemplate;
     procedure SetTemplate(const AName: string; const ATemplate: ITemplate);
     procedure RemoveTemplate(const AName: string);
+    procedure ClearTemplates();
 
     function GetTemplateResolver: TTemplateResolver;
     procedure SetTemplateResolver(const AResolver: TTemplateResolver);
@@ -382,6 +384,16 @@ var
 begin
   for LPair in FVariables do
     AScope[LPair.Key] := LPair.Value;
+end;
+
+procedure TTemplateContext.ClearTemplates;
+begin
+  FLock.Acquire;
+  try
+    FTemplates.Clear();
+  finally
+    FLock.Release;
+  end;
 end;
 
 constructor TTemplateContext.Create(const AOptions: TTemplateEvaluationOptions);
