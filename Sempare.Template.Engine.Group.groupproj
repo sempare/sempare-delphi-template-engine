@@ -18,9 +18,6 @@
         <Projects Include="demo\SempareTemplatePlayground\Sempare.TemplateEngine.Playground.dproj">
             <Dependencies/>
         </Projects>
-        <Projects Include="..\sempare-delphi-template-engine-horse-demo\SempareTemplateEngineHorseDemo.dproj">
-            <Dependencies/>
-        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -74,23 +71,14 @@
     <Target Name="Sempare_TemplateEngine_Playground:Make">
         <MSBuild Projects="demo\SempareTemplatePlayground\Sempare.TemplateEngine.Playground.dproj" Targets="Make"/>
     </Target>
-    <Target Name="SempareTemplateEngineHorseDemo">
-        <MSBuild Projects="..\sempare-delphi-template-engine-horse-demo\SempareTemplateEngineHorseDemo.dproj"/>
-    </Target>
-    <Target Name="SempareTemplateEngineHorseDemo:Clean">
-        <MSBuild Projects="..\sempare-delphi-template-engine-horse-demo\SempareTemplateEngineHorseDemo.dproj" Targets="Clean"/>
-    </Target>
-    <Target Name="SempareTemplateEngineHorseDemo:Make">
-        <MSBuild Projects="..\sempare-delphi-template-engine-horse-demo\SempareTemplateEngineHorseDemo.dproj" Targets="Make"/>
-    </Target>
     <Target Name="Build">
-        <CallTarget Targets="Sempare_Template_Pkg;Sempare_Template_Tester;WebBrokerStandalone8080;Sempare_Template_RCGenerator;Sempare_TemplateEngine_Playground;SempareTemplateEngineHorseDemo"/>
+        <CallTarget Targets="Sempare_Template_Pkg;Sempare_Template_Tester;WebBrokerStandalone8080;Sempare_Template_RCGenerator;Sempare_TemplateEngine_Playground"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="Sempare_Template_Pkg:Clean;Sempare_Template_Tester:Clean;WebBrokerStandalone8080:Clean;Sempare_Template_RCGenerator:Clean;Sempare_TemplateEngine_Playground:Clean;SempareTemplateEngineHorseDemo:Clean"/>
+        <CallTarget Targets="Sempare_Template_Pkg:Clean;Sempare_Template_Tester:Clean;WebBrokerStandalone8080:Clean;Sempare_Template_RCGenerator:Clean;Sempare_TemplateEngine_Playground:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="Sempare_Template_Pkg:Make;Sempare_Template_Tester:Make;WebBrokerStandalone8080:Make;Sempare_Template_RCGenerator:Make;Sempare_TemplateEngine_Playground:Make;SempareTemplateEngineHorseDemo:Make"/>
+        <CallTarget Targets="Sempare_Template_Pkg:Make;Sempare_Template_Tester:Make;WebBrokerStandalone8080:Make;Sempare_Template_RCGenerator:Make;Sempare_TemplateEngine_Playground:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>
