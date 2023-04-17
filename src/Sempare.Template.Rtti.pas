@@ -75,7 +75,8 @@ procedure AssertNumeric(const APositional: IPosition; const ALeft: TValue; const
 procedure AssertString(const APositional: IPosition; const AValue: TValue);
 procedure AssertArray(const APositional: IPosition; const AValue: TValue);
 
-function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext): TValue;
+function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext): TValue; overload;
+function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AResolved: boolean): TValue; overload;
 
 type
   TDerefMatchFunction = function(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
@@ -653,6 +654,13 @@ begin
 end;
 
 function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext): TValue;
+var
+  LResolved: boolean;
+begin
+  exit(Deref(APosition, AVar, ADeref, ARaiseIfMissing, AContext, LResolved));
+end;
+
+function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AResolved: boolean): TValue;
 
   function ProcessArray(AObj: TValue; const ADeref: TValue; out AFound: boolean): TValue;
   var
@@ -718,6 +726,8 @@ var
   LVarFound: boolean;
 
 begin
+  AResolved := true;
+  result := nil;
   if AVar.IsEmpty then
     exit(AVar);
   case AVar.Kind of
@@ -735,11 +745,15 @@ begin
     begin
       if ARaiseIfMissing then
         RaiseError(APosition, SCannotDereferenceValiable);
+      AResolved := false;
       exit('');
     end;
   end;
   if not LVarFound and ARaiseIfMissing then
+  begin
     RaiseError(APosition, SCannotDereferenceValiable);
+  end;
+  AResolved := LVarFound;
 end;
 
 procedure AssertBoolean(const APositional: IPosition; const ALeft: TValue); overload;

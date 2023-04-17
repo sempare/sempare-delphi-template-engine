@@ -66,6 +66,7 @@ type
     FEvaluationContext: ITemplateEvaluationContext;
     FAllowRootDeref: boolean;
     FLocalTemplates: TDictionary<string, ITemplate>;
+    FResolveContext: TTemplateValue;
 
     function HasBreakOrContinue: boolean; inline;
     function EncodeVariable(const AValue: TValue): TValue;
@@ -82,8 +83,8 @@ type
     function ResolveTemplate(const AExpr: IExpr): ITemplate; overload;
     function ResolveTemplate(const APosition: IPosition; const AName: string): ITemplate; overload;
   public
-    constructor Create(const AContext: ITemplateContext; const AValue: TValue; const AStream: TStream); overload;
-    constructor Create(const AContext: ITemplateContext; const AStackFrame: TStackFrame; const AStream: TStream); overload;
+    constructor Create(const AContext: ITemplateContext; const AResolveContext: TTemplateValue; const AValue: TValue; const AStream: TStream); overload;
+    constructor Create(const AContext: ITemplateContext; const AResolveContext: TTemplateValue; const AStackFrame: TStackFrame; const AStream: TStream); overload;
     destructor Destroy; override;
     procedure Visit(const AExpr: IBinopExpr); overload; override;
     procedure Visit(const AExpr: IUnaryExpr); overload; override;
@@ -158,9 +159,9 @@ end;
 
 { TEvaluationTemplateVisitor }
 
-constructor TEvaluationTemplateVisitor.Create(const AContext: ITemplateContext; const AValue: TValue; const AStream: TStream);
+constructor TEvaluationTemplateVisitor.Create(const AContext: ITemplateContext; const AResolveContext: TTemplateValue; const AValue: TValue; const AStream: TStream);
 begin
-  Create(AContext, TStackFrame.Create(AValue, nil), AStream);
+  Create(AContext, AResolveContext, TStackFrame.Create(AValue, nil), AStream);
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AExpr: IValueExpr);
@@ -302,6 +303,8 @@ procedure TEvaluationTemplateVisitor.Visit(const AExpr: IVariableExpr);
 var
   LStackFrame: TStackFrame;
   LValue: TValue;
+  LDeref: TValue;
+  LDerefed: boolean;
 begin
   if FAllowRootDeref then
   begin
@@ -310,7 +313,9 @@ begin
     if LValue.IsEmpty then
     begin
       try
-        LValue := Deref(AExpr, LStackFrame.Root, AExpr.variable, eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext);
+        LDeref := Deref(AExpr, LStackFrame.Root, AExpr.variable, eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext, LDerefed);
+        if LDerefed then
+          LValue := LDeref;
       except
         on e: exception do
         begin
@@ -365,33 +370,35 @@ begin
   i := 0;
   LLoops := 0;
   LFirst := true;
-
-  while ((LLimit = -1) or (LLoops < LLimit)) do
-  begin
-    if not EvalExprAsBoolean(AStmt.Condition) or (coBreak in FLoopOptions) then
-      break;
-    CheckRunTime(AStmt);
-    FStackFrames.peek[LOOP_IDX_NAME] := i;
-    if (LOffset = -1) or (i >= LOffset) then
+  try
+    while ((LLimit = -1) or (LLoops < LLimit)) do
     begin
-      if LFirst then
+      if not EvalExprAsBoolean(AStmt.Condition) or (coBreak in FLoopOptions) then
+        break;
+      CheckRunTime(AStmt);
+      FStackFrames.peek[LOOP_IDX_NAME] := i;
+      if (LOffset = -1) or (i >= LOffset) then
       begin
-        LFirst := false;
-        if AStmt.OnBeginContainer <> nil then
-          AcceptVisitor(AStmt.OnBeginContainer, self);
-      end
-      else
-      begin
-        if AStmt.BetweenItemsContainer <> nil then
-          AcceptVisitor(AStmt.BetweenItemsContainer, self);
+        if LFirst then
+        begin
+          LFirst := false;
+          if AStmt.OnBeginContainer <> nil then
+            AcceptVisitor(AStmt.OnBeginContainer, self);
+        end
+        else
+        begin
+          if AStmt.BetweenItemsContainer <> nil then
+            AcceptVisitor(AStmt.BetweenItemsContainer, self);
+        end;
+        exclude(FLoopOptions, coContinue);
+        AcceptVisitor(AStmt.Container, self);
+        inc(LLoops);
       end;
-      exclude(FLoopOptions, coContinue);
-      AcceptVisitor(AStmt.Container, self);
-      inc(LLoops);
+      inc(i);
     end;
-    inc(i);
+  finally
+    FStackFrames.pop;
   end;
-  FStackFrames.pop;
   if LLoops = 0 then
   begin
     if AStmt.OnEmptyContainer <> nil then
@@ -501,7 +508,7 @@ var
     end;
     LEnumGetEnumeratorMethod := LLoopExprType.GetMethod('GetEnumerator');
     if LEnumGetEnumeratorMethod = nil then
-      RaiseError(AStmt, SGetEnumeratorNotFoundOnObject);
+      RaiseError(AStmt, SGetEnumeratorNotFoundOnObject, [LLoopExprType.AsInstance.MetaclassType.ClassName]);
     LEnumValue := LEnumGetEnumeratorMethod.Invoke(LLoopExpr.AsObject, []);
     if LEnumValue.IsEmpty then
       RaiseErrorRes(AStmt, @SValueIsNotEnumerable);
@@ -596,22 +603,25 @@ begin
   i := 0;
   LLoops := 0;
   LFirst := true;
-  if not LLoopExpr.IsEmpty then
-  begin
-    LLoopExprType := GRttiContext.GetType(LLoopExpr.TypeInfo);
+  try
+    if not LLoopExpr.IsEmpty then
+    begin
+      LLoopExprType := GRttiContext.GetType(LLoopExpr.TypeInfo);
 
-    case LLoopExprType.TypeKind of
-      tkClass, tkClassRef:
-        VisitObject;
-      tkArray:
-        VisitArray;
-      tkDynArray:
-        VisitDynArray;
-    else
-      RaiseError(AStmt, SGetEnumeratorNotFoundOnObject);
+      case LLoopExprType.TypeKind of
+        tkClass, tkClassRef:
+          VisitObject;
+        tkArray:
+          VisitArray;
+        tkDynArray:
+          VisitDynArray;
+      else
+        RaiseError(AStmt, SGetEnumeratorNotFoundOnObject, [LLoopExprType.ClassName]);
+      end;
     end;
+  finally
+    FStackFrames.pop;
   end;
-  FStackFrames.pop;
   if LLoops = 0 then
   begin
     if AStmt.OnEmptyContainer <> nil then
@@ -630,11 +640,12 @@ begin
     RaiseError(APosition, SMaxRuntimeOfMsHasBeenExceeded, [FContext.MaxRunTimeMs]);
 end;
 
-constructor TEvaluationTemplateVisitor.Create(const AContext: ITemplateContext; const AStackFrame: TStackFrame; const AStream: TStream);
+constructor TEvaluationTemplateVisitor.Create(const AContext: ITemplateContext; const AResolveContext: TTemplateValue; const AStackFrame: TStackFrame; const AStream: TStream);
 var
   LApply: ITemplateContextForScope;
 begin
   inherited Create();
+  FResolveContext := AResolveContext;
   FAllowRootDeref := true;
   FStopWatch := TStopWatch.Create;
   FStopWatch.Start;
@@ -794,30 +805,33 @@ begin
   FStackFrames.push(FStackFrames.peek.Clone);
   LIdx := LStartVal;
   i := 0;
-  while LDirectionTestFunc(LIdx, LEndVal) do
-  begin
-    FStackFrames.peek[LVariable] := LIdx;
-    FStackFrames.peek[LOOP_IDX_NAME] := i;
-    if coBreak in FLoopOptions then
-      break;
-    if LFirst then
+  try
+    while LDirectionTestFunc(LIdx, LEndVal) do
     begin
-      LFirst := false;
-      if AStmt.OnBeginContainer <> nil then
-        AcceptVisitor(AStmt.OnBeginContainer, self);
-    end
-    else
-    begin
-      if AStmt.BetweenItemsContainer <> nil then
-        AcceptVisitor(AStmt.BetweenItemsContainer, self);
+      FStackFrames.peek[LVariable] := LIdx;
+      FStackFrames.peek[LOOP_IDX_NAME] := i;
+      if coBreak in FLoopOptions then
+        break;
+      if LFirst then
+      begin
+        LFirst := false;
+        if AStmt.OnBeginContainer <> nil then
+          AcceptVisitor(AStmt.OnBeginContainer, self);
+      end
+      else
+      begin
+        if AStmt.BetweenItemsContainer <> nil then
+          AcceptVisitor(AStmt.BetweenItemsContainer, self);
+      end;
+      exclude(FLoopOptions, coContinue);
+      CheckRunTime(AStmt);
+      AcceptVisitor(AStmt.Container, self);
+      inc(LIdx, LDelta);
+      inc(i);
     end;
-    exclude(FLoopOptions, coContinue);
-    CheckRunTime(AStmt);
-    AcceptVisitor(AStmt.Container, self);
-    inc(LIdx, LDelta);
-    inc(i);
+  finally
+    FStackFrames.pop;
   end;
-  FStackFrames.pop;
   if i = 0 then
   begin
     if AStmt.OnEmptyContainer <> nil then
@@ -1011,7 +1025,7 @@ end;
 
 function TEvaluationTemplateVisitor.ResolveTemplate(const APosition: IPosition; const AName: string): ITemplate;
 begin
-  if not FLocalTemplates.TryGetValue(AName, result) and not FContext.TryGetTemplate(AName, result) then
+  if not FLocalTemplates.TryGetValue(AName, result) and not FContext.TryGetTemplate(AName, result, FResolveContext) then
   begin
     RaiseErrorRes(APosition, @STemplateNotFound, [AName]);
   end;
@@ -1070,10 +1084,11 @@ begin
 
   LStackFrame := FStackFrames.peek.Clone(EvalExpr(AStmt.Expr));
   FStackFrames.push(LStackFrame);
-
-  AcceptVisitor(AStmt.Container, self);
-
-  FStackFrames.pop;
+  try
+    AcceptVisitor(AStmt.Container, self);
+  finally
+    FStackFrames.pop;
+  end;
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AStmt: IRequireStmt);
@@ -1097,8 +1112,13 @@ begin
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AExpr: IArrayExpr);
+var
+  LArray: TArray<TValue>;
+  LArrayValue: TValue;
 begin
-  FEvalStack.push(TValue.From < TArray < TValue >> (ExprListArgs(AExpr.exprlist)));
+  LArray := ExprListArgs(AExpr.exprlist);
+  LArrayValue := TValue.From < TArray < TValue >> (LArray);
+  FEvalStack.push(LArrayValue);
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AExpr: ITernaryExpr);
@@ -1195,6 +1215,7 @@ begin
   LBlocks := TDictionary<string, IBlockStmt>.Create;
   try
     LBlockResolver := TBlockResolverVisitor.Create(self, AStmt.BlockContainer);
+    LBlockResolver.Discover;
     for LBlockName in LBlockResolver.GetBlockNames do
     begin
       LReplacementBlock := LBlockResolver.GetBlock(LBlockName);

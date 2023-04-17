@@ -49,7 +49,7 @@ type
     function Parse(const AStream: TStream; const AManagedStream: boolean = true): ITemplate;
   end;
 
-function CreateTemplateParser(AContext: ITemplateContext): ITemplateParser;
+function CreateTemplateParser(const AContext: ITemplateContext): ITemplateParser;
 
 implementation
 
@@ -192,7 +192,7 @@ type
     FExpr: IExpr;
     function GetExpr: IExpr;
   public
-    constructor Create(APosition: IPosition; AExpr: IExpr);
+    constructor Create(const APosition: IPosition; const AExpr: IExpr);
   end;
 
   TPrintStmt = class(TAbstractStmtWithExpr, IPrintStmt)
@@ -262,7 +262,7 @@ type
     FContainer: ITemplate;
     function GetContainer: ITemplate;
   public
-    constructor Create(APosition: IPosition; AContainer: ITemplate);
+    constructor Create(const APosition: IPosition; const AContainer: ITemplate);
   end;
 
   TProcessTemplateStmt = class(TAbstractStmtWithContainer, IProcessTemplateStmt)
@@ -308,7 +308,7 @@ type
     function GetBetweenItemContainer: ITemplate;
     function GetHasEnd: boolean; override;
   public
-    constructor Create(APosition: IPosition; AContainer: ITemplate; AOnBegin, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
+    constructor Create(const APosition: IPosition; const AContainer: ITemplate; const AOnBegin, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
   end;
 
   TWhileStmt = class(TLoopStmt, IWhileStmt)
@@ -383,7 +383,6 @@ type
     procedure AddExpr(const AExpr: IExpr);
     function GetExprCount: integer;
     procedure Accept(const AVisitor: ITemplateVisitor); override;
-  public
   end;
 
   TAbstractExpr = class abstract(TAbstractBase, IExpr)
@@ -417,7 +416,7 @@ type
     FExprList: IExprList;
     function GetExprList: IExprList;
   public
-    constructor Create(APosition: IPosition; AExprList: IExprList);
+    constructor Create(const APosition: IPosition; AExprList: IExprList);
   end;
 
   TAbstractExprWithExpr = class abstract(TAbstractExpr)
@@ -425,7 +424,7 @@ type
     FExpr: IExpr;
     function GetExpr: IExpr;
   public
-    constructor Create(APosition: IPosition; AExpr: IExpr);
+    constructor Create(const APosition: IPosition; const AExpr: IExpr);
   end;
 
   TArrayExpr = class(TAbstractExprWithExprList, IArrayExpr)
@@ -455,7 +454,7 @@ type
     function GetDerefExpr: IExpr;
     procedure Accept(const AVisitor: ITemplateVisitor); override;
   public
-    constructor Create(APosition: IPosition; const ADerefType: TDerefType; AVariable: IExpr; ADeref: IExpr);
+    constructor Create(const APosition: IPosition; const ADerefType: TDerefType; const AVariable: IExpr; const ADeref: IExpr);
   end;
 
   TFunctionCallExpr = class(TAbstractExprWithExprList, IFunctionCallExpr)
@@ -549,7 +548,7 @@ type
     function LookaheadValue: string;
     function MatchValues(const ASymbols: TTemplateSymbolSet; out ASymbol: TTemplateSymbol): string;
     function MatchValue(const ASymbol: TTemplateSymbol): string;
-    procedure Match(ASymbol: ITemplateSymbol); overload; inline;
+    procedure Match(const ASymbol: ITemplateSymbol); overload; inline;
     function Match(ASymbols: TTemplateSymbolSet; var AMatchSymbol: TTemplateSymbol): TStripActionSet; overload; inline;
     function MatchEndOfScript: TStripActionSet;
     function Match(const ASymbol: TTemplateSymbol): TStripActionSet; overload;
@@ -566,11 +565,11 @@ type
     function RuleIgnoreOption(const ASymbol: TTemplateSymbol; const AOption: TParserOption): IStmt;
     function RuleExprList(const AEndToken: TTemplateSymbol = vsCloseRoundBracket): IExprList;
     function RuleElIfStmt(out AFalseContainer: ITemplate): IStmt;
-    function RulePrintStmtVariable(AExpr: IExpr): IStmt; overload;
-    function RuleAssignStmt(ASymbol: IExpr): IStmt;
+    function RulePrintStmtVariable(const AExpr: IExpr): IStmt; overload;
+    function RuleAssignStmt(const ASymbol: IExpr): IStmt;
     function RuleEndStmt: IStmt;
   private
-    function RuleStmts(Container: ITemplate; const AEndToken: TTemplateSymbolSet): TTemplateSymbol;
+    function RuleStmts(const Container: ITemplate; const AEndToken: TTemplateSymbolSet): TTemplateSymbol;
     function RuleStmt: IStmt;
 
     function RuleIgnoreNewline: IStmt;
@@ -600,19 +599,25 @@ type
     function RuleFactor: IExpr;
     function RuleVariable: IExpr;
     function RuleFunctionExpr(const ASymbol: string): IExpr;
-    function RuleMethodExpr(AExpr: IExpr; AMethodExpr: IExpr): IExpr;
+    function RuleMethodExpr(const AExpr: IExpr; const AMethodExpr: IExpr): IExpr;
 
   public
-    constructor Create(AContext: ITemplateContext);
+    constructor Create(const AContext: ITemplateContext);
     destructor Destroy; override;
     function Parse(const AStream: TStream; const AManagedStream: boolean): ITemplate;
   end;
 
 function IsPrintNLOrWhitespaceExpr(const AStmt: IStmt; out ANL: boolean): boolean;
 var
+  LDebugStmt: IDebugStmt;
   LPrintStmt: IPrintStmt;
   LExpr: IExpr;
 begin
+  if supports(AStmt, IDebugStmt, LDebugStmt) then
+  begin
+    exit(IsPrintNLOrWhitespaceExpr(LDebugStmt.Stmt, ANL));
+  end;
+
   if not supports(AStmt, IPrintStmt, LPrintStmt) then
     exit(false);
 
@@ -632,9 +637,15 @@ end;
 
 function IsPrintTextExpr(const AStmt: IStmt; out AStr: string): boolean;
 var
+  LDebugStmt: IDebugStmt;
   LPrintStmt: IPrintStmt;
   LVal: IValueExpr;
 begin
+  if supports(AStmt, IDebugStmt, LDebugStmt) then
+  begin
+    exit(IsPrintTextExpr(LDebugStmt.Stmt, AStr));
+  end;
+
   if not supports(AStmt, IPrintStmt, LPrintStmt) then
     exit(false);
   if supports(LPrintStmt.Expr, IValueExpr, LVal) and isStrLike(LVal.Value) then
@@ -646,7 +657,13 @@ begin
 end;
 
 function IsStripStmt(const AStmt: IStmt; out AStripStmt: IStripStmt): boolean;
+var
+  LDebugStmt: IDebugStmt;
 begin
+  if supports(AStmt, IDebugStmt, LDebugStmt) then
+  begin
+    exit(IsStripStmt(LDebugStmt.Stmt, AStripStmt));
+  end;
   exit(supports(AStmt, IStripStmt, AStripStmt));
 end;
 
@@ -664,8 +681,13 @@ end;
 
 function IsPrintExpr(const AStmt: IStmt; const ASymExpr: TGuid): boolean;
 var
+  LDebugStmt: IDebugStmt;
   LPrintStmt: IPrintStmt;
 begin
+  if supports(AStmt, IDebugStmt, LDebugStmt) then
+  begin
+    exit(IsPrintExpr(LDebugStmt.Stmt, ASymExpr));
+  end;
   if not supports(AStmt, IPrintStmt, LPrintStmt) then
     exit(false);
 
@@ -684,8 +706,13 @@ end;
 
 function IsNLorWSStmt(const AStmt: IStmt; out AIsWS: boolean): boolean;
 var
+  LDebugStmt: IDebugStmt;
   LPrintStmt: IPrintStmt;
 begin
+  if supports(AStmt, IDebugStmt, LDebugStmt) then
+  begin
+    exit(IsNLorWSStmt(LDebugStmt.Stmt, AIsWS));
+  end;
   if not supports(AStmt, IPrintStmt, LPrintStmt) then
     exit(false);
   AIsWS := supports(LPrintStmt.Expr, IWhitespaceExpr);
@@ -725,17 +752,17 @@ begin
   end;
 end;
 
-function CreateTemplateParser(AContext: ITemplateContext): ITemplateParser;
+function CreateTemplateParser(const AContext: ITemplateContext): ITemplateParser;
 begin
   exit(TTemplateParser.Create(AContext));
 end;
 
-function IsValue(AExpr: IExpr): boolean;
+function IsValue(const AExpr: IExpr): boolean;
 begin
   exit(supports(AExpr, IValueExpr));
 end;
 
-function AsValue(AExpr: IExpr): TValue;
+function AsValue(const AExpr: IExpr): TValue;
 var
   LValueExpr: IValueExpr;
 begin
@@ -743,7 +770,7 @@ begin
   exit(LValueExpr.Value);
 end;
 
-function AsVarString(AExpr: IExpr): string;
+function AsVarString(const AExpr: IExpr): string;
 var
   LVar: IVariableExpr;
 begin
@@ -753,7 +780,7 @@ begin
     exit('');
 end;
 
-function IsEnd(AStmt: IStmt): boolean;
+function IsEnd(const AStmt: IStmt): boolean;
 begin
   if AStmt = nil then
     exit(false);
@@ -787,7 +814,7 @@ begin
   exit(BinOp <> boInvalid);
 end;
 
-function GetTemplateParser(AContext: ITemplateContext): ITemplateParser;
+function GetTemplateParser(const AContext: ITemplateContext): ITemplateParser;
 begin
   exit(TTemplateParser.Create(AContext));
 end;
@@ -875,7 +902,7 @@ begin
   end;
 end;
 
-constructor TTemplateParser.Create(AContext: ITemplateContext);
+constructor TTemplateParser.Create(const AContext: ITemplateContext);
 begin
   FOptions := [];
   FContext := AContext;
@@ -1056,7 +1083,7 @@ begin
   exit(WrapWithStripStmt(result, LBeforeNLStripActions, LAfterNLStripActions));
 end;
 
-function TTemplateParser.RuleMethodExpr(AExpr: IExpr; AMethodExpr: IExpr): IExpr;
+function TTemplateParser.RuleMethodExpr(const AExpr: IExpr; const AMethodExpr: IExpr): IExpr;
 var
   LSymbol: ITemplateSymbol;
 begin
@@ -1066,7 +1093,7 @@ begin
   MatchClosingBracket(vsCloseRoundBracket);
 end;
 
-function TTemplateParser.RuleStmts(Container: ITemplate; const AEndToken: TTemplateSymbolSet): TTemplateSymbol;
+function TTemplateParser.RuleStmts(const Container: ITemplate; const AEndToken: TTemplateSymbolSet): TTemplateSymbol;
 var
   LStmt: IStmt;
   LParentContainer: ITemplate;
@@ -1347,6 +1374,7 @@ var
   LSymbol: ITemplateSymbol;
   LExpr: IExpr;
   LDone: boolean;
+  LDeref: TValue;
 begin
   LDone := false;
   LSymbol := FLookahead;
@@ -1368,9 +1396,14 @@ begin
           Match(vsOpenSquareBracket);
           LExpr := self.RuleExpression;
           if (eoEvalVarsEarly in FContext.Options) and IsValue(result) and IsValue(LExpr) then
-            result := TValueExpr.Create(LSymbol.Position, deref(LSymbol.Position, AsValue(result), AsValue(LExpr), eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext))
+          begin
+            LDeref := Deref(LSymbol.Position, AsValue(result), AsValue(LExpr), eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext);
+            result := TValueExpr.Create(LSymbol.Position, LDeref);
+          end
           else
+          begin
             result := TVariableDerefExpr.Create(LSymbol.Position, dtArray, result, LExpr);
+          end;
           Match(vsCloseSquareBracket);
         end;
       vsDOT:
@@ -1382,9 +1415,14 @@ begin
           else
           begin
             if (eoEvalVarsEarly in FContext.Options) and IsValue(result) and IsValue(LExpr) then
-              result := TValueExpr.Create(LSymbol.Position, deref(LSymbol.Position, AsValue(result), AsValue(LExpr), eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext))
+            begin
+              LDeref := Deref(LSymbol.Position, AsValue(result), AsValue(LExpr), eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext);
+              result := TValueExpr.Create(LSymbol.Position, LDeref);
+            end
             else
+            begin
               result := TVariableDerefExpr.Create(LSymbol.Position, dtObject, result, LExpr);
+            end;
           end;
         end;
     else
@@ -1395,7 +1433,7 @@ begin
   end;
 end;
 
-function TTemplateParser.RuleAssignStmt(ASymbol: IExpr): IStmt;
+function TTemplateParser.RuleAssignStmt(const ASymbol: IExpr): IStmt;
 var
   LSymbol: ITemplateSymbol;
 begin
@@ -2069,7 +2107,7 @@ begin
   exit(WrapWithStripStmt(result, LBeforeNLStripActions, LAfterNLStripActions));
 end;
 
-function TTemplateParser.RulePrintStmtVariable(AExpr: IExpr): IStmt;
+function TTemplateParser.RulePrintStmtVariable(const AExpr: IExpr): IStmt;
 var
   LSymbol: ITemplateSymbol;
   LValueExpr: IValueExpr;
@@ -2226,7 +2264,7 @@ begin
   RaiseError(LSymbol.Position, format(SParsingErrorExpecting, [TemplateSymbolToString(AMatchSymbol)]));
 end;
 
-procedure TTemplateParser.Match(ASymbol: ITemplateSymbol);
+procedure TTemplateParser.Match(const ASymbol: ITemplateSymbol);
 begin
   Match(ASymbol.Token);
 end;
@@ -2632,11 +2670,11 @@ end;
 
 procedure TTemplate.Accept(const AVisitor: ITemplateVisitor);
 var
-  i: ITemplateVisitorHost;
+  i: integer;
 begin
-  for i in FArray do
+  for i := 0 to FArray.Count - 1 do
   begin
-    i.Accept(AVisitor);
+    FArray[i].Accept(AVisitor);
   end;
 end;
 
@@ -2961,7 +2999,7 @@ begin
   AVisitor.Visit(self);
 end;
 
-constructor TVariableDerefExpr.Create(APosition: IPosition; const ADerefType: TDerefType; AVariable: IExpr; ADeref: IExpr);
+constructor TVariableDerefExpr.Create(const APosition: IPosition; const ADerefType: TDerefType; const AVariable: IExpr; const ADeref: IExpr);
 begin
   inherited Create(APosition, AVariable);
   FDerefType := ADerefType;
@@ -3236,7 +3274,7 @@ end;
 
 { TAbstractStmtWithExpr }
 
-constructor TAbstractStmtWithExpr.Create(APosition: IPosition; AExpr: IExpr);
+constructor TAbstractStmtWithExpr.Create(const APosition: IPosition; const AExpr: IExpr);
 begin
   inherited Create(APosition);
   FExpr := AExpr;
@@ -3249,7 +3287,7 @@ end;
 
 { TAbstractStmtWithContainer }
 
-constructor TAbstractStmtWithContainer.Create(APosition: IPosition; AContainer: ITemplate);
+constructor TAbstractStmtWithContainer.Create(const APosition: IPosition; const AContainer: ITemplate);
 begin
   inherited Create(APosition);
   FContainer := AContainer;
@@ -3262,7 +3300,7 @@ end;
 
 { TAbstractExprWithExprList }
 
-constructor TAbstractExprWithExprList.Create(APosition: IPosition; AExprList: IExprList);
+constructor TAbstractExprWithExprList.Create(const APosition: IPosition; AExprList: IExprList);
 begin
   inherited Create(APosition);
   FExprList := AExprList;
@@ -3275,7 +3313,7 @@ end;
 
 { TAbstractExprWithExpr }
 
-constructor TAbstractExprWithExpr.Create(APosition: IPosition; AExpr: IExpr);
+constructor TAbstractExprWithExpr.Create(const APosition: IPosition; const AExpr: IExpr);
 begin
   inherited Create(APosition);
   FExpr := AExpr;
@@ -3323,7 +3361,7 @@ end;
 
 { TLoopStmt }
 
-constructor TLoopStmt.Create(APosition: IPosition; AContainer, AOnBegin, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
+constructor TLoopStmt.Create(const APosition: IPosition; const AContainer, AOnBegin, AOnEnd, AOnEmpty, ABetweenItem: ITemplate);
 begin
   inherited Create(APosition, AContainer);
   FOnBegin := AOnBegin;

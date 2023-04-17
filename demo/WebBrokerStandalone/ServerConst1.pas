@@ -22,6 +22,9 @@ resourcestring
     '   - "status" for Server status'+ slineBreak +
     '   - "help" to show commands'+ slineBreak +
     '   - "exit" to close the application';
+  sConnect = 'Connect your browser to http://localhost:%d';
+  sWelcome = 'This is the Sempare Template Engine WebBroker Demo';
+  sVersion = 'This is using the Sempare Template Engine v%s';
 
 const
   cArrow = '->';

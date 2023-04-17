@@ -62,7 +62,7 @@ type
   private
     FPosition: IPosition;
   public
-    constructor Create(APosition: IPosition; const AMessage: string);
+    constructor Create(const APosition: IPosition; const AMessage: string);
     property Position: IPosition read FPosition write FPosition implements IPosition;
   end;
 
@@ -181,7 +181,7 @@ end;
 
 { ETemplateEvaluationError }
 
-constructor ETemplateEvaluationError.Create(APosition: IPosition; const AMessage: string);
+constructor ETemplateEvaluationError.Create(const APosition: IPosition; const AMessage: string);
 begin
   inherited Create(AMessage);
   FPosition := APosition;

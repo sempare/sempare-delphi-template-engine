@@ -9,7 +9,8 @@ uses
   IdHTTPWebBrokerBridge,
   Web.WebReq,
   Web.WebBroker,
-  WebModuleUnit1 in 'WebModuleUnit1.pas' {WebModule1: TWebModule},
+  Sempare.Template,
+  WebModuleUnit1 in 'WebModuleUnit1.pas' {WebModule1: TWebModule} ,
   ServerConst1 in 'ServerConst1.pas',
   DynForm in 'DynForm.pas';
 
@@ -66,6 +67,7 @@ begin
     end
     else
       Writeln(Format(sPortInUse, [AServer.DefaultPort.ToString]));
+    Writeln(Format(SConnect, [AServer.DefaultPort]));
   end
   else
     Writeln(sServerRunning);
@@ -143,6 +145,10 @@ begin
 end;
 
 begin
+  Writeln(sWelcome);
+  Writeln('');
+  Writeln(Format(sVersion, [Template.Version]));
+  Writeln('');
   try
     if WebRequestHandler <> nil then
       WebRequestHandler.WebModuleClass := WebModuleClass;
@@ -150,6 +156,7 @@ begin
   except
     on E: Exception do
       Writeln(E.ClassName, ': ', E.Message);
-  end
+  end;
+  TTemplateRegistry.Finalize;
 
 end.

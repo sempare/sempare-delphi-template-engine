@@ -1,4 +1,4 @@
-(*%*************************************************************************************************
+﻿(*%*************************************************************************************************
  *                 ___                                                                              *
  *                / __|  ___   _ __    _ __   __ _   _ _   ___                                      *
  *                \__ \ / -_) | '  \  | '_ \ / _` | | '_| / -_)                                     *
@@ -95,6 +95,9 @@ type
 
     [Test]
     procedure TestExtractBlocks;
+
+    [Test]
+    procedure TestResolver;
 
   end;
 
@@ -534,8 +537,12 @@ begin
   LTemplateData.CopyrightYear := 2023;
   LTemplateData.FormName := 'userinfo';
   LTemplateData.FormAction := '/userinfo';
-  LTemplateData.Fields := [TField.create('FirstName', 'firstname'), TField.create('LastName', 'lastname'), TField.create('Email', 'email', 'TEmail')];
-  LTemplateData.Buttons := [TButton.create('Submit', 'submit')];
+  SetLength(LTemplateData.Fields, 3);
+  LTemplateData.Fields[0] := TField.create('FirstName', 'firstname');
+  LTemplateData.Fields[1] := TField.create('LastName', 'lastname');
+  LTemplateData.Fields[2] := TField.create('Email', 'email', 'TEmail');
+  SetLength(LTemplateData.Buttons, 1);
+  LTemplateData.Buttons[0] := TButton.create('Submit', 'submit');
 
   LTemplate := Template.parse( //
     '<% template "TEdit" %><tr><td><% Caption %></td><td><input name="<% name %>"></td></tr><% end %>'#13#10 + // 1
@@ -633,8 +640,13 @@ begin
   LTemplateData.CopyrightYear := 2023;
   LTemplateData.FormName := 'userinfo';
   LTemplateData.FormAction := '/userinfo';
-  LTemplateData.Fields := [TField.create('FirstName', 'firstname'), TField.create('LastName', 'lastname'), TField.create('Email', 'email', 'TEmail')];
-  LTemplateData.Buttons := [TButton.create('Submit', 'submit')];
+
+  SetLength(LTemplateData.Fields, 3);
+  LTemplateData.Fields[0] := TField.create('FirstName', 'firstname');
+  LTemplateData.Fields[1] := TField.create('LastName', 'lastname');
+  LTemplateData.Fields[2] := TField.create('Email', 'email', 'TEmail');
+  SetLength(LTemplateData.Buttons, 1);
+  LTemplateData.Buttons[0] := TButton.create('Submit', 'submit');
 
   LTemplate := Template.parse( //
     '<% template "TEdit" %><tr><td><% Caption %></td><td><input name="<% name %>"></td></tr><% end %>'#13#10 + // 1
@@ -720,8 +732,13 @@ begin
   LTemplateData.CopyrightYear := 2023;
   LTemplateData.FormName := 'userinfo';
   LTemplateData.FormAction := '/userinfo';
-  LTemplateData.Fields := [TField.create('FirstName', 'firstname'), TField.create('LastName', 'lastname'), TField.create('Email', 'email', 'TEmail')];
-  LTemplateData.Buttons := [TButton.create('Submit', 'submit')];
+
+  SetLength(LTemplateData.Fields, 3);
+  LTemplateData.Fields[0] := TField.create('FirstName', 'firstname');
+  LTemplateData.Fields[1] := TField.create('LastName', 'lastname');
+  LTemplateData.Fields[2] := TField.create('Email', 'email', 'TEmail');
+  SetLength(LTemplateData.Buttons, 1);
+  LTemplateData.Buttons[0] := TButton.create('Submit', 'submit');
 
   LResult := Template.Eval( //
     '<% template "TEdit" %><tr><td><% Caption %></td><td><input name="<% name %>"></td></tr><% end %>'#13#10 + // 1
@@ -849,6 +866,42 @@ begin
   finally
     LBlocks.Free;
   end;
+end;
+
+procedure TTestTemplateInclude.TestResolver;
+var
+  LTemplate: ITemplate;
+begin
+  LTemplate := Template.parse('hello <% _ %>');
+  Template.Resolver.Context.SetTemplate('index', LTemplate);
+
+  LTemplate := Template.parse('hola <% _ %>');
+  Template.Resolver.Context.SetTemplate('index_es', LTemplate);
+
+  LTemplate := Template.parse('hallo <% _ %>');
+  Template.Resolver.Context.SetTemplate('index_de', LTemplate);
+
+  LTemplate := Template.parse('你好 <% _ %>');
+  Template.Resolver.Context.SetTemplate('index_zh', LTemplate);
+
+  Template.Resolver.ContextNameResolver := function(const AName: string; const AContext: TTemplateValue): string
+    var
+      LLang: string;
+    begin
+      LLang := AContext.AsString;
+      if LLang.IsEmpty then
+        exit(AName)
+      else
+        exit(AName + '_' + LLang);
+    end;
+
+  Assert.AreEqual('hello world', Template.Resolve('index', 'world'));
+  Assert.AreEqual('hola world', Template.ResolveWithContext('index', 'es', 'world'));
+  Assert.AreEqual('hallo world', Template.ResolveWithContext('index', 'de', 'world'));
+  Assert.AreEqual('你好 world', Template.ResolveWithContext('index', 'zh', 'world'));
+  Assert.AreEqual('hello world', Template.ResolveWithContext('index', 'en', 'world')); // not found and should default to 'index'
+  Assert.AreEqual('hello world', Template.ResolveWithContext('index', 'af', 'world')); // not found and should default to 'index'
+
 end;
 
 initialization

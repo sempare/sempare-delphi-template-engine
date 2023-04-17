@@ -104,7 +104,7 @@ ctx.RegisterTemplate('footer', Template.Parse('Copyright (c) <% year %> <% compa
 
 <a name="Dynamic_Template_Resolution"><h3>Dynamic Template Resolution</h3></a>
 
-Templates don't need to be located in a single template. They can also be resolved dynamically using the TemplateResolver method on the context.
+Templates don't need to be located in a single template. They can also be resolved dynamically using the TemplateResolver or TemplateResolverWithContext method on the context.
 Templates could be loaded from file, resources or urls are per your requirements.
 
 ```
@@ -112,7 +112,19 @@ ctx.TemplateResolver = function(const AContext : ITemplate; const AName : string
 begin
    result := Template.parse('some template loaded from file...');
 end;
+
+// or
+
+ctx.TemplateResolverWithContext = function(const AContext : ITemplate; const AName : string; const AResolveContext: TTemplateValue) : ITemplate
+begin
+   // ...
+end;
+
 ```
+
+Only one of the resolvers needs to be set as TemplateResolver is wrapped into TemplateResolverWithContext passing an empty string as a context.
+
+Using a resolve context can be useful in scenarios such as web, where a language specific template can be resolved based on request headers (the http request object can be the resolve context).
 
 <a name="Embed_exceptions_in_output"><h3>Embed exceptions in output</h3></a>
 

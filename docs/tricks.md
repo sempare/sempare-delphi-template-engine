@@ -69,8 +69,10 @@ abcd
 
 <a name="dynamic-loading-templates"><h2>Loading templates dynamically</h2></a>
 
-If you reference templates using the 'include' statement, you can rely on a TemplateResolver to load them if they are not
-defined within the template itself.
+If you reference templates using the 'include' statement, you can rely on a TemplateResolver or TemplateResolverWithContext to load them if they are not
+defined within the template itself. Only TemplateResolver or TemplateResolverWithContext should be set. TemplateResolver is essentially ignoring the context.
+
+Using a resolve context can be useful in scenarios such as web, where a language specific template can be resolved based on request headers (the http request object can be the resolve context).
 
 e.g. This is illustrative:
 
@@ -82,6 +84,11 @@ e.g. This is illustrative:
     begin
       LStream := TFileStream.Create(ATemplate + '.tpl', fmOpenRead);
       exit(Template.Parse(AContext, LStream));
+    end;
+    
+  ctx.TemplateResolverWithContext := function(AContext: ITemplateContext; const ATemplate: string; const AResolveContext: TTemplateValue): ITemplate
+    begin
+      // ... note TTemplateValue is an RTTI TValue. 
     end;
 ```
 
