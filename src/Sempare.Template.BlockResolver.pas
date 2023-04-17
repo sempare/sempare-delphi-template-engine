@@ -43,6 +43,7 @@ uses
 type
   IBlockResolverVisitor = interface(ITemplateVisitor)
     ['{623A7C4A-3592-46BD-A3C5-FE354E0E67C0}']
+    procedure Discover;
     function GetBlockNames: TArray<string>;
     function GetBlock(const AName: string): IBlockStmt;
   end;
@@ -51,9 +52,11 @@ type
   private
     FBlocks: TDictionary<string, IBlockStmt>;
     FEvalVisitor: IEvaluationTemplateVisitor;
+    FTemplate: ITemplate;
   public
     constructor Create(const AEvalVisitor: IEvaluationTemplateVisitor; const ATemplate: ITemplate);
     destructor Destroy; override;
+    procedure Discover;
 
     function GetBlockNames: TArray<string>;
     function GetBlock(const AName: string): IBlockStmt;
@@ -100,14 +103,18 @@ constructor TBlockResolverVisitor.Create(const AEvalVisitor: IEvaluationTemplate
 begin
   FEvalVisitor := AEvalVisitor;
   FBlocks := TDictionary<string, IBlockStmt>.Create();
-  AcceptVisitor(ATemplate, self);
+  FTemplate := ATemplate;
 end;
 
 destructor TBlockResolverVisitor.Destroy;
 begin
-  FBlocks.Clear;
   FBlocks.Free;
   inherited;
+end;
+
+procedure TBlockResolverVisitor.Discover;
+begin
+  AcceptVisitor(FTemplate, self);
 end;
 
 function TBlockResolverVisitor.GetBlockNames: TArray<string>;

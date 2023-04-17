@@ -110,9 +110,9 @@ var
   ctx: ITemplateContext;
 begin
   ctx := Template.Context();
-  ctx.StreamWriterProvider := function(const AStream: TStream; AContext: ITemplateContext): TStreamWriter
+  ctx.StreamWriterProvider := function(const AStream: TStream; const AContext: ITemplateContext): TStreamWriter
     begin
-      result := TStreamWriter.Create(AStream);
+      exit(TStreamWriter.Create(AStream));
     end;
   r.Value := 'a value';
   r.description := 'some desc';

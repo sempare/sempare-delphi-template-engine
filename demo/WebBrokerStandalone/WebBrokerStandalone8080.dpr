@@ -10,7 +10,7 @@ uses
   Web.WebReq,
   Web.WebBroker,
   Sempare.Template,
-  WebModuleUnit1 in 'WebModuleUnit1.pas' {WebModule1: TWebModule},
+  WebModuleUnit1 in 'WebModuleUnit1.pas' {WebModule1: TWebModule} ,
   ServerConst1 in 'ServerConst1.pas',
   DynForm in 'DynForm.pas';
 
@@ -156,6 +156,7 @@ begin
   except
     on E: Exception do
       Writeln(E.ClassName, ': ', E.Message);
-  end
+  end;
+  TTemplateRegistry.Finalize;
 
 end.

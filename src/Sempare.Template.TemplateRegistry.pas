@@ -106,18 +106,19 @@ type
   strict private
     class var FTemplateRegistry: TTemplateRegistry;
     class var FLock: TCriticalSection;
-  private
+  public
     class procedure Initialize;
     class procedure Finalize;
+  private
     class function GetInstance: TTemplateRegistry; static;
     function GetResourceName(const AName, AExt: string): string;
     function GetFilename(const AName, AExt: string): string;
-    function LoadResource(const AName: string; const AContext: TTemplateValue): ITemplate;
-    function LoadFile(const AName: string; const AContext: TTemplateValue): ITemplate;
-    function LoadCustom(const AName: string; const AContext: TTemplateValue): ITemplate;
+    function LoadResource(const AName: string; const AContext: TTemplateValue; out ACacheInContext: boolean): ITemplate;
+    function LoadFile(const AName: string; const AContext: TTemplateValue; out ACacheInContext: boolean): ITemplate;
+    function LoadCustom(const AName: string; const AContext: TTemplateValue; out ACacheInContext: boolean): ITemplate;
   private type
     TGetName = function(const AName, AExt: string): string of object;
-    TLoadTemplate = function(const AName: string; const AContext: TTemplateValue): ITemplate of object;
+    TLoadTemplate = function(const AName: string; const AContext: TTemplateValue; out ACacheInContext: boolean): ITemplate of object;
   strict private
     FTemplates: TDictionary<string, ITemplate>;
     FContext: ITemplateContext;
@@ -149,7 +150,7 @@ type
     constructor Create();
     destructor Destroy; override;
 
-    function GetTemplate(const ATemplateName: string): ITemplate; overload;
+    function GetTemplate(const ATemplateName: string): ITemplate; overload; inline;
     function GetTemplate(const ATemplateName: string; const AContext: TTemplateValue): ITemplate; overload;
     function GetTemplate<T>(const ATemplateName: string; const AContext: T): ITemplate; overload; inline;
     procedure RemoveTemplate(const ATemplateName: string);
@@ -192,8 +193,8 @@ implementation
 uses
   Sempare.Template.ResourceStrings,
   Sempare.Template,
-{$IFDEF DEBUG}
   Sempare.Template.Common, // for inline hint
+{$IFDEF DEBUG}
   Sempare.Template.PrettyPrint,
 {$ENDIF}
   System.IOUtils,
@@ -256,8 +257,9 @@ begin
 {$ENDIF}
   FContext.Variable['CopyrightYear'] := YearOf(Now);
 
-  FContext.TemplateResolverWithContext := function(const AContext: ITemplateContext; const AName: string; const AResolveContext: TTemplateValue): ITemplate
+  FContext.TemplateResolverWithContext := function(const AContext: ITemplateContext; const AName: string; const AResolveContext: TTemplateValue; out ACacheInContext: boolean): ITemplate
     begin
+      ACacheInContext := false;
       exit(GetTemplate(AName, AResolveContext));
     end;
 
@@ -285,14 +287,15 @@ end;
 
 destructor TTemplateRegistry.Destroy;
 begin
-  if FThread <> nil then
-  begin
-    FShutdown.SetEvent;
-    FThreadDone.WaitFor();
+  AutomaticRefresh := false;
+  FLock.Acquire;
+  try
+    FreeAndNil(FThreadDone);
+    FreeAndNil(FShutdown);
+    FreeAndNil(FTemplates);
+  finally
+    FLock.Release;
   end;
-  FThreadDone.Free;
-  FShutdown.Free;
-  FTemplates.Free;
   inherited;
 end;
 
@@ -366,14 +369,19 @@ end;
 
 class procedure TTemplateRegistry.Finalize;
 begin
-  FTemplateRegistry.Free;
-  FLock.Free;
+  if FLock = nil then
+    exit;
+  FreeAndNil(FTemplateRegistry);
+  FreeAndNil(FLock);
 end;
 
 class function TTemplateRegistry.GetInstance: TTemplateRegistry;
+var
+  LTemplateRegistry: TTemplateRegistry;
 begin
+  LTemplateRegistry := FTemplateRegistry;
   if assigned(FTemplateRegistry) then
-    exit(FTemplateRegistry);
+    exit(LTemplateRegistry);
   FLock.Acquire;
   try
     if not assigned(FTemplateRegistry) then
@@ -399,19 +407,21 @@ begin
   exit(FFileNameResolver(AName + AExt));
 end;
 
-function TTemplateRegistry.LoadResource(const AName: string; const AContext: TTemplateValue): ITemplate;
+function TTemplateRegistry.LoadResource(const AName: string; const AContext: TTemplateValue; out ACacheInContext: boolean): ITemplate;
 begin
+  ACacheInContext := false;
   exit(TResourceTemplate.Create(FContext, AName));
 end;
 
-function TTemplateRegistry.LoadFile(const AName: string; const AContext: TTemplateValue): ITemplate;
+function TTemplateRegistry.LoadFile(const AName: string; const AContext: TTemplateValue; out ACacheInContext: boolean): ITemplate;
 begin
+  ACacheInContext := false;
   exit(TFileTemplate.Create(FContext, AName));
 end;
 
-function TTemplateRegistry.LoadCustom(const AName: string; const AContext: TTemplateValue): ITemplate;
+function TTemplateRegistry.LoadCustom(const AName: string; const AContext: TTemplateValue; out ACacheInContext: boolean): ITemplate;
 begin
-  exit(FCustomTemplateLoader(FContext, AName, AContext));
+  exit(FCustomTemplateLoader(FContext, AName, AContext, ACacheInContext));
 end;
 
 function TTemplateRegistry.GetTemplate(const ATemplateName: string; const AContext: TTemplateValue): ITemplate;
@@ -427,13 +437,14 @@ var
   var
     LName: string;
     LExt: integer;
+    LCacheInContext: boolean;
   begin
     ATemplate := nil;
     for LExt := low(LExts) to high(LExts) do
     begin
       LName := FGetNames[ALoadStrategy](ATemplateName, LExts[LExt]);
       try
-        ATemplate := FLoadMethods[ALoadStrategy](LName, AContext);
+        ATemplate := FLoadMethods[ALoadStrategy](LName, AContext, LCacheInContext);
         Log('Loaded template from %s: %s', [CLoadStrategy[ALoadStrategy], LName]);
         exit(true);
       except
@@ -458,7 +469,8 @@ var
   LLoadStrategy: TTemplateLoadStrategy;
   LFound: boolean;
   LTemplateAttempts: TTwoStrings;
-
+  LAttempts: integer;
+  i: integer;
 begin
   if assigned(FContextNameResolver) then
     LTemplateName := FContextNameResolver(ATemplateName, AContext)
@@ -468,13 +480,20 @@ begin
   LTemplateAttempts[0] := LTemplateName;
   LTemplateAttempts[1] := ATemplateName;
 
+  if LTemplateName = ATemplateName then
+    LAttempts := 1
+  else
+    LAttempts := 2;
+
   LExts[0] := FTemplateFileExt;
   LExts[1] := '';
+  LFound := false;
 
   for LLoadStrategy in TTemplateRegistry.Instance.LoadStrategy do
   begin
-    for LTemplateName in LTemplateAttempts do
+    for i := 0 to LAttempts - 1 do
     begin
+      LTemplateName := LTemplateAttempts[i];
       if FContext.TryGetContextTemplate(LTemplateName, result, AContext) then
       begin
         exit;
@@ -494,7 +513,7 @@ begin
         break;
       end;
 
-      if LFound or (LTemplateAttempts[1] = LTemplateName) then
+      if LFound then
       begin
         break;
       end;
@@ -542,9 +561,11 @@ var
   LRefreshable: IRefreshableTemplate;
   LTemplate: ITemplate;
 begin
+  if not assigned(FLock) then
+    exit;
   FLock.Acquire;
   try
-    for LTemplate in FTemplates.Values do
+    for LTemplate in FTemplates.values do
     begin
       if supports(LTemplate, IRefreshableTemplate, LRefreshable) then
       begin
@@ -571,7 +592,6 @@ procedure TTemplateRegistry.SetAutomaticRefresh(const Value: boolean);
 begin
   if FAutomaticRefresh = Value then
     exit;
-
   FAutomaticRefresh := Value;
   if Value then
   begin
@@ -708,15 +728,14 @@ end;
 
 constructor TFileTemplate.Create(const AContext: ITemplateContext; const AFilename: string);
 begin
-  FContext := AContext;
   inherited Create(nil);
+  FContext := AContext;
   Load(AFilename, TFile.GetLastWriteTime(AFilename));
 end;
 
 procedure TFileTemplate.Load(const AFilename: string; const ATime: TDateTime);
 var
   LStream: TStream;
-  LTemplate: ITemplate;
 begin
   if FModifiedAt = ATime then
     exit;
@@ -725,9 +744,8 @@ begin
 {$ELSE}
   LStream := TFileStream.Create(AFilename, fmOpenRead or fmShareDenyNone);
 {$ENDIF}
-  LTemplate := Template.Parse(FContext, LStream);
-  inherited Create(LTemplate);
-  LTemplate.FileName := AFilename;
+  FTemplate := Template.Parse(FContext, LStream);
+  FTemplate.FileName := AFilename;
   FModifiedAt := ATime;
 end;
 

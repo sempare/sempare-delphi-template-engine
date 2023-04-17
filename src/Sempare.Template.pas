@@ -486,6 +486,7 @@ begin
     LContext := Template.Context();
     LEvalVisitor := TEvaluationTemplateVisitor.Create(LContext, '', '', LStringStream);
     LVisitor := TBlockResolverVisitor.Create(LEvalVisitor, ATemplate);
+    LVisitor.Discover;
     for LName in LVisitor.GetBlockNames do
     begin
       ABlocks.Add(LName, LVisitor.GetBlock(LName).Container);

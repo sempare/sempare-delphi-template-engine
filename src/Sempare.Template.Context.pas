@@ -48,7 +48,7 @@ uses
 type
   ITemplateContext = interface;
 
-  TStreamWriterProvider = reference to function(const AStream: TStream; AContext: ITemplateContext): TStreamWriter;
+  TStreamWriterProvider = reference to function(const AStream: TStream; const AContext: ITemplateContext): TStreamWriter;
 
   ITemplateFunctions = interface
     ['{D80C777C-086E-4680-A97B-92B8FA08C995}']
@@ -82,7 +82,7 @@ type
 
   TPrettyPrintOutput = reference to procedure(const APrettyPrint: string);
   TTemplateResolver = reference to function(const AContext: ITemplateContext; const AName: string): ITemplate;
-  TTemplateResolverWithContext = reference to function(const AContext: ITemplateContext; const AName: string; const AResolveContext: TTemplateValue): ITemplate;
+  TTemplateResolverWithContext = reference to function(const AContext: ITemplateContext; const AName: string; const AResolveContext: TTemplateValue; out ACacheInContext: boolean): ITemplate;
 
   ITemplateEvaluationContext = interface
     ['{FCE6891F-3D39-4CC4-8ADB-024D843C7770}']
@@ -363,11 +363,11 @@ end;
 
 procedure TTemplateContext.SetTemplate(const AName: string; const ATemplate: ITemplate);
 begin
-  FLock.Enter;
+  FLock.Acquire;
   try
     FTemplates.AddOrSetValue(AName, ATemplate);
   finally
-    FLock.Leave;
+    FLock.Release;
   end;
 end;
 
@@ -421,8 +421,6 @@ end;
 destructor TTemplateContext.Destroy;
 begin
   FTemplates.Free;
-  FVariables := nil;
-  FFunctions := nil;
   FLock.Free;
   inherited;
 end;
@@ -441,17 +439,17 @@ end;
 
 function TTemplateContext.TryGetContextTemplate(const AName: string; out ATemplate: ITemplate; const AResolveContext: TTemplateValue): boolean;
 begin
-  FLock.Enter;
+  FLock.Acquire;
   try
     exit(FTemplates.TryGetValue(AName, ATemplate));
   finally
-    FLock.Leave;
+    FLock.Release;
   end;
 end;
 
 function TTemplateContext.TryGetFunction(const AName: string; out AFunction: TArray<TRttiMethod>): boolean;
 begin
-  FLock.Enter;
+  FLock.Acquire;
   try
     if not FFunctionsSet and not(eoNoDefaultFunctions in FOptions) then
     begin
@@ -461,7 +459,7 @@ begin
     end;
     exit(FFunctions.TryGetValue(AName.ToLower, AFunction));
   finally
-    FLock.Leave;
+    FLock.Release;
   end;
 end;
 
@@ -517,11 +515,11 @@ end;
 
 function TTemplateContext.GetVariable(const AName: string): TValue;
 begin
-  FLock.Enter;
+  FLock.Acquire;
   try
     exit(FVariables[AName]);
   finally
-    FLock.Leave;
+    FLock.Release;
   end;
 end;
 
@@ -549,11 +547,11 @@ end;
 
 procedure TTemplateContext.RemoveTemplate(const AName: string);
 begin
-  FLock.Enter;
+  FLock.Acquire;
   try
     FTemplates.Remove(AName);
   finally
-    FLock.Leave;
+    FLock.Release;
   end;
 end;
 
@@ -591,8 +589,10 @@ end;
 function TTemplateContext.GetTemplateResolver: TTemplateResolver;
 begin
   result := function(const AContext: ITemplateContext; const AName: string): ITemplate
+    var
+      LAddToContext: boolean; // this is actually ignored 
     begin
-      exit(FTemplateResolver(AContext, AName, ''));
+      exit(FTemplateResolver(AContext, AName, '', LAddToContext));
     end;
 end;
 
@@ -664,11 +664,11 @@ end;
 
 procedure TTemplateContext.SetVariable(const AName: string; const AValue: TValue);
 begin
-  FLock.Enter;
+  FLock.Acquire;
   try
     FVariables[AName] := AValue;
   finally
-    FLock.Leave;
+    FLock.Release;
   end;
 end;
 
@@ -714,8 +714,9 @@ end;
 
 procedure TTemplateContext.SetTemplateResolver(const AResolver: TTemplateResolver);
 begin
-  FTemplateResolver := function(const AContext: ITemplateContext; const AName: string; const AResolveContext: TTemplateValue): ITemplate
+  FTemplateResolver := function(const AContext: ITemplateContext; const AName: string; const AResolveContext: TTemplateValue; out AAddToContext: boolean): ITemplate
     begin
+      AAddToContext := false;
       exit(AResolver(AContext, AName));
     end
 end;
@@ -726,21 +727,24 @@ begin
 end;
 
 function TTemplateContext.TryGetTemplate(const AName: string; out ATemplate: ITemplate; const AResolveContext: TTemplateValue): boolean;
+var
+  LAddToContext: boolean;
 begin
-  FLock.Enter;
+  FLock.Acquire;
   try
     result := FTemplates.TryGetValue(AName, ATemplate);
     if result then
       exit(true);
   finally
-    FLock.Leave;
+    FLock.Release;
   end;
   if not assigned(FTemplateResolver) then
     exit(false);
-  ATemplate := FTemplateResolver(self, AName, AResolveContext);
+  ATemplate := FTemplateResolver(self, AName, AResolveContext, LAddToContext);
   if ATemplate = nil then
     exit(false);
-  SetTemplate(AName, ATemplate);
+  if LAddToContext then
+    SetTemplate(AName, ATemplate);
   exit(true);
 end;
 
@@ -831,7 +835,7 @@ initialization
 GUTF8WithoutPreambleEncoding := TUTF8WithoutPreambleEncoding.Create;
 
 GDefaultEncoding := TEncoding.UTF8WithoutBOM;
-GStreamWriterProvider := function(const AStream: TStream; AContext: ITemplateContext): TStreamWriter
+GStreamWriterProvider := function(const AStream: TStream; const AContext: ITemplateContext): TStreamWriter
   begin
     exit(TStreamWriter.Create(AStream, AContext.Encoding, 4096));
   end;
