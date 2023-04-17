@@ -506,8 +506,9 @@ begin
     end));
 
   LContext := Template.Context();
-  LContext.TemplateResolverWithContext := function(const AContext: ITemplateContext; const AName: string; const AResolveContext: TTemplateValue): ITemplate
+  LContext.TemplateResolverWithContext := function(const AContext: ITemplateContext; const AName: string; const AResolveContext: TTemplateValue; out ACacheInContext: boolean): ITemplate
     begin
+      ACacheInContext := false;
       exit(Template.Parse(AName));
     end;
 

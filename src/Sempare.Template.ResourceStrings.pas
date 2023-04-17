@@ -45,7 +45,7 @@ resourcestring
   STypesAreNotOfTheSameType = 'Types are not of the same type';
   STemplateNotFound = 'Template not found: %s';
   SStackFrameCanOnlyBeDefinedOnAClassOrRecord = 'StackFrame must be defined on a class or record.';
-  SGetEnumeratorNotFoundOnObject = 'GetEnumerator not found on object.';
+  SGetEnumeratorNotFoundOnObject = 'GetEnumerator not found on object. Type %s referenced.';
   SValueIsNotEnumerable = 'Value is not enumerable';
   SOnlyOneDimensionalArraysAreSupported = 'Only one dimensional arrays are supported.';
   SCannotDereferenceValueOnObject = 'Cannot dereference ''%s'' in %s';

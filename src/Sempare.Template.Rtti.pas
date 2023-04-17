@@ -727,6 +727,7 @@ var
 
 begin
   AResolved := true;
+  result := nil;
   if AVar.IsEmpty then
     exit(AVar);
   case AVar.Kind of
@@ -749,7 +750,9 @@ begin
     end;
   end;
   if not LVarFound and ARaiseIfMissing then
+  begin
     RaiseError(APosition, SCannotDereferenceValiable);
+  end;
   AResolved := LVarFound;
 end;
 
