@@ -127,6 +127,8 @@ type
     procedure TestIsRecord;
     [Test]
     procedure TestIsEmpty;
+    [Test]
+    procedure TestManaged;
   end;
 
 type
@@ -578,6 +580,54 @@ begin
   Assert.AreEqual('false', Template.Eval('<% isempty(_) %>', LNonEmpty));
   LEmpty.Free;
   LNonEmpty.Free;
+end;
+
+type
+  TMyClass = class
+  public
+    V: PBoolean;
+    value: string;
+    destructor Destroy; override;
+  end;
+
+destructor TMyClass.Destroy;
+begin
+  V^ := true;
+  inherited;
+end;
+
+procedure TFunctionTest.TestManaged;
+var
+  LClass: TMyClass;
+  LDestroyed: boolean;
+begin
+  LDestroyed := false;
+  LClass := TMyClass.Create;
+  LClass.value := 'managed';
+  LClass.V := @LDestroyed;
+
+  Assert.AreEqual('managed', Template.Eval('<% manage(_).value %>', LClass));
+  Assert.IsTrue(LDestroyed);
+
+  LDestroyed := false;
+  LClass := TMyClass.Create;
+  LClass.value := 'managed';
+  LClass.V := @LDestroyed;
+  try
+    Assert.AreEqual('managed', Template.Eval('<% manage(_).value %><% unmanage(_) %>', LClass));
+    Assert.IsFalse(LDestroyed);
+  finally
+    LClass.Free;
+  end;
+
+  LDestroyed := false;
+  LClass := TMyClass.Create;
+  LClass.value := 'managed';
+  LClass.V := @LDestroyed;
+
+  Assert.AreEqual('managed', Template.Eval('<% manage(_).value %><% unmanage(_) %><% _.Free() %>', LClass));
+  Assert.IsTrue(LDestroyed);
+
 end;
 
 initialization

@@ -219,6 +219,8 @@ type
     class function Sha256(const AStr: string): string; static;
 {$ENDIF}
     class function TemplateExists(const AContext: ITemplateContext; const AStr: string): boolean; static;
+    class function Manage(const AContext: ITemplateContext; const AObject: TObject): TObject; static;
+    class procedure Unmanage(const AContext: ITemplateContext; const AObject: TObject); static;
   end;
 
 class function TInternalFuntions.Min(const AValue, BValue: double): double;
@@ -358,6 +360,15 @@ end;
 class function TInternalFuntions.Lowercase(const AString: string): string;
 begin
   exit(AString.ToLower());
+end;
+
+class function TInternalFuntions.Manage(const AContext: ITemplateContext; const AObject: TObject): TObject;
+var
+  LContext: ITemplateEvaluationContext;
+begin
+  if supports(AContext, ITemplateEvaluationContext, LContext) then
+    LContext.Manage(AObject);
+  exit(AObject);
 end;
 
 class function TInternalFuntions.Match(const AValue, ARegex: string): boolean;
@@ -573,6 +584,7 @@ begin
 end;
 
 {$IFDEF SUPPORT_URL_FORM_ENCODING}
+
 class function TInternalFuntions.FormDecode(const AStr: string): string;
 begin
   exit(TNetEncoding.URL.FormDecode(AStr));
@@ -583,7 +595,6 @@ begin
   exit(TNetEncoding.URL.UrlDecode(AStr));
 end;
 {$ENDIF}
-
 {$IFDEF SUPPORT_ENCODING}
 
 class function TInternalFuntions.HtmlEscape(const AStr: string): string;
@@ -696,6 +707,14 @@ class function TInternalFuntions.UCFirst(const AString: string): string;
 begin
   result := AString.ToLower();
   result[1] := Uppercase(result[1])[1];
+end;
+
+class procedure TInternalFuntions.Unmanage(const AContext: ITemplateContext; const AObject: TObject);
+var
+  LContext: ITemplateEvaluationContext;
+begin
+  if supports(AContext, ITemplateEvaluationContext, LContext) then
+    LContext.Unmanage(AObject);
 end;
 
 class function TInternalFuntions.Replace(const AValue, AWith, AIn: string): string;
