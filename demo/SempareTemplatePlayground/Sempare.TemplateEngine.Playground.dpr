@@ -34,13 +34,16 @@ program Sempare.TemplateEngine.Playground;
 
 uses
   Vcl.Forms,
-  Sempare.Template.PlaygroundForm in 'Sempare.Template.PlaygroundForm.pas' {FormTemplateEnginePlayground};
+  Sempare.Template.PlaygroundForm in 'Sempare.Template.PlaygroundForm.pas' {FormTemplateEnginePlayground},
+  Vcl.Themes,
+  Vcl.Styles;
 
 {$R *.res}
 
 begin
   Application.Initialize;
   Application.MainFormOnTaskbar := True;
+  TStyleManager.TrySetStyle('Carbon');
   Application.CreateForm(TFormTemplateEnginePlayground, FormTemplateEnginePlayground);
   Application.OnException := FormTemplateEnginePlayground.OnException;
   Application.Run;
