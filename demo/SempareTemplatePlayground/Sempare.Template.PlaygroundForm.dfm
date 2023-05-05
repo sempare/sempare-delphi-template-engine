@@ -339,9 +339,9 @@ object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
           ExplicitHeight = 224
           object memoTemplate: TMemo
             Left = 0
-            Top = 17
+            Top = 23
             Width = 456
-            Height = 208
+            Height = 202
             Align = alClient
             ScrollBars = ssBoth
             TabOrder = 0
@@ -349,31 +349,46 @@ object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
             OnChange = memoTemplateChange
             OnKeyUp = memoTemplateKeyUp
             OnMouseDown = memoTemplateMouseDown
+            ExplicitTop = 17
             ExplicitHeight = 207
           end
           object Panel3: TPanel
             Left = 0
             Top = 0
             Width = 456
-            Height = 17
+            Height = 23
             Align = alTop
             Caption = 'Panel3'
             ShowCaption = False
             TabOrder = 1
             object lblPosition: TLabel
               AlignWithMargins = True
-              Left = 4
+              Left = 232
               Top = 4
-              Width = 448
-              Height = 17
-              Align = alTop
+              Width = 220
+              Height = 15
+              Align = alRight
               Alignment = taRightJustify
               AutoSize = False
               Caption = '(Line: 1, Position: 1)'
               Transparent = False
-              ExplicitLeft = 0
-              ExplicitTop = 0
-              ExplicitWidth = 456
+              ExplicitTop = 1
+              ExplicitHeight = 9
+            end
+            object lblTiming: TLabel
+              AlignWithMargins = True
+              Left = 4
+              Top = 4
+              Width = 225
+              Height = 15
+              Align = alLeft
+              AutoSize = False
+              Caption = 'lblTiming'
+              Enabled = False
+              Transparent = False
+              ExplicitLeft = 3
+              ExplicitTop = 1
+              ExplicitHeight = 21
             end
           end
         end
@@ -446,11 +461,10 @@ object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
     Left = 483
     Top = 49
     Width = 670
-    Height = 145
+    Height = 139
     Anchors = [akLeft, akTop, akRight]
     Caption = 'Context Options'
     TabOrder = 5
-    ExplicitWidth = 666
     object cbConvertTabsToSpaces: TCheckBox
       Left = 18
       Top = 23
@@ -650,6 +664,16 @@ object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
     Caption = '&Evaluate'
     TabOrder = 7
     OnClick = butEvalClick
+  end
+  object butExtractVars: TButton
+    Left = 483
+    Top = 194
+    Width = 94
+    Height = 25
+    Caption = 'E&xtract Variables'
+    DisabledImageName = 'butExtractVars'
+    TabOrder = 8
+    OnClick = butExtractVarsClick
   end
   object OpenDialog1: TOpenDialog
     Left = 744

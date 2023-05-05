@@ -103,6 +103,8 @@ type
     lblPosition: TLabel;
     Panel2: TPanel;
     Panel3: TPanel;
+    lblTiming: TLabel;
+    butExtractVars: TButton;
     procedure cbConvertTabsToSpacesClick(Sender: TObject);
     procedure cbStripRecurringSpacesClick(Sender: TObject);
     procedure cbTrimLinesClick(Sender: TObject);
@@ -130,6 +132,7 @@ type
     procedure cbShowWhitespaceClick(Sender: TObject);
     procedure memoTemplateMouseDown(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
     procedure memoTemplateKeyUp(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure butExtractVarsClick(Sender: TObject);
   private
     { Private declarations }
     FEncoding: TEncoding;
@@ -155,6 +158,7 @@ implementation
 
 uses
   System.IoUtils,
+  System.Diagnostics,
   Sempare.Template.Context;
 
 {$R *.dfm}
@@ -163,6 +167,7 @@ procedure TFormTemplateEnginePlayground.butClearClick(Sender: TObject);
 var
   LIdx: Integer;
 begin
+  lblTiming.Caption := '';
   memoTemplate.Lines.Text := '';
   FFilename := '';
   butSave.Enabled := false;
@@ -177,6 +182,11 @@ end;
 procedure TFormTemplateEnginePlayground.butEvalClick(Sender: TObject);
 begin
   Eval;
+end;
+
+procedure TFormTemplateEnginePlayground.butExtractVarsClick(Sender: TObject);
+begin
+  // todo
 end;
 
 procedure TFormTemplateEnginePlayground.butOpenClick(Sender: TObject);
@@ -353,6 +363,7 @@ end;
 
 procedure TFormTemplateEnginePlayground.FormCreate(Sender: TObject);
 begin
+  lblTiming.Caption := '';
   FContext := Template.Context();
   FContext.Variable['name'] := 'world';
   properties.Cells[0, 1] := 'name';
@@ -475,6 +486,8 @@ end;
 procedure TFormTemplateEnginePlayground.Process;
 var
   LPrettyOk: boolean;
+  LSW: TStopWatch;
+  LStr: string;
 begin
   if not Finit then
     exit;
@@ -483,7 +496,12 @@ begin
   try
     memoPrettyPrint.Lines.Text := Sempare.Template.Template.PrettyPrint(FTemplate);
     LPrettyOk := true;
-    memoOutput.Lines.Text := Template.Eval(FContext, FTemplate);
+    LSW := TStopWatch.Create;
+    LSW.Start;
+    LStr := Template.Eval(FContext, FTemplate);
+    LSW.Stop;
+    lblTiming.Caption := format('Evaluation %dms', [LSW.ElapsedMilliseconds]);
+    memoOutput.Lines.Text := LStr;
   except
     on E: Exception do
     begin
