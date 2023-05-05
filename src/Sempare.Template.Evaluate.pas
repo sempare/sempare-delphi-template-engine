@@ -1028,10 +1028,11 @@ var
 begin
   LObjType := GRttiContext.GetType(AObject.TypeInfo);
   LMethod := LObjType.GetMethod(AExpr.Method);
+  LObject := AObject;
   if AObject.IsType<TValue> then
     LObject := AObject.AsType<TValue>;
   AHasResult := LMethod.ReturnType <> nil;
-  exit(LMethod.Invoke(AObject, AArgs));
+  exit(LMethod.Invoke(LObject, AArgs));
 end;
 
 function TEvaluationTemplateVisitor.ResolveTemplate(const APosition: IPosition; const AName: string): ITemplate;
