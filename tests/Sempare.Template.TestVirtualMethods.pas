@@ -45,6 +45,8 @@ type
   TTestVirtualMethods = class
 
   public
+    // Author: Searn Bogie (https://github.com/sbogie-gdi)
+    // https://github.com/sempare/sempare-delphi-template-engine/issues/145
     [Test]
     procedure TestVirtualCall;
 
@@ -53,12 +55,6 @@ type
 implementation
 
 uses
-{$IFDEF SEMPARE_TEMPLATE_FIREDAC}
-  Data.DB,
-  FireDAC.Comp.Client,
-{$ENDIF}
-  SysUtils,
-  System.Generics.Collections,
   Sempare.Template;
 
 type
