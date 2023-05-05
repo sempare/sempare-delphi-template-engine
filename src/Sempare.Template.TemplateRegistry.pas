@@ -193,7 +193,8 @@ implementation
 uses
   Sempare.Template.ResourceStrings,
   Sempare.Template,
-  Sempare.Template.Common, // for inline hint
+  Sempare.Template.Common,
+  System.Rtti, // remove inline expansion hint
 {$IFDEF DEBUG}
   Sempare.Template.PrettyPrint,
 {$ENDIF}
@@ -348,13 +349,19 @@ begin
 end;
 
 procedure TTemplateRegistry.EvalWithContext<TContext, T>(const ATemplateName: string; const AContext: TContext; const AData: T; const AOutputStream: TStream);
+var
+  LTemplate: ITemplate;
 begin
-  Eval<T>(ATemplateName, TTemplateValue.From<TContext>(AContext), AData, AOutputStream);
+  LTemplate := GetTemplate(ATemplateName, AContext);
+  Template.EvalWithContext(FContext, LTemplate, TTemplateValue.From<TContext>(AContext), TTemplateValue.From<T>(AData), AOutputStream);
 end;
 
 function TTemplateRegistry.EvalWithContext<TContext, T>(const ATemplateName: string; const AContext: TContext; const AData: T): string;
+var
+  LTemplate: ITemplate;
 begin
-  exit(Eval<T>(ATemplateName, TTemplateValue.From<TContext>(AContext), AData));
+  LTemplate := GetTemplate(ATemplateName, AContext);
+  exit(Template.EvalWithContext(FContext, LTemplate, TTemplateValue.From<TContext>(AContext), TTemplateValue.From<T>(AData)));
 end;
 
 procedure TTemplateRegistry.EvalWithContext<TContext>(const ATemplateName: string; const AContext: TContext; const AOutputStream: TStream);

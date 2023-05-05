@@ -99,17 +99,21 @@ type
 
     // EVAL output to stream
 
-    class procedure Eval(const ATemplate: string; const AStream: TStream; const AOptions: TTemplateEvaluationOptions = []); overload; static;
+    // NOTE: TTemplateEvaluationOptions is only on Eval() methods where no ITemplateContext is present.
+
+    class procedure Eval(const ATemplate: string; const AStream: TStream; const AOptions: TTemplateEvaluationOptions = []); overload; static; inline;
     class procedure Eval<T>(const ATemplate: string; const AValue: T; const AStream: TStream; const AOptions: TTemplateEvaluationOptions = []); overload; static;
     class procedure Eval<T>(const ATemplate: ITemplate; const AValue: T; const AStream: TStream; const AOptions: TTemplateEvaluationOptions = []); overload; static;
-    class procedure Eval(const ATemplate: ITemplate; const AStream: TStream; const AOptions: TTemplateEvaluationOptions = []); overload; static;
-    class procedure Eval<T>(const AContext: ITemplateContext; const ATemplate: ITemplate; const AValue: T; const AStream: TStream); overload; static;
+    class procedure Eval(const ATemplate: ITemplate; const AStream: TStream; const AOptions: TTemplateEvaluationOptions = []); overload; static; inline;
+
+    class procedure Eval(const AContext: ITemplateContext; const ATemplate: ITemplate; const AValue: TTemplateValue; const AStream: TStream); overload; static; inline;
+    class procedure Eval<T>(const AContext: ITemplateContext; const ATemplate: ITemplate; const AValue: T; const AStream: TStream); overload; static; inline;
     class procedure Eval<T>(const AContext: ITemplateContext; const ATemplate: string; const AValue: T; const AStream: TStream); overload; static;
-    class procedure Eval(const AContext: ITemplateContext; const ATemplate: string; const AStream: TStream); overload; static;
-    class procedure Eval(const AContext: ITemplateContext; const ATemplate: ITemplate; const AStream: TStream); overload; static;
+    class procedure Eval(const AContext: ITemplateContext; const ATemplate: string; const AStream: TStream); overload; static; inline;
+    class procedure Eval(const AContext: ITemplateContext; const ATemplate: ITemplate; const AStream: TStream); overload; static; inline;
 
     class procedure EvalWithContext(const AContext: ITemplateContext; const ATemplate: ITemplate; const AResolveContext: TTemplateValue; const AValue: TTemplateValue; const AStream: TStream); overload; static;
-    class function EvalWithContext(const AContext: ITemplateContext; const ATemplate: ITemplate; const AResolveContext: TTemplateValue; const AValue: TTemplateValue): string; overload; static;
+    class function EvalWithContext(const AContext: ITemplateContext; const ATemplate: ITemplate; const AResolveContext: TTemplateValue; const AValue: TTemplateValue): string; overload; static; inline;
 
     // EVAL returning string
 
@@ -121,25 +125,25 @@ type
     class function Eval<T>(const AContext: ITemplateContext; const ATemplate: ITemplate; const AValue: T): string; overload; static;
     class function Eval<T>(const AContext: ITemplateContext; const ATemplate: string; const AValue: T): string; overload; static;
     class function Eval(const AContext: ITemplateContext; const ATemplate: string): string; overload; static;
-    class function Eval(const AContext: ITemplateContext; const ATemplate: ITemplate): string; overload; static;
+    class function Eval(const AContext: ITemplateContext; const ATemplate: ITemplate): string; overload; static; inline;
 
     // TEMPLATE REGISTRY
 
     class function Resolver(): TTemplateRegistry; static; inline;
 
-    class procedure Resolve<T>(const ATemplateName: string; const AData: T; const AOutputStream: TStream); overload; static;
-    class function Resolve<T>(const ATemplateName: string; const AData: T): string; overload; static;
+    class procedure Resolve<T>(const ATemplateName: string; const AData: T; const AOutputStream: TStream); overload; static; inline;
+    class function Resolve<T>(const ATemplateName: string; const AData: T): string; overload; static; inline;
 
-    class procedure Resolve(const ATemplateName: string; const AOutputStream: TStream); overload; static;
-    class function Resolve(const ATemplateName: string): string; overload; static;
+    class procedure Resolve(const ATemplateName: string; const AOutputStream: TStream); overload; static; inline;
+    class function Resolve(const ATemplateName: string): string; overload; static; inline;
 
     // with context
 
-    class procedure ResolveWithContext<TContext, T>(const ATemplateName: string; const AContext: TContext; const AData: T; const AOutputStream: TStream); overload; static;
-    class function ResolveWithContext<TContext, T>(const ATemplateName: string; const AContext: TContext; const AData: T): string; overload; static;
+    class procedure ResolveWithContext<TContext, T>(const ATemplateName: string; const AContext: TContext; const AData: T; const AOutputStream: TStream); overload; static; inline;
+    class function ResolveWithContext<TContext, T>(const ATemplateName: string; const AContext: TContext; const AData: T): string; overload; static; inline;
 
-    class procedure ResolveWithContext<TContext>(const ATemplateName: string; const AContext: TContext; const AOutputStream: TStream); overload; static;
-    class function ResolveWithContext<TContext>(const ATemplateName: string; const AContext: TContext): string; overload; static;
+    class procedure ResolveWithContext<TContext>(const ATemplateName: string; const AContext: TContext; const AOutputStream: TStream); overload; static; inline;
+    class function ResolveWithContext<TContext>(const ATemplateName: string; const AContext: TContext): string; overload; static; inline;
 
     // PARSING
 
@@ -198,26 +202,14 @@ begin
   Eval(LContext, ATemplate, AValue, AStream);
 end;
 
-class procedure Template.Eval<T>(const AContext: ITemplateContext; const ATemplate: ITemplate; const AValue: T; const AStream: TStream);
-var
-  LTemplateVisitor: IEvaluationTemplateVisitor;
+class procedure Template.Eval(const AContext: ITemplateContext; const ATemplate: ITemplate; const AValue: TTemplateValue; const AStream: TStream);
 begin
-{$IFNDEF SEMPARE_TEMPLATE_CONFIRM_LICENSE}
-{$IFDEF MSWINDOWS}
-  if not FLicenseShown then
-  begin
-    ShowMessage( //
-      'Thank you for trying the Sempare Template Engine.'#13#10#13#10 + //
-      'To supress this message, set the conditional define SEMPARE_TEMPLATE_CONFIRM_LICENSE in the project options.'#13#10#13#10 + //
-      'Please remember the library is dual licensed. You are free to use it under the GPL or you can support the project to keep it alive as per:'#13#10#13#10 + //
-      'https://github.com/sempare/sempare-delphi-template-engine/blob/main/docs/commercial.license.md' //
-      );
-    FLicenseShown := true;
-  end;
-{$ENDIF}
-{$ENDIF}
-  LTemplateVisitor := TEvaluationTemplateVisitor.Create(AContext, '', TTemplateValue.From<T>(AValue), AStream);
-  AcceptVisitor(ATemplate, LTemplateVisitor);
+  EvalWithContext(AContext, ATemplate, '', AValue, AStream);
+end;
+
+class procedure Template.Eval<T>(const AContext: ITemplateContext; const ATemplate: ITemplate; const AValue: T; const AStream: TStream);
+begin
+  Eval(AContext, ATemplate, TValue.From<T>(AValue), AStream);
 end;
 
 class procedure Template.Eval(const ATemplate: ITemplate; const AStream: TStream; const AOptions: TTemplateEvaluationOptions);
@@ -377,8 +369,10 @@ end;
 class function Template.Eval(const ATemplate: string; const AOptions: TTemplateEvaluationOptions): string;
 var
   LContext: ITemplateContext;
+  LTemplate: ITemplate;
 begin
   LContext := Context(AOptions);
+  LTemplate := Parse(LContext, ATemplate);
   exit(Eval(LContext, ATemplate));
 end;
 
@@ -409,9 +403,11 @@ end;
 class function Template.Eval<T>(const ATemplate: string; const AValue: T; const AOptions: TTemplateEvaluationOptions): string;
 var
   LContext: ITemplateContext;
+  LTemplate: ITemplate;
 begin
   LContext := Context(AOptions);
-  exit(Eval(LContext, ATemplate, AValue));
+  LTemplate := Template.Parse(LContext, ATemplate);
+  exit(Eval(LContext, LTemplate, AValue));
 end;
 
 class function Template.Eval<T>(const AContext: ITemplateContext; const ATemplate: ITemplate; const AValue: T): string;
@@ -451,6 +447,8 @@ end;
 class procedure Template.EvalWithContext(const AContext: ITemplateContext; const ATemplate: ITemplate; const AResolveContext: TTemplateValue; const AValue: TTemplateValue; const AStream: TStream);
 var
   LTemplateVisitor: IEvaluationTemplateVisitor;
+  LResolveContext: TTemplateValue;
+  LValue: TTemplateValue;
 begin
 {$IFNDEF SEMPARE_TEMPLATE_CONFIRM_LICENSE}
 {$IFDEF MSWINDOWS}
@@ -466,7 +464,13 @@ begin
   end;
 {$ENDIF}
 {$ENDIF}
-  LTemplateVisitor := TEvaluationTemplateVisitor.Create(AContext, AResolveContext, AValue, AStream);
+  LResolveContext := AResolveContext;
+  if LResolveContext.IsType<TTemplateValue> then
+    LResolveContext := LResolveContext.AsType<TTemplateValue>;
+  LValue := AValue;
+  if LValue.IsType<TTemplateValue> then
+    LValue := LValue.AsType<TTemplateValue>;
+  LTemplateVisitor := TEvaluationTemplateVisitor.Create(AContext, LResolveContext, LValue, AStream);
   AcceptVisitor(ATemplate, LTemplateVisitor);
 end;
 

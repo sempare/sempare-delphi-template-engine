@@ -115,6 +115,8 @@ uses
   System.Generics.Collections,
   Sempare.Template.Util,
   Sempare.Template.Context,
+  Sempare.Template.PrettyPrint, // remove inline expansion hint
+  Sempare.Template.TemplateRegistry, // remove inline expansion hint
   Sempare.Template;
 
 type
