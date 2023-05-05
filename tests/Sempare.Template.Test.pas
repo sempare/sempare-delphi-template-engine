@@ -140,6 +140,10 @@ uses
   System.SysUtils,
   System.IOUtils,
   System.Generics.Collections,
+  Sempare.Template.AST, // remove inline expansion hint
+  Sempare.Template.TemplateRegistry, // remove inline expansion hint
+  Sempare.Template.Common, // remove inline expansion hint
+  Sempare.Template.PrettyPrint, // remove inline expansion hint
   Sempare.Template.Parser,
   Sempare.Template.Util,
   Sempare.Template.Functions,
