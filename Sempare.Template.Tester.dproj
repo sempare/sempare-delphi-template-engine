@@ -92,6 +92,7 @@
         <DCCReference Include="tests\Sempare.Template.TestStackFrame.pas"/>
         <DCCReference Include="tests\Sempare.Template.TestLexer.pas"/>
         <DCCReference Include="tests\Sempare.Template.TestFunctions.pas"/>
+        <DCCReference Include="tests\Sempare.Template.TestVirtualMethods.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

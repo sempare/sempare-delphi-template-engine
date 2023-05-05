@@ -470,11 +470,8 @@ type
   private
     FObjectExpr: IExpr;
     FMethod: string;
-    FRttiMethod: TRttiMethod;
     function GetMethod: string;
     function GetObject: IExpr;
-    function GetRttiMethod: TRttiMethod;
-    procedure SetRttiMethod(const ARttiMethod: TRttiMethod);
     procedure Accept(const AVisitor: ITemplateVisitor); override;
   public
     constructor Create(const APosition: IPosition; const AObjectExpr: IExpr; const AMethod: string; const AExprList: IExprList);
@@ -3112,16 +3109,6 @@ end;
 function TMethodCallExpr.GetObject: IExpr;
 begin
   exit(FObjectExpr);
-end;
-
-function TMethodCallExpr.GetRttiMethod: TRttiMethod;
-begin
-  exit(FRttiMethod);
-end;
-
-procedure TMethodCallExpr.SetRttiMethod(const ARttiMethod: TRttiMethod);
-begin
-  FRttiMethod := ARttiMethod;
 end;
 
 { TEncodeStmt }
