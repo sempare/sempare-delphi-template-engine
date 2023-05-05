@@ -24,12 +24,12 @@ begin
   THorse.Get('/',
     procedure(Req: THorseRequest; Res: THorseResponse)
     begin
-      Res.Send(TSempareServerPages.Instance.Eval('index'));
+      Res.Send(Template.Resolve('index'));
     end);
   THorse.All('/*',
     procedure(Req: THorseRequest; Res: THorseResponse)
     begin
-      Res.Send(TSempareServerPages.Instance.Eval('error404'));
+      Res.Send(Template.Resolve('error404'));
     end);
   THorse.Listen(8080);  
 end;
@@ -68,31 +68,35 @@ The framework is also aware of the normal IDE structure where the application is
 TSempareServerPages is actually an alias for TTemplateRegistry. The following public methods and properties:
 ```
   TTemplateLoadStrategy = (tlsLoadResource, tlsLoadFile, tlsLoadCustom);
-  TTemplateNameContextResolver = reference to function: TArray<string>;
-  TTemplateNameResolver = reference to function(const AName: string; const AContext: TArray<string>): string;
-  TTemplateResolver = reference to function(const AContext: ITemplateContext; const AName: string): ITemplate;
+  TTemplateNameContextResolver = reference to function(const AName: string; const AContext: TTemplateValue): string;
+  TTemplateNameResolver = reference to function(const AName: string): string;
   TTempateLogException = reference to procedure(const AException: Exception);
+  TTempateLogMessage = reference to procedure(const AMessage: string; const args: array of const);
 
   TTemplateRegistry = class 
 
     // Resolve a template by name
-    function GetTemplate(const ATemplateName: string): ITemplate; overload;
+    function GetTemplate(const ATemplateName: string): ITemplate; overload; inline;
+    function GetTemplate(const ATemplateName: string; const AContext: TTemplateValue): ITemplate; overload;
+    function GetTemplate<T>(const ATemplateName: string; const AContext: T): ITemplate; overload; inline;
+    procedure RemoveTemplate(const ATemplateName: string);
+    procedure ClearTemplates;
 
-    // Evaluate a ATemplate with output going to a AOutputStream
-    procedure Eval(const AOutputStream: TStream; const ATemplate: ITemplate); overload;
-    procedure Eval<T>(const AOutputStream: TStream; const ATemplate: ITemplate; const AData: T); overload;
-
-    // Evaluate a ATemplate with output going to a string
-    function Eval<T>(const ATemplate: ITemplate; const AData: T): string; overload;
-    function Eval(const ATemplate: ITemplate): string; overload;
-
-    // Evaluate a template given a ATemplateName with output going to a AOutputStream
-    procedure Eval(const AOutputStream: TStream; const ATemplateName: string); overload;
-    procedure Eval<T>(const AOutputStream: TStream; const ATemplateName: string; const AData: T); overload;
-    
-    // Evaluate a ATemplateName with output going to a string
+    procedure Eval<T>(const ATemplateName: string; const AData: T; const AOutputStream: TStream); overload;
     function Eval<T>(const ATemplateName: string; const AData: T): string; overload;
+
+    procedure Eval(const ATemplateName: string; const AOutputStream: TStream); overload;
     function Eval(const ATemplateName: string): string; overload;
+
+    // with context
+    procedure Eval<T>(const ATemplateName: string; const AContext: TTemplateValue; const AData: T; const AOutputStream: TStream); overload;
+    function Eval<T>(const ATemplateName: string; const AContext: TTemplateValue; const AData: T): string; overload;
+
+    procedure EvalWithContext<TContext, T>(const ATemplateName: string; const AContext: TContext; const AData: T; const AOutputStream: TStream); overload;
+    function EvalWithContext<TContext, T>(const ATemplateName: string; const AContext: TContext; const AData: T): string; overload;
+
+    procedure EvalWithContext<TContext>(const ATemplateName: string; const AContext: TContext; const AOutputStream: TStream); overload;
+    function EvalWithContext<TContext>(const ATemplateName: string; const AContext: TContext): string; overload;
 
     // Provides access to the singleton instance of the registry
     class property Instance: TTemplateRegistry;                   // read only
@@ -134,6 +138,32 @@ TSempareServerPages is actually an alias for TTemplateRegistry. The following pu
 
 ```
 
+These can be accessed by using the normal Template helper class:
+
+```
+    Template = class
+        // ....
+       
+        class function Resolver(): TTemplateRegistry; static; inline;
+        
+        class procedure Resolve<T>(const ATemplateName: string; const AData: T; const AOutputStream: TStream); overload; static; inline;
+        class function Resolve<T>(const ATemplateName: string; const AData: T): string; overload; static; inline;
+
+        class procedure Resolve(const ATemplateName: string; const AOutputStream: TStream); overload; static; inline;
+        class function Resolve(const ATemplateName: string): string; overload; static; inline;
+
+        // with context
+
+        class procedure ResolveWithContext<TContext, T>(const ATemplateName: string; const AContext: TContext; const AData: T; const AOutputStream: TStream); overload; static; inline;
+        class function ResolveWithContext<TContext, T>(const ATemplateName: string; const AContext: TContext; const AData: T): string; overload; static; inline;
+
+        class procedure ResolveWithContext<TContext>(const ATemplateName: string; const AContext: TContext; const AOutputStream: TStream); overload; static; inline;
+        class function ResolveWithContext<TContext>(const ATemplateName: string; const AContext: TContext): string; overload; static; inline;
+
+       
+        // ....
+    end;
+```
 
 ## Resource File Creation Tool
 
