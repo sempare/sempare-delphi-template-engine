@@ -31,8 +31,10 @@ Copyright (c) 2019-2023 [Sempare Limited](http://www.sempare.ltd)
 
 - misc functions
   - [isempty](#isempty)
+  - [manage](#manage)
   - [sort](#sort)
   - [templateexists](#templateexists)
+  - [unmanage](#unmanage)
 
 - numeric functions
   - [abs](#abs)
@@ -179,6 +181,14 @@ Returns true if the collection is an object, it is not nil, and it contains valu
 <% isempty(dataset) %>
 ```
 
+<a name="manage"><h3>manage(object)</h3></a>
+Manages an object so that you don't have to explicitly free objects. 
+```
+<% a := manage(aFuncCreatingAnObject()) %>
+```
+
+Also see unmanage(object)
+
 <a name="sort"><h3>sort(array)</h3></a>
 Sorts basic arrays of integer, double, extended and string or something enumerable of these types.
 ```
@@ -189,6 +199,14 @@ Sorts basic arrays of integer, double, extended and string or something enumerab
 returns true if the template exists
 ```
 <% templateexists('template') %>
+```
+
+<a name="unmanage"><h3>unmanage(object)</h3></a>
+Unmanages an object so that you don't have to explicitly free objects. 
+```
+<% a := manage(aFuncCreatingAnObject()) %>
+<% unmanage(a) %>
+<% a.free() %>
 ```
 
 # numeric functions

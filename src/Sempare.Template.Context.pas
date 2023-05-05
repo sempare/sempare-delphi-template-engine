@@ -92,6 +92,9 @@ type
 
     procedure StartEvaluation;
     procedure EndEvaluation;
+
+    procedure Manage(const AObject: TObject);
+    procedure Unmanage(const AObject: TObject);
   end;
 
   ITemplateContext = interface
@@ -235,12 +238,15 @@ type
   TEvaluationContext = class
   private
     FBlocks: TObjectDictionary<string, TStack<IBlockStmt>>;
+    FManaged: TObjectList<TObject>;
   public
     constructor Create;
     destructor Destroy; override;
     function TryGetBlock(const AName: string; out ABlock: IBlockStmt): boolean;
     procedure AddBlock(const AName: string; const ABlock: IBlockStmt);
     procedure RemoveBlock(const AName: string);
+    function Manage(const AObject: TObject): TObject;
+    procedure Unmanage(const AObject: TObject);
   end;
 
   TTemplateContext = class(TInterfacedObject, ITemplateContext, ITemplateContextForScope, ITemplateEvaluationContext)
@@ -281,6 +287,9 @@ type
 
     procedure StartEvaluation;
     procedure EndEvaluation;
+
+    procedure Manage(const AObject: TObject);
+    procedure Unmanage(const AObject: TObject);
 
     function GetEncoding: TEncoding;
     procedure SetEncoding(const AEncoding: TEncoding);
@@ -538,6 +547,11 @@ begin
   exit(FWhiteSpace);
 end;
 
+procedure TTemplateContext.Manage(const AObject: TObject);
+begin
+  FEvaluationContext.Manage(AObject);
+end;
+
 procedure TTemplateContext.RemoveBlock(const AName: string);
 begin
   if not assigned(FEvaluationContext) then
@@ -590,7 +604,7 @@ function TTemplateContext.GetTemplateResolver: TTemplateResolver;
 begin
   result := function(const AContext: ITemplateContext; const AName: string): ITemplate
     var
-      LAddToContext: boolean; // this is actually ignored 
+      LAddToContext: boolean; // this is actually ignored
     begin
       exit(FTemplateResolver(AContext, AName, '', LAddToContext));
     end;
@@ -758,6 +772,11 @@ begin
   end;
 end;
 
+procedure TTemplateContext.Unmanage(const AObject: TObject);
+begin
+  FEvaluationContext.Unmanage(AObject);
+end;
+
 {$IFDEF SEMPARE_TEMPLATE_HAS_HTML_ENCODER}
 
 function HtmlEncode(const AString: string): string;
@@ -800,12 +819,23 @@ end;
 constructor TEvaluationContext.Create;
 begin
   FBlocks := TObjectDictionary < string, TStack < IBlockStmt >>.Create([doOwnsValues]);
+  FManaged := TObjectList<TObject>.Create;
 end;
 
 destructor TEvaluationContext.Destroy;
 begin
   FBlocks.Free;
+  FManaged.Free;
   inherited;
+end;
+
+function TEvaluationContext.Manage(const AObject: TObject): TObject;
+begin
+  if not FManaged.Contains(AObject) then
+  begin
+    FManaged.Add(AObject);
+  end;
+  exit(AObject);
 end;
 
 procedure TEvaluationContext.RemoveBlock(const AName: string);
@@ -827,6 +857,11 @@ begin
     exit(false);
   ABlock := LStack.Peek;
   exit(true);
+end;
+
+procedure TEvaluationContext.Unmanage(const AObject: TObject);
+begin
+  FManaged.Extract(AObject);
 end;
 
 initialization
