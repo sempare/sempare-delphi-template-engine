@@ -2,19 +2,20 @@ object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
   Left = 0
   Top = 0
   Caption = 'Sempare Template Engine Playground'
-  ClientHeight = 487
-  ClientWidth = 1176
+  ClientHeight = 505
+  ClientWidth = 1190
   Color = clBtnFace
+  Constraints.MinHeight = 500
+  Constraints.MinWidth = 1050
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
   Font.Name = 'Tahoma'
   Font.Style = []
   OnCreate = FormCreate
-  OnResize = FormResize
   DesignSize = (
-    1176
-    487)
+    1190
+    505)
   TextHeight = 13
   object Image1: TImage
     Left = 24
@@ -301,17 +302,17 @@ object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
   object Panel1: TPanel
     Left = 18
     Top = 224
-    Width = 1136
-    Height = 255
+    Width = 1150
+    Height = 273
     Anchors = [akLeft, akTop, akRight, akBottom]
     Caption = 'Panel1'
     TabOrder = 4
-    ExplicitWidth = 1132
-    ExplicitHeight = 254
+    ExplicitWidth = 1144
+    ExplicitHeight = 267
     object Splitter1: TSplitter
       Left = 465
       Top = 1
-      Height = 253
+      Height = 271
       ExplicitLeft = 504
       ExplicitTop = 48
       ExplicitHeight = 100
@@ -320,28 +321,28 @@ object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
       Left = 1
       Top = 1
       Width = 464
-      Height = 253
+      Height = 271
       ActivePage = tsTemplate
       Align = alLeft
       TabOrder = 0
-      ExplicitHeight = 252
+      ExplicitHeight = 265
       object tsTemplate: TTabSheet
         Caption = 'Template'
         object Panel2: TPanel
           Left = 0
           Top = 0
           Width = 456
-          Height = 225
+          Height = 243
           Align = alClient
           BevelOuter = bvNone
           Caption = 'Panel2'
           TabOrder = 0
-          ExplicitHeight = 224
+          ExplicitHeight = 237
           object memoTemplate: TMemo
             Left = 0
             Top = 23
             Width = 456
-            Height = 202
+            Height = 220
             Align = alClient
             ScrollBars = ssBoth
             TabOrder = 0
@@ -349,8 +350,7 @@ object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
             OnChange = memoTemplateChange
             OnKeyUp = memoTemplateKeyUp
             OnMouseDown = memoTemplateMouseDown
-            ExplicitTop = 17
-            ExplicitHeight = 207
+            ExplicitHeight = 214
           end
           object Panel3: TPanel
             Left = 0
@@ -371,7 +371,15 @@ object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
               Alignment = taRightJustify
               AutoSize = False
               Caption = '(Line: 1, Position: 1)'
-              Transparent = False
+              Color = 6908265
+              Font.Charset = DEFAULT_CHARSET
+              Font.Color = clWhite
+              Font.Height = -11
+              Font.Name = 'Tahoma'
+              Font.Style = []
+              ParentColor = False
+              ParentFont = False
+              Transparent = True
               ExplicitTop = 1
               ExplicitHeight = 9
             end
@@ -384,8 +392,16 @@ object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
               Align = alLeft
               AutoSize = False
               Caption = 'lblTiming'
+              Color = 6908265
               Enabled = False
-              Transparent = False
+              Font.Charset = DEFAULT_CHARSET
+              Font.Color = clWhite
+              Font.Height = -11
+              Font.Name = 'Tahoma'
+              Font.Style = []
+              ParentColor = False
+              ParentFont = False
+              Transparent = True
               ExplicitLeft = 3
               ExplicitTop = 1
               ExplicitHeight = 21
@@ -400,7 +416,7 @@ object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
           Left = 0
           Top = 0
           Width = 456
-          Height = 225
+          Height = 243
           Align = alClient
           Lines.Strings = (
             'memoPrettyPrint')
@@ -413,20 +429,20 @@ object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
     object pcOutput: TPageControl
       Left = 468
       Top = 1
-      Width = 667
-      Height = 253
-      ActivePage = tsWebBrowser
+      Width = 681
+      Height = 271
+      ActivePage = tsGithubHelp
       Align = alClient
       TabOrder = 1
-      ExplicitWidth = 663
-      ExplicitHeight = 252
+      ExplicitWidth = 675
+      ExplicitHeight = 265
       object tsOutput: TTabSheet
         Caption = 'Output'
         object memoOutput: TMemo
           Left = 0
           Top = 0
-          Width = 659
-          Height = 225
+          Width = 673
+          Height = 243
           Align = alClient
           Lines.Strings = (
             'Memo1')
@@ -441,14 +457,36 @@ object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
         object WebBrowser1: TWebBrowser
           Left = 0
           Top = 0
-          Width = 659
-          Height = 225
+          Width = 673
+          Height = 243
           Align = alClient
           TabOrder = 0
           ExplicitWidth = 655
           ExplicitHeight = 224
           ControlData = {
-            4C0000001C440000411700000000000000000000000000000000000000000000
+            4C0000008E4500001D1900000000000000000000000000000000000000000000
+            000000004C000000000000000000000001000000E0D057007335CF11AE690800
+            2B2E126208000000000000004C0000000114020000000000C000000000000046
+            8000000000000000000000000000000000000000000000000000000000000000
+            00000000000000000100000000000000000000000000000000000000}
+        end
+      end
+      object tsGithubHelp: TTabSheet
+        Caption = 'Github Help'
+        Enabled = False
+        ImageIndex = 2
+        object wbHelp: TWebBrowser
+          Left = 0
+          Top = 0
+          Width = 673
+          Height = 243
+          Align = alClient
+          TabOrder = 0
+          SelectedEngine = EdgeOnly
+          ExplicitWidth = 667
+          ExplicitHeight = 237
+          ControlData = {
+            4C0000008E4500001D1900000000000000000000000000000000000000000000
             000000004C000000000000000000000001000000E0D057007335CF11AE690800
             2B2E126208000000000000004C0000000114020000000000C000000000000046
             8000000000000000000000000000000000000000000000000000000000000000
@@ -460,11 +498,12 @@ object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
   object gbOptions: TGroupBox
     Left = 483
     Top = 49
-    Width = 670
+    Width = 684
     Height = 139
     Anchors = [akLeft, akTop, akRight]
     Caption = 'Context Options'
     TabOrder = 5
+    ExplicitWidth = 678
     object cbConvertTabsToSpaces: TCheckBox
       Left = 18
       Top = 23
@@ -599,7 +638,7 @@ object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
     object cbOptimiseTemplate: TCheckBox
       Left = 384
       Top = 92
-      Width = 159
+      Width = 113
       Height = 17
       Caption = 'Optimise Template'
       TabOrder = 13
@@ -617,7 +656,7 @@ object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
     object cbFlattenTemplate: TCheckBox
       Left = 384
       Top = 69
-      Width = 153
+      Width = 113
       Height = 17
       Caption = 'Flatten Template'
       TabOrder = 15
@@ -626,7 +665,7 @@ object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
     object cbShowWhitespace: TCheckBox
       Left = 384
       Top = 115
-      Width = 159
+      Width = 113
       Height = 17
       Caption = 'Show Whitespace'
       TabOrder = 16
@@ -654,10 +693,13 @@ object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
       TabOrder = 0
       OnGetEditText = propertiesGetEditText
       OnSetEditText = propertiesSetEditText
+      ColWidths = (
+        150
+        282)
     end
   end
   object butEval: TButton
-    Left = 389
+    Left = 384
     Top = 194
     Width = 75
     Height = 25

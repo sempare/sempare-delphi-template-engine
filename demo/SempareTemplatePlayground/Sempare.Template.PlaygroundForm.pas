@@ -105,6 +105,8 @@ type
     Panel3: TPanel;
     lblTiming: TLabel;
     butExtractVars: TButton;
+    tsGithubHelp: TTabSheet;
+    wbHelp: TWebBrowser;
     procedure cbConvertTabsToSpacesClick(Sender: TObject);
     procedure cbStripRecurringSpacesClick(Sender: TObject);
     procedure cbTrimLinesClick(Sender: TObject);
@@ -123,7 +125,6 @@ type
     procedure propertiesGetEditText(Sender: TObject; ACol, ARow: Integer; var Value: string);
     procedure propertiesSetEditText(Sender: TObject; ACol, ARow: Integer; const Value: string);
     procedure butSaveAsClick(Sender: TObject);
-    procedure FormResize(Sender: TObject);
     procedure butEvalClick(Sender: TObject);
     procedure cbUseCustomScriptTagsClick(Sender: TObject);
     procedure cbOptimiseTemplateClick(Sender: TObject);
@@ -158,8 +159,10 @@ implementation
 
 uses
   System.IoUtils,
-  System.Diagnostics,
   Sempare.Template.Context;
+
+var
+  GFreq: int64;
 
 {$R *.dfm}
 
@@ -185,8 +188,23 @@ begin
 end;
 
 procedure TFormTemplateEnginePlayground.butExtractVarsClick(Sender: TObject);
+var
+  LVars: TArray<string>;
+  LFuncs: TArray<string>;
+  LVar: string;
+  i: Integer;
 begin
-  // todo
+  FTemplate := Template.Parse(FContext, memoTemplate.Lines.Text);
+  for i := 1 to properties.RowCount do
+  begin
+    properties.Cells[0, i] := '';
+    properties.Cells[1, i] := '';
+  end;
+  Template.ExtractReferences(FTemplate, LVars, LFuncs);
+  for i := 0 to high(LVars) do
+  begin
+    properties.Cells[0, i + 1] := LVars[i];
+  end;
 end;
 
 procedure TFormTemplateEnginePlayground.butOpenClick(Sender: TObject);
@@ -372,10 +390,14 @@ begin
   FTemplate := Template.Parse(FContext, '');
   properties.Cells[0, 0] := 'Variable';
   properties.Cells[1, 0] := 'Value';
+  properties.ColWidths[1] := properties.Width - properties.ColWidths[0] - 25;
   memoOutput.Lines.Text := '';
   memoTemplate.Lines.Text := '';
   memoPrettyPrint.Lines.Text := '';
   WebBrowser1.Enabled := true;
+  tsGithubHelp.TabVisible := false;
+  wbHelp.Enabled := false; // Doesn't work on github at this stage
+  //  wbHelp.Navigate('https://github.com/sempare/sempare-delphi-template-engine#Introduction');
 {$IF defined(RELEASE)}
   FContext.MaxRunTimeMs := 5000;
 {$ENDIF}
@@ -389,7 +411,7 @@ begin
 
   memoTemplate.Text := '<% template("local_template") %> Hello <% name %><br> <% end %> ' + #13#10 + //
     '  ' + #13#10 + //
-    ' Welcome to the <i>Sempare Template Engine</i> <b><% SEMPARE_TEMPLATE_ENGINE_VERSION %></b> playpen project. ' + #13#10 + //
+    ' Welcome to the <i>Sempare Template Engine</i> <b><% SEMPARE_TEMPLATE_ENGINE_VERSION %></b> playground project. ' + #13#10 + //
     '  ' + #13#10 + //
     ' You can prototype and test templates here.<p> ' + #13#10 + //
     '  ' + #13#10 + //
@@ -435,12 +457,6 @@ begin
   Finit := true;
 end;
 
-procedure TFormTemplateEnginePlayground.FormResize(Sender: TObject);
-begin
-  if width < 1000 then
-    width := 1000;
-end;
-
 procedure TFormTemplateEnginePlayground.GridPropsToContext;
 var
   LIdx: Integer;
@@ -483,11 +499,26 @@ procedure TFormTemplateEnginePlayground.OnException(Sender: TObject; E: Exceptio
 begin
 end;
 
+function FormatTimeMS(const ANS: int64): string;
+const
+  NSPerMs = 1000000;
+begin
+  exit(format('%.3fms', [ANS / NSPerMs]));
+end;
+
 procedure TFormTemplateEnginePlayground.Process;
 var
   LPrettyOk: boolean;
-  LSW: TStopWatch;
+  LStart: int64;
   LStr: string;
+  function GetNanoSeconds: int64;
+  var
+    LEnd: int64;
+  begin
+    QueryPerformanceCounter(LEnd);
+    exit(trunc(((LEnd - LStart) * 1000000000.0) / GFreq));
+  end;
+
 begin
   if not Finit then
     exit;
@@ -496,11 +527,11 @@ begin
   try
     memoPrettyPrint.Lines.Text := Sempare.Template.Template.PrettyPrint(FTemplate);
     LPrettyOk := true;
-    LSW := TStopWatch.Create;
-    LSW.Start;
+    QueryPerformanceCounter(LStart);
+
     LStr := Template.Eval(FContext, FTemplate);
-    LSW.Stop;
-    lblTiming.Caption := format('Evaluation %dms', [LSW.ElapsedMilliseconds]);
+
+    lblTiming.Caption := format('Evaluation %s', [FormatTimeMS(GetNanoSeconds())]);
     memoOutput.Lines.Text := LStr;
   except
     on E: Exception do
@@ -579,7 +610,7 @@ begin
   try
     memoOutput.Lines.SaveToFile('out.htm', FEncoding);
     url := 'file://' + ExpandUNCFileName(GetCurrentDir).Replace('\', '/', [rfReplaceAll]) + '/out.htm';
-    WebBrowser1.navigate(url);
+    WebBrowser1.Navigate(url);
   except
     on E: Exception do
     begin
@@ -587,5 +618,9 @@ begin
     end;
   end;
 end;
+
+initialization
+
+QueryPerformanceFrequency(GFreq);
 
 end.
