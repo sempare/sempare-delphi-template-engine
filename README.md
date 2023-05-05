@@ -69,10 +69,11 @@ type
     end;
 begin
     var tpl := Template.Parse(
-	       'My name is <% name %>.'#13#10 + 
-	       'My favourite sport is <% favourite_sport %>.'#13#10 + 
-	       'Counting... <% for i := 1 to count %><% i %><% betweenitems %>, <% end %>'
-	);
+       'My name is <% name %>.'#13#10 + 
+       'My favourite sport is <% favourite_sport %>.'#13#10 + 
+       'Counting... <% for i := 1 to count %><% i %><% betweenitems %>, <% end %>' +
+       'Counting... <% for i := 1 to count ; print(i) ; betweenitems ; print(', '); onbegin; print('[ '); onend; print('] '); end %>'
+    );
     var info : TInformation;
     info.name := 'conrad';
     info.favourite_sport := 'ultimate';
