@@ -169,6 +169,8 @@ var
   LValue: TValue;
 begin
   LValue := AExpr.Value;
+  if LValue.IsType<TValue> then
+    LValue := LValue.AsType<TValue>;
   FEvalStack.push(LValue);
 end;
 
@@ -203,7 +205,8 @@ begin
   LAllowRootDeref.SetValue(AExpr.DerefType = dtArray);
   LDerefKey := EvalExpr(AExpr.DerefExpr);
   LDerefedValue := Deref(AExpr, LDerefObj, LDerefKey, eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext);
-
+  if LDerefedValue.IsType<TValue> then
+    LDerefedValue := LDerefedValue.AsType<TValue>();
   FEvalStack.push(LDerefedValue);
 end;
 
@@ -331,6 +334,8 @@ begin
   begin
     LValue := AExpr.variable;
   end;
+  if LValue.IsType<TValue> then
+    LValue := LValue.AsType<TValue>();
   FEvalStack.push(LValue);
 end;
 
@@ -597,6 +602,8 @@ begin
   LVariableName := AStmt.variable;
 
   LLoopExpr := EvalExpr(AStmt.Expr);
+  if LLoopExpr.IsType<TValue> then
+    LLoopExpr := LLoopExpr.AsType<TValue>();
   LOffset := GetValue(AStmt.OffsetExpr);
   LLimit := GetValue(AStmt.LimitExpr);
 
@@ -853,6 +860,8 @@ begin
     exit;
   LVariable := AStmt.variable;
   LValue := EvalExpr(AStmt.Expr);
+  if LValue.IsType<TValue> then
+    LValue := LValue.AsType<TValue>;
   FStackFrames.peek[LVariable] := LValue;
 end;
 
@@ -952,6 +961,8 @@ begin
   begin
     LParameter := LParams[LParamIdx];
     LParamValue := CastArg(AArgs[LParamIdx - LOffset], LParameter.ParamType, AContext);
+    if LParamValue.IsType<TValue> then
+      LParamValue := LParamValue.AsType<TValue>();
     result[LParamIdx] := LParamValue;
   end;
 end;
@@ -1012,15 +1023,15 @@ end;
 function TEvaluationTemplateVisitor.Invoke(const AExpr: IMethodCallExpr; const AObject: TValue; const AArgs: TArray<TValue>; out AHasResult: boolean): TValue;
 var
   LObjType: TRttiType;
+  LObject: TValue;
+  LMethod: TRttiMethod;
 begin
-  if AExpr.RttiMethod = nil then
-  begin
-    LObjType := GRttiContext.GetType(AObject.TypeInfo);
-    AExpr.RttiMethod := LObjType.GetMethod(AExpr.Method);
-  end;
-
-  AHasResult := AExpr.RttiMethod.ReturnType <> nil;
-  exit(AExpr.RttiMethod.Invoke(AObject, AArgs));
+  LObjType := GRttiContext.GetType(AObject.TypeInfo);
+  LMethod := LObjType.GetMethod(AExpr.Method);
+  if AObject.IsType<TValue> then
+    LObject := AObject.AsType<TValue>;
+  AHasResult := LMethod.ReturnType <> nil;
+  exit(LMethod.Invoke(AObject, AArgs));
 end;
 
 function TEvaluationTemplateVisitor.ResolveTemplate(const APosition: IPosition; const AName: string): ITemplate;
