@@ -500,12 +500,9 @@ type
     function GetMethod: string;
     function GetObject: IExpr;
     function GetExprList: IExprList;
-    function GetRttiMethod: TRttiMethod;
-    procedure SetRttiMethod(const ARttiMethod: TRttiMethod);
     property Method: string read GetMethod;
     property ObjectExpr: IExpr read GetObject;
     property ExprList: IExprList read GetExprList;
-    property RttiMethod: TRttiMethod read GetRttiMethod write SetRttiMethod;
   end;
 
   IAssignStmt = interface(IStmt)

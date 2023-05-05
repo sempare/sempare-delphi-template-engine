@@ -28,6 +28,7 @@ uses
   IdHTTPWebBrokerBridge,
   IdCustomHTTPServer,
   DynForm,
+  Sempare.Template.TemplateRegistry, // remove inline expansion hint
   Sempare.Template;
 
 {%CLASSGROUP 'System.Classes.TPersistent'}

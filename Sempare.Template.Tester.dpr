@@ -58,7 +58,8 @@ uses
   Sempare.Template.Test in 'tests\Sempare.Template.Test.pas',
   Sempare.Template.TestStackFrame in 'tests\Sempare.Template.TestStackFrame.pas',
   Sempare.Template.TestLexer in 'tests\Sempare.Template.TestLexer.pas',
-  Sempare.Template.TestFunctions in 'tests\Sempare.Template.TestFunctions.pas';
+  Sempare.Template.TestFunctions in 'tests\Sempare.Template.TestFunctions.pas',
+  Sempare.Template.TestVirtualMethods in 'tests\Sempare.Template.TestVirtualMethods.pas';
 
 var
   runner: ITestRunner;
