@@ -45,6 +45,12 @@ type
     [test]
     procedure TestJson;
 
+    [test]
+    procedure TestToJson;
+
+    [test]
+    procedure TestParseJson;
+
   end;
 
 implementation
@@ -68,6 +74,26 @@ begin
   o.AddPair('object', o2);
   Assert.AreEqual('string true  123 value', Template.Eval('<% _.str %> <% _.bool%> <% _.null%> <% _.num%> <% _.object.subval %>', o));
   o.Free;
+end;
+
+procedure TTestTemplateJson.TestParseJson;
+begin
+  Assert.AreEqual('123.45', Template.Eval('<% ParseJson("123.45") %>'));
+  Assert.AreEqual('123', Template.Eval('<% ParseJson("123") %>'));
+  Assert.AreEqual('true', Template.Eval('<% ParseJson("true") %>'));
+  Assert.AreEqual('false', Template.Eval('<% ParseJson("false") %>'));
+  Assert.AreEqual('str', Template.Eval('<% ParseJson(''"str"'') %>'));
+  Assert.AreEqual('{"a":1,"b":2}', Template.Eval('<% ToJson(ParseJson(''{ "a": 1, "b" : 2}'')) %>'));
+end;
+
+procedure TTestTemplateJson.TestToJson;
+begin
+  Assert.AreEqual('123.45', Template.Eval('<% ToJson(123.45) %>'));
+  Assert.AreEqual('123', Template.Eval('<% ToJson(123) %>'));
+  Assert.AreEqual('true', Template.Eval('<% ToJson(true) %>'));
+  Assert.AreEqual('false', Template.Eval('<% ToJson(false) %>'));
+  Assert.AreEqual('str', Template.Eval('<% ToJson("str") %>'));
+  Assert.AreEqual('{"a":1,"b":2}', Template.Eval('<% ToJson({"a":1,"b":2}) %>'));
 end;
 
 initialization
