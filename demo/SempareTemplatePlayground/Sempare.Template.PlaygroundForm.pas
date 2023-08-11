@@ -191,7 +191,6 @@ procedure TFormTemplateEnginePlayground.butExtractVarsClick(Sender: TObject);
 var
   LVars: TArray<string>;
   LFuncs: TArray<string>;
-  LVar: string;
   i: Integer;
 begin
   FTemplate := Template.Parse(FContext, memoTemplate.Lines.Text);
