@@ -1087,7 +1087,8 @@ function ParseExpr: TValue; forward;
       begin
         Match(vsComma);
       end;
-      insert(ParseExpr, result, length(result));
+      SetLength(result, length(result) + 1);
+      result[high(result)] := ParseExpr;
       inc(i);
     end;
     Match(vsCloseSquareBracket);

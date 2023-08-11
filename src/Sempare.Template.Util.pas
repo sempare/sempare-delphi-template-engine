@@ -36,7 +36,7 @@ interface
 
 uses
   System.Rtti,
-  System.JSON,
+  Sempare.Template.JSON,
   System.Generics.Collections;
 
 {$I 'Sempare.Template.Compiler.inc'}
@@ -226,11 +226,16 @@ end;
 { TMap }
 
 function TMap.Add(const AKey: string; const AValue: TValue): boolean;
+var
+  LPair : TPair<string, TValue>;
+
 begin
   Result := not ContainsKey(AKey);
   if Result then
   begin
-    insert(TPair<string, TValue>.Create(AKey, AValue), FItems, Count);
+    LPair := TPair<string, TValue>.Create(AKey, AValue);
+    SetLength(FItems, length(FItems)+1);
+    FItems[high(FItems)] := LPair;
   end;
 end;
 
@@ -278,13 +283,15 @@ end;
 
 function TMap.Delete(const AKey: string): boolean;
 var
-  i: integer;
+  i, j: integer;
 begin
   for i := 0 to Count - 1 do
   begin
     if FItems[i].Key = AKey then
     begin
-      System.Delete(FItems, i, 1);
+      for j := i to High(FItems)-1 do
+        FItems[i] := FItems[i+1];
+      SetLength(fitems, length(FItems) - 1);
       exit(True);
     end;
   end;
@@ -425,7 +432,7 @@ function ToArray(const AValue: TArray<TValue>): TJsonArray; forward;
       tkClass:
         if AValue.AsObject = nil then
           exit(TJSONNull.Create());
-      tkRecord, tkMRecord:
+      tkRecord{$IFDEF SUPPORT_CUSTOM_MANAGED_RECORDS}, tkMRecord{$ENDIF}:
         exit(ToMap(AValue.AsType<TMap>));
       tkDynArray:
         exit(ToArray(AValue.AsType < TArray < TValue >> ));
@@ -437,7 +444,8 @@ var
 begin
   LObject := ToMap(self);
   try
-    exit(LObject.ToJSON);
+    //exit(LObject.ToJSON);
+    exit(LObject.ToString);
   finally
     LObject.Free;
   end;

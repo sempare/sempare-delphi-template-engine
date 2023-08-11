@@ -65,7 +65,7 @@ uses
   System.TypInfo, // needed for XE6 and below to access the TTypeKind variables
   System.SysUtils,
   System.Math,
-  System.Json,
+  Sempare.Template.JSON,
   System.RegularExpressions,
   System.Generics.Collections,
   System.Generics.Defaults,
@@ -257,7 +257,7 @@ var
   LJsonStr: TJSonString absolute LJsonValue;
 
 begin
-  LJsonValue := TJsonValue.ParseJsonValue(AValue);
+  LJsonValue := TJsonObject.ParseJsonValue(AValue);
   try
     if LJsonValue is TJSonNumber then
       exit(LJsonNum.AsDouble);
