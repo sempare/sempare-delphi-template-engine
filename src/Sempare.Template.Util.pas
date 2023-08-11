@@ -36,6 +36,7 @@ interface
 
 uses
   System.Rtti,
+  System.JSON,
   System.Generics.Collections;
 
 {$I 'Sempare.Template.Compiler.inc'}
@@ -102,7 +103,7 @@ type
     function ToKeyArray: TArray<string>;
     function ToValueArray: TArray<TValue>;
     function ToJSON: string;
-    class function ParseJson(const AJson: string): TMap; static;
+    class function ParseJson(const AJson: TJsonObject): TMap; static;
     function GetItems: TArray<TPair<string, TValue>>;
     property Items[const AKey: string]: TValue read GetItem write SetItem; default;
     property Keys[const AIdx: integer]: string read GetKey write SetKey;
@@ -116,7 +117,6 @@ implementation
 
 uses
   System.TypInfo,
-  System.JSON,
   SysUtils
 {$IFDEF MSWINDOWS}
     , WinAPI.Windows
@@ -317,31 +317,24 @@ begin
   exit(FItems[AIdx].Value);
 end;
 
-class function TMap.ParseJson(const AJson: string): TMap;
-var
-  LValue: TJsonValue;
-  LObject: TJSONObject absolute LValue;
+class function TMap.ParseJson(const AJson: TJsonObject): TMap;
 
-  procedure Visit(const AObject: TJSONObject; var AMap: TMap);
+  procedure Visit(const AObject: TJsonObject; var AMap: TMap);
   var
     LPair: TJSONPair;
     LMap: TMap;
   begin
     for LPair in AObject do
     begin
-      if LPair.JsonValue is TJSONObject then
+      if LPair.JsonValue is TJsonObject then
       begin
         LMap := TMap.Create;
-        Visit(TJSONObject(LPair.JsonValue), LMap);
+        Visit(TJsonObject(LPair.JsonValue), LMap);
         AMap.Add(LPair.JsonString.Value, TValue.From<TMap>(LMap));
-      end
-      else if LPair.JsonValue is TJSONString then
-      begin
-        AMap.Add(LPair.JsonString.Value, LPair.JsonValue.Value);
       end
       else if LPair.JsonValue is TJSONNumber then
       begin
-        AMap.Add(LPair.JsonString.Value, StrToFloat(LPair.JsonValue.Value));
+        AMap.Add(LPair.JsonString.Value, TJSONNumber(LPair.JsonValue).AsDouble);
       end
       else if LPair.JsonValue is TJSONTrue then
       begin
@@ -354,22 +347,19 @@ var
       else if LPair.JsonValue is TJSONNull then
       begin
         AMap.AddNil(LPair.JsonString.Value);
+      end
+      else if LPair.JsonValue is TJSONString then
+      begin
+        AMap.Add(LPair.JsonString.Value, LPair.JsonValue.Value);
       end;
-
     end;
-
   end;
 
 begin
   Result.FItems := nil;
-  LValue := TJsonValue.ParseJSONValue(AJson);
-  try
-    if not(LValue is TJSONObject) then
-      exit;
-    Visit(LObject, Result);
-  finally
-    LObject.Free;
-  end;
+  if AJson = nil then
+    exit;
+  Visit(AJson, Result);
 end;
 
 procedure TMap.SetItem(const AKey: string; const AValue: TValue);
@@ -391,11 +381,11 @@ function TMap.ToJSON: string;
 function ToExpr(const AValue: TValue): TJsonValue; forward;
 function ToArray(const AValue: TArray<TValue>): TJsonArray; forward;
 
-  function ToMap(const AMap: TMap): TJSONObject;
+  function ToMap(const AMap: TMap): TJsonObject;
   var
     LPair: TPair<string, TValue>;
   begin
-    Result := TJSONObject.Create;
+    Result := TJsonObject.Create;
     for LPair in AMap.FItems do
     begin
       Result.AddPair(LPair.Key, ToExpr(LPair.Value));
@@ -443,7 +433,7 @@ function ToArray(const AValue: TArray<TValue>): TJsonArray; forward;
   end;
 
 var
-  LObject: TJSONObject;
+  LObject: TJsonObject;
 begin
   LObject := ToMap(self);
   try

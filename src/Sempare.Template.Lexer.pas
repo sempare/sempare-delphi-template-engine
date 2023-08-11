@@ -404,11 +404,30 @@ begin
         '(':
           exit(SimpleToken(vsOpenRoundBracket));
         ')':
-          exit(SimpleToken(vsCloseRoundBracket));
+          begin
+            if isEndOfScript(#0, Result, []) then
+              exit
+            else
+              exit(SimpleToken(vsCloseRoundBracket));
+          end;
         '[':
           exit(SimpleToken(vsOpenSquareBracket));
         ']':
-          exit(SimpleToken(vsCloseSquareBracket));
+          begin
+            if isEndOfScript(#0, Result, []) then
+              exit
+            else
+              exit(SimpleToken(vsCloseSquareBracket));
+          end;
+        '{':
+          exit(SimpleToken(vsOpenCurlyBracket));
+        '}':
+          begin
+            if isEndOfScript(#0, Result, []) then
+              exit
+            else
+              exit(SimpleToken(vsCloseCurlyBracket));
+          end;
         '.':
           exit(SimpleToken(vsDOT));
         '?':
@@ -456,13 +475,17 @@ begin
           else
             exit(SimpleToken(vsLT));
         '>':
-          if Expecting('=') then
           begin
-            SwallowInput;
-            exit(SimpleToken(vsGTE));
-          end
-          else
-            exit(SimpleToken(vsGT));
+            if isEndOfScript(#0, Result, []) then
+              exit
+            else if Expecting('=') then
+            begin
+              SwallowInput;
+              exit(SimpleToken(vsGTE));
+            end
+            else
+              exit(SimpleToken(vsGT));
+          end;
         '=':
           begin
             if FLookahead.Input = '=' then
@@ -841,6 +864,8 @@ AddSymKeyword('id', vsID);
 AddSymKeyword('.', vsDOT);
 AddSymKeyword('[', vsOpenSquareBracket);
 AddSymKeyword(']', vsCloseSquareBracket);
+AddSymKeyword('{', vsOpenCurlyBracket);
+AddSymKeyword('}', vsCloseCurlyBracket);
 
 AddSymKeyword('number', vsNumber);
 AddSymKeyword('boolean', vsBoolean);

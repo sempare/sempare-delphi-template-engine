@@ -388,6 +388,15 @@ type
   TAbstractExpr = class abstract(TAbstractBase, IExpr)
   end;
 
+  TMapExpr = class(TAbstractExpr, IMapExpr)
+  private
+    FValue: TMap;
+    function GetMap: TMap;
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
+  public
+    constructor Create(const APosition: IPosition; const AValue: TMap);
+  end;
+
   TValueExpr = class(TAbstractExpr, IValueExpr)
   private
     FValue: TValue;
@@ -588,7 +597,7 @@ type
     function RuleExtendsStmt: IStmt;
     function RuleRequireStmt: IStmt;
     function RuleNoopStmt: IStmt;
-
+    function ruleMapExpr: IExpr;
     function RuleExpression: IExpr;
     function RuleSimpleExpression: IExpr;
     function RuleTerm: IExpr;
@@ -1060,6 +1069,90 @@ begin
   exit(WrapWithStripStmt(result, LBeforeNLStripActions, LAfterNLStripActions));
 end;
 
+function TTemplateParser.ruleMapExpr: IExpr;
+function ParseMap: TMap; forward;
+function ParseExpr: TValue; forward;
+  function ParseArray: TArray<TValue>;
+  var
+    LSymbol: ITemplateSymbol;
+    i: integer;
+  begin
+    i := 0;
+    result := nil;
+    LSymbol := FLookahead;
+    Match(vsOpenSquareBracket);
+    while FLookahead.Token <> vsCloseSquareBracket do
+    begin
+      if i > 0 then
+      begin
+        Match(vsComma);
+      end;
+      insert(ParseExpr, result, length(result));
+      inc(i);
+    end;
+    Match(vsCloseSquareBracket);
+  end;
+  function ParseExpr: TValue;
+  var
+    LSymbol: ITemplateSymbol;
+    LValue: TValue;
+    LArr: TArray<TValue>;
+  begin
+    LSymbol := FLookahead;
+    case LSymbol.Token of
+      vsString:
+        exit(MatchValue(vsString));
+      vsNumber:
+        exit(MatchNumber(vsNumber));
+      vsBoolean:
+        exit(MatchValue(vsBoolean) = 'true');
+      vsOpenSquareBracket:
+        begin
+          LArr := ParseArray;
+          LValue := TValue.From < TArray < TValue >> (LArr);
+          exit(LValue);
+        end;
+      vsOpenCurlyBracket:
+        begin
+          exit(TValue.From<TMap>(ParseMap));
+        end;
+    end;
+  end;
+  function ParseMap: TMap;
+  var
+    LKey: string;
+    i: integer;
+    LValue: TValue;
+    LTok: TTemplateSymbol;
+  begin
+    result := TMap.Create;
+    i := 0;
+    Match(vsOpenCurlyBracket);
+    while FLookahead.Token <> VsCloseCurlyBracket do
+    begin
+      if i > 0 then
+      begin
+        Match(vsComma);
+      end;
+      LTok := vsString;
+      LKey := MatchValues([vsString, vsId], LTok);
+      Match(VsCOLON);
+      LValue := ParseExpr;
+      result.Add(LKey, LValue);
+      inc(i);
+    end;
+    Match(VsCloseCurlyBracket);
+  end;
+
+var
+  LSymbol: ITemplateSymbol;
+  LDict: TMap;
+begin
+  LSymbol := FLookahead;
+  LDict := ParseMap;
+  exit(TMapExpr.Create(LSymbol.Position, LDict));
+end;
+
 function TTemplateParser.RuleRequireStmt: IStmt;
 var
   LSymbol: ITemplateSymbol;
@@ -1348,7 +1441,7 @@ begin
       result := RuleRequireStmt;
     vsTemplate:
       result := RuleTemplateStmt;
-    vsID:
+    vsId:
       result := RuleIdStmt;
     vsBlock:
       result := RuleBlockStmt;
@@ -1375,7 +1468,7 @@ var
 begin
   LDone := false;
   LSymbol := FLookahead;
-  LId := MatchValue(vsID);
+  LId := MatchValue(vsId);
   if (eoEvalVarsEarly in FContext.Options) and FContext.TryGetVariable(LId, LIdVal) then
     result := TValueExpr.Create(LSymbol.Position, LIdVal)
   else
@@ -1406,7 +1499,7 @@ begin
       vsDOT:
         begin
           Match(vsDOT);
-          LExpr := TVariableExpr.Create(LSymbol.Position, MatchValue(vsID));
+          LExpr := TVariableExpr.Create(LSymbol.Position, MatchValue(vsId));
           if FLookahead.Token = vsOpenRoundBracket then
             result := RuleMethodExpr(result, LExpr)
           else
@@ -1433,10 +1526,14 @@ end;
 function TTemplateParser.RuleAssignStmt(const ASymbol: IExpr): IStmt;
 var
   LSymbol: ITemplateSymbol;
+  LVar: string;
 begin
   LSymbol := FLookahead;
   Match(vsCOLONEQ);
-  exit(TAssignStmt.Create(LSymbol.Position, AsVarString(ASymbol), RuleExpression));
+  LVar := AsVarString(ASymbol);
+  if LVar = '' then
+    RaiseError(LSymbol.Position, SAssignmentToVar);
+  exit(TAssignStmt.Create(LSymbol.Position, LVar, RuleExpression));
 end;
 
 function TTemplateParser.RuleBlockStmt: IStmt;
@@ -1664,7 +1761,7 @@ begin
   begin
     Match(vsQUESTION);
     LTrueExpr := RuleExpression();
-    Match(vsColon);
+    Match(VsCOLON);
     LFalseExpr := RuleExpression();
 
     if (eoEvalEarly in FContext.Options) and IsValue(result) then
@@ -1685,6 +1782,8 @@ var
 begin
   LSymbol := FLookahead;
   case LSymbol.Token of
+    vsOpenCurlyBracket:
+      exit(ruleMapExpr);
     vsOpenSquareBracket:
       begin
         Match(vsOpenSquareBracket);
@@ -1705,7 +1804,7 @@ begin
       exit(TValueExpr.Create(LSymbol.Position, MatchNumber(vsNumber)));
     vsBoolean:
       exit(TValueExpr.Create(LSymbol.Position, MatchValue(vsBoolean) = 'true'));
-    vsID:
+    vsId:
       exit(self.RuleVariable());
     vsNOT:
       begin
@@ -1788,7 +1887,7 @@ begin
 
   LAfterNLStripActions := FAfterNLStripActions;
   Match(vsFor);
-  LId := MatchValue(vsID);
+  LId := MatchValue(vsId);
   if FLookahead.Token in [vsIn, vsOf] then
   begin
     LForOp := TemplateForop(LSymbol.Position, FLookahead.Token);
@@ -3585,6 +3684,24 @@ constructor TStripActionStackItem.Create(const ABeforeNLStripActions, AAfterNLSt
 begin
   BeforeNLStripActions := ABeforeNLStripActions;
   AfterNLStripActions := AAfterNLStripActions;
+end;
+
+{ TMapExpr }
+
+procedure TMapExpr.Accept(const AVisitor: ITemplateVisitor);
+begin
+  AVisitor.Visit(self);
+end;
+
+constructor TMapExpr.Create(const APosition: IPosition; const AValue: TMap);
+begin
+  inherited Create(APosition);
+  FValue := AValue;
+end;
+
+function TMapExpr.GetMap: TMap;
+begin
+  exit(FValue);
 end;
 
 initialization
