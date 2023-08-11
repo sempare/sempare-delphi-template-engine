@@ -56,9 +56,10 @@ type
     procedure Visit(const AExprList: IExprList); overload; virtual;
     procedure Visit(const AExpr: ITernaryExpr); overload; virtual;
     procedure Visit(const AExpr: IArrayExpr); overload; virtual;
-    procedure Visit(const AStmt: IFunctionCallExpr); overload; virtual;
-    procedure Visit(const AStmt: IMethodCallExpr); overload; virtual;
-    procedure Visit(const AStmt: IEncodeExpr); overload; virtual;
+    procedure Visit(const AExpr: IFunctionCallExpr); overload; virtual;
+    procedure Visit(const AExpr: IMethodCallExpr); overload; virtual;
+    procedure Visit(const AExpr: IEncodeExpr); overload; virtual;
+    procedure Visit(const AExpr: IMapExpr); overload; virtual;
 
     procedure Visit(const AStmt: IAssignStmt); overload; virtual;
     procedure Visit(const AStmt: IContinueStmt); overload; virtual;
@@ -81,7 +82,6 @@ type
     procedure Visit(const AStmt: IStripStmt); overload; virtual;
     procedure Visit(const AStmt: IStmt); overload; virtual;
     procedure Visit(const AStmt: INoopStmt); overload; virtual;
-
     procedure Visit(const AStmt: IBlockStmt); overload; virtual;
     procedure Visit(const AStmt: IExtendsStmt); overload; virtual;
   end;
@@ -95,10 +95,10 @@ type
     procedure Visit(const AExprList: IExprList); overload; override;
     procedure Visit(const AExpr: ITernaryExpr); overload; override;
     procedure Visit(const AExpr: IArrayExpr); overload; override;
-    procedure Visit(const AStmt: IFunctionCallExpr); overload; override;
-    procedure Visit(const AStmt: IMethodCallExpr); overload; override;
-    procedure Visit(const AStmt: IEncodeExpr); overload; override;
-
+    procedure Visit(const AExpr: IFunctionCallExpr); overload; override;
+    procedure Visit(const AExpr: IMethodCallExpr); overload; override;
+    procedure Visit(const AExpr: IEncodeExpr); overload; override;
+    procedure Visit(const AExpr: IMapExpr); overload; override;
   end;
 
 implementation
@@ -162,7 +162,6 @@ begin
   AcceptVisitor(AStmt.OnEndContainer, self);
   AcceptVisitor(AStmt.OnEmptyContainer, self);
   AcceptVisitor(AStmt.BetweenItemsContainer, self);
-
 end;
 
 procedure TBaseTemplateVisitor.Visit(const AStmt: IForInStmt);
@@ -212,17 +211,17 @@ end;
 
 procedure TBaseTemplateVisitor.Visit(const AStmt: IContinueStmt);
 begin
-
+  // don't do anything
 end;
 
 procedure TBaseTemplateVisitor.Visit(const AStmt: IBreakStmt);
 begin
-
+  // don't do anything
 end;
 
 procedure TBaseTemplateVisitor.Visit(const AStmt: IEndStmt);
 begin
-
+  // don't do anything
 end;
 
 procedure TBaseTemplateVisitor.Visit(const AStmt: IPrintStmt);
@@ -230,25 +229,25 @@ begin
   AcceptVisitor(AStmt.Expr, self);
 end;
 
-procedure TBaseTemplateVisitor.Visit(const AStmt: IFunctionCallExpr);
+procedure TBaseTemplateVisitor.Visit(const AExpr: IFunctionCallExpr);
 begin
-  AcceptVisitor(AStmt.ExprList, self);
+  AcceptVisitor(AExpr.ExprList, self);
 end;
 
 procedure TBaseTemplateVisitor.Visit(const AStmt: IElseStmt);
 begin
-
+  // don't do anything
 end;
 
-procedure TBaseTemplateVisitor.Visit(const AStmt: IMethodCallExpr);
+procedure TBaseTemplateVisitor.Visit(const AExpr: IMethodCallExpr);
 begin
-  AcceptVisitor(AStmt.ObjectExpr, self);
-  AcceptVisitor(AStmt.ExprList, self);
+  AcceptVisitor(AExpr.ObjectExpr, self);
+  AcceptVisitor(AExpr.ExprList, self);
 end;
 
-procedure TBaseTemplateVisitor.Visit(const AStmt: IEncodeExpr);
+procedure TBaseTemplateVisitor.Visit(const AExpr: IEncodeExpr);
 begin
-  AcceptVisitor(AStmt.Expr, self);
+  AcceptVisitor(AExpr.Expr, self);
 end;
 
 procedure TBaseTemplateVisitor.Visit(const AStmt: IProcessTemplateStmt);
@@ -303,7 +302,7 @@ end;
 
 procedure TBaseTemplateVisitor.Visit(const AStmt: IStripStmt);
 begin
-
+  // don't do anything
 end;
 
 procedure TBaseTemplateVisitor.Visit(const AStmt: ICompositeStmt);
@@ -316,6 +315,11 @@ procedure TBaseTemplateVisitor.Visit(const AStmt: IExtendsStmt);
 begin
   AcceptVisitor(AStmt.Name, self);
   AcceptVisitor(AStmt.BlockContainer, self);
+end;
+
+procedure TBaseTemplateVisitor.Visit(const AExpr: IMapExpr);
+begin
+  // don't do anything
 end;
 
 procedure TBaseTemplateVisitor.Visit(const AExpr: IWhitespaceExpr);
@@ -360,22 +364,27 @@ begin
   // do nothing
 end;
 
-procedure TNoExprTemplateVisitor.Visit(const AStmt: IEncodeExpr);
+procedure TNoExprTemplateVisitor.Visit(const AExpr: IEncodeExpr);
 begin
   // do nothing
 end;
 
-procedure TNoExprTemplateVisitor.Visit(const AStmt: IMethodCallExpr);
+procedure TNoExprTemplateVisitor.Visit(const AExpr: IMethodCallExpr);
 begin
   // do nothing
 end;
 
-procedure TNoExprTemplateVisitor.Visit(const AStmt: IFunctionCallExpr);
+procedure TNoExprTemplateVisitor.Visit(const AExpr: IFunctionCallExpr);
 begin
   // do nothing
 end;
 
 procedure TNoExprTemplateVisitor.Visit(const AExpr: IArrayExpr);
+begin
+  // do nothing
+end;
+
+procedure TNoExprTemplateVisitor.Visit(const AExpr: IMapExpr);
 begin
   // do nothing
 end;
