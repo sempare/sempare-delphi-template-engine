@@ -36,7 +36,8 @@ interface
 
 uses
   System.SysUtils,
-  System.Rtti;
+  System.Rtti,
+  Sempare.Template.Util;
 
 type
   ETemplate = class(Exception);
@@ -111,6 +112,8 @@ type
     vsDOT, //
     vsOpenSquareBracket, //
     vsCloseSquareBracket, //
+    vsOpenCurlyBracket, //
+    vsCloseCurlyBracket, //
 
     // types
     vsNumber, //
@@ -422,6 +425,11 @@ type
     property StepExpr: IExpr read GetStepExpr;
   end;
 
+  IMapExpr = interface(IExpr)
+    ['{458156C4-6AA3-4400-A9B5-15D56CD98901}']
+    function GetMap: TMap;
+  end;
+
   IExprList = interface(ITemplateVisitorHost)
     ['{DAA177EA-B3CB-434C-A8C1-9E7571F6441B}']
     function GetExpr(const AOffset: integer): IExpr;
@@ -547,6 +555,7 @@ type
     procedure Visit(const AExpr: IArrayExpr); overload;
     procedure Visit(const AExpr: IFunctionCallExpr); overload;
     procedure Visit(const AExpr: IMethodCallExpr); overload;
+    procedure Visit(const AExpr: IMapExpr); overload;
     procedure Visit(const AExpr: IVariableDerefExpr); overload;
     procedure Visit(const AExprList: IExprList); overload;
     procedure Visit(const AStmt: IStmt); overload;

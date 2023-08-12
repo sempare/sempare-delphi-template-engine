@@ -49,3 +49,63 @@ Strings can be single quote or double quotes. There is no special meaning on eit
 <% 'that\'s nice' %>
 <% "that's nice" %>
 ```
+
+# Arrays
+
+Arrays can be defined with square braces. e.g.
+
+```
+<% arr := [ 1, 2, 3] %>
+```
+
+There is no requirement for the values to be of the same type.
+
+```
+<% arr := [ 1, false, "string" ] %>
+```
+
+Dereferencing an array is 0 based. e.g.
+```
+num := arr[0];
+bool := arr[1];
+str := arr[2];
+```
+
+Also see the [for-in/for-of](./statements.md#for) loop statements.
+
+In the above, the for-in statement will return 1, 2, 3
+In the above, the for-of statement will return  1, false, "string"
+
+# Maps
+
+Simple map / dictionary support is provided. You may define a map withing curly braces. e.g.
+
+```
+<% map := { 
+        "a" : 1, 
+        "b": true, 
+        "c": "string", 
+        "d": { 
+            "key" : "value" 
+        } 
+  } %>
+```
+
+Note again that there is no requirement for the types to be of the same type.
+
+
+Dereferencing a map is as follows:
+```
+<% key := map['a'] %> // or
+<% key := map.a %>    // for keys without spaces and match the identifier syntax 
+```
+
+Also see the [for-in/for-of](./statements.md#for) loop statements.
+
+
+In the above, the for-in statement will enumerate over the keys.
+In the above, the for-of statement will enumerate over the values.
+
+*NOTE* Values in a map are immutable. This means that you need to recreate the entire map if you need to change a value.
+
+This is currently due to a limitation in the assignment statement implementation which currently assigns simple variables only. We will review this in future.

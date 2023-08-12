@@ -30,7 +30,7 @@
  * limitations under the License.                                                                   *
  *                                                                                                  *
  *************************************************************************************************%*)
-unit Sempare.Template.TestJson;
+unit Sempare.Template.TestMap;
 
 interface
 
@@ -40,64 +40,110 @@ uses
 type
 
   [TestFixture]
-  TTestTemplateJson = class
-  public
-    [test]
-    procedure TestJson;
+  TTestTemplateMap = class
 
-    [test]
+  public
+    [Test]
+    procedure TestMap;
+
+    [Test]
+    procedure TestMapAssignment;
+
+    [Test]
+    procedure TestIsMapFunction;
+
+    [Test]
+    procedure TestContainsKeyFunction;
+
+    [Test]
+    procedure TestForIn;
+
+    [Test]
+    procedure TestForOf;
+
+    [Test]
     procedure TestToJson;
 
-    [test]
+    [Test]
     procedure TestParseJson;
-
   end;
 
 implementation
 
+{$I 'Sempare.Template.Compiler.inc'}
+
 uses
-  Sempare.Template.JSON,
-  Sempare.Template;
+  Sempare.Template,
+  Sempare.Template.Util;
 
-procedure TTestTemplateJson.TestJson;
-var
-  o, o2: TJSonObject;
+procedure TTestTemplateMap.TestMap;
 begin
-  o := TJSonObject.create;
-  o.AddPair('str', 'string');
-  o.AddPair('bool', TJSONTrue.create);
-  o.AddPair('null', TJSONNull.create);
-  o.AddPair('num', TJSONNumber.create(123));
+  Assert.AreEqual('false', Template.Eval('<% map := { "a": false } %><% print(map["a"]) %>'));
+  Assert.AreEqual('true', Template.Eval('<% map := { "a": true } %><% print(map["a"]) %>'));
+  Assert.AreEqual('1', Template.Eval('<% map := { "a": 1 } %><% print(map["a"]) %>'));
+  Assert.AreEqual('1.234', Template.Eval('<% map := { "a": 1.234 } %><% print(map["a"]) %>'));
+  Assert.AreEqual('str', Template.Eval('<% map := { "a": "str" } %><% print(map["a"]) %>'));
+  Assert.AreEqual('123', Template.Eval('<% map := { "a": {"str" : 123} } %><% print(map["a"]["str"]) %>'));
+  Assert.AreEqual('123', Template.Eval('<% map := { "a": {"str" : 123} } %><% print(map.a.str) %>'));
 
-  o2 := TJSonObject.create;
-  o2.AddPair('subval', 'value');
-  o.AddPair('object', o2);
-  Assert.AreEqual('string true  123 value', Template.Eval('<% _.str %> <% _.bool%> <% _.null%> <% _.num%> <% _.object.subval %>', o));
-  o.Free;
 end;
 
-procedure TTestTemplateJson.TestParseJson;
+procedure TTestTemplateMap.TestMapAssignment;
 begin
-  Assert.AreEqual('123.45', Template.Eval('<% ParseJson("123.45") %>'));
-  Assert.AreEqual('123', Template.Eval('<% ParseJson("123") %>'));
-  Assert.AreEqual('true', Template.Eval('<% ParseJson("true") %>'));
-  Assert.AreEqual('false', Template.Eval('<% ParseJson("false") %>'));
-  Assert.AreEqual('str', Template.Eval('<% ParseJson(''"str"'') %>'));
-  Assert.AreEqual('{"a":1,"b":2}', Template.Eval('<% ToJson(ParseJson(''{ "a": 1, "b" : 2}'')) %>'));
+  Assert.WillRaise(
+    procedure
+    begin
+      Template.Eval('<% map := { "a": false } %><% map.a := 123%><% print(map.a) %>');
+    end);
+
+  Assert.AreEqual('123', Template.Eval('<% map := { "a": false } %><% map := { "a": 123 } %><% print(map.a) %>'));
+
 end;
 
-procedure TTestTemplateJson.TestToJson;
+procedure TTestTemplateMap.TestParseJson;
 begin
-  Assert.AreEqual('123.45', Template.Eval('<% ToJson(123.45) %>'));
-  Assert.AreEqual('123', Template.Eval('<% ToJson(123) %>'));
-  Assert.AreEqual('true', Template.Eval('<% ToJson(true) %>'));
-  Assert.AreEqual('false', Template.Eval('<% ToJson(false) %>'));
-  Assert.AreEqual('str', Template.Eval('<% ToJson("str") %>'));
-  Assert.AreEqual('{"a":1,"b":2}', Template.Eval('<% ToJson({"a":1,"b":2}) %>'));
+  Assert.AreEqual('true, 123', Template.Eval('<% map := parseJson(''{ "a": true, "b": 123 }'') %><% map.a %>, <% map.b %>'));
+end;
+
+procedure TTestTemplateMap.TestToJson;
+begin
+  Assert.AreEqual('{"a":true,"b":123}', Template.Eval('<% map := { "a": true, "b": 123 } %><% ToJson(map) %>'));
+end;
+
+procedure TTestTemplateMap.TestContainsKeyFunction;
+begin
+  Assert.WillRaise(
+    procedure
+    begin
+      Template.Eval('<% containskey(123, "a") %>');
+    end);
+  Assert.AreEqual('true', Template.Eval('<% map := { "a": {"str" : 123} } %><% containskey(map, "a") %>'));
+  Assert.AreEqual('false', Template.Eval('<% map := { "a": {"str" : 123} } %><% containskey(map, "b") %>'));
+  Assert.AreEqual('true', Template.Eval('<% map := { "a": {"str" : 123} } %><% containskey(map.a, "str") %>'));
+  Assert.AreEqual('false', Template.Eval('<% map := { "a": {"str" : 123} } %><% containskey(map.a, "b") %>'));
+end;
+
+procedure TTestTemplateMap.TestForIn;
+begin
+  Assert.AreEqual('a, b', Template.Eval('<% map := { "a": 1, "b": 2 } %><% for k in map %><% k %><% betweenitems%>, <% end %>'));
+end;
+
+procedure TTestTemplateMap.TestForOf;
+begin
+  Assert.AreEqual('1, 2', Template.Eval('<% map := { "a": 1, "b": 2 } %><% for v of map %><% v %><% betweenitems%>, <% end %>'));
+end;
+
+procedure TTestTemplateMap.TestIsMapFunction;
+begin
+  Assert.AreEqual('false', Template.Eval('<% ismap(123) %>'));
+  Assert.AreEqual('false', Template.Eval('<% ismap("123") %>'));
+  Assert.AreEqual('false', Template.Eval('<% ismap(false) %>'));
+  Assert.AreEqual('true', Template.Eval('<% ismap({}) %>'));
+  Assert.AreEqual('true', Template.Eval('<% ismap({"a":123}) %>'));
 end;
 
 initialization
 
-TDUnitX.RegisterTestFixture(TTestTemplateJson);
+TDUnitX.RegisterTestFixture(TTestTemplateMap);
 
 end.

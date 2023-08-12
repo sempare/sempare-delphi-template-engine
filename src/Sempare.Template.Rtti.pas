@@ -65,6 +65,7 @@ function isEqual(const ALeft: TValue; const ARight: TValue; const AContext: ITem
 function isLessThan(const ALeft: TValue; const ARight: TValue; const AContext: ITemplateContext): boolean;
 function isGreaterThan(const ALeft: TValue; const ARight: TValue; const AContext: ITemplateContext): boolean;
 
+function IsEmptyValue(const AValue: TValue): boolean;
 function IsEmptyObject(const AObject: TObject): boolean;
 
 procedure AssertBoolean(const APositional: IPosition; const ALeft: TValue); overload;
@@ -93,6 +94,11 @@ procedure RegisterEmptyObjectCheck(const AMatch: TDerefMatchFunction; const AFun
 
 function PopulateStackFrame(const StackFrame: TStackFrame; const ARttiType: TRttiType; const AClass: TValue): boolean;
 
+function MatchMap(const ATypeInfo: PTypeInfo): boolean; overload;
+function MatchMap(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean; overload;
+function MatchMap(const AValue: TValue): boolean; overload;
+function MatchMapExpr(const AInterface: IInterface): boolean;
+
 var
   EQUALITY_PRECISION: extended = 1E-8;
   GRttiContext: TRttiContext;
@@ -109,6 +115,7 @@ uses
   System.Math,
   Data.DB,
   System.Generics.Collections,
+  Sempare.Template.Util,
   Sempare.Template.ResourceStrings,
   Sempare.Template.Common;
 
@@ -122,6 +129,8 @@ const
   INT_LIKE: set of TTypeKind = [tkInteger, tkInt64];
   NUMBER_LIKE: set of TTypeKind = [tkInteger, tkInt64, tkFloat];
   STR_LIKE: set of TTypeKind = [tkString, tkWString, tkUString, tkLString];
+
+function MatchValue(const ATypeInfo: PTypeInfo): boolean; forward;
 
 procedure RegisterDeref(const AMatch: TDerefMatchInterfaceFunction; const AFunction: TDerefFunction);
 begin
@@ -190,7 +199,7 @@ var
       begin
         LValue := LEnumCurrentProperty.GetValue(LEnumObject);
         if LValue.TypeInfo = TypeInfo(TValue) then
-          LValue := LValue.Astype<TValue>();
+          LValue := LValue.AsType<TValue>();
         if isEqual(ALeft, LValue, AContext) then
         begin
           result := true;
@@ -216,7 +225,7 @@ var
     begin
       LElementValue := ARight.GetArrayElement(LIndex);
       if LElementValue.TypeInfo = TypeInfo(TValue) then
-        LElementValue := LElementValue.Astype<TValue>();
+        LElementValue := LElementValue.AsType<TValue>();
       if isEqual(ALeft, LElementValue, AContext) then
       begin
         result := true;
@@ -234,7 +243,7 @@ var
     begin
       LElementValue := ARight.GetArrayElement(LIndex);
       if LElementValue.TypeInfo = TypeInfo(TValue) then
-        LElementValue := LElementValue.Astype<TValue>();
+        LElementValue := LElementValue.AsType<TValue>();
       if isEqual(ALeft, LElementValue, AContext) then
       begin
         result := true;
@@ -243,12 +252,43 @@ var
     end;
   end;
 
+  procedure VisitMap(const AMap: TMap);
+  begin
+    result := AMap.containskey(ALeft.AsType<string>);
+  end;
+
+  procedure VisitRecord;
+  begin
+    if ARight.IsType<TMap> then
+    begin
+      VisitMap(ARight.AsType<TMap>);
+      exit;
+    end;
+  end;
+
+  procedure VisitInterface;
+  begin
+    if ARight.IsType<IMapExpr> then
+    begin
+      if not ALeft.IsType<string> then
+      begin
+        exit;
+      end;
+      VisitMap(ARight.AsType<IMapExpr>.GetMap);
+      exit;
+    end;
+  end;
+
 begin
   result := false;
-  if not IsEnumerable(ARight) then
-    RaiseError(APosition, SValueIsNotEnumerable);
+  if not IsEnumerable(ARight) and not MatchMap(ARight) then
+    RaiseError(APosition, SValueIsNotEnumerableOrMap);
   TRightType := GRttiContext.GetType(ARight.TypeInfo);
   case TRightType.TypeKind of
+    tkInterface:
+      VisitInterface;
+    tkRecord{$IFDEF SUPPORT_CUSTOM_MANAGED_RECORDS}, tkMRecord{$ENDIF}:
+      VisitRecord;
     tkClass, tkClassRef:
       VisitObject;
     tkArray:
@@ -421,7 +461,7 @@ begin
       exit(ArrayAsString(AValue, AContext));
     tkRecord {$IFDEF SUPPORT_CUSTOM_MANAGED_RECORDS}, tkMRecord{$ENDIF}:
       if AValue.TypeInfo = TypeInfo(TValue) then
-        exit(AsString(AValue.Astype<TValue>(), AContext))
+        exit(AsString(AValue.AsType<TValue>(), AContext))
       else
         exit(GRttiContext.GetType(AValue.TypeInfo).Name);
   else
@@ -632,13 +672,39 @@ begin
   exit(AClass = TJsonObject);
 end;
 
-function processDataSet(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
+function processMap(const APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
+var
+  LKey: string;
+  LMap: TMap;
+begin
+  AFound := false;
+  LKey := AsString(ADeref, AContext);
+  if not ADeref.IsType<string> then
+    RaiseError(APosition, SCannotDereferenceValueOnObject, [LKey, SDataSet]);
+  LMap := AObj.AsType<TMap>;
+  if LMap.TryGetValue(LKey, result) then
+  begin
+    AFound := true;
+    exit;
+  end;
+  if ARaiseIfMissing then
+  begin
+    RaiseError(APosition, SCannotDereferenceValueOnObject, [LKey, SDataSet]);
+  end;
+end;
+
+function processMapExpr(const APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
+begin
+  exit(processMap(APosition, TValue.From(AObj.AsType<IMapExpr>.GetMap), ADeref, ARaiseIfMissing, AContext, AFound));
+end;
+
+function processDataSet(const APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
 var
   LDataSet: TDataSet;
   LKey: string;
 begin
   AFound := true;
-  LDataSet := obj.AsObject as TDataSet;
+  LDataSet := AObj.AsObject as TDataSet;
   LKey := AsString(ADeref, AContext);
   try
     exit(TValue.FromVariant(LDataSet.FieldByName(LKey).AsVariant));
@@ -700,8 +766,16 @@ function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARa
   end;
 
   function ProcessRecord(const AObj: TValue; const ADeref: TValue; var AFound: boolean): TValue;
+  var
+    LObj: TValue;
   begin
-    exit(GetFieldOrProperty(AObj.GetReferenceToRawData, GRttiContext.GetType(AObj.TypeInfo), ADeref, AContext, AFound));
+    LObj := AObj;
+    if MatchMap(LObj.TypeInfo) then
+    begin
+      exit(processDictionary(APosition, LObj, ADeref, ARaiseIfMissing, AContext, AFound));
+    end;
+
+    exit(GetFieldOrProperty(LObj.GetReferenceToRawData, GRttiContext.GetType(AObj.TypeInfo), ADeref, AContext, AFound));
   end;
 
   function ProcessInterface(const AObj: TValue; const ADeref: TValue; out AFound: boolean): TValue;
@@ -716,7 +790,7 @@ function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARa
       begin
         result := LFunctionPair.Value(APosition, AObj, ADeref, ARaiseIfMissing, AContext, AFound);
         if AFound then
-          exit(true);
+          exit;
       end;
     end;
     exit(false);
@@ -724,23 +798,30 @@ function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARa
 
 var
   LVarFound: boolean;
-
+  LVar: TValue;
 begin
   AResolved := true;
   result := nil;
-  if AVar.IsEmpty then
-    exit(AVar);
-  case AVar.Kind of
+  LVar := AVar;
+  if (LVar.Kind = tkRecord) and MatchValue(LVar.TypeInfo) then
+  begin
+    LVar := LVar.AsType<TValue>;
+  end;
+
+  if LVar.IsEmpty then
+    exit(LVar);
+
+  case LVar.Kind of
     tkInterface:
-      result := ProcessInterface(AVar, ADeref, LVarFound);
+      result := ProcessInterface(LVar, ADeref, LVarFound);
     tkClass:
-      result := ProcessClass(APosition, AVar, ADeref, ARaiseIfMissing, false, AContext, LVarFound);
+      result := ProcessClass(APosition, LVar, ADeref, ARaiseIfMissing, false, AContext, LVarFound);
     tkRecord {$IFDEF SUPPORT_CUSTOM_MANAGED_RECORDS}, tkMRecord{$ENDIF}:
-      result := ProcessRecord(AVar, ADeref, LVarFound);
+      result := ProcessRecord(LVar, ADeref, LVarFound);
     tkArray:
-      result := ProcessArray(AVar, ADeref, LVarFound);
+      result := ProcessArray(LVar, ADeref, LVarFound);
     tkDynArray:
-      result := ProcessDynArray(AVar, ADeref, LVarFound);
+      result := ProcessDynArray(LVar, ADeref, LVarFound);
   else
     begin
       if ARaiseIfMissing then
@@ -752,6 +833,10 @@ begin
   if not LVarFound and ARaiseIfMissing then
   begin
     RaiseError(APosition, SCannotDereferenceValiable);
+  end;
+  if (result.Kind = tkRecord) and MatchValue(result.TypeInfo) then
+  begin
+    result := result.AsType<TValue>;
   end;
   AResolved := LVarFound;
 end;
@@ -830,6 +915,31 @@ begin
   exit(LClassName.StartsWith('System.Generics.Collections.TDictionary') or LClassName.StartsWith('System.Generics.Collections.TObjectDictionary'));
 end;
 
+function MatchMapExpr(const AInterface: IInterface): boolean;
+begin
+  exit(supports(AInterface, IMapExpr));
+end;
+
+function MatchMap(const ATypeInfo: PTypeInfo): boolean;
+begin
+  exit(ATypeInfo.Name = 'TMap');
+end;
+
+function MatchMap(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
+begin
+  exit(MatchMap(ATypeInfo));
+end;
+
+function MatchValue(const ATypeInfo: PTypeInfo): boolean;
+begin
+  exit(ATypeInfo.Name = 'TValue');
+end;
+
+function MatchMap(const AValue: TValue): boolean;
+begin
+  exit(MatchMap(AValue.TypeInfo) or AValue.IsType<IMapExpr>);
+end;
+
 function MatchStringDictionary(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
 var
   LClassName: string;
@@ -906,6 +1016,18 @@ begin
   exit(LCount = 0);
 end;
 
+function IsRecordCountEmpty(const AObject: TValue): boolean;
+var
+  LType: TRttiType;
+  LCount: integer;
+  LCountProp: TRttiMethod;
+begin
+  LType := GRttiContext.GetType(AObject.TypeInfo);
+  LCountProp := LType.GetMethod('GetCount');
+  LCount := LCountProp.Invoke(AObject, []).AsInteger;
+  exit(LCount = 0);
+end;
+
 function IsGenericCollectionEmpty(const AObject: TObject): boolean;
 var
   LType: TRttiType;
@@ -946,6 +1068,14 @@ begin
   exit(false);
 end;
 
+function IsEmptyValue(const AValue: TValue): boolean;
+begin
+  if MatchMap(AValue.TypeInfo) then
+    exit(IsRecordCountEmpty(AValue))
+  else
+    exit(false);
+end;
+
 function IsEmptyObject(const AObject: TObject): boolean;
 var
   LPair: TPair<TDerefMatchFunction, TCheckEmptyObjectFunction>;
@@ -978,6 +1108,8 @@ RegisterPopulateStackFrame(MatchJsonObject, PopulateStackFrameFromJsonObject);
 RegisterPopulateStackFrame(MatchStringDictionary, PopulateStackFrameFromDictionary);
 RegisterDeref(MatchTemplateVariables, processTemplateVariables);
 RegisterDeref(MatchDataSet, processDataSet);
+RegisterDeref(MatchMap, processMap);
+RegisterDeref(MatchMapExpr, processMapExpr);
 RegisterEmptyObjectCheck(MatchDictionary, IsGenericCollectionEmpty);
 RegisterEmptyObjectCheck(MatchList, IsGenericCollectionEmpty);
 RegisterEmptyObjectCheck(MatchQueue, IsGenericCollectionEmpty);

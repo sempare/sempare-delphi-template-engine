@@ -45,8 +45,9 @@ resourcestring
   STypesAreNotOfTheSameType = 'Types are not of the same type';
   STemplateNotFound = 'Template not found: %s';
   SStackFrameCanOnlyBeDefinedOnAClassOrRecord = 'StackFrame must be defined on a class or record.';
-  SGetEnumeratorNotFoundOnObject = 'GetEnumerator not found on object. Type %s referenced.';
+  SGetEnumeratorNotFoundOnObject = 'GetEnumerator not found on object.';
   SValueIsNotEnumerable = 'Value is not enumerable';
+  SValueIsNotEnumerableOrMap = 'Value is not enumerable or map';
   SOnlyOneDimensionalArraysAreSupported = 'Only one dimensional arrays are supported.';
   SCannotDereferenceValueOnObject = 'Cannot dereference ''%s'' in %s';
   SDictionary = 'dictionary';
@@ -75,6 +76,7 @@ resourcestring
   STooManyParameters = 'Too many parameters';
   SInvalidCharacterDetected = 'Invalid character detected';
   SRefreshTooFrequent = 'Template refresh too frequent';
+  SAssignmentToVar = 'Assignment to variables only';
 
 implementation
 

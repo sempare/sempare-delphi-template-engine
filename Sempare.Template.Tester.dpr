@@ -59,7 +59,8 @@ uses
   Sempare.Template.TestStackFrame in 'tests\Sempare.Template.TestStackFrame.pas',
   Sempare.Template.TestLexer in 'tests\Sempare.Template.TestLexer.pas',
   Sempare.Template.TestFunctions in 'tests\Sempare.Template.TestFunctions.pas',
-  Sempare.Template.TestVirtualMethods in 'tests\Sempare.Template.TestVirtualMethods.pas';
+  Sempare.Template.TestVirtualMethods in 'tests\Sempare.Template.TestVirtualMethods.pas',
+  Sempare.Template.TestMap in 'tests\Sempare.Template.TestMap.pas';
 
 var
   runner: ITestRunner;

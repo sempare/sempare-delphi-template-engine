@@ -30,6 +30,7 @@ Copyright (c) 2019-2023 [Sempare Limited](http://www.sempare.ltd)
   - [sha256](#sha256)
 
 - misc functions
+  - [containskey](#containskey)
   - [isempty](#isempty)
   - [manage](#manage)
   - [sort](#sort)
@@ -76,6 +77,7 @@ Copyright (c) 2019-2023 [Sempare Limited](http://www.sempare.ltd)
     - [isint](#isint)
     - [isnil](#isnil)
     - [isnum](#isnum)
+    - [ismap](#ismap)
     - [isobject](#isobject)
     - [isrecord](#isrecord)
     - [isstr](#isstr)
@@ -180,6 +182,14 @@ Returns true if the collection is an object, it is not nil, and it contains valu
 <% isempty(stack) %>
 <% isempty(dataset) %>
 ```
+
+<a name="containskey"><h3>containskey(map, key)</h3></a>
+Returns true if the map contains the key. The key must be a string.
+```
+<% containskey({}, "key") %> // false
+<% containskey({"key":"value"}, "key") %> // trye
+```
+
 
 <a name="manage"><h3>manage(object)</h3></a>
 Manages an object so that you don't have to explicitly free objects. 
@@ -440,6 +450,15 @@ isnum() checks if a variable is an number.
 <% isnum(123) %>      // true
 <% isnum(123.45) %>   // true
 <% isnum('123.45') %> // false
+```
+
+<a name="ismap"><h3>ismap(any)</h3></a>
+ismap() checks if a variable is a map.
+
+```
+<% ismap(123) %>      // false
+<% ismap({}) %>   // true
+<% ismap({"a":123}) %>   // true
 ```
 
 <a name="isobject"><h3>isobject(any)</h3></a>

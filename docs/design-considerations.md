@@ -23,3 +23,7 @@ of this override scenario, so it is up to you to ensure that overriding does not
 
 Some Delphi TComponent based descendents were catered for, but code is currently disabled. The main reason for this is that we didn't
 want the template engine to have to be bound to a visual framework like VCL. However, we may review this if requested. 
+
+### Why is TMap a record
+
+It is a simple wrapper around a TArray. The main motivation is to have a structure that is memory managed by Delphi to simplify the implementation.

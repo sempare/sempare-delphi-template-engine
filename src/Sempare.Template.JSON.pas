@@ -54,9 +54,12 @@ type
   TJSONPair = Data.DBXJSON.TJSONPair;
   TJSONTrue = Data.DBXJSON.TJSONTrue;
   TJSONFalse = Data.DBXJSON.TJSONFalse;
+  TJsonArray = Data.DBXJSON.TJsonArray;
 {$ELSE}
   TJsonValue = System.JSON.TJsonValue;
-  //TJSONBool = System.JSON.TJSONBool; // not in XE6
+  {$IFDEF SUPPORT_JSON_BOOL}
+  TJSONBool = System.JSON.TJSONBool; // not in XE6
+  {$ENDIF}
   TJSONString = System.JSON.TJSONString;
   TJSONNumber = System.JSON.TJSONNumber;
   TJsonObject = System.JSON.TJsonObject;
@@ -64,6 +67,7 @@ type
   TJSONPair = System.JSON.TJSONPair;
   TJSONTrue = System.JSON.TJSONTrue;
   TJSONFalse = System.JSON.TJSONFalse;
+  TJsonArray = System.JSON.TJsonArray;
 {$ENDIF}
 
 implementation
