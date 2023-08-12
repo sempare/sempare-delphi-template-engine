@@ -66,6 +66,7 @@ type
     procedure Visit(const AExpr: IEncodeExpr); overload; override;
     procedure Visit(const AExpr: ITernaryExpr); overload; override;
     procedure Visit(const AExpr: IArrayExpr); overload; override;
+    procedure Visit(const AExpr: IMapExpr); overload; override;
 
     procedure Visit(const AStmt: IAssignStmt); overload; override;
     procedure Visit(const AStmt: IContinueStmt); overload; override;
@@ -453,7 +454,7 @@ end;
 
 procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IMethodCallExpr);
 begin
-  Visit(AStmt.ObjectExpr);
+  AcceptVisitor(AStmt.ObjectExpr, self);
   Write('.%s', [AStmt.Method]);
   Visit(AStmt.ExprList);
 end;
@@ -604,6 +605,11 @@ begin
   delta(-4);
   tab();
   writeln('<%% end %%>');
+end;
+
+procedure TPrettyPrintTemplateVisitor.Visit(const AExpr: IMapExpr);
+begin
+  write(AExpr.GetMap.ToJson);
 end;
 
 initialization

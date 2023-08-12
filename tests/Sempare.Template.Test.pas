@@ -125,6 +125,8 @@ type
     [Test]
     procedure TestTemplateAPI;
 
+    [Test]
+    procedure TestPassingTValue;
   end;
 
 type
@@ -140,6 +142,11 @@ uses
   System.SysUtils,
   System.IOUtils,
   System.Generics.Collections,
+  System.Rtti, // remove inline expansion hint
+  Sempare.Template.AST, // remove inline expansion hint
+  Sempare.Template.TemplateRegistry, // remove inline expansion hint
+  Sempare.Template.Common, // remove inline expansion hint
+  Sempare.Template.PrettyPrint, // remove inline expansion hint
   Sempare.Template.Parser,
   Sempare.Template.Util,
   Sempare.Template.Functions,
@@ -340,6 +347,14 @@ begin
   // main thing is that we have no exception here!
   LTemplate := Template.ParseFile('..\..\demo\SempareTemplatePlayground\templates\international.tpl');
   Assert.IsNotNull(LTemplate);
+end;
+
+procedure TTestTemplate.TestPassingTValue;
+var
+  rec: record a: string end;
+begin
+  rec.a := '1234';
+  Assert.AreEqual('"1234"', Template.Eval('"<% a %>"', TTemplateValue.From(rec)));
 end;
 
 procedure TTestTemplate.testPrint;

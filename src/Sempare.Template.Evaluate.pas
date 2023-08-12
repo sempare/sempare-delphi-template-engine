@@ -91,7 +91,7 @@ type
     procedure Visit(const AExpr: IVariableExpr); overload; override;
     procedure Visit(const AExpr: IVariableDerefExpr); overload; override;
     procedure Visit(const AExpr: IValueExpr); overload; override;
-
+    procedure Visit(const AExpr: IMapExpr); overload; override;
     procedure Visit(const AExprList: IExprList); overload; override;
     procedure Visit(const AExpr: ITernaryExpr); overload; override;
     procedure Visit(const AExpr: IEncodeExpr); overload; override;
@@ -169,6 +169,8 @@ var
   LValue: TValue;
 begin
   LValue := AExpr.Value;
+  if LValue.IsType<TValue> then
+    LValue := LValue.AsType<TValue>;
   FEvalStack.push(LValue);
 end;
 
@@ -203,7 +205,8 @@ begin
   LAllowRootDeref.SetValue(AExpr.DerefType = dtArray);
   LDerefKey := EvalExpr(AExpr.DerefExpr);
   LDerefedValue := Deref(AExpr, LDerefObj, LDerefKey, eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext);
-
+  if LDerefedValue.IsType<TValue> then
+    LDerefedValue := LDerefedValue.AsType<TValue>();
   FEvalStack.push(LDerefedValue);
 end;
 
@@ -331,6 +334,8 @@ begin
   begin
     LValue := AExpr.variable;
   end;
+  if LValue.IsType<TValue> then
+    LValue := LValue.AsType<TValue>();
   FEvalStack.push(LValue);
 end;
 
@@ -426,7 +431,9 @@ end;
 
 function GetForInValueLoopExprIndex(const ALoopExpr: TValue; const AIndex: integer; const AMin: integer): TValue;
 begin
-  exit(ALoopExpr.GetArrayElement(AIndex));
+  result := ALoopExpr.GetArrayElement(AIndex);
+  if result.IsType<TValue> then
+    result := result.AsType<TValue>;
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AStmt: IForInStmt);
@@ -508,7 +515,7 @@ var
     end;
     LEnumGetEnumeratorMethod := LLoopExprType.GetMethod('GetEnumerator');
     if LEnumGetEnumeratorMethod = nil then
-      RaiseError(AStmt, SGetEnumeratorNotFoundOnObject, [LLoopExprType.AsInstance.MetaclassType.ClassName]);
+      RaiseError(AStmt, SGetEnumeratorNotFoundOnObject);
     LEnumValue := LEnumGetEnumeratorMethod.Invoke(LLoopExpr.AsObject, []);
     if LEnumValue.IsEmpty then
       RaiseErrorRes(AStmt, @SValueIsNotEnumerable);
@@ -558,12 +565,12 @@ var
     end;
   end;
 
-  procedure VisitDynArray;
+  procedure VisitDynArray(const AOp: TForOp);
   var
     LIdx: integer;
     LGetValue: TGetForInValueIndex;
   begin
-    if AStmt.ForOp = foIn then
+    if AOp = foIn then
       LGetValue := GetForInValueIndex
     else
       LGetValue := GetForInValueLoopExprIndex;
@@ -589,6 +596,36 @@ var
     end;
   end;
 
+  procedure VisitInterface;
+  begin
+    if LLoopExpr.IsType<IMapExpr> then
+    begin
+      if AStmt.ForOp = foIn then
+        LLoopExpr := TValue.From(LLoopExpr.AsType<IMapExpr>.GetMap.ToKeyArray)
+      else
+        LLoopExpr := TValue.From(LLoopExpr.AsType<IMapExpr>.GetMap.ToValueArray);
+      VisitDynArray(TForOp.foOf);
+      exit;
+    end;
+
+    RaiseError(AStmt, SGetEnumeratorNotFoundOnObject);
+  end;
+
+  procedure VisitRecord;
+  begin
+    if MatchMap(LLoopExpr.TypeInfo) then
+    begin
+      if AStmt.ForOp = foIn then
+        LLoopExpr := TValue.From(LLoopExpr.AsType<TMap>.ToKeyArray)
+      else
+        LLoopExpr := TValue.From(LLoopExpr.AsType<TMap>.ToValueArray);
+      VisitDynArray(TForOp.foOf);
+      exit;
+    end;
+
+    RaiseError(AStmt, SGetEnumeratorNotFoundOnObject);
+  end;
+
 begin
   if HasBreakOrContinue then
     exit;
@@ -597,6 +634,8 @@ begin
   LVariableName := AStmt.variable;
 
   LLoopExpr := EvalExpr(AStmt.Expr);
+  if LLoopExpr.IsType<TValue> then
+    LLoopExpr := LLoopExpr.AsType<TValue>();
   LOffset := GetValue(AStmt.OffsetExpr);
   LLimit := GetValue(AStmt.LimitExpr);
 
@@ -609,14 +648,18 @@ begin
       LLoopExprType := GRttiContext.GetType(LLoopExpr.TypeInfo);
 
       case LLoopExprType.TypeKind of
+        tkInterface:
+          VisitInterface;
+        tkRecord{$IFDEF SUPPORT_CUSTOM_MANAGED_RECORDS}, tkMRecord{$ENDIF}:
+          VisitRecord;
         tkClass, tkClassRef:
           VisitObject;
         tkArray:
           VisitArray;
         tkDynArray:
-          VisitDynArray;
+          VisitDynArray(AStmt.ForOp);
       else
-        RaiseError(AStmt, SGetEnumeratorNotFoundOnObject, [LLoopExprType.ClassName]);
+        RaiseError(AStmt, SGetEnumeratorNotFoundOnObject);
       end;
     end;
   finally
@@ -853,6 +896,8 @@ begin
     exit;
   LVariable := AStmt.variable;
   LValue := EvalExpr(AStmt.Expr);
+  if LValue.IsType<TValue> then
+    LValue := LValue.AsType<TValue>;
   FStackFrames.peek[LVariable] := LValue;
 end;
 
@@ -952,6 +997,8 @@ begin
   begin
     LParameter := LParams[LParamIdx];
     LParamValue := CastArg(AArgs[LParamIdx - LOffset], LParameter.ParamType, AContext);
+    if LParamValue.IsType<TValue> then
+      LParamValue := LParamValue.AsType<TValue>();
     result[LParamIdx] := LParamValue;
   end;
 end;
@@ -1012,15 +1059,16 @@ end;
 function TEvaluationTemplateVisitor.Invoke(const AExpr: IMethodCallExpr; const AObject: TValue; const AArgs: TArray<TValue>; out AHasResult: boolean): TValue;
 var
   LObjType: TRttiType;
+  LObject: TValue;
+  LMethod: TRttiMethod;
 begin
-  if AExpr.RttiMethod = nil then
-  begin
-    LObjType := GRttiContext.GetType(AObject.TypeInfo);
-    AExpr.RttiMethod := LObjType.GetMethod(AExpr.Method);
-  end;
-
-  AHasResult := AExpr.RttiMethod.ReturnType <> nil;
-  exit(AExpr.RttiMethod.Invoke(AObject, AArgs));
+  LObjType := GRttiContext.GetType(AObject.TypeInfo);
+  LMethod := LObjType.GetMethod(AExpr.Method);
+  LObject := AObject;
+  if AObject.IsType<TValue> then
+    LObject := AObject.AsType<TValue>;
+  AHasResult := LMethod.ReturnType <> nil;
+  exit(LMethod.Invoke(LObject, AArgs));
 end;
 
 function TEvaluationTemplateVisitor.ResolveTemplate(const APosition: IPosition; const AName: string): ITemplate;
@@ -1239,5 +1287,25 @@ begin
     LBlocks.Free;
   end;
 end;
+
+procedure TEvaluationTemplateVisitor.Visit(const AExpr: IMapExpr);
+var
+  LValue: TValue;
+begin
+  LValue := TValue.From<IMapExpr>(AExpr);
+  FEvalStack.push(LValue);
+end; {
+ var
+ LMap: TMap;
+ i: integer;
+ LValue: TValue;
+ begin
+ LMap := AExpr.getMap;
+ for i := 0 to LMap.Count - 1 do
+ begin
+ LValue := LMap.Values[i];
+ LMap.Values[i] := EvalExpr(LValue.AsType<IExpr>);
+ end;
+ end;  }
 
 end.

@@ -30,9 +30,11 @@
  * limitations under the License.                                                                   *
  *                                                                                                  *
  *************************************************************************************************%*)
-unit Sempare.Template.TestJson;
+unit Sempare.Template.TestVirtualMethods;
 
 interface
+
+{$I 'Sempare.Template.Compiler.inc'}
 
 uses
   DUnitX.TestFramework;
@@ -40,64 +42,67 @@ uses
 type
 
   [TestFixture]
-  TTestTemplateJson = class
+  TTestVirtualMethods = class
+
   public
-    [test]
-    procedure TestJson;
-
-    [test]
-    procedure TestToJson;
-
-    [test]
-    procedure TestParseJson;
+    // Author: Sean Bogie (https://github.com/sbogie-gdi)
+    // https://github.com/sempare/sempare-delphi-template-engine/issues/145
+    [Test]
+    procedure TestVirtualCall;
 
   end;
 
 implementation
 
 uses
-  Sempare.Template.JSON,
   Sempare.Template;
 
-procedure TTestTemplateJson.TestJson;
+type
+  TBase = class
+  public
+    function Name: string; virtual; abstract;
+  end;
+
+  TFoo = class(TBase)
+  public
+    function Name: string; override;
+  end;
+
+  TBar = class(TBase)
+  public
+    function Name: string; override;
+  end;
+
+function TFoo.Name: string;
+begin
+  Result := 'Foo';
+end;
+
+function TBar.Name: string;
+begin
+  Result := 'Bar';
+end;
+
+procedure TTestVirtualMethods.TestVirtualCall;
 var
-  o, o2: TJSonObject;
+  l: array [0 .. 1] of TBase;
 begin
-  o := TJSonObject.create;
-  o.AddPair('str', 'string');
-  o.AddPair('bool', TJSONTrue.create);
-  o.AddPair('null', TJSONNull.create);
-  o.AddPair('num', TJSONNumber.create(123));
-
-  o2 := TJSonObject.create;
-  o2.AddPair('subval', 'value');
-  o.AddPair('object', o2);
-  Assert.AreEqual('string true  123 value', Template.Eval('<% _.str %> <% _.bool%> <% _.null%> <% _.num%> <% _.object.subval %>', o));
-  o.Free;
-end;
-
-procedure TTestTemplateJson.TestParseJson;
-begin
-  Assert.AreEqual('123.45', Template.Eval('<% ParseJson("123.45") %>'));
-  Assert.AreEqual('123', Template.Eval('<% ParseJson("123") %>'));
-  Assert.AreEqual('true', Template.Eval('<% ParseJson("true") %>'));
-  Assert.AreEqual('false', Template.Eval('<% ParseJson("false") %>'));
-  Assert.AreEqual('str', Template.Eval('<% ParseJson(''"str"'') %>'));
-  Assert.AreEqual('{"a":1,"b":2}', Template.Eval('<% ToJson(ParseJson(''{ "a": 1, "b" : 2}'')) %>'));
-end;
-
-procedure TTestTemplateJson.TestToJson;
-begin
-  Assert.AreEqual('123.45', Template.Eval('<% ToJson(123.45) %>'));
-  Assert.AreEqual('123', Template.Eval('<% ToJson(123) %>'));
-  Assert.AreEqual('true', Template.Eval('<% ToJson(true) %>'));
-  Assert.AreEqual('false', Template.Eval('<% ToJson(false) %>'));
-  Assert.AreEqual('str', Template.Eval('<% ToJson("str") %>'));
-  Assert.AreEqual('{"a":1,"b":2}', Template.Eval('<% ToJson({"a":1,"b":2}) %>'));
+  l[0] := nil;
+  l[1] := nil;
+  try
+    l[0] := TFoo.Create;
+    l[1] := TBar.Create;
+    Assert.AreEqual('FooBar', Template.Eval('<% print(_[0].Name() + _[1].Name()) %>', l));
+    Assert.AreEqual('FooBar', Template.Eval('<% for v of _ %><% v.Name() %><% end %>', l));
+    Assert.AreEqual('FooBar', Template.Eval('<% for i := 0 to 1; print( _[i].Name()); end %>', l));
+  finally
+    l[0].Free;
+    l[1].Free;
+  end;
 end;
 
 initialization
 
-TDUnitX.RegisterTestFixture(TTestTemplateJson);
+TDUnitX.RegisterTestFixture(TTestVirtualMethods);
 
 end.

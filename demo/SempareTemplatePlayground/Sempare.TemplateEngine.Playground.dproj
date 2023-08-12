@@ -59,6 +59,7 @@
         <UWP_DelphiLogo150>$(BDS)\bin\Artwork\Windows\UWP\delphi_UwpDefault_150.png</UWP_DelphiLogo150>
         <SanitizedProjectName>Sempare_TemplateEngine_Playground</SanitizedProjectName>
         <DCC_UnitSearchPath>..\..\src;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <Custom_Styles>Carbon|VCLSTYLE|$(BDSCOMMONDIR)\Styles\Carbon.vsf</Custom_Styles>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
         <DCC_UsePackage>DBXSqliteDriver;RESTComponents;OmniThreadLibraryRuntime;VCLTMSFNCChartPkgDXE12;DBXInterBaseDriver;sgcWebSocketsD10_3;FlexCel_Pdf;vclactnband;FMX_FlexCel_Core;vclFireDAC;tethering;svnui;JvGlobus;FireDACADSDriver;JvPluginSystem;JvMM;TMSScripter;FMXTMSFNCUIPackPkgDXE12;vcltouch;JvBands;vcldb;bindcompfmx;svn;JvJans;JvNet;TMSWEBCorePkgLibDXE12;SKIA_FlexCel_Core;inetdb;JvAppFrm;FlexCel_Report;FMXTMSFNCBloxPkgDXE12;FmxTeeUI;JvDotNetCtrls;TMSScripter_Memo;fmx;FireDACIBDriver;fmxdae;VCL_FlexCel_Components;vquery260;JvWizards;dacvcl260;dbexpress;IndyCore;vclx;JvPageComps;dsnap;TMSMQTTPkgDEDXE12;unidac260;FireDACCommon;FrameStandPackage_10_3;JvDB;VCLTMSFNCUIPackPkgDXE12;VCLTMSFNCCloudPackPkgDXE12;RESTBackendComponents;Sempare.Boot.VFS.Pkg;VCLRESTComponents;soapserver;Sempare.Boot.AWS.Common.Pkg;JclDeveloperTools;TMSScripter_Legacy;TMSScripter_VCL;vclie;bindengine;DBXMySQLDriver;CloudService;JvCmp;FireDACMySQLDriver;JvHMI;VCLTMSFNCBloxPkgDXE12;FireDACCommonODBC;FireDACCommonDriver;VCLTMSFNCCorePkgDXE12;inet;bindcompdbx;JvCustom;vcl;ADODataProvider;indy10sbridge260;JvXPCtrls;IndySystem;VCLTMSFNCMapsPkgDXE12;dsnapcon;FmxTrayIcon;Sempare.Boot.Json.Pkg;FireDACDataProvider;FireDACMSAccDriver;fmxFireDAC;FMXTMSFNCCorePkgDXE12;vclimg;TeeDB;FireDAC;Jcl;FlexCel_XlsAdapter;JvCore;TMSMQTTPkgDXE12;Sempare.Boot.Rtti.Pkg;FMXTMSFNCMapsPkgDXE12;DBXDataProvider;JvCrypt;FireDACSqliteDriver;FireDACPgDriver;unidacvcl260;FMXTee;crcontrols260;soaprtl;DbxCommonDriver;JvDlgs;JvRuntimeDesign;JvManagedThreads;Tee;FlexCel_Core;xmlrtl;soapmidas;JvTimeFramework;fmxobj;vclwinx;dac260;rtl;TMSScripter_IDE;DbxClientDriver;CustomIPTransport;vcldsnap;JvSystem;JvStdCtrls;DOSCommandDR;Sempare.Boot.Log.Pkg;Sempare.Template.Design.Pkg;bindcomp;appanalytics;FMXTMSFNCCloudPackPkgDXE12;TMSWEBCorePkgDXE12;bindcompvcl;TeeUI;FMX_FlexCel_Components;EntityDac;JvDocking;dbxcds;VclSmp;JvPascalInterpreter;adortl;VCL_FlexCel_Core;FixInsight_10_3;FlexCel_Render;JclVcl;UniDACDataProvider;unidacfmx260;TMSFMXPackPkgDXE12;sbridge260;dsnapxml;Sempare.Boot.Common.Pkg;dbrtl;inetdbxpress;IndyProtocols;JvControls;JvPrintPreview;FMXTMSFNCChartPkgDXE12;JclContainers;OnGuardFMXDR;fmxase;$(DCC_UsePackage)</DCC_UsePackage>
@@ -82,7 +83,6 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_1_Win32)'!=''">
         <DCC_RemoteDebug>false</DCC_RemoteDebug>
-        <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
         <AppDPIAwarenessMode>PerMonitorV2</AppDPIAwarenessMode>
         <DCC_DebugDCUs>false</DCC_DebugDCUs>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>

@@ -65,11 +65,13 @@ uses
   System.TypInfo, // needed for XE6 and below to access the TTypeKind variables
   System.SysUtils,
   System.Math,
+  Sempare.Template.JSON,
   System.RegularExpressions,
   System.Generics.Collections,
   System.Generics.Defaults,
   Sempare.Template.ResourceStrings,
   Sempare.Template.Common,
+  Sempare.Template.Util,
   Sempare.Template.Rtti;
 
 {$I 'Sempare.Template.Compiler.inc'}
@@ -169,9 +171,11 @@ type
     class function Str(const AContext: ITemplateContext; const AValue: TValue): string; static;
     class function UCFirst(const AString: string): string; static;
     class function Rev(const AString: string): string; static;
+    class function ContainsKey(const AContext: ITemplateContext; const AValue: TValue; const AKey: string): boolean; static;
     class function IsNull(const AValue: TValue): boolean; static;
     class function IsNil(const AValue: TValue): boolean; static;
     class function IsEmpty(const AValue: TValue): boolean; static;
+    class function IsMap(const AValue: TValue): boolean; static;
     class function IsObject(const AValue: TValue): boolean; static;
     class function IsRecord(const AValue: TValue): boolean; static;
     class function IsStr(const AValue: TValue): boolean; static;
@@ -219,6 +223,10 @@ type
     class function Sha256(const AStr: string): string; static;
 {$ENDIF}
     class function TemplateExists(const AContext: ITemplateContext; const AStr: string): boolean; static;
+    class function Manage(const AContext: ITemplateContext; const AObject: TObject): TObject; static;
+    class procedure Unmanage(const AContext: ITemplateContext; const AObject: TObject); static;
+    class function ToJson(const AContext: ITemplateContext; const AValue: TValue): string; static;
+    class function ParseJson(const AValue: string): TValue; static;
   end;
 
 class function TInternalFuntions.Min(const AValue, BValue: double): double;
@@ -239,6 +247,37 @@ end;
 class function TInternalFuntions.PadRight(const AStr: string; const ANum: integer; const APadChar: char): string;
 begin
   exit(AStr.PadRight(ANum, APadChar));
+end;
+
+class function TInternalFuntions.ParseJson(const AValue: string): TValue;
+var
+  LJsonValue: TJsonValue;
+  LJsonNum: TJSonNumber absolute LJsonValue;
+  LJsonObj: TJSONObject absolute LJsonValue;
+  LJsonStr: TJSonString absolute LJsonValue;
+
+begin
+  LJsonValue := TJsonObject.ParseJsonValue(AValue);
+  try
+    if LJsonValue is TJSonNumber then
+      exit(LJsonNum.AsDouble);
+    if LJsonValue is TJSonString then
+      exit(LJsonStr.Value);
+{$IFDEF SUPPORT_JSON_BOOL}
+    if LJsonValue is TJSONBool then
+      exit(TJSONBool(LJsonValue).AsBoolean);
+{$ELSE}
+    if LJsonValue is TJSONTrue then
+      exit(true);
+    if LJsonValue is TJSONFalse then
+      exit(false);
+{$ENDIF}
+    if LJsonValue is TJSONObject then
+      exit(TValue.From(TMap.ParseJson(LJsonObj)));
+  finally
+    LJsonValue.Free;
+  end;
+  exit(TValue.Empty);
 end;
 
 class function TInternalFuntions.PadRight(const AStr: string; const ANum: integer): string;
@@ -360,6 +399,15 @@ begin
   exit(AString.ToLower());
 end;
 
+class function TInternalFuntions.Manage(const AContext: ITemplateContext; const AObject: TObject): TObject;
+var
+  LContext: ITemplateEvaluationContext;
+begin
+  if supports(AContext, ITemplateEvaluationContext, LContext) then
+    LContext.Manage(AObject);
+  exit(AObject);
+end;
+
 class function TInternalFuntions.Match(const AValue, ARegex: string): boolean;
 begin
   exit(TRegex.IsMatch(AValue, ARegex));
@@ -392,6 +440,30 @@ var
   LTemplate: ITemplate;
 begin
   exit(AContext.TryGetTemplate(AStr, LTemplate));
+end;
+
+class function TInternalFuntions.ToJson(const AContext: ITemplateContext; const AValue: TValue): string;
+var
+  LMap: TMap;
+begin
+  if IsStr(AValue) then
+    exit(AsString(AValue, AContext));
+  if IsNumLike(AValue) then
+    exit(FloatToStr(AsNum(AValue, AContext)));
+  if IsBool(AValue) then
+    exit(BoolToStr(AsBoolean(AValue), true).ToLower);
+  if AValue.IsType<TMap> then
+  begin
+    LMap := AValue.AsType<TMap>;
+    exit(LMap.ToJson());
+  end
+  else if AValue.IsType<IMapExpr> then
+  begin
+    LMap := AValue.AsType<IMapExpr>.GetMap;
+    exit(LMap.ToJson());
+  end
+  else
+    raise ETemplateFunction.CreateRes(@STypeNotSupported);
 end;
 
 class function TInternalFuntions.Trim(const AString: string): string;
@@ -476,6 +548,8 @@ begin
     exit(length(AString.AsType<string>()))
   else if AString.Kind in [tkDynArray, tkArray] then
     exit(AString.GetArrayLength)
+  else if MatchMap(AString.TypeInfo) then
+    exit(AString.AsType<TMap>.Count)
   else
     exit(-1);
 end;
@@ -573,6 +647,7 @@ begin
 end;
 
 {$IFDEF SUPPORT_URL_FORM_ENCODING}
+
 class function TInternalFuntions.FormDecode(const AStr: string): string;
 begin
   exit(TNetEncoding.URL.FormDecode(AStr));
@@ -583,7 +658,6 @@ begin
   exit(TNetEncoding.URL.UrlDecode(AStr));
 end;
 {$ENDIF}
-
 {$IFDEF SUPPORT_ENCODING}
 
 class function TInternalFuntions.HtmlEscape(const AStr: string): string;
@@ -628,6 +702,11 @@ end;
 class function TInternalFuntions.Chr(const AValue: int64): string;
 begin
   exit(System.Chr(AValue));
+end;
+
+class function TInternalFuntions.ContainsKey(const AContext: ITemplateContext; const AValue: TValue; const AKey: string): boolean;
+begin
+  exit(Contains(nil, AKey, AValue, AContext));
 end;
 
 class function TInternalFuntions.crnl(const ANum: integer): string;
@@ -698,6 +777,14 @@ begin
   result[1] := Uppercase(result[1])[1];
 end;
 
+class procedure TInternalFuntions.Unmanage(const AContext: ITemplateContext; const AObject: TObject);
+var
+  LContext: ITemplateEvaluationContext;
+begin
+  if supports(AContext, ITemplateEvaluationContext, LContext) then
+    LContext.Unmanage(AObject);
+end;
+
 class function TInternalFuntions.Replace(const AValue, AWith, AIn: string): string;
 begin
   exit(AIn.Replace(AValue, AWith, [rfReplaceAll]));
@@ -728,6 +815,11 @@ begin
   exit(isIntLike(AValue));
 end;
 
+class function TInternalFuntions.IsMap(const AValue: TValue): boolean;
+begin
+  exit(MatchMap(AValue.TypeInfo) or AValue.IsType<IMapExpr>);
+end;
+
 class function TInternalFuntions.IsBool(const AValue: TValue): boolean;
 begin
   exit(Sempare.Template.Rtti.IsBool(AValue));
@@ -745,7 +837,7 @@ end;
 
 class function TInternalFuntions.IsNum(const AValue: TValue): boolean;
 begin
-  exit(isnumlike(AValue));
+  exit(IsNumLike(AValue));
 end;
 
 class function TInternalFuntions.IsObject(const AValue: TValue): boolean;
