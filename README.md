@@ -102,7 +102,7 @@ There are a few ways to get started quickly.
    - [WebBroker](https://docwiki.embarcadero.com/RADStudio/Alexandria/en/Creating_WebBroker_Applications) [Demo](https://github.com/sempare/sempare-delphi-template-engine/tree/main/demo/WebBrokerStandalone)
    - [Horse](https://github.com/hashload/horse) [Demo](https://github.com/sempare/sempare-delphi-template-engine-horse-demo)
 
-[Try the demo](./demo//SempareTemplatePlaypen/README.md) if you want to dive in quick and play with the template engine.
+[Try the demo](./demo//SempareTemplatePlayground/README.md) if you want to dive in quick and play with the template engine.
 
 <a name="Features"><h2>Features</h3></a>
 - statements
