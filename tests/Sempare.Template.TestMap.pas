@@ -66,6 +66,9 @@ type
 
     [Test]
     procedure TestParseJson;
+
+    [test]
+    procedure TestMapWithExpression;
   end;
 
 implementation
@@ -98,6 +101,11 @@ begin
 
   Assert.AreEqual('123', Template.Eval('<% map := { "a": false } %><% map := { "a": 123 } %><% print(map.a) %>'));
 
+end;
+
+procedure TTestTemplateMap.TestMapWithExpression;
+begin
+  Assert.AreEqual('false, 129', Template.Eval('<% map := { "a": true and false, "b": 123 + 6 } %><% map.a %>, <% map.b %>'));
 end;
 
 procedure TTestTemplateMap.TestParseJson;
