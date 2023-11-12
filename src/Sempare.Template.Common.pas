@@ -66,6 +66,8 @@ type
     property Position: IPosition read FPosition write FPosition implements IPosition;
   end;
 
+  ETemplateVariableNotResolved = class(ETemplate);
+
   ITemplateVariables = interface
     ['{8C2D166D-2AC1-47AB-985E-2CFD5D44271D}']
     function GetItem(const AKey: string): TTemplateValue;
