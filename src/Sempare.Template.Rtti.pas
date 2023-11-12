@@ -40,6 +40,7 @@ uses
   System.Rtti,
   System.TypInfo,
   System.SysUtils,
+  Sempare.Template.Util,
   Sempare.Template.StackFrame,
   Sempare.Template.Context,
   Sempare.Template.AST;
@@ -100,7 +101,7 @@ function MatchMap(const AValue: TValue): boolean; overload;
 function MatchMapExpr(const AInterface: IInterface): boolean;
 
 var
-  EQUALITY_PRECISION: extended = 1E-8;
+
   GRttiContext: TRttiContext;
 
 implementation
@@ -115,7 +116,6 @@ uses
   System.Math,
   Data.DB,
   System.Generics.Collections,
-  Sempare.Template.Util,
   Sempare.Template.ResourceStrings,
   Sempare.Template.Common;
 
@@ -320,7 +320,7 @@ end;
 function IsIntLike(const AValue: TValue): boolean;
 begin
   if AValue.Kind = tkFloat then
-    exit(abs(AValue.asExtended - trunc(AValue.asExtended)) < 1E-8);
+    exit(SameValue(AValue.asExtended, trunc(AValue.asExtended)));
   exit(AValue.Kind in INT_LIKE);
 end;
 
@@ -356,7 +356,7 @@ end;
 function isEqual(const ALeft: TValue; const ARight: TValue; const AContext: ITemplateContext): boolean;
 begin
   if IsNumLike(ALeft) and IsNumLike(ARight) then
-    exit(abs(AsNum(ALeft, AContext) - AsNum(ARight, AContext)) < EQUALITY_PRECISION);
+    exit(SameValue(AsNum(ALeft, AContext), AsNum(ARight, AContext)));
   if IsStrLike(ALeft) and IsStrLike(ARight) then
     exit(ALeft.AsString = ARight.AsString);
   if IsBool(ALeft) and IsBool(ARight) then
@@ -490,7 +490,7 @@ begin
   end;
 end;
 
-function processTemplateVariables(const APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
+function DerefTemplateVariables(const APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
 var
   LObjectType: TRttiType;
   LGetItemMethod: TRttiMethod;
@@ -535,7 +535,7 @@ begin
   exit(TValue.Empty);
 end;
 
-function ProcessClass(APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AOwnObject: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
+function DerefClass(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AOwnObject: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
 var
   ClassType: TClass;
   LClassInfo: PTypeInfo;
@@ -559,32 +559,79 @@ begin
   exit(GetFieldOrProperty(obj.AsObject, GRttiContext.GetType(obj.TypeInfo), ADeref, AContext, AFound));
 end;
 
-function processDictionary(const APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
+function DerefList(const APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
 var
-  LDictionaryType: TRttiType;
-  LDictGetItemMethod: TRttiMethod;
-  LDerefValue: TValue;
+  LType: TRttiType;
+  LProperty: TRttiProperty;
+  LIndexedProperty: TRttiIndexedProperty;
 begin
-  AFound := false;
-  LDictionaryType := GRttiContext.GetType(AObj.TypeInfo);
-  LDictGetItemMethod := LDictionaryType.GetMethod('GetItem');
-
-  // values are sometime floats, so cast explicitly
-  LDerefValue := ADeref;
-  if LDictGetItemMethod.GetParameters[0].ParamType.TypeKind in [tkInteger, tkInt64] then
-    LDerefValue := AsInt(LDerefValue, AContext);
-
+  LType := GRttiContext.GetType(AObj.TypeInfo);
   try
-    result := LDictGetItemMethod.Invoke(AObj, [LDerefValue]);
+    if IsIntLike(ADeref) then
+    begin
+      LIndexedProperty := LType.GetIndexedProperty('Items');
+      result := LIndexedProperty.GetValue(AObj.AsObject, [AsInt(ADeref, AContext)]);
+    end
+    else
+    begin
+      LProperty := LType.GetProperty(AsString(ADeref, AContext));
+      result := LProperty.GetValue(AObj.AsObject);
+    end;
     AFound := true;
   except
     on e: Exception do
     begin
-      result := ProcessClass(APosition, AObj, ADeref, ARaiseIfMissing, true, AContext, AFound);
+      AFound := false;
+      result := DerefClass(APosition, AObj, ADeref, ARaiseIfMissing, true, AContext, AFound);
       if not AFound then
       begin
         if ARaiseIfMissing then
-          RaiseError(APosition, SCannotDereferenceValueOnObject, [AsString(LDerefValue, AContext), LDictionaryType.QualifiedName]);
+          RaiseError(APosition, SCannotDereferenceValueOnObject, [AsString(ADeref, AContext), LType.QualifiedName]);
+        exit('');
+      end;
+    end;
+  end;
+end;
+
+function DerefDictionary(const APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
+var
+  LType: TRttiType;
+  LProperty: TRttiProperty;
+  LIndexedProperty: TRttiIndexedProperty;
+  LDerefValue: TValue;
+begin
+  LType := GRttiContext.GetType(AObj.TypeInfo);
+  try
+    if IsStrLike(ADeref) then
+    begin
+      // lets check if it is a property on the class
+      LProperty := LType.GetProperty(AsString(ADeref, AContext));
+      if LProperty <> nil then
+      begin
+        result := LProperty.GetValue(AObj.AsObject);
+        AFound := true;
+        exit;
+      end;
+    end;
+
+    LIndexedProperty := LType.GetIndexedProperty('Items');
+    // values are sometime floats, so cast explicitly
+    if IsIntLike(ADeref) then
+      LDerefValue := AsInt(ADeref, AContext)
+    else
+      LDerefValue := ADeref;
+
+    result := LIndexedProperty.GetValue(AObj.AsObject, [LDerefValue]);
+    AFound := true;
+  except
+    on e: Exception do
+    begin
+      AFound := false;
+      result := DerefClass(APosition, AObj, ADeref, ARaiseIfMissing, true, AContext, AFound);
+      if not AFound then
+      begin
+        if ARaiseIfMissing then
+          RaiseError(APosition, SCannotDereferenceValueOnObject, [AsString(LDerefValue, AContext), LType.QualifiedName]);
         exit('');
       end;
     end;
@@ -648,7 +695,7 @@ begin
   end;
 end;
 
-function processJson(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
+function DerefJson(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
 var
   LJsonObject: TJsonObject;
   LJsonKey: string;
@@ -672,7 +719,7 @@ begin
   exit(AClass = TJsonObject);
 end;
 
-function processMap(const APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
+function DerefMap(const APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
 var
   LKey: string;
   LMap: TMap;
@@ -693,12 +740,12 @@ begin
   end;
 end;
 
-function processMapExpr(const APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
+function DerefMapExpr(const APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
 begin
-  exit(processMap(APosition, TValue.From(AObj.AsType<IMapExpr>.GetMap), ADeref, ARaiseIfMissing, AContext, AFound));
+  exit(DerefMap(APosition, TValue.From(AObj.AsType<IMapExpr>.GetMap), ADeref, ARaiseIfMissing, AContext, AFound));
 end;
 
-function processDataSet(const APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
+function DerefDataSet(const APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
 var
   LDataSet: TDataSet;
   LKey: string;
@@ -728,7 +775,7 @@ end;
 
 function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AResolved: boolean): TValue;
 
-  function ProcessArray(AObj: TValue; const ADeref: TValue; out AFound: boolean): TValue;
+  function DerefArray(AObj: TValue; const ADeref: TValue; out AFound: boolean): TValue;
   var
     LIndex: int64;
     LElementType: TRttiArrayType;
@@ -754,7 +801,7 @@ function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARa
     exit(AObj.GetArrayElement(LIndex - LMin));
   end;
 
-  function ProcessDynArray(AObj: TValue; const ADeref: TValue; out AFound: boolean): TValue;
+  function DerefDynArray(AObj: TValue; const ADeref: TValue; out AFound: boolean): TValue;
   var
     LIndex: integer;
   begin
@@ -765,20 +812,20 @@ function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARa
     exit(AObj.GetArrayElement(LIndex));
   end;
 
-  function ProcessRecord(const AObj: TValue; const ADeref: TValue; var AFound: boolean): TValue;
+  function DerefRecord(const AObj: TValue; const ADeref: TValue; var AFound: boolean): TValue;
   var
     LObj: TValue;
   begin
     LObj := AObj;
     if MatchMap(LObj.TypeInfo) then
     begin
-      exit(processDictionary(APosition, LObj, ADeref, ARaiseIfMissing, AContext, AFound));
+      exit(DerefMap(APosition, LObj, ADeref, ARaiseIfMissing, AContext, AFound));
     end;
 
     exit(GetFieldOrProperty(LObj.GetReferenceToRawData, GRttiContext.GetType(AObj.TypeInfo), ADeref, AContext, AFound));
   end;
 
-  function ProcessInterface(const AObj: TValue; const ADeref: TValue; out AFound: boolean): TValue;
+  function DerefInterface(const AObj: TValue; const ADeref: TValue; out AFound: boolean): TValue;
   var
     LFunctionPair: TPair<TDerefMatchInterfaceFunction, TDerefFunction>;
     LIntf: IInterface;
@@ -813,15 +860,15 @@ begin
 
   case LVar.Kind of
     tkInterface:
-      result := ProcessInterface(LVar, ADeref, LVarFound);
+      result := DerefInterface(LVar, ADeref, LVarFound);
     tkClass:
-      result := ProcessClass(APosition, LVar, ADeref, ARaiseIfMissing, false, AContext, LVarFound);
+      result := DerefClass(APosition, LVar, ADeref, ARaiseIfMissing, false, AContext, LVarFound);
     tkRecord {$IFDEF SUPPORT_CUSTOM_MANAGED_RECORDS}, tkMRecord{$ENDIF}:
-      result := ProcessRecord(LVar, ADeref, LVarFound);
+      result := DerefRecord(LVar, ADeref, LVarFound);
     tkArray:
-      result := ProcessArray(LVar, ADeref, LVarFound);
+      result := DerefArray(LVar, ADeref, LVarFound);
     tkDynArray:
-      result := ProcessDynArray(LVar, ADeref, LVarFound);
+      result := DerefDynArray(LVar, ADeref, LVarFound);
   else
     begin
       if ARaiseIfMissing then
@@ -1101,15 +1148,16 @@ GDerefFunctions := TList < TPair < TDerefMatchFunction, TDerefFunction >>.Create
 GPopulateFunctions := TList < TPair < TPopulateMatchFunction, TPopulateStackFrame >>.Create;
 GEmptyObjectFunctions := TList < TPair < TDerefMatchFunction, TCheckEmptyObjectFunction >>.Create;
 
-RegisterDeref(MatchTemplateVariableObject, processTemplateVariables);
-RegisterDeref(MatchDictionary, processDictionary);
-RegisterDeref(MatchJsonObject, processJson);
+RegisterDeref(MatchTemplateVariableObject, DerefTemplateVariables);
+RegisterDeref(MatchList, DerefList);
+RegisterDeref(MatchDictionary, DerefDictionary);
+RegisterDeref(MatchJsonObject, DerefJson);
 RegisterPopulateStackFrame(MatchJsonObject, PopulateStackFrameFromJsonObject);
 RegisterPopulateStackFrame(MatchStringDictionary, PopulateStackFrameFromDictionary);
-RegisterDeref(MatchTemplateVariables, processTemplateVariables);
-RegisterDeref(MatchDataSet, processDataSet);
-RegisterDeref(MatchMap, processMap);
-RegisterDeref(MatchMapExpr, processMapExpr);
+RegisterDeref(MatchTemplateVariables, DerefTemplateVariables);
+RegisterDeref(MatchDataSet, DerefDataSet);
+RegisterDeref(MatchMap, DerefMap);
+RegisterDeref(MatchMapExpr, DerefMapExpr);
 RegisterEmptyObjectCheck(MatchDictionary, IsGenericCollectionEmpty);
 RegisterEmptyObjectCheck(MatchList, IsGenericCollectionEmpty);
 RegisterEmptyObjectCheck(MatchQueue, IsGenericCollectionEmpty);
