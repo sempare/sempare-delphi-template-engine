@@ -234,6 +234,8 @@ type
     class procedure SetVariable(const AStackFrames: TObjectStack<TStackFrame>; const AVariable: string; const AValue: TValue; const AStackOffset: integer); overload; static;
     class function StackDepth(const AStackFrames: TObjectStack<TStackFrame>): integer; static;
     class procedure SetMapValue(const AMap: TValue; const AKey: string; const AValue: TValue); static;
+
+    class function SempareVersion(): string; static;
   end;
 
 class function TInternalFuntions.Min(const AValue, BValue: double): double;
@@ -384,6 +386,11 @@ begin
     exit;
   LStackFrame := AStackFrames.List[AStackFrames.count + AStackOffset];
   LStackFrame[AVariable] := AValue;
+end;
+
+class function TInternalFuntions.SempareVersion: string;
+begin
+  exit(GetSempareVersion());
 end;
 
 class function TInternalFuntions.Sort(const AArray: TValue): TValue;
@@ -586,7 +593,7 @@ begin
   else if AString.Kind in [tkDynArray, tkArray] then
     exit(AString.GetArrayLength)
   else if MatchMap(AString.TypeInfo) then
-    exit(AString.AsType<TMap>.Count)
+    exit(AString.AsType<TMap>.count)
   else
     exit(-1);
 end;

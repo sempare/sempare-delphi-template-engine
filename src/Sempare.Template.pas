@@ -301,7 +301,7 @@ end;
 
 class function Template.Version: string;
 begin
-  exit(format('%d.%d.%d', [MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION]));
+  exit(GetSempareVersion());
 end;
 
 class procedure Template.Eval(const AContext: ITemplateContext; const ATemplate: string; const AStream: TStream);
