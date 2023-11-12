@@ -319,6 +319,10 @@ begin
     begin
       try
         LDeref := Deref(AExpr, LStackFrame.Root, AExpr.variable, eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext, LDerefed);
+        if not LDerefed then
+        begin
+          LDerefed := FContext.TryGetVariable(AExpr.variable, LDeref);
+        end;
         if LDerefed then
           LValue := LDeref;
       except
