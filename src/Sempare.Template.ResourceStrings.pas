@@ -77,6 +77,7 @@ resourcestring
   SInvalidCharacterDetected = 'Invalid character detected';
   SRefreshTooFrequent = 'Template refresh too frequent';
   SAssignmentToVar = 'Assignment to variables only';
+  SVariableNotResolved = 'Variable %s not resolved';
 
 implementation
 

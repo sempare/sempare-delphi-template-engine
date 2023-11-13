@@ -83,6 +83,7 @@ type
   TPrettyPrintOutput = reference to procedure(const APrettyPrint: string);
   TTemplateResolver = reference to function(const AContext: ITemplateContext; const AName: string): ITemplate;
   TTemplateResolverWithContext = reference to function(const AContext: ITemplateContext; const AName: string; const AResolveContext: TTemplateValue; out ACacheInContext: boolean): ITemplate;
+  TTemplateVariableResolver = reference to function(const AContext: ITemplateContext; const AName: string; out AResult: TValue): boolean;
 
   ITemplateEvaluationContext = interface
     ['{FCE6891F-3D39-4CC4-8ADB-024D843C7770}']
@@ -168,6 +169,9 @@ type
     function GetWhitespace: char;
     procedure SetWhiteSpace(const AWS: char);
 
+    function GetVariableResolver: TTemplateVariableResolver;
+    procedure SetVariableResolver(const AResolver: TTemplateVariableResolver);
+
     property Functions: ITemplateFunctions read GetFunctions write SetFunctions;
     property NewLine: string read GetNewLine write SetNewLine;
     property WhitespaceChar: char read GetWhitespace write SetWhiteSpace;
@@ -186,6 +190,7 @@ type
     property StartStripToken: string read GetScriptStartStripToken write SetScriptStartStripToken;
     property EndStripToken: string read GetScriptEndStripToken write SetScriptEndStripToken;
 
+    property VariableResolver: TTemplateVariableResolver read GetVariableResolver write SetVariableResolver;
     property ValueSeparator: char read GetValueSeparator write SetValueSeparator;
     property DecimalSeparator: char read GetDecimalSeparator write SetDecimalSeparator;
     property FormatSettings: TFormatSettings read GetFormatSettings;
@@ -274,6 +279,7 @@ type
     FDebugFormat: string;
     FPrettyPrintOutput: TPrettyPrintOutput;
     FWhiteSpace: char;
+    FVariableResolver: TTemplateVariableResolver;
   public
     constructor Create(const AOptions: TTemplateEvaluationOptions);
     destructor Destroy; override;
@@ -360,6 +366,9 @@ type
 
     function GetWhitespace: char;
     procedure SetWhiteSpace(const AWS: char);
+
+    function GetVariableResolver: TTemplateVariableResolver;
+    procedure SetVariableResolver(const AResolver: TTemplateVariableResolver);
 
   end;
 
@@ -526,7 +535,9 @@ function TTemplateContext.GetVariable(const AName: string): TValue;
 begin
   FLock.Acquire;
   try
-    exit(FVariables[AName]);
+    if TryGetVariable(AName, result) then
+      exit;
+    raise ETemplateVariableNotResolved.CreateResFmt(@SVariableNotResolved, [AName]);
   finally
     FLock.Release;
   end;
@@ -535,6 +546,11 @@ end;
 function TTemplateContext.GetVariableEncoder: TTemplateEncodeFunction;
 begin
   result := FVariableEncoder;
+end;
+
+function TTemplateContext.GetVariableResolver: TTemplateVariableResolver;
+begin
+  result := FVariableResolver;
 end;
 
 function TTemplateContext.GetVariables: ITemplateVariables;
@@ -691,6 +707,11 @@ begin
   FVariableEncoder := AEncoder;
 end;
 
+procedure TTemplateContext.SetVariableResolver(const AResolver: TTemplateVariableResolver);
+begin
+  FVariableResolver := AResolver;
+end;
+
 procedure TTemplateContext.SetWhiteSpace(const AWS: char);
 begin
   FWhiteSpace := AWS;
@@ -766,10 +787,14 @@ function TTemplateContext.TryGetVariable(const AName: string; out AValue: TValue
 begin
   FLock.Enter;
   try
-    exit(FVariables.TryGetItem(AName, AValue));
+    if FVariables.TryGetItem(AName, AValue) then
+      exit(true);
+    if assigned(FVariableResolver) then
+      exit(FVariableResolver(self, AName, AValue));
   finally
     FLock.Leave;
   end;
+  exit(false);
 end;
 
 procedure TTemplateContext.Unmanage(const AObject: TObject);
