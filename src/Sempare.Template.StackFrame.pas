@@ -56,6 +56,7 @@ type
     function Clone(const ARecord: TValue): TStackFrame; overload;
     function Root: TValue;
     property Item[const AKey: string]: TValue read GetItem write SetItem; default;
+    property Parent: TStackFrame read FParent;
   end;
 
 implementation

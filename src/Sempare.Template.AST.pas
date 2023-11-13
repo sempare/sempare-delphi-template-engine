@@ -594,6 +594,42 @@ type
     procedure VisitStmt(const AStmt: IStmt);
   end;
 
+  TAbstractBase = class abstract(TInterfacedObject, IPositional, ITemplateVisitorHost)
+  private
+    FPosition: IPosition;
+    function GetPosition: IPosition;
+    function GetFilename: string;
+    procedure SetFilename(const AFilename: string);
+    function GetLine: integer;
+    procedure SetLine(const Aline: integer);
+    function GetPos: integer;
+    procedure SetPos(const Apos: integer);
+  public
+    constructor Create(const APosition: IPosition);
+    destructor Destroy; override;
+    procedure Accept(const AVisitor: ITemplateVisitor); virtual; abstract;
+  end;
+
+  TAbstractStmt = class abstract(TAbstractBase, IStmt)
+  protected
+    function Flatten: TArray<IStmt>; virtual;
+    function GetHasEnd: boolean; virtual;
+  public
+    constructor Create(const APosition: IPosition);
+  end;
+
+  TAbstractExpr = class abstract(TAbstractBase, IExpr)
+  end;
+
+  TMapExpr = class(TAbstractExpr, IMapExpr)
+  private
+    FValue: TMap;
+    function GetMap: TMap;
+  public
+    constructor Create(const APosition: IPosition; const AValue: TMap);
+    procedure Accept(const AVisitor: ITemplateVisitor); override;
+  end;
+
 const
   StripDirectionStr: array [TStripDirection] of string = ( //
     'sdEnd', 'sdLeft', 'sdRight', 'sdBeforeNewLine', 'sdAfterNewLine');
@@ -622,6 +658,90 @@ begin
       result := result + ',';
     result := result + StripActionStr[LAction];
   end;
+end;
+
+{ TMapExpr }
+
+procedure TMapExpr.Accept(const AVisitor: ITemplateVisitor);
+begin
+  AVisitor.Visit(self);
+end;
+
+constructor TMapExpr.Create(const APosition: IPosition; const AValue: TMap);
+begin
+  inherited Create(APosition);
+  FValue := AValue;
+end;
+
+function TMapExpr.GetMap: TMap;
+begin
+  exit(FValue);
+end;
+
+{ TAbstractBase }
+
+constructor TAbstractBase.Create(const APosition: IPosition);
+begin
+  FPosition := APosition;
+end;
+
+destructor TAbstractBase.Destroy;
+begin
+  FPosition := nil;
+  inherited;
+end;
+
+function TAbstractBase.GetFilename: string;
+begin
+  exit(FPosition.FileName);
+end;
+
+function TAbstractBase.GetLine: integer;
+begin
+  exit(FPosition.Line);
+end;
+
+function TAbstractBase.GetPos: integer;
+begin
+  exit(FPosition.Pos);
+end;
+
+function TAbstractBase.GetPosition: IPosition;
+begin
+  exit(FPosition);
+end;
+
+procedure TAbstractBase.SetFilename(const AFilename: string);
+begin
+  FPosition.FileName := AFilename;
+end;
+
+procedure TAbstractBase.SetLine(const Aline: integer);
+begin
+  FPosition.Line := Aline;
+end;
+
+procedure TAbstractBase.SetPos(const Apos: integer);
+begin
+  FPosition.Pos := Apos;
+end;
+
+{ TAbstractStmt }
+
+constructor TAbstractStmt.Create(const APosition: IPosition);
+begin
+  inherited Create(APosition);
+end;
+
+function TAbstractStmt.Flatten: TArray<IStmt>;
+begin
+  SetLength(result, 1);
+  result[0] := self;
+end;
+
+function TAbstractStmt.GetHasEnd: boolean;
+begin
+  exit(false);
 end;
 
 end.

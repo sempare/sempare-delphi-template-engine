@@ -237,12 +237,17 @@ begin
 
   FResourceNameResolver := function(const AName: string): string
     begin
-      exit(AName.ToUpper.Replace('.', '_', [rfReplaceAll]));
+      exit(AName.ToUpper.Replace('-', '_', [rfReplaceAll]).Replace('\', '_', [rfReplaceAll]).Replace('/', '_', [rfReplaceAll]).Replace('.', '_', [rfReplaceAll]));
     end;
 
   FFileNameResolver := function(const AName: string): string
     begin
-      exit(TPath.Combine(TTemplateRegistry.Instance.TemplateRootFolder, AName));
+      result := TPath.Combine(TTemplateRegistry.Instance.TemplateRootFolder, AName);
+{$IFDEF MSWINDOWS}
+      exit(result.Replace('/', '\'));
+{$ELSE}
+      exit(result.Replace('\', '/'));
+{$ENDIF}
     end;
 
   FTemplateRootFolder := TPath.Combine(TPath.GetDirectoryName(paramstr(0)), 'templates');
@@ -329,7 +334,7 @@ var
   LTemplate: ITemplate;
 begin
   LTemplate := GetTemplate(ATemplateName);
-  exit(Template.Eval<T>(LTemplate, AData));
+  exit(Template.Eval<T>(FContext, LTemplate, AData));
 end;
 
 procedure TTemplateRegistry.Eval<T>(const ATemplateName: string; const AData: T; const AOutputStream: TStream);
@@ -337,7 +342,7 @@ var
   LTemplate: ITemplate;
 begin
   LTemplate := GetTemplate(ATemplateName);
-  Template.Eval<T>(LTemplate, AData, AOutputStream);
+  Template.Eval<T>(FContext, LTemplate, AData, AOutputStream);
 end;
 
 function TTemplateRegistry.Eval<T>(const ATemplateName: string; const AContext: TTemplateValue; const AData: T): string;
@@ -479,6 +484,14 @@ var
   LAttempts: integer;
   i: integer;
 begin
+  FLock.Acquire;
+  try
+    if FTemplates.TryGetValue(ATemplateName, result) then
+      exit;
+  finally
+    FLock.Release;
+  end;
+
   if assigned(FContextNameResolver) then
     LTemplateName := FContextNameResolver(ATemplateName, AContext)
   else
@@ -515,11 +528,6 @@ begin
       end;
 
       LFound := LoadTemplate(LLoadStrategy, result);
-      if LFound then
-      begin
-        break;
-      end;
-
       if LFound then
       begin
         break;

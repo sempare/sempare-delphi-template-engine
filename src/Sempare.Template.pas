@@ -79,18 +79,14 @@ type
   TTemplateRegistry = Sempare.Template.TemplateRegistry.TTemplateRegistry;
   TTemplateLoadStrategy = Sempare.Template.TemplateRegistry.TTemplateLoadStrategy;
   TSempareServerPages = TTemplateRegistry;
-  ETemplateNotResolved = Sempare.Template.TemplateRegistry.ETemplateNotResolved;
   TTempateLogMessage = Sempare.Template.TemplateRegistry.TTempateLogMessage;
+
+  ETemplateNotResolved = Sempare.Template.TemplateRegistry.ETemplateNotResolved;
+  ETemplateEvaluationError = Sempare.Template.Common.ETemplateEvaluationError;
+  ETemplateVariableNotResolved = Sempare.Template.Common.ETemplateVariableNotResolved;
 
   Template = class
 {$INCLUDE 'Sempare.Template.Version.inc'}
-{$IFNDEF SEMPARE_TEMPLATE_CONFIRM_LICENSE}
-{$IFDEF MSWINDOWS}
-  private
-    class var FLicenseShown: boolean;
-    class procedure Initialize;
-{$ENDIF}
-{$ENDIF}
   public
     class function Context(const AOptions: TTemplateEvaluationOptions = [eoOptimiseTemplate]): ITemplateContext; inline; static;
     class function Parser(const AContext: ITemplateContext): ITemplateParser; overload; inline; static;
@@ -176,11 +172,6 @@ type
 implementation
 
 uses
-{$IFNDEF SEMPARE_TEMPLATE_CONFIRM_LICENSE}
-{$IFDEF MSWINDOWS}
-  VCL.Dialogs,
-{$ENDIF}
-{$ENDIF}
   System.Rtti,
   Sempare.Template.Evaluate,
   Sempare.Template.VariableExtraction,
@@ -310,7 +301,7 @@ end;
 
 class function Template.Version: string;
 begin
-  exit(format('%d.%d.%d', [MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION]));
+  exit(GetSempareVersion());
 end;
 
 class procedure Template.Eval(const AContext: ITemplateContext; const ATemplate: string; const AStream: TStream);
@@ -449,20 +440,23 @@ var
   LTemplateVisitor: IEvaluationTemplateVisitor;
   LResolveContext: TTemplateValue;
   LValue: TTemplateValue;
+{$IFNDEF SEMPARE_TEMPLATE_CONFIRM_LICENSE}
+  LConfirmLicense: TStringStream;
+{$ENDIF}
 begin
 {$IFNDEF SEMPARE_TEMPLATE_CONFIRM_LICENSE}
-{$IFDEF MSWINDOWS}
-  if not FLicenseShown then
-  begin
-    ShowMessage( //
-      'Thank you for trying the Sempare Template Engine.'#13#10#13#10 + //
-      'To supress this message, set the conditional define SEMPARE_TEMPLATE_CONFIRM_LICENSE in the project options.'#13#10#13#10 + //
-      'Please remember the library is dual licensed. You are free to use it under the GPL or you can support the project to keep it alive as per:'#13#10#13#10 + //
-      'https://github.com/sempare/sempare-delphi-template-engine/blob/main/docs/commercial.license.md' //
-      );
-    FLicenseShown := true;
+  LConfirmLicense := TStringStream.Create('Thank you for trying the Sempare Template Engine.'#13#10#13#10 + //
+    'To supress this message, set the conditional define SEMPARE_TEMPLATE_CONFIRM_LICENSE in the project options.'#13#10#13#10#13#10 + //
+    'Please remember the library is dual licensed. This is open source - Free as in speech, not Free as in beer. You are free to use it under conditions of the GPL or you can support the project with a commercial license to keep it alive as per:'#13#10#13#10#13#10 + //
+    'https://github.com/sempare/sempare-delphi-template-engine/blob/main/docs/commercial.license.md'#13#10#13#10#13#10 + //
+    'NOTE: Downloading the Sempare Template Engine through GetIt does not mean you are exempt of licensing for commercial use.'#13#10#13#10#13#10 //
+    );
+  try
+    LConfirmLicense.Position := 0;
+    AStream.CopyFrom(LConfirmLicense);
+  finally
+    LConfirmLicense.Free;
   end;
-{$ENDIF}
 {$ENDIF}
   LResolveContext := AResolveContext;
   if LResolveContext.IsType<TTemplateValue> then
@@ -512,16 +506,6 @@ begin
   AFunctions := LExtractionVisitor.Functions;
 end;
 
-{$IFNDEF SEMPARE_TEMPLATE_CONFIRM_LICENSE}
-{$IFDEF MSWINDOWS}
-
-class procedure Template.Initialize;
-begin
-  FLicenseShown := false;
-end;
-{$ENDIF}
-{$ENDIF}
-
 class function Template.Eval(const AContext: ITemplateContext; const ATemplate: ITemplate): string;
 begin
   exit(Eval(AContext, ATemplate, ''));
@@ -538,15 +522,5 @@ class function TEncodingHelper.GetUTF8WithoutBOM: TEncoding;
 begin
   exit(GUTF8WithoutPreambleEncoding);
 end;
-
-initialization
-
-{$IFNDEF SEMPARE_TEMPLATE_CONFIRM_LICENSE}
-{$IFDEF MSWINDOWS}
-  Template.Initialize;
-{$ENDIF}
-{$ENDIF}
-
-finalization
 
 end.

@@ -129,6 +129,8 @@ type
     procedure TestIsEmpty;
     [Test]
     procedure TestManaged;
+    [Test]
+    procedure TestVersion;
   end;
 
 type
@@ -628,6 +630,11 @@ begin
   Assert.AreEqual('managed', Template.Eval('<% manage(_).value %><% unmanage(_) %><% _.Free() %>', LClass));
   Assert.IsTrue(LDestroyed);
 
+end;
+
+procedure TFunctionTest.TestVersion;
+begin
+  Assert.AreEqual(Template.Version, Template.Eval('<% SempareVersion() %>'));
 end;
 
 initialization

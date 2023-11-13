@@ -72,6 +72,8 @@ type
     function EncodeVariable(const AValue: TValue): TValue;
     procedure CheckRunTime(const APosition: IPosition);
     function ExprListArgs(const AExprList: IExprList): TArray<TValue>;
+    function GetArgs(const APosition: IPosition; const AMethod: TRttiMethod; const AArgs: TArray<TValue>; const AContext: ITemplateContext): TArray<TValue>;
+    function DoInvoke(const APosition: IPosition; const AMethod: TRttiMethod; const AObject: TValue; const AArgs: TArray<TValue>; out AHasResult: boolean): TValue; overload;
     function Invoke(const AFuncCall: IFunctionCallExpr; const AArgs: TArray<TValue>; out AHasResult: boolean): TValue; overload;
     function Invoke(const AExpr: IMethodCallExpr; const AObject: TValue; const AArgs: TArray<TValue>; out AHasResult: boolean): TValue; overload;
     function EvalExpr(const AExpr: IExpr): TValue;
@@ -317,6 +319,10 @@ begin
     begin
       try
         LDeref := Deref(AExpr, LStackFrame.Root, AExpr.variable, eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext, LDerefed);
+        if not LDerefed then
+        begin
+          LDerefed := FContext.TryGetVariable(AExpr.variable, LDeref);
+        end;
         if LDerefed then
           LValue := LDeref;
       except
@@ -968,7 +974,7 @@ begin
   exit(AValue);
 end;
 
-function GetArgs(const APosition: IPosition; const AMethod: TRttiMethod; const AArgs: TArray<TValue>; const AContext: ITemplateContext): TArray<TValue>;
+function TEvaluationTemplateVisitor.GetArgs(const APosition: IPosition; const AMethod: TRttiMethod; const AArgs: TArray<TValue>; const AContext: ITemplateContext): TArray<TValue>;
 var
   LParameter: TRttiParameter;
   LParamIdx: integer;
@@ -981,18 +987,28 @@ begin
   LNumParams := length(LParams);
   LOffset := 0;
   setlength(result, LNumParams);
-  if (LNumParams > 0) and (LParams[0].ParamType.Handle = TypeInfo(ITemplateContext)) then
+  if (LNumParams > 0) then
   begin
-    result[0] := TValue.From<ITemplateContext>(AContext);
-    LOffset := 1;
+    if LParams[LOffset].ParamType.Handle = TypeInfo(ITemplateContext) then
+    begin
+      result[LOffset] := TValue.From<ITemplateContext>(AContext);
+      inc(LOffset);
+    end;
+    if LParams[LOffset].ParamType.Handle = TypeInfo(TObjectStack<TStackFrame>) then
+    begin
+      result[LOffset] := TValue.From < TObjectStack < TStackFrame >> (FStackFrames);
+      inc(LOffset);
+    end;
+
+    if LParams[LNumParams - 1].ParamType.TypeKind = tkDynArray then
+    begin
+      if LNumParams > 2 then
+        RaiseErrorRes(APosition, @STooManyParameters);
+      result[LOffset] := TValue.From(AArgs);
+      exit;
+    end;
   end;
-  if (LNumParams > 0) and (LParams[LNumParams - 1].ParamType.TypeKind = tkDynArray) then
-  begin
-    if LNumParams > 2 then
-      RaiseErrorRes(APosition, @STooManyParameters);
-    result[LOffset] := TValue.From(AArgs);
-    exit;
-  end;
+
   for LParamIdx := LOffset to LNumParams - 1 do
   begin
     LParameter := LParams[LParamIdx];
@@ -1031,13 +1047,7 @@ begin
       if GetParamCount = length(AArgs) then
         break;
   end;
-  AHasResult := LMethod.ReturnType <> nil;
-  if length(LMethod.GetParameters) = 0 then
-    result := LMethod.Invoke(nil, [])
-  else
-    result := LMethod.Invoke(nil, GetArgs(AFuncCall, LMethod, AArgs, FContext));
-  if result.IsType<TValue> then
-    result := result.AsType<TValue>();
+  exit(DoInvoke(AFuncCall, LMethod, nil, AArgs, AHasResult));
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AExpr: IFunctionCallExpr);
@@ -1056,6 +1066,33 @@ begin
   end;
 end;
 
+function TEvaluationTemplateVisitor.DoInvoke(const APosition: IPosition; const AMethod: TRttiMethod; const AObject: TValue; const AArgs: TArray<TValue>; out AHasResult: boolean): TValue;
+
+  function GetParamCount: integer;
+  var
+    LParams: TArray<TRttiParameter>;
+    LParam: TRttiParameter;
+  begin
+    LParams := AMethod.GetParameters;
+    result := length(LParams);
+    if result > 0 then
+    begin
+      LParam := LParams[0];
+      if LParam.ParamType.Handle = TypeInfo(ITemplateContext) then
+        dec(result);
+    end;
+  end;
+
+begin
+  AHasResult := AMethod.ReturnType <> nil;
+  if length(AMethod.GetParameters) = 0 then
+    result := AMethod.Invoke(AObject, [])
+  else
+    result := AMethod.Invoke(AObject, GetArgs(APosition, AMethod, AArgs, FContext));
+  if result.IsType<TValue> then
+    result := result.AsType<TValue>();
+end;
+
 function TEvaluationTemplateVisitor.Invoke(const AExpr: IMethodCallExpr; const AObject: TValue; const AArgs: TArray<TValue>; out AHasResult: boolean): TValue;
 var
   LObjType: TRttiType;
@@ -1067,8 +1104,7 @@ begin
   LObject := AObject;
   if AObject.IsType<TValue> then
     LObject := AObject.AsType<TValue>;
-  AHasResult := LMethod.ReturnType <> nil;
-  exit(LMethod.Invoke(LObject, AArgs));
+  exit(DoInvoke(AExpr, LMethod, LObject, AArgs, AHasResult));
 end;
 
 function TEvaluationTemplateVisitor.ResolveTemplate(const APosition: IPosition; const AName: string): ITemplate;
@@ -1290,22 +1326,21 @@ end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AExpr: IMapExpr);
 var
+  LMap: TMap;
+  LMapExpr: IMapExpr;
   LValue: TValue;
+  i: integer;
 begin
-  LValue := TValue.From<IMapExpr>(AExpr);
+  LMap := AExpr.GetMap.Clone;
+  LMapExpr := TMapExpr.Create(AExpr, LMap);
+  for i := 0 to LMap.Count - 1 do
+  begin
+    LValue := LMap.Values[i];
+    if LValue.IsType<IExpr> then
+      LMap.Values[i] := EvalExpr(LValue.AsType<IExpr>);
+  end;
+  LValue := TValue.From<IMapExpr>(LMapExpr);
   FEvalStack.push(LValue);
-end; {
- var
- LMap: TMap;
- i: integer;
- LValue: TValue;
- begin
- LMap := AExpr.getMap;
- for i := 0 to LMap.Count - 1 do
- begin
- LValue := LMap.Values[i];
- LMap.Values[i] := EvalExpr(LValue.AsType<IExpr>);
- end;
- end;  }
+end;
 
 end.

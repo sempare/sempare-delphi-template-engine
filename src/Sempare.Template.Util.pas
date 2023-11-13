@@ -40,8 +40,8 @@ uses
   System.Generics.Collections;
 
 {$I 'Sempare.Template.Compiler.inc'}
-// This is copied from Sempare.Boot.Common.PreserveValue to make standalone.
 
+// This is copied from Sempare.Boot.Common.PreserveValue to make standalone.
 type
   IPreserveValue<T> = interface
 
@@ -55,6 +55,7 @@ type
 
 type
   Preserve = class
+  public
     class function Value<T>(var AValue: T): IPreserveValue<T>; overload; static;
     class function Value<T>(var AValue: T; const NewValue: T): IPreserveValue<T>; overload; static;
   end;
@@ -112,12 +113,16 @@ type
   end;
 
 function GetTestTimeTollerance(const ANativeTime, AHypervisorTime: double): double;
+function FloatToTValue(const AValue: double): TValue;
 
 implementation
 
 uses
+  Sempare.Template.Rtti,
   System.TypInfo,
-  SysUtils
+  System.JSON,
+  System.Math,
+  System.SysUtils
 {$IFDEF MSWINDOWS}
     , WinAPI.Windows
 {$IFDEF SUPPORT_WIN_REGISTRY}, System.Win.Registry{$ELSE}, Registry{$ENDIF};
@@ -129,6 +134,14 @@ uses
 var
   GVmwareResolved: boolean;
   GIsUnderVmware: boolean;
+
+function FloatToTValue(const AValue: double): TValue;
+begin
+  if SameValue(AValue, trunc(AValue)) then
+    exit(trunc(AValue))
+  else
+    exit(AValue);
+end;
 
 function IsRunningUnderVMWare: boolean;
 var
@@ -227,14 +240,14 @@ end;
 
 function TMap.Add(const AKey: string; const AValue: TValue): boolean;
 var
-  LPair : TPair<string, TValue>;
+  LPair: TPair<string, TValue>;
 
 begin
   Result := not ContainsKey(AKey);
   if Result then
   begin
     LPair := TPair<string, TValue>.Create(AKey, AValue);
-    SetLength(FItems, length(FItems)+1);
+    SetLength(FItems, length(FItems) + 1);
     FItems[high(FItems)] := LPair;
   end;
 end;
@@ -289,9 +302,9 @@ begin
   begin
     if FItems[i].Key = AKey then
     begin
-      for j := i to High(FItems)-1 do
-        FItems[i] := FItems[i+1];
-      SetLength(fitems, length(FItems) - 1);
+      for j := i to High(FItems) - 1 do
+        FItems[i] := FItems[i + 1];
+      SetLength(FItems, length(FItems) - 1);
       exit(True);
     end;
   end;
@@ -341,7 +354,7 @@ class function TMap.ParseJson(const AJson: TJsonObject): TMap;
       end
       else if LPair.JsonValue is TJSONNumber then
       begin
-        AMap.Add(LPair.JsonString.Value, TJSONNumber(LPair.JsonValue).AsDouble);
+        AMap.Add(LPair.JsonString.Value, FloatToTValue(TJSONNumber(LPair.JsonValue).AsDouble));
       end
       else if LPair.JsonValue is TJSONTrue then
       begin
@@ -385,8 +398,8 @@ begin
 end;
 
 function TMap.ToJSON: string;
-function ToExpr(const AValue: TValue): TJsonValue; forward;
-function ToArray(const AValue: TArray<TValue>): TJsonArray; forward;
+  function ToExpr(const AValue: TValue): TJsonValue; forward;
+  function ToArray(const AValue: TArray<TValue>): TJsonArray; forward;
 
   function ToMap(const AMap: TMap): TJsonObject;
   var
@@ -425,7 +438,12 @@ function ToArray(const AValue: TArray<TValue>): TJsonArray; forward;
             exit(TJSONFalse.Create);
         end;
       tkFloat:
-        exit(TJSONNumber.Create(AValue.AsExtended));
+        begin
+          if IsIntLike(AValue) then
+            exit(TJSONNumber.Create(trunc(AValue.AsExtended)))
+          else
+            exit(TJSONNumber.Create(AValue.AsExtended));
+        end;
       tkPointer:
         if AValue.AsType<pointer> = nil then
           exit(TJSONNull.Create());
@@ -444,8 +462,7 @@ var
 begin
   LObject := ToMap(self);
   try
-    //exit(LObject.ToJSON);
-    exit(LObject.ToString);
+    exit(LObject.ToJson);
   finally
     LObject.Free;
   end;
@@ -455,7 +472,7 @@ function TMap.ToKeyArray: TArray<string>;
 var
   i: integer;
 begin
-  setlength(Result, length(FItems));
+  SetLength(Result, length(FItems));
   for i := 0 to high(Result) do
     Result[i] := FItems[i].Key;
 end;
@@ -464,7 +481,7 @@ function TMap.ToValueArray: TArray<TValue>;
 var
   i: integer;
 begin
-  setlength(Result, length(FItems));
+  SetLength(Result, length(FItems));
   for i := 0 to high(Result) do
     Result[i] := FItems[i].Value;
 end;

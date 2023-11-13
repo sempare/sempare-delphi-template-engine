@@ -66,6 +66,8 @@ type
     property Position: IPosition read FPosition write FPosition implements IPosition;
   end;
 
+  ETemplateVariableNotResolved = class(ETemplate);
+
   ITemplateVariables = interface
     ['{8C2D166D-2AC1-47AB-985E-2CFD5D44271D}']
     function GetItem(const AKey: string): TTemplateValue;
@@ -108,10 +110,19 @@ procedure RaiseError(const APositional: IPosition; const AFormat: string); overl
 procedure RaiseErrorRes(const APositional: IPosition; const ResStringRec: PResStringRec; const AArgs: array of const); overload;
 procedure RaiseErrorRes(const APositional: IPosition; const ResStringRec: PResStringRec); overload;
 
+function GetSempareVersion(): string;
+
 implementation
 
 uses
   Sempare.Template;
+
+{$INCLUDE 'Sempare.Template.Version.inc'}
+
+function GetSempareVersion(): string;
+begin
+  exit(format('%d.%d.%d', [MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION]));
+end;
 
 procedure AcceptVisitor(const ATemplate: ITemplate; const AVisitor: ITemplateVisitor); overload;
 begin

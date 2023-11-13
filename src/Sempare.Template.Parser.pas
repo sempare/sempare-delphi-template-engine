@@ -93,30 +93,6 @@ type
     destructor Destroy; override;
   end;
 
-  TAbstractBase = class abstract(TInterfacedObject, IPositional, ITemplateVisitorHost)
-  private
-    FPosition: IPosition;
-    function GetPosition: IPosition;
-    function GetFilename: string;
-    procedure SetFilename(const AFilename: string);
-    function GetLine: integer;
-    procedure SetLine(const Aline: integer);
-    function GetPos: integer;
-    procedure SetPos(const Apos: integer);
-  public
-    constructor Create(const APosition: IPosition);
-    destructor Destroy; override;
-    procedure Accept(const AVisitor: ITemplateVisitor); virtual; abstract;
-  end;
-
-  TAbstractStmt = class abstract(TAbstractBase, IStmt)
-  private
-    function Flatten: TArray<IStmt>; virtual;
-    function GetHasEnd: boolean; virtual;
-  public
-    constructor Create(const APosition: IPosition);
-  end;
-
   TDebugStmt = class(TAbstractStmt, IDebugStmt)
   private
     FStmt: IStmt;
@@ -383,18 +359,6 @@ type
     procedure AddExpr(const AExpr: IExpr);
     function GetExprCount: integer;
     procedure Accept(const AVisitor: ITemplateVisitor); override;
-  end;
-
-  TAbstractExpr = class abstract(TAbstractBase, IExpr)
-  end;
-
-  TMapExpr = class(TAbstractExpr, IMapExpr)
-  private
-    FValue: TMap;
-    function GetMap: TMap;
-    procedure Accept(const AVisitor: ITemplateVisitor); override;
-  public
-    constructor Create(const APosition: IPosition; const AValue: TMap);
   end;
 
   TValueExpr = class(TAbstractExpr, IValueExpr)
@@ -1070,8 +1034,10 @@ begin
 end;
 
 function TTemplateParser.ruleMapExpr: IExpr;
-function ParseMap: TMap; forward;
-function ParseExpr: TValue; forward;
+
+  function ParseMap: TMap; forward;
+  function ParseExpr: TValue; forward;
+
   function ParseArray: TArray<TValue>;
   var
     LSymbol: ITemplateSymbol;
@@ -1093,6 +1059,7 @@ function ParseExpr: TValue; forward;
     end;
     Match(vsCloseSquareBracket);
   end;
+
   function ParseExpr: TValue;
   var
     LSymbol: ITemplateSymbol;
@@ -1119,6 +1086,7 @@ function ParseExpr: TValue; forward;
         end;
     end;
   end;
+
   function ParseMap: TMap;
   var
     LKey: string;
@@ -1138,7 +1106,7 @@ function ParseExpr: TValue; forward;
       LTok := vsString;
       LKey := MatchValues([vsString, vsId], LTok);
       Match(VsCOLON);
-      LValue := ParseExpr;
+      LValue := TValue.From<IExpr>(RuleSimpleExpression);
       result.Add(LKey, LValue);
       inc(i);
     end;
@@ -1834,7 +1802,7 @@ function ArrayOfTemplate(const ATemplates: array of ITemplate): TArray<ITemplate
 var
   i: integer;
 begin
-  setlength(result, length(ATemplates));
+  SetLength(result, length(ATemplates));
   for i := Low(ATemplates) to High(ATemplates) do
     result[i] := ATemplates[i];
 end;
@@ -2513,7 +2481,7 @@ var
   LOffset: integer;
 begin
   LOffset := length(FExprs);
-  setlength(FExprs, LOffset + 1);
+  SetLength(FExprs, LOffset + 1);
   FExprs[LOffset] := AExpr;
 end;
 
@@ -3139,54 +3107,6 @@ procedure TCommentStmt.Accept(const AVisitor: ITemplateVisitor);
 begin
 end;
 
-{ TAbstractBase }
-
-constructor TAbstractBase.Create(const APosition: IPosition);
-begin
-  FPosition := APosition;
-end;
-
-destructor TAbstractBase.Destroy;
-begin
-  FPosition := nil;
-  inherited;
-end;
-
-function TAbstractBase.GetFilename: string;
-begin
-  exit(FPosition.FileName);
-end;
-
-function TAbstractBase.GetLine: integer;
-begin
-  exit(FPosition.line);
-end;
-
-function TAbstractBase.GetPos: integer;
-begin
-  exit(FPosition.pos);
-end;
-
-function TAbstractBase.GetPosition: IPosition;
-begin
-  exit(FPosition);
-end;
-
-procedure TAbstractBase.SetFilename(const AFilename: string);
-begin
-  FPosition.FileName := AFilename;
-end;
-
-procedure TAbstractBase.SetLine(const Aline: integer);
-begin
-  FPosition.line := Aline;
-end;
-
-procedure TAbstractBase.SetPos(const Apos: integer);
-begin
-  FPosition.pos := Apos;
-end;
-
 { TMethodCallExpr }
 
 procedure TMethodCallExpr.Accept(const AVisitor: ITemplateVisitor);
@@ -3630,24 +3550,6 @@ begin
   exit(AEvalVisitor.EvalExprAsString(FName));
 end;
 
-{ TAbstractStmt }
-
-constructor TAbstractStmt.Create(const APosition: IPosition);
-begin
-  inherited Create(APosition);
-end;
-
-function TAbstractStmt.Flatten: TArray<IStmt>;
-begin
-  setlength(result, 1);
-  result[0] := self;
-end;
-
-function TAbstractStmt.GetHasEnd: boolean;
-begin
-  exit(false);
-end;
-
 { TNoopStmt }
 
 procedure TNoopStmt.Accept(const AVisitor: ITemplateVisitor);
@@ -3685,24 +3587,6 @@ constructor TStripActionStackItem.Create(const ABeforeNLStripActions, AAfterNLSt
 begin
   BeforeNLStripActions := ABeforeNLStripActions;
   AfterNLStripActions := AAfterNLStripActions;
-end;
-
-{ TMapExpr }
-
-procedure TMapExpr.Accept(const AVisitor: ITemplateVisitor);
-begin
-  AVisitor.Visit(self);
-end;
-
-constructor TMapExpr.Create(const APosition: IPosition; const AValue: TMap);
-begin
-  inherited Create(APosition);
-  FValue := AValue;
-end;
-
-function TMapExpr.GetMap: TMap;
-begin
-  exit(FValue);
 end;
 
 initialization

@@ -70,6 +70,7 @@ uses
   System.Generics.Collections,
   System.Generics.Defaults,
   Sempare.Template.ResourceStrings,
+  Sempare.Template.StackFrame,
   Sempare.Template.Common,
   Sempare.Template.Util,
   Sempare.Template.Rtti;
@@ -227,6 +228,14 @@ type
     class procedure Unmanage(const AContext: ITemplateContext; const AObject: TObject); static;
     class function ToJson(const AContext: ITemplateContext; const AValue: TValue): string; static;
     class function ParseJson(const AValue: string): TValue; static;
+    class function GetVariable(const AStackFrames: TObjectStack<TStackFrame>; const AVariable: string): TValue; overload; static;
+    class function GetVariable(const AStackFrames: TObjectStack<TStackFrame>; const AVariable: string; const AStackOffset: integer): TValue; overload; static;
+    class procedure SetVariable(const AStackFrames: TObjectStack<TStackFrame>; const AVariable: string; const AValue: TValue); overload; static;
+    class procedure SetVariable(const AStackFrames: TObjectStack<TStackFrame>; const AVariable: string; const AValue: TValue; const AStackOffset: integer); overload; static;
+    class function StackDepth(const AStackFrames: TObjectStack<TStackFrame>): integer; static;
+    class procedure SetMapValue(const AMap: TValue; const AKey: string; const AValue: TValue); static;
+
+    class function SempareVersion(): string; static;
   end;
 
 class function TInternalFuntions.Min(const AValue, BValue: double): double;
@@ -257,10 +266,12 @@ var
   LJsonStr: TJSonString absolute LJsonValue;
 
 begin
-  LJsonValue := TJsonObject.ParseJsonValue(AValue);
+  LJsonValue := TJSONObject.ParseJsonValue(AValue);
   try
     if LJsonValue is TJSonNumber then
-      exit(LJsonNum.AsDouble);
+    begin
+      exit(FloatToTValue(LJsonNum.AsDouble));
+    end;
     if LJsonValue is TJSonString then
       exit(LJsonStr.Value);
 {$IFDEF SUPPORT_JSON_BOOL}
@@ -353,6 +364,34 @@ begin
   exit(THashMD5.GetHashString(AStr));
 end;
 {$ENDIF}
+
+class procedure TInternalFuntions.SetMapValue(const AMap: TValue; const AKey: string; const AValue: TValue);
+var
+  LMap: IMapExpr;
+begin
+  LMap := AMap.AsType<IMapExpr>();
+  LMap.GetMap.Items[AKey] := AValue;
+end;
+
+class procedure TInternalFuntions.SetVariable(const AStackFrames: TObjectStack<TStackFrame>; const AVariable: string; const AValue: TValue);
+begin
+  SetVariable(AStackFrames, AVariable, AValue, -1);
+end;
+
+class procedure TInternalFuntions.SetVariable(const AStackFrames: TObjectStack<TStackFrame>; const AVariable: string; const AValue: TValue; const AStackOffset: integer);
+var
+  LStackFrame: TStackFrame;
+begin
+  if (AStackFrames = nil) or (AStackFrames.count = 0) or (AStackOffset > 0) or (-AStackOffset > AStackFrames.count) then
+    exit;
+  LStackFrame := AStackFrames.List[AStackFrames.count + AStackOffset];
+  LStackFrame[AVariable] := AValue;
+end;
+
+class function TInternalFuntions.SempareVersion: string;
+begin
+  exit(GetSempareVersion());
+end;
 
 class function TInternalFuntions.Sort(const AArray: TValue): TValue;
 
@@ -449,7 +488,12 @@ begin
   if IsStr(AValue) then
     exit(AsString(AValue, AContext));
   if IsNumLike(AValue) then
-    exit(FloatToStr(AsNum(AValue, AContext)));
+  begin
+    if IsIntLike(AValue) then
+      exit(IntToStr(trunc(AValue.AsExtended)))
+    else
+      exit(FloatToStr(AValue.AsExtended));
+  end;
   if IsBool(AValue) then
     exit(BoolToStr(AsBoolean(AValue), true).ToLower);
   if AValue.IsType<TMap> then
@@ -549,7 +593,7 @@ begin
   else if AString.Kind in [tkDynArray, tkArray] then
     exit(AString.GetArrayLength)
   else if MatchMap(AString.TypeInfo) then
-    exit(AString.AsType<TMap>.Count)
+    exit(AString.AsType<TMap>.count)
   else
     exit(-1);
 end;
@@ -644,6 +688,21 @@ end;
 class function TInternalFuntions.FmtDt(const AFormat: string; const ADateTime: TDateTime): string;
 begin
   exit(FormatDateTime(AFormat, ADateTime));
+end;
+
+class function TInternalFuntions.GetVariable(const AStackFrames: TObjectStack<TStackFrame>; const AVariable: string; const AStackOffset: integer): TValue;
+var
+  LStackFrame: TStackFrame;
+begin
+  if (AStackFrames = nil) or (AStackFrames.count = 0) or (AStackOffset > 0) or (-AStackOffset > AStackFrames.count) then
+    exit;
+  LStackFrame := AStackFrames.List[AStackFrames.count + AStackOffset];
+  exit(LStackFrame[AVariable]);
+end;
+
+class function TInternalFuntions.GetVariable(const AStackFrames: TObjectStack<TStackFrame>; const AVariable: string): TValue;
+begin
+  exit(GetVariable(AStackFrames, AVariable, -1));
 end;
 
 {$IFDEF SUPPORT_URL_FORM_ENCODING}
@@ -744,6 +803,13 @@ begin
   exit(Split(AString, ' '));
 end;
 
+class function TInternalFuntions.StackDepth(const AStackFrames: TObjectStack<TStackFrame>): integer;
+begin
+  if (AStackFrames = nil) then
+    exit(-1);
+  exit(AStackFrames.count);
+end;
+
 class function TInternalFuntions.StartsWith(const AString, ASearch: string; const AIgnoreCase: boolean): boolean;
 begin
   exit(AString.StartsWith(ASearch, AIgnoreCase));
@@ -812,7 +878,7 @@ end;
 
 class function TInternalFuntions.IsInt(const AValue: TValue): boolean;
 begin
-  exit(isIntLike(AValue));
+  exit(IsIntLike(AValue));
 end;
 
 class function TInternalFuntions.IsMap(const AValue: TValue): boolean;
@@ -863,7 +929,7 @@ end;
 
 function TTemplateFunctions.GetIsEmpty: boolean;
 begin
-  exit(FFunctions.Count > 0);
+  exit(FFunctions.count > 0);
 end;
 
 procedure TTemplateFunctions.RegisterDefaults;

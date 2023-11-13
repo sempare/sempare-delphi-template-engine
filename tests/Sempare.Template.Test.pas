@@ -127,6 +127,9 @@ type
 
     [Test]
     procedure TestPassingTValue;
+
+    [Test]
+    procedure TestVariableResolver;
   end;
 
 type
@@ -869,6 +872,24 @@ begin
     begin // expects  abc
       Assert.AreEqual('', Template.Eval(LCtx, '<% abc %>'));
     end);
+end;
+
+procedure TTestTemplate.TestVariableResolver;
+var
+  LCtx: ITemplateContext;
+begin
+  LCtx := Template.Context();
+  LCtx.VariableResolver := function(const AContext: ITemplateContext; const AName: string; out AResult: TValue): boolean
+    begin
+      if AName = 'somevar' then
+      begin
+        AResult := 'value';
+        exit(true);
+      end;
+      exit(false);
+    end;
+  Assert.AreEqual('', Template.Eval(LCtx, '<% avar %>'));
+  Assert.AreEqual('value', Template.Eval(LCtx, '<% somevar %>'));
 end;
 
 procedure TTestTemplate.TestVersionPresent;
