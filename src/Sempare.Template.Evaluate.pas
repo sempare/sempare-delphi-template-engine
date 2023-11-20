@@ -67,7 +67,7 @@ type
     FAllowRootDeref: boolean;
     FLocalTemplates: TDictionary<string, ITemplate>;
     FResolveContext: TTemplateValue;
-
+    FTemplate: ITemplate;
     function HasBreakOrContinue: boolean; inline;
     function EncodeVariable(const AValue: TValue): TValue;
     procedure CheckRunTime(const APosition: IPosition);
@@ -85,8 +85,8 @@ type
     function ResolveTemplate(const AExpr: IExpr): ITemplate; overload;
     function ResolveTemplate(const APosition: IPosition; const AName: string): ITemplate; overload;
   public
-    constructor Create(const AContext: ITemplateContext; const AResolveContext: TTemplateValue; const AValue: TValue; const AStream: TStream); overload;
-    constructor Create(const AContext: ITemplateContext; const AResolveContext: TTemplateValue; const AStackFrame: TStackFrame; const AStream: TStream); overload;
+    constructor Create(const AContext: ITemplateContext; const AResolveContext: TTemplateValue; const AValue: TValue; const AStream: TStream; const ATemplate: ITemplate); overload;
+    constructor Create(const AContext: ITemplateContext; const AResolveContext: TTemplateValue; const AStackFrame: TStackFrame; const AStream: TStream; const ATemplate: ITemplate); overload;
     destructor Destroy; override;
     procedure Visit(const AExpr: IBinopExpr); overload; override;
     procedure Visit(const AExpr: IUnaryExpr); overload; override;
@@ -161,9 +161,9 @@ end;
 
 { TEvaluationTemplateVisitor }
 
-constructor TEvaluationTemplateVisitor.Create(const AContext: ITemplateContext; const AResolveContext: TTemplateValue; const AValue: TValue; const AStream: TStream);
+constructor TEvaluationTemplateVisitor.Create(const AContext: ITemplateContext; const AResolveContext: TTemplateValue; const AValue: TValue; const AStream: TStream; const ATemplate: ITemplate);
 begin
-  Create(AContext, AResolveContext, TStackFrame.Create(AValue, nil), AStream);
+  Create(AContext, AResolveContext, TStackFrame.Create(AValue, nil), AStream, ATemplate);
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AExpr: IValueExpr);
@@ -689,11 +689,12 @@ begin
     RaiseError(APosition, SMaxRuntimeOfMsHasBeenExceeded, [FContext.MaxRunTimeMs]);
 end;
 
-constructor TEvaluationTemplateVisitor.Create(const AContext: ITemplateContext; const AResolveContext: TTemplateValue; const AStackFrame: TStackFrame; const AStream: TStream);
+constructor TEvaluationTemplateVisitor.Create(const AContext: ITemplateContext; const AResolveContext: TTemplateValue; const AStackFrame: TStackFrame; const AStream: TStream; const ATemplate: ITemplate);
 var
   LApply: ITemplateContextForScope;
 begin
   inherited Create();
+  FTemplate := ATemplate;
   FResolveContext := AResolveContext;
   FAllowRootDeref := true;
   FStopWatch := TStopWatch.Create;
