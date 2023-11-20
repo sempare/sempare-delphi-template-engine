@@ -73,6 +73,15 @@ var
   GKeywords: TDictionary<string, TTemplateSymbol>;
   GSymbolToKeyword: TDictionary<TTemplateSymbol, string>;
 
+const
+{$WARN WIDECHAR_REDUCED OFF}
+  WHITESPACE: set of char = [#0, ' ', #9, #10, #13];
+  VARIABLE_START: set of char = ['a' .. 'z', 'A' .. 'Z', '_'];
+  VARIABLE_END: set of char = ['a' .. 'z', 'A' .. 'Z', '0' .. '9', '_'];
+  NUMBER: set of char = ['0' .. '9'];
+  ESCAPE = '\';
+{$WARN WIDECHAR_REDUCED ON}
+
 type
   TTemplateLexer = class(TInterfacedObject, ITemplateLexer)
   type
@@ -98,6 +107,7 @@ type
     FFilename: string;
     FLookahead: TPair;
     FCurrent: TPair;
+    FPrev: TPair;
     FManageStream: Boolean;
     FState: TState;
     FAccumulator: TStringBuilder;
@@ -175,6 +185,8 @@ begin
   FLine := 1;
   FPos := 0;
   FState := SText;
+  FPrev.Input := #0;
+  FPrev.Eof := false;
   FLookahead.Input := #0;
   FLookahead.Eof := AStream.Size = 0;
   GetInput;
@@ -210,6 +222,7 @@ end;
 
 procedure TTemplateLexer.GetInput;
 begin
+  FPrev := FCurrent;
   FCurrent := FLookahead;
   if FLookahead.Eof then
     exit;
@@ -231,14 +244,6 @@ end;
 
 function TTemplateLexer.GetScriptToken: ITemplateSymbol;
 
-const
-{$WARN WIDECHAR_REDUCED OFF}
-  WHITESPACE: set of char = [#0, ' ', #9, #10, #13];
-  VARIABLE_START: set of char = ['a' .. 'z', 'A' .. 'Z', '_'];
-  VARIABLE_END: set of char = ['a' .. 'z', 'A' .. 'Z', '0' .. '9', '_'];
-  NUMBER: set of char = ['0' .. '9'];
-  ESCAPE = '\';
-{$WARN WIDECHAR_REDUCED ON}
 var
   LLine: integer;
   LPosition: integer;
@@ -350,25 +355,19 @@ begin
   LLast := #0;
   while not FCurrent.Eof do
   begin
-{$WARN WIDECHAR_REDUCED OFF}
-    if FCurrent.Input in WHITESPACE then
-{$WARN WIDECHAR_REDUCED ON}
+    if CharInSet(FCurrent.Input, WHITESPACE) then
     begin
       SwallowInput;
       continue;
     end
-{$WARN WIDECHAR_REDUCED OFF}
-    else if FCurrent.Input in VARIABLE_START then
-{$WARN WIDECHAR_REDUCED ON}
+    else if CharInSet(FCurrent.Input, VARIABLE_START) then
     begin
       FAccumulator.Append(FCurrent.Input);
       while Expecting(VARIABLE_END) do
         Accumulate;
       exit(ValueToken(vsID));
     end
-{$WARN WIDECHAR_REDUCED OFF}
-    else if FCurrent.Input in NUMBER then
-{$WARN WIDECHAR_REDUCED ON}
+    else if CharInSet(FCurrent.Input, NUMBER) then
     begin
       FAccumulator.Append(FCurrent.Input);
       while Expecting(NUMBER) do
@@ -379,14 +378,10 @@ begin
         while Expecting(NUMBER) do
           Accumulate;
       end;
-{$WARN WIDECHAR_REDUCED OFF}
-      if FLookahead.Input in ['e', 'E'] then
-{$WARN WIDECHAR_REDUCED ON}
+      if CharInSet(FLookahead.Input, ['e', 'E']) then
       begin
         Accumulate;
-{$WARN WIDECHAR_REDUCED OFF}
-        if FLookahead.Input in ['-', '+'] then
-{$WARN WIDECHAR_REDUCED ON}
+        if CharInSet(FLookahead.Input, ['-', '+']) then
         begin
           Accumulate;
         end;
@@ -398,7 +393,17 @@ begin
     else
       case FCurrent.Input of
         ';':
-          exit(SimpleToken(vsSemiColon));
+          begin
+            if FPrev.Input = ';' then
+            begin
+              SwallowInput;
+              continue;
+            end
+            else
+            begin
+              exit(SimpleToken(vsSemiColon));
+            end;
+          end;
         ',':
           exit(SimpleToken(vsComma));
         '(':
@@ -506,16 +511,13 @@ begin
           if Expecting('=') then
           begin
             SwallowInput;
-            exit(SimpleToken(vsCOLONEQ));
+            exit(SimpleToken(vsEQ));
           end
           else
             exit(SimpleToken(vsCOLON));
-      else
-        begin
-          if isEndOfScript(#0, Result, []) then
-            exit;
-        end;
       end;
+    if isEndOfScript(#0, Result, []) then
+      exit;
     FAccumulator.Append(FCurrent.Input);
     GetInput;
   end;
@@ -729,8 +731,15 @@ begin
 end;
 
 procedure TTemplateLexer.SwallowInput;
+var
+  LPrev: TPair;
 begin
+  LPrev := FPrev;
   GetInput;
+  if CharInSet(FPrev.Input, WHITESPACE) then
+  begin
+    FPrev := LPrev;
+  end;
 end;
 
 { TSimpleTemplateSymbol }
@@ -852,6 +861,8 @@ AddHashedKeyword('onempty', vsOnEmpty);
 AddHashedKeyword('betweenitems', vsBetweenItem);
 AddHashedKeyword('extends', vsExtends);
 AddHashedKeyword('block', vsBlock);
+AddHashedKeyword('validate', vsValidate);
+AddHashedKeyword('singleton', vsSingleton);
 
 AddSymKeyword('<%', VsStartScript);
 AddSymKeyword('%>', VsEndScript);
@@ -859,7 +870,6 @@ AddSymKeyword('(', vsOpenRoundBracket);
 AddSymKeyword(')', vsCloseRoundBracket);
 AddSymKeyword('(*   *) ', vsComment);
 AddSymKeyword('Text', vsText);
-AddSymKeyword(':=', vsCOLONEQ);
 AddSymKeyword('id', vsID);
 AddSymKeyword('.', vsDOT);
 AddSymKeyword('[', vsOpenSquareBracket);
