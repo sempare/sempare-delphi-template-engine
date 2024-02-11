@@ -464,7 +464,7 @@ begin
   LValue := AValue;
   if LValue.IsType<TTemplateValue> then
     LValue := LValue.AsType<TTemplateValue>;
-  LTemplateVisitor := TEvaluationTemplateVisitor.Create(AContext, LResolveContext, LValue, AStream);
+  LTemplateVisitor := TEvaluationTemplateVisitor.Create(AContext, LResolveContext, LValue, AStream, ATemplate);
   AcceptVisitor(ATemplate, LTemplateVisitor);
 end;
 
@@ -482,7 +482,7 @@ begin
   try
     LStringStream := TStringStream.Create;
     LContext := Template.Context();
-    LEvalVisitor := TEvaluationTemplateVisitor.Create(LContext, '', '', LStringStream);
+    LEvalVisitor := TEvaluationTemplateVisitor.Create(LContext, '', '', LStringStream, ATemplate);
     LVisitor := TBlockResolverVisitor.Create(LEvalVisitor, ATemplate);
     LVisitor.Discover;
     for LName in LVisitor.GetBlockNames do

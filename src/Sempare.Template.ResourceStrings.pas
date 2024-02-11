@@ -78,6 +78,8 @@ resourcestring
   SRefreshTooFrequent = 'Template refresh too frequent';
   SAssignmentToVar = 'Assignment to variables only';
   SVariableNotResolved = 'Variable %s not resolved';
+  SClassOrRecordExpected = 'A class or record is expected';
+  SIdFieldOrPropertyExpected = 'Id field or property expected on class or record';
 
 implementation
 

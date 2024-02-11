@@ -104,9 +104,6 @@ type
     vsTo, //
     vsDownto, //
 
-    // assignment statement
-    vsCOLONEQ, //
-
     // identifier
     vsID, //
     vsDOT, //
@@ -153,7 +150,10 @@ type
     vsBlock, //
 
     vsNewLine, //
-    vsWhiteSpace //
+    vsWhiteSpace, //
+
+    vsSingleton, //
+    vsValidate //
     );
 
   TTemplateSymbolSet = set of TTemplateSymbol;
