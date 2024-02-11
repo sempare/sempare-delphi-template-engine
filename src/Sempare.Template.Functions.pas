@@ -12,7 +12,7 @@
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
  ****************************************************************************************************
  *                                                                                                  *
- * Copyright (c) 2019-2023 Sempare Limited                                                          *
+ * Copyright (c) 2019-2024 Sempare Limited                                                          *
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
@@ -234,8 +234,10 @@ type
     class procedure SetVariable(const AStackFrames: TObjectStack<TStackFrame>; const AVariable: string; const AValue: TValue; const AStackOffset: integer); overload; static;
     class function StackDepth(const AStackFrames: TObjectStack<TStackFrame>): integer; static;
     class procedure SetMapValue(const AMap: TValue; const AKey: string; const AValue: TValue); static;
-
     class function SempareVersion(): string; static;
+    class function Default(const AValue: TValue; const ADefault: TValue): TValue; static;
+    class function DomId(const AContext: ITemplateContext; const AValue: TValue; const AExtraContext: string): string; overload; static;
+    class function DomId(const AContext: ITemplateContext; const AValue: TValue): string; overload; static;
   end;
 
 class function TInternalFuntions.Min(const AValue, BValue: double): double;
@@ -783,6 +785,75 @@ begin
   end;
 end;
 
+class function TInternalFuntions.Default(const AValue, ADefault: TValue): TValue;
+begin
+  if IsEmpty(AValue) then
+    exit(ADefault)
+  else
+    exit(AValue);
+end;
+
+class function TInternalFuntions.DomId(const AContext: ITemplateContext; const AValue: TValue): string;
+begin
+  exit(DomId(AContext, AValue, ''));
+end;
+
+class function TInternalFuntions.DomId(const AContext: ITemplateContext; const AValue: TValue; const AExtraContext: string): string;
+var
+  LType: TRttiType;
+  LProperty: TRttiProperty;
+  LField: TRttiField;
+  LIsRecord: boolean;
+  LIsObject: boolean;
+  LPtr: Pointer;
+  LValue: string;
+
+  function GetPtr: Pointer;
+  begin
+    if LIsRecord then
+      exit(AValue.GetReferenceToRawData)
+    else
+      exit(AValue.AsObject);
+  end;
+
+begin
+  LIsRecord := IsRecord(AValue);
+  LIsObject := false;
+  if not LIsRecord then
+  begin
+    LIsObject := IsObject(AValue);
+  end;
+  if LIsRecord or LIsObject then
+  begin
+    LType := GRttiContext.GetType(AValue.TypeInfo);
+    LField := LType.GetField('id');
+    LPtr := GetPtr;
+    if LField <> nil then
+    begin
+      LValue := AsString(LField.GetValue(LPtr), AContext);
+    end
+    else
+    begin
+      LProperty := LType.GetProperty('id');
+      if LProperty <> nil then
+      begin
+        LValue := AsString(LProperty.GetValue(LPtr), AContext);
+      end
+      else
+      begin
+        raise ETemplateFunction.CreateRes(@SIdFieldOrPropertyExpected);
+      end;
+    end;
+    result := LType.Name + '_' + LValue;
+    if not AExtraContext.IsEmpty then
+    begin
+      result := AExtraContext + '_' + result;
+    end;
+    exit;
+  end;
+  raise ETemplateFunction.CreateRes(@SClassOrRecordExpected);
+end;
+
 class function TInternalFuntions.DtNow(): TDateTime;
 begin
   exit(System.SysUtils.Now);
@@ -896,7 +967,11 @@ var
   LObject: TObject;
 begin
   if not AValue.IsObject then
+  begin
+    if isStrLike(AValue) then
+      exit(AValue.AsString.IsEmpty);
     exit(false);
+  end;
   LObject := AValue.AsObject;
   exit(not assigned(LObject) or IsEmptyObject(LObject));
 end;

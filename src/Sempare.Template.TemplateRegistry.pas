@@ -12,7 +12,7 @@
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
  ****************************************************************************************************
  *                                                                                                  *
- * Copyright (c) 2019-2023 Sempare Limited                                                          *
+ * Copyright (c) 2019-2024 Sempare Limited                                                          *
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
@@ -150,6 +150,7 @@ type
     constructor Create();
     destructor Destroy; override;
 
+    procedure SetTemplate(const ATemplateName: string; const ATemplate: ITemplate);
     function GetTemplate(const ATemplateName: string): ITemplate; overload; inline;
     function GetTemplate(const ATemplateName: string; const AContext: TTemplateValue): ITemplate; overload;
     function GetTemplate<T>(const ATemplateName: string; const AContext: T): ITemplate; overload; inline;
@@ -207,9 +208,13 @@ const
   { TTemplateRegistry }
 
 procedure TTemplateRegistry.ClearTemplates;
+var
+  LName: string;
 begin
   FLock.Acquire;
   try
+    for LName in FTemplates.keys do
+      FContext.RemoveTemplate(LName);
     FTemplates.Clear();
   finally
     FLock.Release;
@@ -422,13 +427,25 @@ end;
 function TTemplateRegistry.LoadResource(const AName: string; const AContext: TTemplateValue; out ACacheInContext: boolean): ITemplate;
 begin
   ACacheInContext := false;
-  exit(TResourceTemplate.Create(FContext, AName));
+  try
+    exit(TResourceTemplate.Create(FContext, AName));
+  except
+    on ETemplateEvaluationError do
+      raise;
+    on Exception do
+      exit(nil);
+  end;
 end;
 
 function TTemplateRegistry.LoadFile(const AName: string; const AContext: TTemplateValue; out ACacheInContext: boolean): ITemplate;
+var
+  LName: string;
 begin
   ACacheInContext := false;
-  exit(TFileTemplate.Create(FContext, AName));
+  LName := TPath.GetFullPath(AName);
+  if TFile.Exists(LName) then
+    exit(TFileTemplate.Create(FContext, LName));
+  exit(nil);
 end;
 
 function TTemplateRegistry.LoadCustom(const AName: string; const AContext: TTemplateValue; out ACacheInContext: boolean): ITemplate;
@@ -457,6 +474,8 @@ var
       LName := FGetNames[ALoadStrategy](ATemplateName, LExts[LExt]);
       try
         ATemplate := FLoadMethods[ALoadStrategy](LName, AContext, LCacheInContext);
+        if ATemplate = nil then
+          continue;
         Log('Loaded template from %s: %s', [CLoadStrategy[ALoadStrategy], LName]);
         exit(true);
       except
@@ -650,6 +669,17 @@ begin
   if Value < 5 then
     raise ETemplateRefreshTooFrequent.Create();
   FRefreshIntervalS := Value;
+end;
+
+procedure TTemplateRegistry.SetTemplate(const ATemplateName: string; const ATemplate: ITemplate);
+begin
+  FLock.Acquire;
+  try
+    FContext.SetTemplate(ATemplateName, ATemplate);
+    FTemplates.AddOrSetValue(ATemplateName, ATemplate);
+  finally
+    FLock.Release;
+  end;
 end;
 
 procedure TTemplateRegistry.SetTemplateFileExt(const Value: string);

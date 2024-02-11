@@ -12,7 +12,7 @@
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
  ****************************************************************************************************
  *                                                                                                  *
- * Copyright (c) 2019-2023 Sempare Limited                                                          *
+ * Copyright (c) 2019-2024 Sempare Limited                                                          *
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
@@ -565,23 +565,31 @@ var
   LProperty: TRttiProperty;
   LIndexedProperty: TRttiIndexedProperty;
 begin
+  AFound := false;
   LType := GRttiContext.GetType(AObj.TypeInfo);
   try
     if IsIntLike(ADeref) then
     begin
       LIndexedProperty := LType.GetIndexedProperty('Items');
-      result := LIndexedProperty.GetValue(AObj.AsObject, [AsInt(ADeref, AContext)]);
+      if LIndexedProperty <> nil then
+      begin
+        result := LIndexedProperty.GetValue(AObj.AsObject, [AsInt(ADeref, AContext)]);
+        AFound := true;
+      end;
     end
     else
     begin
       LProperty := LType.GetProperty(AsString(ADeref, AContext));
-      result := LProperty.GetValue(AObj.AsObject);
+      if LProperty <> nil then
+      begin
+        result := LProperty.GetValue(AObj.AsObject);
+        AFound := true;
+      end;
     end;
-    AFound := true;
   except
     on e: Exception do
     begin
-      AFound := false;
+
       result := DerefClass(APosition, AObj, ADeref, ARaiseIfMissing, true, AContext, AFound);
       if not AFound then
       begin
@@ -600,6 +608,7 @@ var
   LIndexedProperty: TRttiIndexedProperty;
   LDerefValue: TValue;
 begin
+  AFound := false;
   LType := GRttiContext.GetType(AObj.TypeInfo);
   try
     if IsStrLike(ADeref) then
@@ -615,18 +624,19 @@ begin
     end;
 
     LIndexedProperty := LType.GetIndexedProperty('Items');
-    // values are sometime floats, so cast explicitly
-    if IsIntLike(ADeref) then
-      LDerefValue := AsInt(ADeref, AContext)
-    else
-      LDerefValue := ADeref;
-
-    result := LIndexedProperty.GetValue(AObj.AsObject, [LDerefValue]);
-    AFound := true;
+    if LIndexedProperty <> nil then
+    begin
+      // values are sometime floats, so cast explicitly
+      if IsIntLike(ADeref) then
+        LDerefValue := AsInt(ADeref, AContext)
+      else
+        LDerefValue := ADeref;
+      result := LIndexedProperty.GetValue(AObj.AsObject, [LDerefValue]);
+      AFound := true;
+    end;
   except
     on e: Exception do
     begin
-      AFound := false;
       result := DerefClass(APosition, AObj, ADeref, ARaiseIfMissing, true, AContext, AFound);
       if not AFound then
       begin

@@ -12,7 +12,7 @@
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
  ****************************************************************************************************
  *                                                                                                  *
- * Copyright (c) 2019-2023 Sempare Limited                                                          *
+ * Copyright (c) 2019-2024 Sempare Limited                                                          *
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
@@ -560,8 +560,10 @@ type
     function RuleBlockStmt: IStmt;
     function RuleExtendsStmt: IStmt;
     function RuleRequireStmt: IStmt;
+    function RuleSingletonStmt: IStmt;
+    function RuleValidateStmt: IStmt;
     function RuleNoopStmt: IStmt;
-    function ruleMapExpr: IExpr;
+    function RuleMapExpr: IExpr;
     function RuleExpression: IExpr;
     function RuleSimpleExpression: IExpr;
     function RuleTerm: IExpr;
@@ -1005,12 +1007,18 @@ var
   LValueSeparator: TTemplateSymbol;
   LBeforeNLStripActions: TStripActionSet;
   LAfterNLStripActions: TStripActionSet;
+  LMatchBracket: boolean;
 begin
   LSymbol := FLookahead;
 
   LAfterNLStripActions := FAfterNLStripActions;
   Match(vsInclude);
-  Match(vsOpenRoundBracket);
+  LMatchBracket := false;
+  if FLookahead.Token = vsOpenRoundBracket then
+  begin
+    Match(vsOpenRoundBracket);
+    LMatchBracket := true;
+  end;
   LIncludeExpr := RuleExpression;
   LValueSeparator := GetValueSeparatorSymbol;
   if FLookahead.Token = LValueSeparator then
@@ -1018,7 +1026,8 @@ begin
     Match(LValueSeparator);
     LScopeExpr := RuleExpression;
   end;
-  MatchClosingBracket(vsCloseRoundBracket);
+  if LMatchBracket then
+    MatchClosingBracket(vsCloseRoundBracket);
   LBeforeNLStripActions := MatchEndOfScript;
 
   result := TIncludeStmt.Create(LSymbol.Position, LIncludeExpr);
@@ -1033,7 +1042,7 @@ begin
   exit(WrapWithStripStmt(result, LBeforeNLStripActions, LAfterNLStripActions));
 end;
 
-function TTemplateParser.ruleMapExpr: IExpr;
+function TTemplateParser.RuleMapExpr: IExpr;
 
   function ParseMap: TMap; forward;
   function ParseExpr: TValue; forward;
@@ -1128,14 +1137,21 @@ var
   LBeforeNLStripActions: TStripActionSet;
   LAfterNLStripActions: TStripActionSet;
   LExprList: IExprList;
+  LMatchBracket: boolean;
 begin
   LSymbol := FLookahead;
 
   LAfterNLStripActions := FAfterNLStripActions;
   Match(vsRequire);
-  Match(vsOpenRoundBracket);
+  LMatchBracket := false;
+  if FLookahead.Token = vsOpenRoundBracket then
+  begin
+    Match(vsOpenRoundBracket);
+    LMatchBracket := true;
+  end;
   LExprList := self.RuleExprList();
-  MatchClosingBracket(vsCloseRoundBracket);
+  if LMatchBracket then
+    Match(vsCloseRoundBracket);
   LBeforeNLStripActions := MatchEndOfScript;
 
   result := TRequireStmt.Create(LSymbol.Position, LExprList);
@@ -1416,6 +1432,10 @@ begin
       result := RuleBlockStmt;
     vsExtends:
       result := RuleExtendsStmt;
+    vsValidate:
+      result := RuleValidateStmt;
+    vsSingleton:
+      result := RuleSingletonStmt;
   else
     result := RuleExprStmt;
   end;
@@ -1498,7 +1518,7 @@ var
   LVar: string;
 begin
   LSymbol := FLookahead;
-  Match(vsCOLONEQ);
+  Match(vsEQ);
   LVar := AsVarString(ASymbol);
   if LVar = '' then
     RaiseError(LSymbol.Position, SAssignmentToVar);
@@ -1513,13 +1533,23 @@ var
   LContainer: ITemplate;
   LBeforeNLStripActions: TStripActionSet;
   LAfterNLStripActions: TStripActionSet;
+  LMatchBracket: boolean;
 begin
   LOptions := Preserve.Value<TParserOptions>(FOptions, FOptions + [poAllowEnd]);
   LSymbol := FLookahead;
 
   LAfterNLStripActions := FAfterNLStripActions;
   Match(vsBlock);
+  LMatchBracket := false;
+  if FLookahead.Token = vsOpenRoundBracket then
+  begin
+    Match(vsOpenRoundBracket);
+    LMatchBracket := true;
+  end;
   LName := RuleExpression;
+  if LMatchBracket then
+    Match(vsCloseRoundBracket);
+
   LBeforeNLStripActions := MatchEndOfScript;
 
   LContainer := PushContainer(LBeforeNLStripActions, LAfterNLStripActions);
@@ -1603,20 +1633,65 @@ begin
   exit(WrapWithStripStmt(result, LBeforeNLStripActions, LAfterNLStripActions));
 end;
 
-function TTemplateParser.RuleCycleStmt: IStmt;
+function TTemplateParser.RuleSingletonStmt: IStmt;
 var
   LSymbol: ITemplateSymbol;
-  LListExpr: IExprList;
   LBeforeNLStripActions: TStripActionSet;
   LAfterNLStripActions: TStripActionSet;
 begin
   LSymbol := FLookahead;
 
   LAfterNLStripActions := FAfterNLStripActions;
+  Match(vsSingleton);
+
+  // TODO: create a singleton stmt
+
+  LBeforeNLStripActions := MatchEndOfScript;
+
+  result := TNoopStmt.Create(LSymbol.Position);
+  exit(WrapWithStripStmt(result, LBeforeNLStripActions, LAfterNLStripActions));
+end;
+
+function TTemplateParser.RuleValidateStmt: IStmt;
+var
+  LSymbol: ITemplateSymbol;
+  LBeforeNLStripActions: TStripActionSet;
+  LAfterNLStripActions: TStripActionSet;
+begin
+  LSymbol := FLookahead;
+
+  LAfterNLStripActions := FAfterNLStripActions;
+  Match(vsValidate);
+
+  // TODO: create a validate stmt
+
+  LBeforeNLStripActions := MatchEndOfScript;
+
+  result := TNoopStmt.Create(LSymbol.Position);
+  exit(WrapWithStripStmt(result, LBeforeNLStripActions, LAfterNLStripActions));
+end;
+
+function TTemplateParser.RuleCycleStmt: IStmt;
+var
+  LSymbol: ITemplateSymbol;
+  LListExpr: IExprList;
+  LBeforeNLStripActions: TStripActionSet;
+  LAfterNLStripActions: TStripActionSet;
+  LMatchBracket: boolean;
+begin
+  LSymbol := FLookahead;
+
+  LAfterNLStripActions := FAfterNLStripActions;
   Match(vsCycle);
-  Match(vsOpenRoundBracket);
+  LMatchBracket := false;
+  if FLookahead.Token = vsOpenRoundBracket then
+  begin
+    Match(vsOpenRoundBracket);
+    LMatchBracket := true;
+  end;
   LListExpr := RuleExprList();
-  MatchClosingBracket(vsCloseRoundBracket);
+  if LMatchBracket then
+    MatchClosingBracket(vsCloseRoundBracket);
   LBeforeNLStripActions := MatchEndOfScript;
 
   result := TCycleStmt.Create(LSymbol.Position, LListExpr);
@@ -1695,9 +1770,54 @@ function TTemplateParser.RuleExpression: IExpr;
 var
   LSymbol: ITemplateSymbol;
   LRight: IExpr;
-  LTrueExpr: IExpr;
-  LFalseExpr: IExpr;
   LBinOp: TBinOp;
+
+  function TryTernary(const ACond: IExpr; const ATrueExpr: IExpr; const AFalseExpr: IExpr): IExpr;
+  begin
+    if (eoEvalEarly in FContext.Options) and IsValue(ACond) then
+    begin
+      if AsBoolean(AsValue(ACond)) then
+        exit(ATrueExpr)
+      else
+        exit(AFalseExpr);
+    end;
+    exit(TTernaryExpr.Create(LSymbol.Position, ACond, ATrueExpr, AFalseExpr));
+  end;
+
+  function TryCTernary(var AExpr: IExpr): boolean;
+  var
+    LTrueExpr: IExpr;
+    LFalseExpr: IExpr;
+  begin
+    if FLookahead.Token = vsQUESTION then
+    begin
+      Match(vsQUESTION);
+      LTrueExpr := RuleExpression();
+      Match(VsCOLON);
+      LFalseExpr := RuleExpression();
+      AExpr := TryTernary(AExpr, LTrueExpr, LFalseExpr);
+      exit(true);
+    end;
+    exit(false);
+  end;
+
+  function TryPasTernary(var LExprIsInitialTrue: IExpr): boolean;
+  var
+    LCond: IExpr;
+    LFalseExpr: IExpr;
+  begin
+    if FLookahead.Token = vsIF then
+    begin
+      Match(vsIF);
+      LCond := RuleExpression();
+      Match(vsElse);
+      LFalseExpr := RuleExpression();
+      LExprIsInitialTrue := TryTernary(LCond, LExprIsInitialTrue, LFalseExpr);
+      exit(true);
+    end;
+    exit(false);
+  end;
+
 begin
   result := RuleSimpleExpression();
   LSymbol := FLookahead;
@@ -1726,22 +1846,10 @@ begin
     result := TBinopExpr.Create(LSymbol.Position, result, LBinOp, LRight);
   end;
 
-  if FLookahead.Token = vsQUESTION then
-  begin
-    Match(vsQUESTION);
-    LTrueExpr := RuleExpression();
-    Match(VsCOLON);
-    LFalseExpr := RuleExpression();
-
-    if (eoEvalEarly in FContext.Options) and IsValue(result) then
-    begin
-      if AsBoolean(AsValue(result)) then
-        exit(LTrueExpr)
-      else
-        exit(LFalseExpr);
-    end;
-    exit(TTernaryExpr.Create(LSymbol.Position, result, LTrueExpr, LFalseExpr));
-  end;
+  if TryCTernary(result) then // this is C like - initial mistake IMO
+    exit;
+  if TryPasTernary(result) then // this is the prefered ternary
+    exit;
 end;
 
 function TTemplateParser.RuleFactor: IExpr;
@@ -1752,7 +1860,7 @@ begin
   LSymbol := FLookahead;
   case LSymbol.Token of
     vsOpenCurlyBracket:
-      exit(ruleMapExpr);
+      exit(RuleMapExpr);
     vsOpenSquareBracket:
       begin
         Match(vsOpenSquareBracket);
@@ -1865,7 +1973,7 @@ begin
   end
   else
   begin
-    Match(vsCOLONEQ);
+    Match(vsEQ);
     LLowValueExpr := RuleExpression();
     LForOp := TemplateForop(LSymbol.Position, FLookahead.Token);
     if FLookahead.Token in [vsDownto, vsTo] then
@@ -1976,13 +2084,12 @@ var
 begin
   LSymbol := FLookahead;
   LExpr := RuleVariable;
-
   LAfterNLStripActions := FAfterNLStripActions;
-  if FLookahead.Token = vsCOLONEQ then
+  if FLookahead.Token = vsEQ then
   begin
     result := RuleAssignStmt(LExpr);
   end
-  else if FLookahead.Token = vsEndScript then
+  else if FLookahead.Token in [vsEndScript, vsSemiColon] then
   begin
     LExpr := TEncodeExpr.Create(LSymbol.Position, LExpr);
     result := RulePrintStmtVariable(LExpr);
@@ -2158,14 +2265,21 @@ var
   LExpr: IExpr;
   LBeforeNLStripActions: TStripActionSet;
   LAfterNLStripActions: TStripActionSet;
+  LMatchBracket: boolean;
 begin
   LSymbol := FLookahead;
 
   LAfterNLStripActions := FAfterNLStripActions;
   Match(vsPrint);
-  Match(vsOpenRoundBracket);
+  LMatchBracket := false;
+  if FLookahead.Token = vsOpenRoundBracket then
+  begin
+    Match(vsOpenRoundBracket);
+    LMatchBracket := true;
+  end;
   LExpr := RuleExpression;
-  MatchClosingBracket(vsCloseRoundBracket);
+  if LMatchBracket then
+    MatchClosingBracket(vsCloseRoundBracket);
   LBeforeNLStripActions := MatchEndOfScript;
 
   result := TPrintStmt.Create(LSymbol.Position, LExpr);
@@ -2206,11 +2320,20 @@ var
   LExpr: IExpr;
   LBeforeNLStripActions: TStripActionSet;
   LAfterNLStripActions: TStripActionSet;
+  LMatchBracket: boolean;
 begin
   LSymbol := FLookahead;
 
   LAfterNLStripActions := FAfterNLStripActions;
+  LMatchBracket := false;
+  if FLookahead.Token = vsOpenRoundBracket then
+  begin
+    Match(vsOpenRoundBracket);
+    LMatchBracket := true;
+  end;
   LExpr := RuleExpression;
+  if LMatchBracket then
+    Match(vsCloseRoundBracket);
   result := RulePrintStmtVariable(TEncodeExpr.Create(LSymbol.Position, LExpr));
   LBeforeNLStripActions := MatchEndOfScript;
 
@@ -2227,20 +2350,27 @@ var
   LContainerTemplate: TTemplate;
   LBeforeNLStripActions: TStripActionSet;
   LAfterNLStripActions: TStripActionSet;
+  LMatchBracket: boolean;
 begin
   LOptions := Preserve.Value<TParserOptions>(FOptions, FOptions + [poAllowEnd]);
   LSymbol := FLookahead;
 
   LAfterNLStripActions := FAfterNLStripActions;
   Match(vsExtends);
-  Match(vsOpenRoundBracket);
+  LMatchBracket := false;
+  if FLookahead.Token = vsOpenRoundBracket then
+  begin
+    Match(vsOpenRoundBracket);
+    LMatchBracket := true;
+  end;
   LName := RuleExpression;
   if FLookahead.Token = vsComma then
   begin
     Match(vsComma);
     LScopeExpr := RuleExpression;
   end;
-  Match(vsCloseRoundBracket);
+  if LMatchBracket then
+    Match(vsCloseRoundBracket);
   LBeforeNLStripActions := MatchEndOfScript; // we don't care about the strip action on this as content is ignored inside an extends block
   LContainer := PushContainer(LBeforeNLStripActions, LAfterNLStripActions);
 

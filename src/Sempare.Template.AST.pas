@@ -12,7 +12,7 @@
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
  ****************************************************************************************************
  *                                                                                                  *
- * Copyright (c) 2019-2023 Sempare Limited                                                          *
+ * Copyright (c) 2019-2024 Sempare Limited                                                          *
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
@@ -104,9 +104,6 @@ type
     vsTo, //
     vsDownto, //
 
-    // assignment statement
-    vsCOLONEQ, //
-
     // identifier
     vsID, //
     vsDOT, //
@@ -153,7 +150,10 @@ type
     vsBlock, //
 
     vsNewLine, //
-    vsWhiteSpace //
+    vsWhiteSpace, //
+
+    vsSingleton, //
+    vsValidate //
     );
 
   TTemplateSymbolSet = set of TTemplateSymbol;

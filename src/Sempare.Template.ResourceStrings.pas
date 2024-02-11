@@ -12,7 +12,7 @@
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
  ****************************************************************************************************
  *                                                                                                  *
- * Copyright (c) 2019-2023 Sempare Limited                                                          *
+ * Copyright (c) 2019-2024 Sempare Limited                                                          *
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
@@ -78,6 +78,8 @@ resourcestring
   SRefreshTooFrequent = 'Template refresh too frequent';
   SAssignmentToVar = 'Assignment to variables only';
   SVariableNotResolved = 'Variable %s not resolved';
+  SClassOrRecordExpected = 'A class or record is expected';
+  SIdFieldOrPropertyExpected = 'Id field or property expected on class or record';
 
 implementation
 

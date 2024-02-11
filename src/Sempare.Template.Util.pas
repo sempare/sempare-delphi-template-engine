@@ -12,7 +12,7 @@
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
  ****************************************************************************************************
  *                                                                                                  *
- * Copyright (c) 2019-2023 Sempare Limited                                                          *
+ * Copyright (c) 2019-2024 Sempare Limited                                                          *
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
@@ -129,11 +129,6 @@ uses
 {$ELSE}
     ;
 {$ENDIF}
-{$IFDEF MSWINDOWS}
-
-var
-  GVmwareResolved: boolean;
-  GIsUnderVmware: boolean;
 
 function FloatToTValue(const AValue: double): TValue;
 begin
@@ -142,6 +137,12 @@ begin
   else
     exit(AValue);
 end;
+
+{$IFDEF MSWINDOWS}
+
+var
+  GVmwareResolved: boolean;
+  GIsUnderVmware: boolean;
 
 function IsRunningUnderVMWare: boolean;
 var

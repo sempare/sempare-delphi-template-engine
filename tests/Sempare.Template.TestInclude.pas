@@ -12,7 +12,7 @@
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
  ****************************************************************************************************
  *                                                                                                  *
- * Copyright (c) 2019-2023 Sempare Limited                                                          *
+ * Copyright (c) 2019-2024 Sempare Limited                                                          *
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
@@ -284,8 +284,8 @@ var
   info: TTemplate;
 begin
   info.header.company := 'sempare limited';
-  info.footer.copyright := 2023;
-  Assert.AreEqual('sempare limited'#13#10'Copyright (c) 2023'#13#10, Template.Eval( //
+  info.footer.copyright := 2024;
+  Assert.AreEqual('sempare limited'#13#10'Copyright (c) 2024'#13#10, Template.Eval( //
     '<% template ''prefix'' %><% Company %>'#13#10'<% end %>' + //
     '<% template ''suffix'' %>Copyright (c) <% Copyright %>'#13#10'<% end %>' + //
     '<% header.company %>'#13#10 + //
@@ -297,15 +297,15 @@ begin
     '<% include(''prefix'', header) %>' //
     , info));
 
-  Assert.AreEqual('Copyright (c) 2023'#13#10, Template.Eval( //
+  Assert.AreEqual('Copyright (c) 2024'#13#10, Template.Eval( //
     '<% template ''suffix'' %>Copyright (c) <% Copyright %>'#13#10'<% end %>' + //
     '<% include(''suffix'', footer) %>', info));
 
   Assert.AreEqual( //
     'sempare limited'#13#10 + //
     'sempare limited'#13#10 + //
-    'Copyright (c) 2023'#13#10 + //
-    'Copyright (c) 2023'#13#10, //
+    'Copyright (c) 2024'#13#10 + //
+    'Copyright (c) 2024'#13#10, //
     Template.Eval( //
     '<% template ''prefix'' %><% Company %>'#13#10'<% end %>' + //
     '<% template ''suffix'' %>Copyright (c) <% Copyright %>'#13#10'<% end %>' + //
@@ -492,7 +492,7 @@ const
     '         <tr>'#$D#$A'             <td colspan="2" align="right">'#$D#$A'               '#$D#$A + //
     '                 <input type="button" name="submit" value="Submit">'#$D#$A'               '#$D#$A + //
     '             </td>'#$D#$A'         </tr>'#$D#$A'      </table>'#$D#$A'   </form>'#$D#$A#$D#$A#$D#$A + //
-    '  <p>Copyright (c) 2023 </p>'#$D#$A' </body>'#$D#$A'</html>'#$D#$A#$D#$A#$D#$A;
+    '  <p>Copyright (c) 2024 </p>'#$D#$A' </body>'#$D#$A'</html>'#$D#$A#$D#$A#$D#$A;
 
 procedure ThreadDetail(const AFailed: pinteger; const ANumEvals: integer; const ATemplate: ITemplate; const ATemplateData: TTemplateData);
 var
@@ -536,7 +536,7 @@ var
   LEvent: TCountDownEvent;
 begin
   LTemplateData.company := 'Sempare';
-  LTemplateData.CopyrightYear := 2023;
+  LTemplateData.CopyrightYear := 2024;
   LTemplateData.FormName := 'userinfo';
   LTemplateData.FormAction := '/userinfo';
   SetLength(LTemplateData.Fields, 3);
@@ -639,7 +639,7 @@ var
   LIterations: integer;
 begin
   LTemplateData.company := 'Sempare';
-  LTemplateData.CopyrightYear := 2023;
+  LTemplateData.CopyrightYear := 2024;
   LTemplateData.FormName := 'userinfo';
   LTemplateData.FormAction := '/userinfo';
 
@@ -731,7 +731,7 @@ var
   LResult: string;
 begin
   LTemplateData.company := 'Sempare';
-  LTemplateData.CopyrightYear := 2023;
+  LTemplateData.CopyrightYear := 2024;
   LTemplateData.FormName := 'userinfo';
   LTemplateData.FormAction := '/userinfo';
 
@@ -800,7 +800,7 @@ begin
     '         '#13#10'             <tr><td>Email</td><td><input type="email" name="email"></td></tr>'#13#10'         '#13#10 + //
     '         <tr>'#13#10'             <td colspan="2" align="right">'#13#10'               '#13#10 + //
     '                 <input type="button" name="submit" value="Submit">'#13#10'               '#13#10'             </td>'#13#10'         </tr>'#13#10 + //
-    '      </table>'#13#10'   </form>'#13#10''#13#10''#13#10'  <p>Copyright (c) 2023 </p>'#13#10' </body>'#13#10'</html>'#13#10''#13#10''#13#10, LResult);
+    '      </table>'#13#10'   </form>'#13#10''#13#10''#13#10'  <p>Copyright (c) 2024 </p>'#13#10' </body>'#13#10'</html>'#13#10''#13#10''#13#10, LResult);
 end;
 
 procedure TTestTemplateInclude.TestNestedBody;

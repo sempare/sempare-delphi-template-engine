@@ -371,7 +371,7 @@ object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
               Alignment = taRightJustify
               AutoSize = False
               Caption = '(Line: 1, Position: 1)'
-              Color = 6908265
+              Color = clDimgray
               Font.Charset = DEFAULT_CHARSET
               Font.Color = clWhite
               Font.Height = -11
@@ -392,7 +392,7 @@ object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
               Align = alLeft
               AutoSize = False
               Caption = 'lblTiming'
-              Color = 6908265
+              Color = clDimgray
               Enabled = False
               Font.Charset = DEFAULT_CHARSET
               Font.Color = clWhite

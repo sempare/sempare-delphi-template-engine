@@ -12,7 +12,7 @@
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
  ****************************************************************************************************
  *                                                                                                  *
- * Copyright (c) 2019-2023 Sempare Limited                                                          *
+ * Copyright (c) 2019-2024 Sempare Limited                                                          *
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
@@ -131,11 +131,29 @@ type
     procedure TestManaged;
     [Test]
     procedure TestVersion;
+    [Test]
+    procedure TestDefault;
+    [Test]
+    procedure TestDomId;
   end;
 
 type
   TMyType = class
     Dummy: integer;
+  end;
+
+  TMyId1 = record
+    id: integer;
+  end;
+
+  TMyId2 = record
+    FId: string;
+    property id: string read FId;
+  end;
+
+  TMyId3 = class
+    FId: string;
+    property id: string read FId write FId;
   end;
 
 implementation
@@ -635,6 +653,55 @@ end;
 procedure TFunctionTest.TestVersion;
 begin
   Assert.AreEqual(Template.Version, Template.Eval('<% SempareVersion() %>'));
+end;
+
+procedure TFunctionTest.TestDefault;
+begin
+  Assert.AreEqual('default', Template.Eval('<% Default('''', ''default'') %>'));
+  Assert.AreEqual('world', Template.Eval('<% Default(''world'', ''default'') %>'));
+
+  Assert.AreEqual('false', Template.Eval('<% Default(false, ''default'') %>'));
+  Assert.AreEqual('true', Template.Eval('<% Default(true, ''default'') %>'));
+
+  Assert.AreEqual('0', Template.Eval('<% Default(0, ''default'') %>'));
+  Assert.AreEqual('123', Template.Eval('<% Default(123, ''default'') %>'));
+
+  Assert.AreEqual('0', Template.Eval('<% Default(0.0, ''default'') %>'));
+  Assert.AreEqual('123', Template.Eval('<% Default(123.0, ''default'') %>'));
+end;
+
+procedure TFunctionTest.TestDomId;
+var
+  LRec1: TMyId1;
+  LRec2: TMyId2;
+  LRec3: TMyId3;
+begin
+  LRec1.id := 345;
+  LRec2.FId := '678';
+  Assert.AreEqual('TMyId1_345', Template.Eval('<% DomId(_) %>', LRec1));
+  Assert.AreEqual('x_TMyId1_345', Template.Eval('<% DomId(_, ''x'') %>', LRec1));
+
+  // property on record not working
+  Assert.WillRaise(
+    procedure
+    begin
+      Assert.AreEqual('TMyId2_678', Template.Eval('<% DomId(_) %>', LRec2));
+    end);
+
+  Assert.WillRaise(
+    procedure
+    begin
+      Assert.AreEqual('x_TMyId2_678', Template.Eval('<% DomId(_, ''x'') %>', LRec2));
+    end);
+
+  LRec3 := TMyId3.Create;
+  try
+    LRec3.id := '543';
+    Assert.AreEqual('TMyId3_543', Template.Eval('<% DomId(_) %>', LRec3));
+    Assert.AreEqual('x_TMyId3_543', Template.Eval('<% DomId(_, ''x'') %>', LRec3));
+  finally
+    LRec3.Free;
+  end;
 end;
 
 initialization
