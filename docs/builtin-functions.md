@@ -31,6 +31,8 @@ Copyright (c) 2019-2023 [Sempare Limited](http://www.sempare.ltd)
 
 - misc functions
   - [containskey](#containskey)
+  - [default](#default)
+  - [domid](#domid)
   - [isempty](#isempty)
   - [manage](#manage)
   - [sort](#sort)
@@ -187,9 +189,36 @@ Returns true if the collection is an object, it is not nil, and it contains valu
 Returns true if the map contains the key. The key must be a string.
 ```
 <% containskey({}, "key") %> // false
-<% containskey({"key":"value"}, "key") %> // trye
+<% containskey({"key":"value"}, "key") %> // true
 ```
 
+<a name="default"><h3>default(value, default)</h3></a>
+Returns value if value is not empty, otherwise default
+
+```
+<% name := '' %>
+<% default(name, 'joe bloggs') %> 
+```
+
+<a name="domid"><h3>domid(value[, context])</h3></a>
+Returns a string composed of a type and an id. Useful for creating unique DOM ids in HTML.
+
+This works with records and classes, where the function inspects the structure for an 'id' field.
+
+```
+type
+  TMyRec = record
+    id : string;
+  end;
+  
+...
+  var LRec : TMyRec;
+  LRec.id := '123';
+  var LResult := Template.Parse('<% domid(_) %>', LRec); // TMyRec_123
+  
+  LResult := Template.Parse('<% domid(_, ''ctx'') %>', LRec); // ctx_TMyRec_123
+  
+```
 
 <a name="manage"><h3>manage(object)</h3></a>
 Manages an object so that you don't have to explicitly free objects. 
