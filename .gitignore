@@ -1,4 +1,6 @@
 *.res
+*.dcu
+*.stat
 __recovery
 *.bak
 Win64
