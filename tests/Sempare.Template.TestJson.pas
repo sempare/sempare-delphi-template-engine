@@ -43,13 +43,28 @@ type
   TTestTemplateJson = class
   public
     [test]
-    procedure TestJson;
+    procedure TestJsonObject;
+
+    [test]
+    procedure TestJsonArray;
 
     [test]
     procedure TestToJson;
 
     [test]
     procedure TestParseJson;
+
+    [test]
+    procedure TestJsonNonEmptyArray;
+
+    [test]
+    procedure TestJsonEmptyArray;
+
+    [test]
+    procedure TestJsonDerefArray;
+
+    [test]
+    procedure TestJsonDerefAV;
 
   end;
 
@@ -59,7 +74,62 @@ uses
   Sempare.Template.JSON,
   Sempare.Template;
 
-procedure TTestTemplateJson.TestJson;
+procedure TTestTemplateJson.TestJsonNonEmptyArray;
+var
+  o: TJsonValue;
+begin
+  o := TJsonValue.ParseJSONValue('[1,2,3,4,5]');
+  Assert.AreEqual('not empty', Template.Eval('<% if not isempty(_) %>not empty<% end %>', o));
+  o.Free;
+
+  o := TJsonValue.ParseJSONValue('[1,2,3,4,5]');
+  Assert.AreEqual('', Template.Eval('<% if   isempty(_) %>not empty<% end %>', o));
+  o.Free;
+
+end;
+
+procedure TTestTemplateJson.TestJsonDerefArray;
+var
+  o: TJsonValue;
+begin
+  o := TJsonValue.ParseJSONValue('{ "abc": [1,2,3,4,5] }');
+  Assert.AreEqual('1 2 3 4 5 ', Template.Eval('<% for i of _["abc"] %><% i %> <% end %>', o));
+  o.Free;
+end;
+
+procedure TTestTemplateJson.TestJsonDerefAV;
+var
+  o: TJsonValue;
+begin
+  o := TJsonValue.ParseJSONValue('{ "abc": [1,2,3,4,5] }');
+  Assert.AreEqual('', Template.Eval('<% for i of _.ab %><% i %> <% end %>', o)); // AV took place due to wrong naming
+  o.Free;
+end;
+
+procedure TTestTemplateJson.TestJsonEmptyArray;
+var
+  o: TJsonValue;
+begin
+  o := TJsonValue.ParseJSONValue('[]');
+  Assert.AreEqual('', Template.Eval('<% if not isempty(_) %>empty<% end %>', o));
+  o.Free;
+
+  o := TJsonValue.ParseJSONValue('[]');
+  Assert.AreEqual('empty', Template.Eval('<% if isempty(_) %>empty<% end %>', o));
+  o.Free;
+end;
+
+procedure TTestTemplateJson.TestJsonArray;
+var
+  o: TJsonValue;
+begin
+  o := TJsonValue.ParseJSONValue('[1,2,3,4,5]');
+  Assert.AreEqual('1 2 3 4 5 ', Template.Eval('<% for i in _ %><% i %> <% end %>', o));
+
+  o.Free;
+end;
+
+procedure TTestTemplateJson.TestJsonObject;
 var
   o, o2: TJSonObject;
 begin

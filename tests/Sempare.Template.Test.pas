@@ -98,7 +98,6 @@ type
     procedure TestParseFile;
 
     [Test]
-    // Not Yet Supported
     procedure TestSemiColon;
 
     [Test]
@@ -581,7 +580,7 @@ begin
   LTemplate := Template.Parse('<% _ %>');
   Template.Resolver.Context.SetTemplate('test', LTemplate);
 
-  //  class procedure Resolve<T>(const ATemplateName: string; const AData: T; const AOutputStream: TStream); overload; static;
+  // class procedure Resolve<T>(const ATemplateName: string; const AData: T; const AOutputStream: TStream); overload; static;
   Assert.AreEqual('hello world', EvalStream(
     procedure(AOutputStream: TStream)
     begin
@@ -616,7 +615,7 @@ begin
   LTemplate := Template.Parse('<% _ %>');
   Template.Resolver.Context.SetTemplate('test', LTemplate);
 
-  //  class procedure ResolveWithContext<T, TContext>(const ATemplateName: string; const AContext: TContext; const AData: T; const AOutputStream: TStream); overload; static;
+  // class procedure ResolveWithContext<T, TContext>(const ATemplateName: string; const AContext: TContext; const AData: T; const AOutputStream: TStream); overload; static;
   Assert.AreEqual('hello world', EvalStream(
     procedure(AOutputStream: TStream)
     begin
@@ -635,7 +634,7 @@ begin
       Template.ResolveWithContext('te', 'st', AOutputStream);
     end));
 
-  //  class function ResolveWithContext<TContext>(const ATemplateName: string; const AContext: TContext): string; overload; static;
+  // class function ResolveWithContext<TContext>(const ATemplateName: string; const AContext: TContext): string; overload; static;
   LTemplate := Template.Parse('hello <% "world" %>');
   Template.Resolver.Context.SetTemplate('test', LTemplate);
 
@@ -683,7 +682,7 @@ begin
     TFile.Delete(LPath);
   end;
 
-  //  class procedure ExtractReferences(const ATemplate: ITemplate; out AVariables: TArray<string>; out AFunctions: TArray<string>); static;
+  // class procedure ExtractReferences(const ATemplate: ITemplate; out AVariables: TArray<string>; out AFunctions: TArray<string>); static;
 
   LTemplate := Template.Parse('<% if x = 1 ; print(trim(var)); end %>');
   Template.ExtractReferences(LTemplate, LVariables, LFunctions);
@@ -693,7 +692,7 @@ begin
   Assert.AreEqual(1, length(LFunctions));
   Assert.AreEqual('Trim', LFunctions[0]);
 
-  //   class procedure ExtractBlocks(const ATemplate: ITemplate; var ABlocks: TDictionary<string, ITemplate>); static;
+  // class procedure ExtractBlocks(const ATemplate: ITemplate; var ABlocks: TDictionary<string, ITemplate>); static;
   LTemplate := Template.Parse('<% block "header" %>header<% end %><% block "footer" %>footer<% end %>');
   LBlocks := TDictionary<string, ITemplate>.Create;
   try
@@ -886,6 +885,7 @@ begin
         AResult := 'value';
         exit(true);
       end;
+      AResult := '';
       exit(false);
     end;
   Assert.AreEqual('', Template.Eval(LCtx, '<% avar %>'));

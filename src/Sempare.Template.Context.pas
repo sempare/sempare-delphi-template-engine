@@ -235,6 +235,7 @@ uses
 {$ENDIF}
   System.SyncObjs,
   Sempare.Template,
+  Sempare.Template.Rtti,
   Sempare.Template.Evaluate,
   Sempare.Template.Functions,
   Sempare.Template.ResourceStrings;
@@ -790,11 +791,12 @@ begin
     if FVariables.TryGetItem(AName, AValue) then
       exit(true);
     if assigned(FVariableResolver) then
-      exit(FVariableResolver(self, AName, AValue));
+      if FVariableResolver(self, AName, AValue) then
+        exit(true);
   finally
     FLock.Leave;
   end;
-  exit(false);
+  exit(ExitEmpty(AValue));
 end;
 
 procedure TTemplateContext.Unmanage(const AObject: TObject);

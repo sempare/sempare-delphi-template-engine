@@ -308,8 +308,6 @@ procedure TEvaluationTemplateVisitor.Visit(const AExpr: IVariableExpr);
 var
   LStackFrame: TStackFrame;
   LValue: TValue;
-  LDeref: TValue;
-  LDerefed: boolean;
 begin
   if FAllowRootDeref then
   begin
@@ -318,13 +316,8 @@ begin
     if LValue.IsEmpty then
     begin
       try
-        LDeref := Deref(AExpr, LStackFrame.Root, AExpr.variable, eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext, LDerefed);
-        if not LDerefed then
-        begin
-          LDerefed := FContext.TryGetVariable(AExpr.variable, LDeref);
-        end;
-        if LDerefed then
-          LValue := LDeref;
+        if not TryDeref(AExpr, LStackFrame.Root, AExpr.variable, eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext, LValue) then
+          FContext.TryGetVariable(AExpr.variable, LValue);
       except
         on e: exception do
         begin
@@ -513,6 +506,9 @@ var
     LEnumMoveNextMethod: TRttiMethod;
     LEnumCurrentProperty: TRttiProperty;
     LEnumValue: TValue;
+    LValue: TValue;
+    LValue2: TValue;
+    LRaiseIfMissing: boolean;
   begin
     if LLoopExprType.AsInstance.MetaclassType.InheritsFrom(TDataSet) then
     begin
@@ -530,9 +526,12 @@ var
       LLoopExprType := GRttiContext.GetType(LEnumObj.ClassType);
       LEnumMoveNextMethod := LLoopExprType.GetMethod('MoveNext');
       LEnumCurrentProperty := LLoopExprType.getProperty('Current');
+      LRaiseIfMissing := eoRaiseErrorWhenVariableNotFound in FContext.Options;
       while LEnumMoveNextMethod.Invoke(LEnumObj, []).AsBoolean and ((LLimit = -1) or (LLoops < LLimit)) do
       begin
-        FStackFrames.peek[LVariableName] := LEnumCurrentProperty.GetValue(LEnumObj);
+        LValue := LEnumCurrentProperty.GetValue(LEnumObj);
+        TryDeref(AStmt, LValue, LRaiseIfMissing, FContext, LValue2);
+        FStackFrames.peek[LVariableName] := LValue2;
         if HandleLoop then
           break;
       end;
@@ -548,6 +547,9 @@ var
     LIdx: integer;
     LMin: integer;
     LGetValue: TGetForInValueIndex;
+    LRaiseIfMissing: boolean;
+    LValue: TValue;
+    LValue2: TValue;
   begin
     LArrayType := LLoopExprType as TRttiArrayType;
     if LArrayType.DimensionCount <> 1 then
@@ -562,9 +564,12 @@ var
     else
       LGetValue := GetForInValueLoopExprIndex;
     LIdx := 0;
+    LRaiseIfMissing := eoRaiseErrorWhenVariableNotFound in FContext.Options;
     while (LIdx <= LLoopExpr.GetArrayLength - 1) and ((LLimit = -1) or (LLoops < LLimit)) do
     begin
-      FStackFrames.peek[LVariableName] := LGetValue(LLoopExpr, LIdx, LMin);
+      LValue := LGetValue(LLoopExpr, LIdx, LMin);
+      TryDeref(AStmt, LValue, LRaiseIfMissing, FContext, LValue2);
+      FStackFrames.peek[LVariableName] := LValue2;
       if HandleLoop then
         break;
       inc(LIdx);
@@ -575,15 +580,21 @@ var
   var
     LIdx: integer;
     LGetValue: TGetForInValueIndex;
+    LRaiseIfMissing: boolean;
+    LValue: TValue;
+    LValue2: TValue;
   begin
     if AOp = foIn then
       LGetValue := GetForInValueIndex
     else
       LGetValue := GetForInValueLoopExprIndex;
     LIdx := 0;
+    LRaiseIfMissing := eoRaiseErrorWhenVariableNotFound in FContext.Options;
     while (LIdx <= LLoopExpr.GetArrayLength - 1) and ((LLimit = -1) or (LLoops < LLimit)) do
     begin
-      FStackFrames.peek[LVariableName] := LGetValue(LLoopExpr, LIdx, 0);
+      LValue := LGetValue(LLoopExpr, LIdx, 0);
+      TryDeref(AStmt, LValue, LRaiseIfMissing, FContext, LValue2);
+      FStackFrames.peek[LVariableName] := LValue;
       if HandleLoop then
         break;
       inc(LIdx);
@@ -664,6 +675,8 @@ begin
           VisitArray;
         tkDynArray:
           VisitDynArray(AStmt.ForOp);
+        tkString, tkWString, tkLString, tkUString:
+          exit; // we return empty when there are issues, so lets ignore it
       else
         RaiseError(AStmt, SGetEnumeratorNotFoundOnObject);
       end;
