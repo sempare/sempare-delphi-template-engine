@@ -62,6 +62,8 @@ function IsNull(const AValue: TValue): boolean;
 function IsEnumerable(const AValue: TValue): boolean;
 function Contains(const APosition: IPosition; const ALeft, ARight: TValue; const AContext: ITemplateContext): boolean;
 
+function ExitEmpty(var AResult: TValue): boolean;
+
 function isEqual(const ALeft: TValue; const ARight: TValue; const AContext: ITemplateContext): boolean;
 function isLessThan(const ALeft: TValue; const ARight: TValue; const AContext: ITemplateContext): boolean;
 function isGreaterThan(const ALeft: TValue; const ARight: TValue; const AContext: ITemplateContext): boolean;
@@ -78,12 +80,15 @@ procedure AssertString(const APositional: IPosition; const AValue: TValue);
 procedure AssertArray(const APositional: IPosition; const AValue: TValue);
 
 function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext): TValue; overload;
-function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AResolved: boolean): TValue; overload;
+function TryDeref(const APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AResult: TValue): boolean; overload;
+function TryDeref(const APosition: IPosition; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AResult: TValue): boolean; overload;
+function Deref(const APosition: IPosition; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext): TValue; overload;
 
 type
   TDerefMatchFunction = function(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
   TDerefMatchInterfaceFunction = function(const AInterface: IInterface): boolean;
-  TDerefFunction = function(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
+  TDerefFunction = function(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AResult: TValue): boolean;
+  TDerefWrappedValue = function(const APosition: IPosition; const obj: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AResult: TValue): boolean;
   TPopulateStackFrame = procedure(const StackFrame: TStackFrame; const ARttiType: TRttiType; const AClass: TValue);
   TPopulateMatchFunction = function(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
   TCheckEmptyObjectFunction = function(const AObject: TObject): boolean;
@@ -92,6 +97,7 @@ procedure RegisterDeref(const AMatch: TDerefMatchFunction; const AFunction: TDer
 procedure RegisterDeref(const AMatch: TDerefMatchInterfaceFunction; const AFunction: TDerefFunction); overload;
 procedure RegisterPopulateStackFrame(const AMatch: TPopulateMatchFunction; const APopulator: TPopulateStackFrame); overload;
 procedure RegisterEmptyObjectCheck(const AMatch: TDerefMatchFunction; const AFunction: TCheckEmptyObjectFunction);
+procedure RegisterDerefWrappedValue(const AMatch: TDerefMatchFunction; const AFunction: TDerefWrappedValue);
 
 function PopulateStackFrame(const StackFrame: TStackFrame; const ARttiType: TRttiType; const AClass: TValue): boolean;
 
@@ -124,6 +130,7 @@ var
   GDerefFunctions: TList<TPair<TDerefMatchFunction, TDerefFunction>>;
   GDerefInterfaceFunctions: TList<TPair<TDerefMatchInterfaceFunction, TDerefFunction>>;
   GEmptyObjectFunctions: TList<TPair<TDerefMatchFunction, TCheckEmptyObjectFunction>>;
+  GDerefWrappedValues: TList<TPair<TDerefMatchFunction, TDerefWrappedValue>>;
 
 const
   INT_LIKE: set of TTypeKind = [tkInteger, tkInt64];
@@ -131,6 +138,11 @@ const
   STR_LIKE: set of TTypeKind = [tkString, tkWString, tkUString, tkLString];
 
 function MatchValue(const ATypeInfo: PTypeInfo): boolean; forward;
+
+procedure RegisterDerefWrappedValue(const AMatch: TDerefMatchFunction; const AFunction: TDerefWrappedValue);
+begin
+  GDerefWrappedValues.add(TPair<TDerefMatchFunction, TDerefWrappedValue>.Create(AMatch, AFunction));
+end;
 
 procedure RegisterDeref(const AMatch: TDerefMatchInterfaceFunction; const AFunction: TDerefFunction);
 begin
@@ -170,6 +182,12 @@ end;
 function IsNull(const AValue: TValue): boolean;
 begin
   exit(AValue.IsEmpty);
+end;
+
+function ExitEmpty(var AResult: TValue): boolean;
+begin
+  AResult := TValue.Empty;
+  exit(false);
 end;
 
 function Contains(const APosition: IPosition; const ALeft, ARight: TValue; const AContext: ITemplateContext): boolean;
@@ -490,7 +508,7 @@ begin
   end;
 end;
 
-function DerefTemplateVariables(const APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
+function TryDerefTemplateVariables(const APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AResult: TValue): boolean;
 var
   LObjectType: TRttiType;
   LGetItemMethod: TRttiMethod;
@@ -500,72 +518,105 @@ begin
   // with TValue result...
   LObjectType := GRttiContext.GetType(AObj.TypeInfo);
   LContainsKeyMethod := LObjectType.GetMethod('ContainsKey');
-  AFound := LContainsKeyMethod.Invoke(AObj, [ADeref]).AsBoolean;
-  if not AFound then
-    exit('');
+  try
+    if not LContainsKeyMethod.Invoke(AObj, [ADeref]).AsBoolean then
+      exit(ExitEmpty(AResult));
+  except
+    // TODO: log
+    exit(ExitEmpty(AResult));
+  end;
   LGetItemMethod := LObjectType.GetMethod('GetItem');
   try
-    exit(LGetItemMethod.Invoke(AObj, [ADeref]));
+    AResult := LGetItemMethod.Invoke(AObj, [ADeref]);
+    exit(true);
   except
-    on e: Exception do
-    begin
-      AFound := false;
-      exit('');
-    end;
+    // TODO: log
+    exit(ExitEmpty(AResult));
   end;
 end;
 
-function GetFieldOrProperty(const APtr: pointer; ADerefType: TRttiType; const ADeref: TValue; const AContext: ITemplateContext; out AFound: boolean): TValue;
+function TryGetFieldOrProperty(const APtr: pointer; ADerefType: TRttiType; const ADeref: TValue; const AContext: ITemplateContext; out AResult: TValue): boolean;
 var
   LDerefField: TRttiField;
   LDerefProp: TRttiProperty;
   LDerefFieldName: string;
 begin
-  AFound := true;
   LDerefFieldName := AsString(ADeref, AContext);
   // first try check if there is a field
   LDerefField := ADerefType.GetField(LDerefFieldName);
   if LDerefField <> nil then
-    exit(LDerefField.GetValue(APtr));
+  begin
+    AResult := LDerefField.GetValue(APtr);
+    exit(true);
+  end;
   // next check if it is a property
   LDerefProp := ADerefType.GetProperty(LDerefFieldName);
   if LDerefProp <> nil then
-    exit(LDerefProp.GetValue(APtr));
-  AFound := false;
-  exit(TValue.Empty);
+  begin
+    AResult := LDerefProp.GetValue(APtr);
+    exit(true);
+  end;
+  exit(ExitEmpty(AResult));
 end;
 
-function DerefClass(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AOwnObject: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
+function ExitValue(const AValue: TValue; var AResult: TValue): boolean;
+begin
+  AResult := AValue;
+  exit(true);
+end;
+
+function TryDeref(const APosition: IPosition; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AResult: TValue): boolean; overload;
 var
-  ClassType: TClass;
+  LPair: TPair<TDerefMatchFunction, TDerefWrappedValue>;
+  LClassType: TClass;
+  LClassInfo: PTypeInfo;
+  LObject: TObject;
+begin
+  if not ADeref.IsObject then
+    exit(ExitValue(ADeref, AResult));
+  LObject := ADeref.AsObject;
+  if LObject = nil then
+    exit(ExitValue(ADeref, AResult));
+  LClassType := LObject.ClassType;
+  LClassInfo := ADeref.TypeInfo;
+  for LPair in GDerefWrappedValues do
+  begin
+    if not LPair.Key(LClassInfo, LClassType) then
+      continue;
+    if LPair.Value(APosition, ADeref, ARaiseIfMissing, AContext, AResult) then
+      exit(true);
+  end;
+  exit(ExitValue(ADeref, AResult));
+end;
+
+function TryDerefClass(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AOwnObject: boolean; const AContext: ITemplateContext; out AResult: TValue): boolean;
+var
+  LClassType: TClass;
   LClassInfo: PTypeInfo;
   LFuncPair: TPair<TDerefMatchFunction, TDerefFunction>;
 begin
-  AFound := false;
-  ClassType := obj.AsObject.ClassType;
+  LClassType := obj.AsObject.ClassType;
   LClassInfo := obj.TypeInfo;
   if not AOwnObject then
   begin
     for LFuncPair in GDerefFunctions do
     begin
-      if LFuncPair.Key(LClassInfo, ClassType) then
+      if LFuncPair.Key(LClassInfo, LClassType) then
       begin
-        result := LFuncPair.Value(APosition, obj, ADeref, ARaiseIfMissing, AContext, AFound);
-        if AFound then
-          exit;
+        if LFuncPair.Value(APosition, obj, ADeref, ARaiseIfMissing, AContext, AResult) then
+          exit(true)
       end;
     end;
   end;
-  exit(GetFieldOrProperty(obj.AsObject, GRttiContext.GetType(obj.TypeInfo), ADeref, AContext, AFound));
+  exit(TryGetFieldOrProperty(obj.AsObject, GRttiContext.GetType(obj.TypeInfo), ADeref, AContext, AResult));
 end;
 
-function DerefList(const APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
+function TryDerefList(const APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AResult: TValue): boolean;
 var
   LType: TRttiType;
   LProperty: TRttiProperty;
   LIndexedProperty: TRttiIndexedProperty;
 begin
-  AFound := false;
   LType := GRttiContext.GetType(AObj.TypeInfo);
   try
     if IsIntLike(ADeref) then
@@ -573,8 +624,8 @@ begin
       LIndexedProperty := LType.GetIndexedProperty('Items');
       if LIndexedProperty <> nil then
       begin
-        result := LIndexedProperty.GetValue(AObj.AsObject, [AsInt(ADeref, AContext)]);
-        AFound := true;
+        AResult := LIndexedProperty.GetValue(AObj.AsObject, [AsInt(ADeref, AContext)]);
+        exit(true);
       end;
     end
     else
@@ -582,33 +633,30 @@ begin
       LProperty := LType.GetProperty(AsString(ADeref, AContext));
       if LProperty <> nil then
       begin
-        result := LProperty.GetValue(AObj.AsObject);
-        AFound := true;
+        AResult := LProperty.GetValue(AObj.AsObject);
+        exit(true);
       end;
     end;
   except
     on e: Exception do
     begin
-
-      result := DerefClass(APosition, AObj, ADeref, ARaiseIfMissing, true, AContext, AFound);
-      if not AFound then
+      if not TryDerefClass(APosition, AObj, ADeref, ARaiseIfMissing, true, AContext, AResult) then
       begin
         if ARaiseIfMissing then
           RaiseError(APosition, SCannotDereferenceValueOnObject, [AsString(ADeref, AContext), LType.QualifiedName]);
-        exit('');
       end;
     end;
   end;
+  exit(ExitEmpty(AResult));
 end;
 
-function DerefDictionary(const APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
+function TryDerefDictionary(const APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AResult: TValue): boolean;
 var
   LType: TRttiType;
   LProperty: TRttiProperty;
   LIndexedProperty: TRttiIndexedProperty;
   LDerefValue: TValue;
 begin
-  AFound := false;
   LType := GRttiContext.GetType(AObj.TypeInfo);
   try
     if IsStrLike(ADeref) then
@@ -617,9 +665,8 @@ begin
       LProperty := LType.GetProperty(AsString(ADeref, AContext));
       if LProperty <> nil then
       begin
-        result := LProperty.GetValue(AObj.AsObject);
-        AFound := true;
-        exit;
+        AResult := LProperty.GetValue(AObj.AsObject);
+        exit(true);
       end;
     end;
 
@@ -631,24 +678,23 @@ begin
         LDerefValue := AsInt(ADeref, AContext)
       else
         LDerefValue := ADeref;
-      result := LIndexedProperty.GetValue(AObj.AsObject, [LDerefValue]);
-      AFound := true;
+      AResult := LIndexedProperty.GetValue(AObj.AsObject, [LDerefValue]);
+      exit(true);
     end;
   except
     on e: Exception do
     begin
-      result := DerefClass(APosition, AObj, ADeref, ARaiseIfMissing, true, AContext, AFound);
-      if not AFound then
+      if not TryDerefClass(APosition, AObj, ADeref, ARaiseIfMissing, true, AContext, AResult) then
       begin
         if ARaiseIfMissing then
           RaiseError(APosition, SCannotDereferenceValueOnObject, [AsString(LDerefValue, AContext), LType.QualifiedName]);
-        exit('');
       end;
     end;
   end;
+  exit(ExitEmpty(AResult));
 end;
 
-function JsonValueToTValue(const AJsonValue: TJsonValue; out AValue: TValue): boolean;
+function TryJsonValueToTValue(const AJsonValue: TJsonValue; out AValue: TValue): boolean;
 begin
 {$IFDEF SUPPORT_JSON_BOOL}
   if AJsonValue is TJSONBool then
@@ -688,7 +734,8 @@ begin
     AValue := nil;
     exit(true);
   end;
-  exit(false);
+  AValue := AJsonValue;
+  exit(true);
 end;
 
 procedure PopulateStackFrameFromJsonObject(const StackFrame: TStackFrame; const ARttiType: TRttiType; const AClass: TValue);
@@ -700,28 +747,58 @@ begin
   LJsonObject := TJsonObject(AClass.AsObject);
   for LJsonPair in LJsonObject do
   begin
-    if JsonValueToTValue(LJsonPair.JsonValue, LJsonValueAsTValue) then
+    if TryJsonValueToTValue(LJsonPair.JsonValue, LJsonValueAsTValue) then
       StackFrame[LJsonPair.JsonString.Value] := LJsonValueAsTValue;
   end;
 end;
 
-function DerefJson(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
+function TryDerefJsonObject(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AResult: TValue): boolean;
 var
   LJsonObject: TJsonObject;
   LJsonKey: string;
   LJsonKeyVal: TJsonValue;
+  LJsonPair: TJsonPair;
 begin
-  AFound := true;
   LJsonObject := obj.AsObject as TJsonObject;
   LJsonKey := AsString(ADeref, AContext);
-  LJsonKeyVal := LJsonObject.Get(LJsonKey).JsonValue;
-  if not JsonValueToTValue(LJsonKeyVal, result) then
+  LJsonPair := LJsonObject.Get(LJsonKey);
+  if LJsonPair <> nil then
   begin
-    if ARaiseIfMissing then
-      RaiseError(APosition, SCannotDereferenceValueOnObject, [LJsonKey, SDictionary]);
-    AFound := false;
-    exit('');
+    LJsonKeyVal := LJsonPair.JsonValue;
+    if TryJsonValueToTValue(LJsonKeyVal, AResult) then
+      exit(true);
   end;
+  if ARaiseIfMissing then
+    RaiseError(APosition, SCannotDereferenceValueOnObject, [LJsonKey, 'TJsonObject']);
+  exit(ExitEmpty(AResult));
+end;
+
+function TryDerefJsonArray(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AResult: TValue): boolean;
+var
+  LJsonArray: TJsonArray;
+  LJsonKey: integer;
+  LJsonKeyVal: TJsonValue;
+begin
+  LJsonArray := obj.AsObject as TJsonArray;
+  LJsonKey := AsInt(ADeref, AContext);
+  LJsonKeyVal := LJsonArray.Get(LJsonKey);
+  if TryJsonValueToTValue(LJsonKeyVal, AResult) then
+    exit(true);
+  if ARaiseIfMissing then
+    RaiseError(APosition, SCannotDereferenceValueOnArray, [LJsonKey, 'TJsonArray']);
+  exit(ExitEmpty(AResult));
+end;
+
+function TryDerefJsonValue(const APosition: IPosition; const obj: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AResult: TValue): boolean;
+var
+  LObj: TJsonValue;
+begin
+  LObj := obj.AsObject as TJsonValue;
+  if TryJsonValueToTValue(LObj, AResult) then
+    exit(true);
+  if ARaiseIfMissing then
+    RaiseError(APosition, SCannotDereferenceValiable);
+  exit(ExitEmpty(AResult));
 end;
 
 function MatchJsonObject(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
@@ -729,63 +806,60 @@ begin
   exit(AClass = TJsonObject);
 end;
 
-function DerefMap(const APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
+function TryDerefMap(const APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AResult: TValue): boolean;
 var
   LKey: string;
   LMap: TMap;
 begin
-  AFound := false;
   LKey := AsString(ADeref, AContext);
   if not ADeref.IsType<string> then
     RaiseError(APosition, SCannotDereferenceValueOnObject, [LKey, SDataSet]);
   LMap := AObj.AsType<TMap>;
-  if LMap.TryGetValue(LKey, result) then
-  begin
-    AFound := true;
-    exit;
-  end;
+  if LMap.TryGetValue(LKey, AResult) then
+    exit(true);
   if ARaiseIfMissing then
-  begin
     RaiseError(APosition, SCannotDereferenceValueOnObject, [LKey, SDataSet]);
-  end;
+  exit(ExitEmpty(AResult));
 end;
 
-function DerefMapExpr(const APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
+function TryDerefMapExpr(const APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AResult: TValue): boolean;
 begin
-  exit(DerefMap(APosition, TValue.From(AObj.AsType<IMapExpr>.GetMap), ADeref, ARaiseIfMissing, AContext, AFound));
+  exit(TryDerefMap(APosition, TValue.From(AObj.AsType<IMapExpr>.GetMap), ADeref, ARaiseIfMissing, AContext, AResult));
 end;
 
-function DerefDataSet(const APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AFound: boolean): TValue;
+function TryDerefDataSet(const APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AResult: TValue): boolean;
 var
   LDataSet: TDataSet;
   LKey: string;
 begin
-  AFound := true;
   LDataSet := AObj.AsObject as TDataSet;
   LKey := AsString(ADeref, AContext);
   try
-    exit(TValue.FromVariant(LDataSet.FieldByName(LKey).AsVariant));
+    AResult := TValue.FromVariant(LDataSet.FieldByName(LKey).AsVariant);
+    exit(true);
   except
     on e: Exception do
-    begin
       if ARaiseIfMissing then
         RaiseError(APosition, SCannotDereferenceValueOnObject, [LKey, SDataSet]);
-      AFound := false;
-      exit('');
-    end;
   end;
+  exit(ExitEmpty(AResult));
 end;
 
 function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext): TValue;
-var
-  LResolved: boolean;
 begin
-  exit(Deref(APosition, AVar, ADeref, ARaiseIfMissing, AContext, LResolved));
+  if not TryDeref(APosition, AVar, ADeref, ARaiseIfMissing, AContext, result) then
+    exit('');
 end;
 
-function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AResolved: boolean): TValue;
+function Deref(const APosition: IPosition; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext): TValue; overload;
+begin
+  if not TryDeref(APosition, ADeref, ARaiseIfMissing, AContext, result) then
+    exit('');
+end;
 
-  function DerefArray(AObj: TValue; const ADeref: TValue; out AFound: boolean): TValue;
+function TryDeref(const APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AResult: TValue): boolean;
+
+  function TryDerefArray(AObj: TValue; const ADeref: TValue; out AResult: TValue): boolean;
   var
     LIndex: int64;
     LElementType: TRttiArrayType;
@@ -795,7 +869,6 @@ function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARa
     LMax: int64;
   begin
     LIndex := AsInt(ADeref, AContext);
-    AFound := false;
     LElementType := GRttiContext.GetType(AObj.TypeInfo) as TRttiArrayType;
     LArrayDimType := LElementType.Dimensions[0];
     LMin := 0;
@@ -807,35 +880,39 @@ function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARa
       if (LIndex < LMin) or (LIndex > LMax) then
         RaiseErrorRes(APosition, @SIndexOutOfBounds);
     end;
-    AFound := true;
-    exit(AObj.GetArrayElement(LIndex - LMin));
+    AResult := AObj.GetArrayElement(LIndex - LMin);
+    exit(true);
   end;
 
-  function DerefDynArray(AObj: TValue; const ADeref: TValue; out AFound: boolean): TValue;
+  function TryDerefDynArray(AObj: TValue; const ADeref: TValue; out AResult: TValue): boolean;
   var
     LIndex: integer;
   begin
-    AFound := false;
     LIndex := AsInt(ADeref, AContext);
     if (LIndex < 0) or (LIndex >= AObj.GetArrayLength) then
-      exit(TValue.Empty);
-    exit(AObj.GetArrayElement(LIndex));
+    begin
+      AResult := TValue.Empty;
+      exit(false);
+    end;
+    AResult := AObj.GetArrayElement(LIndex);
+    exit(true);
   end;
 
-  function DerefRecord(const AObj: TValue; const ADeref: TValue; var AFound: boolean): TValue;
+  function TryDerefRecord(const AObj: TValue; const ADeref: TValue; out AResult: TValue): boolean;
   var
     LObj: TValue;
   begin
     LObj := AObj;
     if MatchMap(LObj.TypeInfo) then
     begin
-      exit(DerefMap(APosition, LObj, ADeref, ARaiseIfMissing, AContext, AFound));
+      if TryDerefMap(APosition, LObj, ADeref, ARaiseIfMissing, AContext, AResult) then
+        exit(true);
     end;
 
-    exit(GetFieldOrProperty(LObj.GetReferenceToRawData, GRttiContext.GetType(AObj.TypeInfo), ADeref, AContext, AFound));
+    exit(TryGetFieldOrProperty(LObj.GetReferenceToRawData, GRttiContext.GetType(AObj.TypeInfo), ADeref, AContext, AResult));
   end;
 
-  function DerefInterface(const AObj: TValue; const ADeref: TValue; out AFound: boolean): TValue;
+  function TryDerefInterface(const AObj: TValue; const ADeref: TValue; out AResult: TValue): boolean;
   var
     LFunctionPair: TPair<TDerefMatchInterfaceFunction, TDerefFunction>;
     LIntf: IInterface;
@@ -845,57 +922,52 @@ function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARa
     begin
       if LFunctionPair.Key(LIntf) then
       begin
-        result := LFunctionPair.Value(APosition, AObj, ADeref, ARaiseIfMissing, AContext, AFound);
-        if AFound then
-          exit;
+        if LFunctionPair.Value(APosition, AObj, ADeref, ARaiseIfMissing, AContext, AResult) then
+          exit(true);
       end;
     end;
-    exit(false);
+    exit(ExitEmpty(AResult));
+  end;
+
+  function FixTValue(var AValue: TValue): boolean;
+  begin
+    if (AValue.Kind = tkRecord) and MatchValue(AValue.TypeInfo) then
+    begin
+      AValue := AValue.AsType<TValue>;
+    end;
+    exit(true);
   end;
 
 var
-  LVarFound: boolean;
   LVar: TValue;
 begin
-  AResolved := true;
-  result := nil;
   LVar := AVar;
-  if (LVar.Kind = tkRecord) and MatchValue(LVar.TypeInfo) then
-  begin
-    LVar := LVar.AsType<TValue>;
-  end;
 
   if LVar.IsEmpty then
-    exit(LVar);
+  begin
+    exit(FixTValue(LVar));
+  end;
 
   case LVar.Kind of
     tkInterface:
-      result := DerefInterface(LVar, ADeref, LVarFound);
+      if TryDerefInterface(LVar, ADeref, AResult) then
+        exit(FixTValue(AResult));
     tkClass:
-      result := DerefClass(APosition, LVar, ADeref, ARaiseIfMissing, false, AContext, LVarFound);
+      if TryDerefClass(APosition, LVar, ADeref, ARaiseIfMissing, false, AContext, AResult) then
+        exit(FixTValue(AResult));
     tkRecord {$IFDEF SUPPORT_CUSTOM_MANAGED_RECORDS}, tkMRecord{$ENDIF}:
-      result := DerefRecord(LVar, ADeref, LVarFound);
+      if TryDerefRecord(LVar, ADeref, AResult) then
+        exit(FixTValue(AResult));
     tkArray:
-      result := DerefArray(LVar, ADeref, LVarFound);
+      if TryDerefArray(LVar, ADeref, AResult) then
+        exit(FixTValue(AResult));
     tkDynArray:
-      result := DerefDynArray(LVar, ADeref, LVarFound);
-  else
-    begin
-      if ARaiseIfMissing then
-        RaiseError(APosition, SCannotDereferenceValiable);
-      AResolved := false;
-      exit('');
-    end;
+      if TryDerefDynArray(LVar, ADeref, AResult) then
+        exit(FixTValue(AResult));
   end;
-  if not LVarFound and ARaiseIfMissing then
-  begin
+  if ARaiseIfMissing then
     RaiseError(APosition, SCannotDereferenceValiable);
-  end;
-  if (result.Kind = tkRecord) and MatchValue(result.TypeInfo) then
-  begin
-    result := result.AsType<TValue>;
-  end;
-  AResolved := LVarFound;
+  exit(ExitEmpty(AResult));
 end;
 
 procedure AssertBoolean(const APositional: IPosition; const ALeft: TValue); overload;
@@ -962,6 +1034,24 @@ var
 begin
   LClassName := AClass.QualifiedClassName;
   exit(LClassName.StartsWith('System.Generics.Collections.TList') or LClassName.StartsWith('System.Generics.Collections.TObjectList'));
+end;
+
+function MatchJsonArray(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
+begin
+  exit(AClass = TJsonArray);
+end;
+
+function MatchJsonValue(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
+begin
+  exit( //
+    (ATypeInfo = TypeInfo(TJSONString)) or //
+    (ATypeInfo = TypeInfo(TJSONNull)) or //
+    (ATypeInfo = TypeInfo(TJSONNumber)) or //
+    (ATypeInfo = TypeInfo(TJSONString)) or //
+    (ATypeInfo = TypeInfo(TJSONBool)) or //
+    (ATypeInfo = TypeInfo(TJSONTrue)) or //
+    (ATypeInfo = TypeInfo(TJSONFalse)) //
+    );
 end;
 
 function MatchDictionary(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
@@ -1101,12 +1191,12 @@ end;
 
 function IsJsonObjectEmpty(const AObject: TObject): boolean;
 var
-  LJsonArray: TJSONArray absolute AObject;
+  LJsonArray: TJsonArray absolute AObject;
   LJsonObject: TJsonObject absolute AObject;
 begin
   if AObject = nil then
     exit(true);
-  if AObject is TJSONArray then
+  if AObject is TJsonArray then
   begin
 {$IFDEF SUPPORT_JSON_DBX}
     exit(LJsonArray.Size = 0);
@@ -1157,21 +1247,30 @@ GDerefInterfaceFunctions := TList < TPair < TDerefMatchInterfaceFunction, TDeref
 GDerefFunctions := TList < TPair < TDerefMatchFunction, TDerefFunction >>.Create;
 GPopulateFunctions := TList < TPair < TPopulateMatchFunction, TPopulateStackFrame >>.Create;
 GEmptyObjectFunctions := TList < TPair < TDerefMatchFunction, TCheckEmptyObjectFunction >>.Create;
+GDerefWrappedValues := TList < TPair < TDerefMatchFunction, TDerefWrappedValue >>.Create;
 
-RegisterDeref(MatchTemplateVariableObject, DerefTemplateVariables);
-RegisterDeref(MatchList, DerefList);
-RegisterDeref(MatchDictionary, DerefDictionary);
-RegisterDeref(MatchJsonObject, DerefJson);
+RegisterDeref(MatchJsonArray, TryDerefJsonArray);
+RegisterDeref(MatchJsonObject, TryDerefJsonObject);
+RegisterDerefWrappedValue(MatchJsonValue, TryDerefJsonValue);
+
+RegisterDeref(MatchTemplateVariableObject, TryDerefTemplateVariables);
+
+RegisterDeref(MatchList, TryDerefList);
+RegisterDeref(MatchDictionary, TryDerefDictionary);
+RegisterDeref(MatchTemplateVariables, TryDerefTemplateVariables);
+RegisterDeref(MatchDataSet, TryDerefDataSet);
+RegisterDeref(MatchMap, TryDerefMap);
+RegisterDeref(MatchMapExpr, TryDerefMapExpr);
+
 RegisterPopulateStackFrame(MatchJsonObject, PopulateStackFrameFromJsonObject);
 RegisterPopulateStackFrame(MatchStringDictionary, PopulateStackFrameFromDictionary);
-RegisterDeref(MatchTemplateVariables, DerefTemplateVariables);
-RegisterDeref(MatchDataSet, DerefDataSet);
-RegisterDeref(MatchMap, DerefMap);
-RegisterDeref(MatchMapExpr, DerefMapExpr);
+
 RegisterEmptyObjectCheck(MatchDictionary, IsGenericCollectionEmpty);
 RegisterEmptyObjectCheck(MatchList, IsGenericCollectionEmpty);
 RegisterEmptyObjectCheck(MatchQueue, IsGenericCollectionEmpty);
 RegisterEmptyObjectCheck(MatchStack, IsGenericCollectionEmpty);
+
+RegisterEmptyObjectCheck(MatchJsonArray, IsJsonObjectEmpty);
 RegisterEmptyObjectCheck(MatchJsonObject, IsJsonObjectEmpty);
 RegisterEmptyObjectCheck(MatchDataSet, IsDataSetEmpty);
 
@@ -1183,5 +1282,6 @@ GDerefFunctions.Free;
 GDerefInterfaceFunctions.Free;
 GPopulateFunctions.Free;
 GEmptyObjectFunctions.Free;
+GDerefWrappedValues.Free;
 
 end.

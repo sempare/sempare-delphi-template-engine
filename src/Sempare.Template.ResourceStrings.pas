@@ -50,6 +50,7 @@ resourcestring
   SValueIsNotEnumerableOrMap = 'Value is not enumerable or map';
   SOnlyOneDimensionalArraysAreSupported = 'Only one dimensional arrays are supported.';
   SCannotDereferenceValueOnObject = 'Cannot dereference ''%s'' in %s';
+  SCannotDereferenceValueOnArray = 'Cannot dereference ''%s'' in %s';
   SDictionary = 'dictionary';
   SDataset = 'dataset';
   SCannotDereferenceValiable = 'Cannot dereference variable';
