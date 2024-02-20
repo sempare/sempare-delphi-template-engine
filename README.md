@@ -101,6 +101,8 @@ There are a few ways to get started quickly.
 - Look at the examples on how to do server side scripting using some popular web frameworks:
    - [WebBroker](https://docwiki.embarcadero.com/RADStudio/Alexandria/en/Creating_WebBroker_Applications) [Demo](https://github.com/sempare/sempare-delphi-template-engine/tree/main/demo/WebBrokerStandalone)
    - [Horse](https://github.com/hashload/horse) [Demo](https://github.com/sempare/sempare-delphi-template-engine-horse-demo)
+   - [Synopse mORMot1](https://synopse.info) [Demo](https://github.com/edwinyzh/simple-sempare-template-engine-mormot1-demo)
+   - [DelphiMVCFramework](https://github.com/danieleteti/delphimvcframework) [Demo](https://github.com/danieleteti/delphimvcframework/tree/master/samples/serversideviews_sempare)
 
 [Try the demo](./demo//SempareTemplatePlayground/README.md) if you want to dive in quick and play with the template engine.
 
