@@ -1,3 +1,3 @@
 const MAJOR_VERSION=1;
 const MINOR_VERSION=7;
-const PATCH_VERSION=4;
+const PATCH_VERSION=5;
