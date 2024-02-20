@@ -150,6 +150,7 @@ An attempt has been made not to use the latest features to ease backward compata
 - Delphi 10.3.3 Rio
 - Delphi 10.4 Sydney
 - Delphi 11.0 to 11.3 Alexandria
+- Delphi 12 Athens
 
 There should be no platform specific restrictions.
 
