@@ -444,6 +444,11 @@ var
   LConfirmLicense: TStringStream;
 {$ENDIF}
 begin
+{$IFDEF RELEASE}
+  {$IFNDEF SEMPARE_TEMPLATE_CONFIRM_LICENSE }
+    {$MESSAGE FATAL 'The SEMPARE_TEMPLATE_CONFIRM_LICENSE define must be set in RELEASE mode.'}
+  {$ENDIF}
+{$ENDIF}
 {$IFNDEF SEMPARE_TEMPLATE_CONFIRM_LICENSE}
   LConfirmLicense := TStringStream.Create('Thank you for trying the Sempare Template Engine.'#13#10#13#10 + //
     'To supress this message, set the conditional define SEMPARE_TEMPLATE_CONFIRM_LICENSE in the project options.'#13#10#13#10#13#10 + //
