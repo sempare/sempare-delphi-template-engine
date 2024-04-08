@@ -46,6 +46,7 @@ uses
   Sempare.Template.Common;
 
 type
+  PRttiContext = ^TRttiContext;
   ITemplateContext = interface;
 
   TStreamWriterProvider = reference to function(const AStream: TStream; const AContext: ITemplateContext): TStreamWriter;
@@ -172,6 +173,10 @@ type
     function GetVariableResolver: TTemplateVariableResolver;
     procedure SetVariableResolver(const AResolver: TTemplateVariableResolver);
 
+    function GetRttiContext: PRttiContext;
+    procedure SetRttiContext(const AContext: PRttiContext);
+
+    property RttiContext: PRttiContext read GetRttiContext write SetRttiContext;
     property Functions: ITemplateFunctions read GetFunctions write SetFunctions;
     property NewLine: string read GetNewLine write SetNewLine;
     property WhitespaceChar: char read GetWhitespace write SetWhiteSpace;
@@ -281,9 +286,13 @@ type
     FPrettyPrintOutput: TPrettyPrintOutput;
     FWhiteSpace: char;
     FVariableResolver: TTemplateVariableResolver;
+    FRttiContext: PRttiContext;
   public
     constructor Create(const AOptions: TTemplateEvaluationOptions);
     destructor Destroy; override;
+
+    function GetRttiContext: PRttiContext;
+    procedure SetRttiContext(const AContext: PRttiContext);
 
     function TryGetBlock(const AName: string; out ABlock: IBlockStmt): boolean;
     procedure AddBlock(const AName: string; const ABlock: IBlockStmt);
@@ -417,6 +426,7 @@ end;
 
 constructor TTemplateContext.Create(const AOptions: TTemplateEvaluationOptions);
 begin
+  FRttiContext := @GRttiContext;
   FOptions := AOptions + [eoFlattenTemplate, eoOptimiseTemplate];
   FMaxRuntimeMs := GDefaultRuntimeMS;
   FPrettyPrintOutput := GPrettyPrintOutput;
@@ -427,7 +437,7 @@ begin
   FEndStripToken := GDefaultCloseWSTag;
   FTemplates := TDictionary<string, ITemplate>.Create;
   FVariables := TTemplateVariables.Create;
-  FFunctions := GFunctions;
+  FFunctions := CreateTemplateFunctions(self);
   FLock := TCriticalSection.Create;
   FNewLine := GNewLine;
   FStreamWriterProvider := GStreamWriterProvider;
@@ -530,6 +540,11 @@ end;
 function TTemplateContext.GetPrettyPrintOutput: TPrettyPrintOutput;
 begin
   result := FPrettyPrintOutput;
+end;
+
+function TTemplateContext.GetRttiContext: PRttiContext;
+begin
+  exit(FRttiContext);
 end;
 
 function TTemplateContext.GetVariable(const AName: string): TValue;
@@ -682,6 +697,11 @@ end;
 procedure TTemplateContext.SetPrettyPrintOutput(const APrettyPrintOutput: TPrettyPrintOutput);
 begin
   FPrettyPrintOutput := APrettyPrintOutput;
+end;
+
+procedure TTemplateContext.SetRttiContext(const AContext: PRttiContext);
+begin
+  FRttiContext := AContext;
 end;
 
 procedure TTemplateContext.SetValueSeparator(const ASeparator: char);

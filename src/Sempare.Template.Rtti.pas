@@ -59,7 +59,7 @@ function IsStrLike(const AValue: TValue): boolean;
 function IsIntLike(const AValue: TValue): boolean;
 function IsNumLike(const AValue: TValue): boolean;
 function IsNull(const AValue: TValue): boolean;
-function IsEnumerable(const AValue: TValue): boolean;
+function IsEnumerable(const AContext: ITemplateContext; const AValue: TValue): boolean;
 function Contains(const APosition: IPosition; const ALeft, ARight: TValue; const AContext: ITemplateContext): boolean;
 
 function ExitEmpty(var AResult: TValue): boolean;
@@ -68,8 +68,8 @@ function isEqual(const ALeft: TValue; const ARight: TValue; const AContext: ITem
 function isLessThan(const ALeft: TValue; const ARight: TValue; const AContext: ITemplateContext): boolean;
 function isGreaterThan(const ALeft: TValue; const ARight: TValue; const AContext: ITemplateContext): boolean;
 
-function IsEmptyValue(const AValue: TValue): boolean;
-function IsEmptyObject(const AObject: TObject): boolean;
+function IsEmptyValue(const AContext: ITemplateContext; const AValue: TValue): boolean;
+function IsEmptyObject(const AContext: ITemplateContext; const AObject: TObject): boolean;
 
 procedure AssertBoolean(const APositional: IPosition; const ALeft: TValue); overload;
 procedure AssertBoolean(const APositional: IPosition; const ALeft: TValue; const ARight: TValue); overload;
@@ -77,7 +77,7 @@ procedure AssertBoolean(const APositional: IPosition; const ALeft: TValue; const
 procedure AssertNumeric(const APositional: IPosition; const ALeft: TValue); overload;
 procedure AssertNumeric(const APositional: IPosition; const ALeft: TValue; const ARight: TValue); overload;
 procedure AssertString(const APositional: IPosition; const AValue: TValue);
-procedure AssertArray(const APositional: IPosition; const AValue: TValue);
+procedure AssertArray(const AContext: ITemplateContext; const APositional: IPosition; const AValue: TValue);
 
 function Deref(const APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext): TValue; overload;
 function TryDeref(const APosition: IPosition; const AVar, ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AResult: TValue): boolean; overload;
@@ -85,13 +85,13 @@ function TryDeref(const APosition: IPosition; const ADeref: TValue; const ARaise
 function Deref(const APosition: IPosition; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext): TValue; overload;
 
 type
-  TDerefMatchFunction = function(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
+  TDerefMatchFunction = function(const AContext: ITemplateContext; const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
   TDerefMatchInterfaceFunction = function(const AInterface: IInterface): boolean;
   TDerefFunction = function(const APosition: IPosition; const obj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AResult: TValue): boolean;
   TDerefWrappedValue = function(const APosition: IPosition; const obj: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AResult: TValue): boolean;
-  TPopulateStackFrame = procedure(const StackFrame: TStackFrame; const ARttiType: TRttiType; const AClass: TValue);
-  TPopulateMatchFunction = function(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
-  TCheckEmptyObjectFunction = function(const AObject: TObject): boolean;
+  TPopulateStackFrame = procedure(const AContext: ITemplateContext; const StackFrame: TStackFrame; const ARttiType: TRttiType; const AClass: TValue);
+  TPopulateMatchFunction = function(const AContext: ITemplateContext; const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
+  TCheckEmptyObjectFunction = function(const AContext: ITemplateContext; const AObject: TObject): boolean;
 
 procedure RegisterDeref(const AMatch: TDerefMatchFunction; const AFunction: TDerefFunction); overload;
 procedure RegisterDeref(const AMatch: TDerefMatchInterfaceFunction; const AFunction: TDerefFunction); overload;
@@ -99,15 +99,14 @@ procedure RegisterPopulateStackFrame(const AMatch: TPopulateMatchFunction; const
 procedure RegisterEmptyObjectCheck(const AMatch: TDerefMatchFunction; const AFunction: TCheckEmptyObjectFunction);
 procedure RegisterDerefWrappedValue(const AMatch: TDerefMatchFunction; const AFunction: TDerefWrappedValue);
 
-function PopulateStackFrame(const StackFrame: TStackFrame; const ARttiType: TRttiType; const AClass: TValue): boolean;
+function PopulateStackFrame(const AContext: ITemplateContext; const StackFrame: TStackFrame; const ARttiType: TRttiType; const AClass: TValue): boolean;
 
-function MatchMap(const ATypeInfo: PTypeInfo): boolean; overload;
-function MatchMap(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean; overload;
-function MatchMap(const AValue: TValue): boolean; overload;
+function MatchMap(const AContext: ITemplateContext; const ATypeInfo: PTypeInfo): boolean; overload;
+function MatchMap(const AContext: ITemplateContext; const ATypeInfo: PTypeInfo; const AClass: TClass): boolean; overload;
+function MatchMap(const AContext: ITemplateContext; const AValue: TValue): boolean; overload;
 function MatchMapExpr(const AInterface: IInterface): boolean;
 
 var
-
   GRttiContext: TRttiContext;
 
 implementation
@@ -164,15 +163,15 @@ begin
   GEmptyObjectFunctions.add(TPair<TDerefMatchFunction, TCheckEmptyObjectFunction>.Create(AMatch, AFunction));
 end;
 
-function PopulateStackFrame(const StackFrame: TStackFrame; const ARttiType: TRttiType; const AClass: TValue): boolean;
+function PopulateStackFrame(const AContext: ITemplateContext; const StackFrame: TStackFrame; const ARttiType: TRttiType; const AClass: TValue): boolean;
 var
   LFuncPair: TPair<TPopulateMatchFunction, TPopulateStackFrame>;
 begin
   for LFuncPair in GPopulateFunctions do
   begin
-    if LFuncPair.Key(ARttiType.Handle, ARttiType.ClassType) then
+    if LFuncPair.Key(AContext, ARttiType.Handle, ARttiType.ClassType) then
     begin
-      LFuncPair.Value(StackFrame, ARttiType, AClass);
+      LFuncPair.Value(AContext, StackFrame, ARttiType, AClass);
       exit(true);
     end;
   end;
@@ -210,7 +209,7 @@ var
       RaiseError(APosition, SValueIsNotEnumerable);
     LEnumObject := LValue.AsObject;
     try
-      TRightType := GRttiContext.GetType(LEnumObject.ClassType);
+      TRightType := AContext.RttiContext.GetType(LEnumObject.ClassType);
       LEnumMoveNextMethod := TRightType.GetMethod('MoveNext');
       LEnumCurrentProperty := TRightType.GetProperty('Current');
       while LEnumMoveNextMethod.Invoke(LEnumObject, []).AsBoolean do
@@ -299,9 +298,9 @@ var
 
 begin
   result := false;
-  if not IsEnumerable(ARight) and not MatchMap(ARight) then
+  if not IsEnumerable(AContext, ARight) and not MatchMap(AContext, ARight) then
     RaiseError(APosition, SValueIsNotEnumerableOrMap);
-  TRightType := GRttiContext.GetType(ARight.TypeInfo);
+  TRightType := AContext.RttiContext.GetType(ARight.TypeInfo);
   case TRightType.TypeKind of
     tkInterface:
       VisitInterface;
@@ -318,13 +317,13 @@ begin
   end;
 end;
 
-function IsEnumerable(const AValue: TValue): boolean;
+function IsEnumerable(const AContext: ITemplateContext; const AValue: TValue): boolean;
 begin
   case AValue.Kind of
     tkDynArray, tkArray:
       exit(true);
     tkClass, tkClassRef:
-      exit(GRttiContext.GetType(AValue.TypeInfo).GetMethod('GetEnumerator') <> nil);
+      exit(AContext.RttiContext.GetType(AValue.TypeInfo).GetMethod('GetEnumerator') <> nil);
   else
     exit(false);
   end;
@@ -481,7 +480,7 @@ begin
       if AValue.TypeInfo = TypeInfo(TValue) then
         exit(AsString(AValue.AsType<TValue>(), AContext))
       else
-        exit(GRttiContext.GetType(AValue.TypeInfo).Name);
+        exit(AContext.RttiContext.GetType(AValue.TypeInfo).Name);
   else
     exit('');
   end;
@@ -516,7 +515,7 @@ var
 begin
   // Ideally wuld like to use TryGetItem, but couldn't get it working
   // with TValue result...
-  LObjectType := GRttiContext.GetType(AObj.TypeInfo);
+  LObjectType := AContext.RttiContext.GetType(AObj.TypeInfo);
   LContainsKeyMethod := LObjectType.GetMethod('ContainsKey');
   try
     if not LContainsKeyMethod.Invoke(AObj, [ADeref]).AsBoolean then
@@ -581,7 +580,7 @@ begin
   LClassInfo := ADeref.TypeInfo;
   for LPair in GDerefWrappedValues do
   begin
-    if not LPair.Key(LClassInfo, LClassType) then
+    if not LPair.Key(AContext, LClassInfo, LClassType) then
       continue;
     if LPair.Value(APosition, ADeref, ARaiseIfMissing, AContext, AResult) then
       exit(true);
@@ -601,14 +600,14 @@ begin
   begin
     for LFuncPair in GDerefFunctions do
     begin
-      if LFuncPair.Key(LClassInfo, LClassType) then
+      if LFuncPair.Key(AContext, LClassInfo, LClassType) then
       begin
         if LFuncPair.Value(APosition, obj, ADeref, ARaiseIfMissing, AContext, AResult) then
           exit(true)
       end;
     end;
   end;
-  exit(TryGetFieldOrProperty(obj.AsObject, GRttiContext.GetType(obj.TypeInfo), ADeref, AContext, AResult));
+  exit(TryGetFieldOrProperty(obj.AsObject, AContext.RttiContext.GetType(obj.TypeInfo), ADeref, AContext, AResult));
 end;
 
 function TryDerefList(const APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AResult: TValue): boolean;
@@ -617,7 +616,7 @@ var
   LProperty: TRttiProperty;
   LIndexedProperty: TRttiIndexedProperty;
 begin
-  LType := GRttiContext.GetType(AObj.TypeInfo);
+  LType := AContext.RttiContext.GetType(AObj.TypeInfo);
   try
     if IsIntLike(ADeref) then
     begin
@@ -657,7 +656,7 @@ var
   LIndexedProperty: TRttiIndexedProperty;
   LDerefValue: TValue;
 begin
-  LType := GRttiContext.GetType(AObj.TypeInfo);
+  LType := AContext.RttiContext.GetType(AObj.TypeInfo);
   try
     if IsStrLike(ADeref) then
     begin
@@ -738,7 +737,7 @@ begin
   exit(true);
 end;
 
-procedure PopulateStackFrameFromJsonObject(const StackFrame: TStackFrame; const ARttiType: TRttiType; const AClass: TValue);
+procedure PopulateStackFrameFromJsonObject(const AContext: ITemplateContext; const StackFrame: TStackFrame; const ARttiType: TRttiType; const AClass: TValue);
 var
   LJsonObject: TJsonObject;
   LJsonPair: TJsonPair;
@@ -781,7 +780,7 @@ var
 begin
   LJsonArray := obj.AsObject as TJsonArray;
   LJsonKey := AsInt(ADeref, AContext);
-  LJsonKeyVal := LJsonArray.Get(LJsonKey);
+  LJsonKeyVal := LJsonArray.Items[LJsonKey];
   if TryJsonValueToTValue(LJsonKeyVal, AResult) then
     exit(true);
   if ARaiseIfMissing then
@@ -801,7 +800,7 @@ begin
   exit(ExitEmpty(AResult));
 end;
 
-function MatchJsonObject(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
+function MatchJsonObject(const AContext: ITemplateContext; const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
 begin
   exit(AClass = TJsonObject);
 end;
@@ -869,7 +868,7 @@ function TryDeref(const APosition: IPosition; const AVar, ADeref: TValue; const 
     LMax: int64;
   begin
     LIndex := AsInt(ADeref, AContext);
-    LElementType := GRttiContext.GetType(AObj.TypeInfo) as TRttiArrayType;
+    LElementType := AContext.RttiContext.GetType(AObj.TypeInfo) as TRttiArrayType;
     LArrayDimType := LElementType.Dimensions[0];
     LMin := 0;
     if LArrayDimType <> nil then
@@ -903,13 +902,13 @@ function TryDeref(const APosition: IPosition; const AVar, ADeref: TValue; const 
     LObj: TValue;
   begin
     LObj := AObj;
-    if MatchMap(LObj.TypeInfo) then
+    if MatchMap(AContext, LObj.TypeInfo) then
     begin
       if TryDerefMap(APosition, LObj, ADeref, ARaiseIfMissing, AContext, AResult) then
         exit(true);
     end;
 
-    exit(TryGetFieldOrProperty(LObj.GetReferenceToRawData, GRttiContext.GetType(AObj.TypeInfo), ADeref, AContext, AResult));
+    exit(TryGetFieldOrProperty(LObj.GetReferenceToRawData, AContext.RttiContext.GetType(AObj.TypeInfo), ADeref, AContext, AResult));
   end;
 
   function TryDerefInterface(const AObj: TValue; const ADeref: TValue; out AResult: TValue): boolean;
@@ -929,13 +928,13 @@ function TryDeref(const APosition: IPosition; const AVar, ADeref: TValue; const 
     exit(ExitEmpty(AResult));
   end;
 
-  function FixTValue(var AValue: TValue): boolean;
+  function FixTValue(var AValue: TValue; const AResult:boolean=true): boolean;
   begin
     if (AValue.Kind = tkRecord) and MatchValue(AValue.TypeInfo) then
     begin
       AValue := AValue.AsType<TValue>;
     end;
-    exit(true);
+    exit(AResult);
   end;
 
 var
@@ -945,7 +944,7 @@ begin
 
   if LVar.IsEmpty then
   begin
-    exit(FixTValue(LVar));
+    exit(FixTValue(LVar, false));
   end;
 
   case LVar.Kind of
@@ -1005,14 +1004,14 @@ begin
   RaiseError(APositional, SStringTypeExpected);
 end;
 
-procedure AssertArray(const APositional: IPosition; const AValue: TValue);
+procedure AssertArray(const AContext: ITemplateContext; const APositional: IPosition; const AValue: TValue);
 begin
-  if IsEnumerable(AValue) then
+  if IsEnumerable(AContext, AValue) then
     exit;
   RaiseError(APositional, SEnumerableTypeExpected);
 end;
 
-function MatchQueue(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
+function MatchQueue(const AContext: ITemplateContext; const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
 var
   LClassName: string;
 begin
@@ -1020,7 +1019,7 @@ begin
   exit(LClassName.StartsWith('System.Generics.Collections.TQueue') or LClassName.StartsWith('System.Generics.Collections.TObjectQueue'));
 end;
 
-function MatchStack(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
+function MatchStack(const AContext: ITemplateContext; const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
 var
   LClassName: string;
 begin
@@ -1028,7 +1027,7 @@ begin
   exit(LClassName.StartsWith('System.Generics.Collections.TStack') or LClassName.StartsWith('System.Generics.Collections.TObjectStack'));
 end;
 
-function MatchList(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
+function MatchList(const AContext: ITemplateContext; const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
 var
   LClassName: string;
 begin
@@ -1036,12 +1035,12 @@ begin
   exit(LClassName.StartsWith('System.Generics.Collections.TList') or LClassName.StartsWith('System.Generics.Collections.TObjectList'));
 end;
 
-function MatchJsonArray(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
+function MatchJsonArray(const AContext: ITemplateContext; const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
 begin
   exit(AClass = TJsonArray);
 end;
 
-function MatchJsonValue(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
+function MatchJsonValue(const AContext: ITemplateContext; const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
 begin
   exit( //
     (ATypeInfo = TypeInfo(TJSONString)) or //
@@ -1054,7 +1053,7 @@ begin
     );
 end;
 
-function MatchDictionary(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
+function MatchDictionary(const AContext: ITemplateContext; const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
 var
   LClassName: string;
 begin
@@ -1067,14 +1066,14 @@ begin
   exit(supports(AInterface, IMapExpr));
 end;
 
-function MatchMap(const ATypeInfo: PTypeInfo): boolean;
+function MatchMap(const AContext: ITemplateContext; const ATypeInfo: PTypeInfo): boolean;
 begin
   exit(ATypeInfo.Name = 'TMap');
 end;
 
-function MatchMap(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
+function MatchMap(const AContext: ITemplateContext; const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
 begin
-  exit(MatchMap(ATypeInfo));
+  exit(MatchMap(AContext, ATypeInfo));
 end;
 
 function MatchValue(const ATypeInfo: PTypeInfo): boolean;
@@ -1082,12 +1081,12 @@ begin
   exit(ATypeInfo.Name = 'TValue');
 end;
 
-function MatchMap(const AValue: TValue): boolean;
+function MatchMap(const AContext: ITemplateContext; const AValue: TValue): boolean;
 begin
-  exit(MatchMap(AValue.TypeInfo) or AValue.IsType<IMapExpr>);
+  exit(MatchMap(AContext, AValue.TypeInfo) or AValue.IsType<IMapExpr>);
 end;
 
-function MatchStringDictionary(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
+function MatchStringDictionary(const AContext: ITemplateContext; const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
 var
   LClassName: string;
 begin
@@ -1095,12 +1094,12 @@ begin
   exit(LClassName.StartsWith('System.Generics.Collections.TDictionary<System.string,') or LClassName.StartsWith('System.Generics.Collections.TObjectDictionary<string,'));
 end;
 
-function MatchDataSet(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
+function MatchDataSet(const AContext: ITemplateContext; const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
 begin
   exit(AClass.InheritsFrom(TDataSet));
 end;
 
-procedure PopulateStackFrameFromDictionary(const StackFrame: TStackFrame; const ARttiType: TRttiType; const AClass: TValue);
+procedure PopulateStackFrameFromDictionary(const AContext: ITemplateContext; const StackFrame: TStackFrame; const ARttiType: TRttiType; const AClass: TValue);
 var
   LEnumObject: TObject;
   LEnumType: TRttiType;
@@ -1117,7 +1116,7 @@ begin
   LMethod := ARttiType.GetMethod('GetEnumerator');
   LEnumObject := LMethod.Invoke(LDictionary, []).AsObject;
   try
-    LEnumType := GRttiContext.GetType(LEnumObject.ClassType);
+    LEnumType := AContext.RttiContext.GetType(LEnumObject.ClassType);
     LEnumMoveNextMethod := LEnumType.GetMethod('MoveNext');
     LEnumCurrentProperty := LEnumType.GetProperty('Current');
     LPairKeyField := nil;
@@ -1128,7 +1127,7 @@ begin
       LPairRecordPtr := LEnumPair.GetReferenceToRawData;
       if LPairKeyField = nil then
       begin
-        LEnumType := GRttiContext.GetType(LEnumPair.TypeInfo);
+        LEnumType := AContext.RttiContext.GetType(LEnumPair.TypeInfo);
         LPairKeyField := LEnumType.GetField('Key');
         LPairValueField := LEnumType.GetField('Value');
       end;
@@ -1144,12 +1143,12 @@ begin
   exit(supports(AInterface, ITemplateVariables));
 end;
 
-function MatchTemplateVariableObject(const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
+function MatchTemplateVariableObject(const AContext: ITemplateContext; const ATypeInfo: PTypeInfo; const AClass: TClass): boolean;
 begin
   exit(AClass = TTemplateVariables);
 end;
 
-function IsDataSetEmpty(const AObject: TObject): boolean;
+function IsDataSetEmpty(const AContext: ITemplateContext; const AObject: TObject): boolean;
 var
   LType: TRttiType;
   LCount: integer;
@@ -1157,25 +1156,25 @@ var
 begin
   if AObject = nil then
     exit(true);
-  LType := GRttiContext.GetType(AObject.ClassType);
+  LType := AContext.RttiContext.GetType(AObject.ClassType);
   LCountProp := LType.GetProperty('RecordCount');
   LCount := LCountProp.GetValue(AObject).AsInteger;
   exit(LCount = 0);
 end;
 
-function IsRecordCountEmpty(const AObject: TValue): boolean;
+function IsRecordCountEmpty(const AContext: ITemplateContext; const AObject: TValue): boolean;
 var
   LType: TRttiType;
   LCount: integer;
   LCountProp: TRttiMethod;
 begin
-  LType := GRttiContext.GetType(AObject.TypeInfo);
+  LType := AContext.RttiContext.GetType(AObject.TypeInfo);
   LCountProp := LType.GetMethod('GetCount');
   LCount := LCountProp.Invoke(AObject, []).AsInteger;
   exit(LCount = 0);
 end;
 
-function IsGenericCollectionEmpty(const AObject: TObject): boolean;
+function IsGenericCollectionEmpty(const AContext: ITemplateContext; const AObject: TObject): boolean;
 var
   LType: TRttiType;
   LCount: integer;
@@ -1183,13 +1182,13 @@ var
 begin
   if AObject = nil then
     exit(true);
-  LType := GRttiContext.GetType(AObject.ClassType);
+  LType := AContext.RttiContext.GetType(AObject.ClassType);
   LCountProp := LType.GetProperty('Count');
   LCount := LCountProp.GetValue(AObject).AsInteger;
   exit(LCount = 0);
 end;
 
-function IsJsonObjectEmpty(const AObject: TObject): boolean;
+function IsJsonObjectEmpty(const AContext: ITemplateContext; const AObject: TObject): boolean;
 var
   LJsonArray: TJsonArray absolute AObject;
   LJsonObject: TJsonObject absolute AObject;
@@ -1215,15 +1214,15 @@ begin
   exit(false);
 end;
 
-function IsEmptyValue(const AValue: TValue): boolean;
+function IsEmptyValue(const AContext: ITemplateContext; const AValue: TValue): boolean;
 begin
-  if MatchMap(AValue.TypeInfo) then
-    exit(IsRecordCountEmpty(AValue))
+  if MatchMap(AContext, AValue.TypeInfo) then
+    exit(IsRecordCountEmpty(AContext, AValue))
   else
     exit(false);
 end;
 
-function IsEmptyObject(const AObject: TObject): boolean;
+function IsEmptyObject(const AContext: ITemplateContext; const AObject: TObject): boolean;
 var
   LPair: TPair<TDerefMatchFunction, TCheckEmptyObjectFunction>;
 begin
@@ -1231,9 +1230,9 @@ begin
     exit(true);
   for LPair in GEmptyObjectFunctions do
   begin
-    if LPair.Key(AObject.classinfo, AObject.ClassType) then
+    if LPair.Key(AContext, AObject.classinfo, AObject.ClassType) then
     begin
-      exit(LPair.Value(AObject));
+      exit(LPair.Value(AContext, AObject));
     end;
   end;
   exit(false);

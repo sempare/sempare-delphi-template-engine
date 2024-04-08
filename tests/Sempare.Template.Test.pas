@@ -795,10 +795,10 @@ var
   LContext: ITemplateContext;
   Functions: ITemplateFunctions;
 begin
-  Functions := CreateTemplateFunctions;
+  LContext := Template.Context([eoEmbedException]);
+  Functions := CreateTemplateFunctions(LContext);
   Functions.RegisterDefaults;
   Functions.AddFunctions(TMyExceptProc);
-  LContext := Template.Context([eoEmbedException]);
   LContext.Functions := Functions;
   Assert.AreEqual(#$D#$A#$D#$A'ERROR:  (Line 1, Column 16) test'#$D#$A#$D#$A, Template.Eval(LContext, '<% RaiseExcept(''test'') %>'));
   LContext.DebugErrorFormat := '<b>Error:</b><i>%s</i>';
