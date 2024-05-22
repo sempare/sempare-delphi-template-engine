@@ -223,7 +223,7 @@ A commercial licence grants you the right to use Sempare Template Engine in your
 Sempare Template Engine or to any other party. A commercial license lasts into perpetuity, and entitles you to all future updates.
 
 A commercial licence is provided per developer developing applications that uses the Sempare Template Engine. The initial license fee is $70 per developer.
-For support thereafter, at your discretion, a support fee of $30 per developer per year would be appreciated. The initial site licensing fee is $1,500 and the annual site support licensing fee is $500.
+For support thereafter, at your discretion, a support fee of $30 per developer per year would be appreciated.
 
 The following payment links allow you to quickly subscribe. Please note that the initial license and support links are seperate.
 - [Initial License Fee](https://buy.stripe.com/aEU7t61N88pffQIdQQ)
