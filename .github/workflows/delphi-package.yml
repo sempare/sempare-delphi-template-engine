@@ -12,10 +12,12 @@ jobs:
         with:
           fetch-depth: 2
       - name: build win32 debug
+        shell: cmd
         id: build_win32_debug
         run: |
           scripts\build.bat debug
       - name: build win32 release
+        shell: cmd
         id: build_win32_release
         run: |
           scripts\build.bat release
