@@ -5,6 +5,7 @@ on: [push, pull_request]
 jobs:
   build_sempare_template_engine:
     runs-on: self-hosted
+    environment: ${{ vars.ENVIRONMENT_CONRADLAPTOP }}
     strategy:
       fail-fast: true
     steps:
@@ -14,10 +15,10 @@ jobs:
       - name: build win32 debug
         id: build_win32_debug
         run: |
-          "C:\Program Files (x86)\Embarcadero\Studio\23.0\bin\rsvars.bat"
+          call /b rsvars.bat
           msbuild Sempare.Template.Tester.dproj /t:Build /p:Config=Debug /p:Platform=Win32
       - name: build win32 release
         id: build_win32_release
         run: |
-          "C:\Program Files (x86)\Embarcadero\Studio\23.0\bin\rsvars.bat"
+          call /b rsvars.bat
           msbuild Sempare.Template.Tester.dproj /t:Build /p:Config=Release /p:Platform=Win32
