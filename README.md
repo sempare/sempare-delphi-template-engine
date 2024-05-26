@@ -236,3 +236,4 @@ The following payment links are available for site licenses. Please note that th
 Please send an e-mail to info@sempare.ltd to request an invoice which will contain alternative payment details.
 
 Support and enhancement requests submitted by users that pay for support will be prioritised. New developments may incur additional costs depending on time required for implementation.
+
