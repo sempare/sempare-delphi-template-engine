@@ -15,8 +15,7 @@ jobs:
       - name: build win32 debug
         id: build_win32_debug
         run: |
-          rsvars.bat
-          msbuild Sempare.Template.Tester.dproj /t:Build /p:Config=Debug /p:Platform=Win32
+          ${{ vars.MSBUILD_PATH }} msbuild Sempare.Template.Tester.dproj /t:Build /p:Config=Debug /p:Platform=Win32
       - name: build win32 release
         id: build_win32_release
         run: |
