@@ -1,11 +1,7 @@
 name: Delphi package
 
-on:
-  push:
-    paths:
-      - '**'
-  pull_request:
-      - '**'
+on: [push, pull_request]
+
 jobs:
   build_sempare_template_engine:
     runs-on: self-hosted
