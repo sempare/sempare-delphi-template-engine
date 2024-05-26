@@ -15,10 +15,10 @@ jobs:
       - name: build win32 debug
         id: build_win32_debug
         run: |
-          call /b rsvars.bat
+          rsvars.bat
           msbuild Sempare.Template.Tester.dproj /t:Build /p:Config=Debug /p:Platform=Win32
       - name: build win32 release
         id: build_win32_release
         run: |
-          call /b rsvars.bat
+          rsvars.bat
           msbuild Sempare.Template.Tester.dproj /t:Build /p:Config=Release /p:Platform=Win32
