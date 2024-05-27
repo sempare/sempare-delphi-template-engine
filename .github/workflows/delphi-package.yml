@@ -41,11 +41,10 @@ jobs:
         run: |
           dir
 
-      - name: Report Test Results
-        uses: mikepenz/action-junit-report@v4
+      - name: Publish test results
+        uses: mikepenz/action-junit-report@v3
         with:
-          report_paths: './test-results.xml'
-          require_tests: true
+          report_paths: 'test-results.xml'
 
 
 
