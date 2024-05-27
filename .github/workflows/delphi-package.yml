@@ -18,6 +18,21 @@ jobs:
           $lineToFind = '// {$DEFINE SEMPARE_TEMPLATE_CONFIRM_LICENSE}'
           $newLine = '{$DEFINE SEMPARE_TEMPLATE_CONFIRM_LICENSE}'
           (Get-Content $filePath) -replace [regex]::Escape($lineToFind), $newLine | Set-Content $filePath
+
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: '6.0.x'
+      - name: Install dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore
+
+      - name: Install ReportGenerator
+        run: dotnet tool install -g dotnet-reportgenerator-globaltool
+
+
       
       - name: build win32 debug
         shell: cmd
@@ -31,11 +46,21 @@ jobs:
         working-directory: Win32\Debug
         run: Sempare.Template.Tester.exe -cm:quiet -exit:continue -b -xmlfile:.\test-results.xml
 
+      - name: Generate Test Report
+        run: reportgenerator -reports:./test-results.xml -targetdir:TestReport -reporttypes:HtmlInline_AzurePipelines
+
+
       - name: build win32 release
         id: build_win32_release
         working-directory: scripts
         shell: cmd
         run: bootstrap.bat Release Win32
+
+      - name: Upload Test Report
+        uses: actions/upload-artifact@v2
+        with:
+          name: TestReport
+          path: TestReport
 
       - name: run win64 release tests
         shell: cmd
