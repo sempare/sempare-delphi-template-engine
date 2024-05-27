@@ -37,8 +37,8 @@ jobs:
           path: 'Win32/Debug/test-results.xml'
 
       - name: Report Test Results
-        uses: mikepenz/action-junit-report@v3
+        uses: mikepenz/action-junit-report@v4
         with:
-          report_paths: 'Win32/Debug/test-results.xml'
+          report_paths: '**/test-results.xml'
           require_tests: true
 
