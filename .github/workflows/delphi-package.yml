@@ -18,13 +18,6 @@ jobs:
           $lineToFind = '// {$DEFINE SEMPARE_TEMPLATE_CONFIRM_LICENSE}'
           $newLine = '{$DEFINE SEMPARE_TEMPLATE_CONFIRM_LICENSE}'
           (Get-Content $filePath) -replace [regex]::Escape($lineToFind), $newLine | Set-Content $filePath
-
- 
-
-      - name: Install ReportGenerator
-        run: dotnet tool install -g dotnet-reportgenerator-globaltool
-
-
       
       - name: build win32 debug
         shell: cmd
