@@ -1,2 +1,3 @@
-rsvars.bat
-C:\windows\Microsoft.NET\Framework\v4.0.30319\msbuild Sempare.Template.Tester.dproj /t:Build /p:Config=%~1 /p:Platform=Win32
+call /b rsvars.bat
+msbuild Sempare.Template.Tester.dproj /t:Clean /p:Config=Debug /p:Platform=Win32
+msbuild Sempare.Template.Tester.dproj /t:Build /p:Config=Debug /p:Platform=Win32
