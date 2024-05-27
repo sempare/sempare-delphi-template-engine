@@ -13,7 +13,6 @@ jobs:
           fetch-depth: 2
 
       - name: Remove comment from specific line in file
-        shell: pwsh
         run: |
           $filePath = "src/Sempare.Template.Compiler.inc"
           $lineToFind = '// {$DEFINE SEMPARE_TEMPLATE_CONFIRM_LICENSE}'
