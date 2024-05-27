@@ -1,1 +1,2 @@
-cmd.exe /c scripts/build.bat %*
+cd scripts
+cmd.exe /c build.bat %*
