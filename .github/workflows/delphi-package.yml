@@ -20,8 +20,8 @@ jobs:
       - name: run win32 debug tests
         shell: cmd
         id: run_win32_debug_tests
-        working-directory: scripts
-        run: Win32\Debug\Sempare.Template.Tester.exe -cm:quiet -exit:continue -b -xmlfile:.\test-results.xml
+        working-directory: Win32\Debug
+        run: Sempare.Template.Tester.exe -cm:quiet -exit:continue -b -xmlfile:.\test-results.xml
 
       - name: build win32 release
         id: build_win32_release
