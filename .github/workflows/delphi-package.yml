@@ -27,46 +27,20 @@ jobs:
 
       - name: run win32 debug tests
         shell: cmd
-        id: run_win32_debug_tests
         working-directory: Win32\Debug
         run: Sempare.Template.Tester.exe -cm:quiet -exit:continue -b -xmlfile:.\test-results.xml
 
       - name: Publish Test Results
         uses: actions/upload-artifact@v2
+        working-directory: Win32\Debug
         with:
           name: TestResults
-          path: Win32/Debug/test-results.xml
+          path: test-results.xml
 
       - name: Report Test Results
         uses: mikepenz/action-junit-report@v3
+        working-directory: Win32\Debug
         with:
-          report_paths: Win32/Debug/test-results.xml
+          report_paths: test-results.xml
           require_tests: true
-
-    
-
-      - name: build win32 release
-        id: build_win32_release
-        working-directory: scripts
-        shell: cmd
-        run: bootstrap.bat Release Win32
-
-      - name: Upload Test Report
-        uses: actions/upload-artifact@v2
-        with:
-          name: TestReport
-          path: TestReport
-
-      - name: run win64 release tests
-        shell: cmd
-        id: run_win32_release_tests
-        working-directory: Win32\Release
-        run: Sempare.Template.Tester.exe -cm:quiet -exit:continue -b -xmlfile:.\test-results.xml
-
-      - name: Publish Test Results
-        if: always()
-        uses: actions/upload-artifact@v2
-        with:
-          name: TestResults
-          path: 'Win32\Debug\test-results.xml'
 
