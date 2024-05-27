@@ -31,9 +31,19 @@ jobs:
         working-directory: Win32\Debug
         run: Sempare.Template.Tester.exe -cm:quiet -exit:continue -b -xmlfile:.\test-results.xml
 
-      - name: Generate Test Report
-        run: reportgenerator -reports:./test-results.xml -targetdir:TestReport -reporttypes:HtmlInline_AzurePipelines
+      - name: Publish Test Results
+        uses: actions/upload-artifact@v2
+        with:
+          name: TestResults
+          path: Win32/Debug/test-results.xml
 
+      - name: Report Test Results
+        uses: mikepenz/action-junit-report@v3
+        with:
+          report_paths: Win32/Debug/test-results.xml
+          require_tests: true
+
+    
 
       - name: build win32 release
         id: build_win32_release
