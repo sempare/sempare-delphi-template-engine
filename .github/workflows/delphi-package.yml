@@ -17,9 +17,9 @@ jobs:
         run: |
           $filePath = "src/Sempare.Template.Compiler.inc"
           $lineToFind = '// {$DEFINE SEMPARE_TEMPLATE_CONFIRM_LICENSE}'
-          (Get-Content $filePath) | ForEach-Object { $_ -replace $lineToFind, '{$DEFINE SEMPARE_TEMPLATE_CONFIRM_LICENSE}' } | Set-Content $filePath
-
-          
+          $newLine = '{$DEFINE SEMPARE_TEMPLATE_CONFIRM_LICENSE}'
+          (Get-Content $filePath) -replace [regex]::Escape($lineToFind), $newLine | Set-Content $filePath
+      
       - name: build win32 debug
         shell: cmd
         id: build_win32_debug
