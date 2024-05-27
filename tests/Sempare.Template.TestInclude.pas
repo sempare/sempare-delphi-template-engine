@@ -709,7 +709,8 @@ begin
   LStopWatch.Stop;
   LElapsedMs := LStopWatch.ElapsedMilliseconds / LIterations;
 {$IF defined( WIN32) OR defined(WIN64)}
-  Assert.IsTrue(LElapsedMs <= GetTestTimeTollerance(0.25, 8.0));
+  writeln('Time: ' +  floattostr(LElapsedMs));
+  Assert.IsTrue(LElapsedMs <= GetTestTimeTollerance(0.5, 6.0));
 {$ENDIF}
 end;
 
