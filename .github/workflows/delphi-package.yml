@@ -15,11 +15,13 @@ jobs:
         shell: cmd
         id: build_win32_debug
         run: |
-          call "scripts\bootstrap.bat" Debug Win32
+          cd scripts
+          bootstrap.bat Debug Win32
 
       - name: build win32 release
         id: build_win32_release
         shell: cmd
         run: |
-          call "scripts\bootstrap.bat" Release Win32
+           cd scripts
+           bootstrap.bat Release Win32
 
