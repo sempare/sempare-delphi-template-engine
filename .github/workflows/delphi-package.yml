@@ -7,6 +7,9 @@ jobs:
     runs-on: self-hosted
     strategy:
       fail-fast: true
+    env:
+       MSBUILD_PATH: C:\windows\Microsoft.NET\Framework\v4.0.30319\msbuild
+       PATH: %PATH%;MSBUILD_PATH
     steps:
       - uses: actions/checkout@v2
         with:
@@ -16,13 +19,13 @@ jobs:
         id: build_win32_debug
         run: |
           call /b rsvars.bat
-          C:\windows\Microsoft.NET\Framework\v4.0.30319\msbuild Sempare.Template.Tester.dproj /t:Clean /p:Config=Debug /p:Platform=Win32
-          C:\windows\Microsoft.NET\Framework\v4.0.30319\msbuild Sempare.Template.Tester.dproj /t:Build /p:Config=Debug /p:Platform=Win32
+          msbuild Sempare.Template.Tester.dproj /t:Clean /p:Config=Debug /p:Platform=Win32
+          msbuild Sempare.Template.Tester.dproj /t:Build /p:Config=Debug /p:Platform=Win32
       - name: build win32 release
         shell: cmd
         id: build_win32_release
         run: |
           call /b rsvars.bat
-          C:\windows\Microsoft.NET\Framework\v4.0.30319\msbuild Sempare.Template.Tester.dproj /t:Clean /p:Config=Debug /p:Platform=Win32
-          C:\windows\Microsoft.NET\Framework\v4.0.30319\msbuild Sempare.Template.Tester.dproj /t:Build /p:Config=Release /p:Platform=Win32
+          msbuild Sempare.Template.Tester.dproj /t:Clean /p:Config=Debug /p:Platform=Win32
+          msbuild Sempare.Template.Tester.dproj /t:Build /p:Config=Release /p:Platform=Win32
 
