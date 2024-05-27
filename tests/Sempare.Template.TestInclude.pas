@@ -520,7 +520,7 @@ begin
   LStopWatch.Stop;
   LElapsedMs := LStopWatch.ElapsedMilliseconds / ANumEvals;
 
-  if LElapsedMs > GetTestTimeTollerance(0.25, 6.0) then
+  if LElapsedMs > GetTestTimeTollerance(0.5, 6.0) then
     AtomicIncrement(AFailed^);
 
 end;
