@@ -42,3 +42,7 @@ jobs:
           report_paths: './test-results.xml'
           require_tests: true
 
+      - name: list files
+        run: |
+          dir
+
