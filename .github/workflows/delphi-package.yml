@@ -23,7 +23,7 @@ jobs:
         shell: cmd
         id: build_win32_debug
         working-directory: scripts
-        run: bootstrap.bat Debug Win32
+        run: build.bat Debug Win32
 
       - name: run win32 debug tests
         shell: cmd
@@ -35,11 +35,6 @@ jobs:
         with:
           name: TestResults
           path: './test-results.xml'
-
-
-      - name: list files
-        run: |
-          dir
 
       - name: Publish test results
         uses: mikepenz/action-junit-report@v3
