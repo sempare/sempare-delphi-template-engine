@@ -21,4 +21,3 @@ jobs:
         run: |
           cmd.exe /c scripts\build.bat Release Win32
 
-
