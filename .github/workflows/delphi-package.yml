@@ -19,15 +19,7 @@ jobs:
           $newLine = '{$DEFINE SEMPARE_TEMPLATE_CONFIRM_LICENSE}'
           (Get-Content $filePath) -replace [regex]::Escape($lineToFind), $newLine | Set-Content $filePath
 
-      - name: Setup .NET Core
-        uses: actions/setup-dotnet@v2
-        with:
-          dotnet-version: '6.0.x'
-      - name: Install dependencies
-        run: dotnet restore
-
-      - name: Build
-        run: dotnet build --no-restore
+ 
 
       - name: Install ReportGenerator
         run: dotnet tool install -g dotnet-reportgenerator-globaltool
