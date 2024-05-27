@@ -32,14 +32,14 @@ jobs:
 
       - name: Publish Test Results
         uses: actions/upload-artifact@v2
-        working-directory: Win32\Debug
+        working-directory: Win32/Debug
         with:
           name: TestResults
           path: test-results.xml
 
       - name: Report Test Results
         uses: mikepenz/action-junit-report@v3
-        working-directory: Win32\Debug
+        working-directory: Win32/Debug
         with:
           report_paths: test-results.xml
           require_tests: true
