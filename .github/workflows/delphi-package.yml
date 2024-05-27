@@ -34,11 +34,11 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: TestResults
-          path: Win32\Debug\test-results.xml
+          path: 'Win32/Debug/test-results.xml'
 
       - name: Report Test Results
         uses: mikepenz/action-junit-report@v3
         with:
-          report_paths: '**/test-results.xml'
+          report_paths: 'Win32/Debug/test-results.xml'
           require_tests: true
 
