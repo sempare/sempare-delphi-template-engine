@@ -28,17 +28,17 @@ jobs:
       - name: run win32 debug tests
         shell: cmd
         working-directory: Win32\Debug
-        run: Sempare.Template.Tester.exe -cm:quiet -exit:continue -b -xmlfile:.\test-results.xml
+        run: Sempare.Template.Tester.exe -cm:quiet -exit:continue -b -xmlfile:..\..\test-results.xml
 
       - name: Publish Test Results
         uses: actions/upload-artifact@v2
         with:
           name: TestResults
-          path: 'Win32/Debug/test-results.xml'
+          path: './test-results.xml'
 
       - name: Report Test Results
         uses: mikepenz/action-junit-report@v4
         with:
-          report_paths: './Win32/Debug/test-results.xml'
+          report_paths: './test-results.xml'
           require_tests: true
 
