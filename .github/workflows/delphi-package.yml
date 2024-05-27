@@ -11,6 +11,15 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 2
+
+      - name: Remove comment from specific line in file
+        shell: pwsh
+        run: |
+          $filePath = "src/Sempare.Template.Compiler.inc"
+          $lineToFind = '// {$DEFINE SEMPARE_TEMPLATE_CONFIRM_LICENSE}'
+          (Get-Content $filePath) | ForEach-Object { $_ -replace $lineToFind, '{$DEFINE SEMPARE_TEMPLATE_CONFIRM_LICENSE}' } | Set-Content $filePath
+
+          
       - name: build win32 debug
         shell: cmd
         id: build_win32_debug
