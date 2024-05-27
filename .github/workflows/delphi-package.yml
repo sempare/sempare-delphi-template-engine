@@ -1,6 +1,6 @@
 name: Delphi package
 
-on: [push, pull_request]
+on: [push]
 
 jobs:
   build_sempare_template_engine:
