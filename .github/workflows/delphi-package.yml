@@ -36,13 +36,16 @@ jobs:
           name: TestResults
           path: './test-results.xml'
 
+
+      - name: list files
+        run: |
+          dir
+
       - name: Report Test Results
         uses: mikepenz/action-junit-report@v4
         with:
           report_paths: './test-results.xml'
           require_tests: true
 
-      - name: list files
-        run: |
-          dir
+
 
