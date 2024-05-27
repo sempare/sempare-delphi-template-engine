@@ -37,3 +37,9 @@ jobs:
         shell: cmd
         run: bootstrap.bat Release Win32
 
+      - name: run win64 release tests
+        shell: cmd
+        id: run_win32_release_tests
+        working-directory: Win32\Release
+        run: Sempare.Template.Tester.exe -cm:quiet -exit:continue -b -xmlfile:.\test-results.xml
+
