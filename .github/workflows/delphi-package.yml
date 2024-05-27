@@ -39,6 +39,6 @@ jobs:
       - name: Report Test Results
         uses: mikepenz/action-junit-report@v3
         with:
-          report_paths: Win32\Debug\test-results.xml
+          report_paths: ./Win32/Debug/test-results.xml
           require_tests: true
 
