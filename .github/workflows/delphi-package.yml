@@ -12,7 +12,7 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Remove comment from specific line in file
+      - name: remove comment from specific line in file
         run: |
           $filePath = "src/Sempare.Template.Compiler.inc"
           $lineToFind = '// {$DEFINE SEMPARE_TEMPLATE_CONFIRM_LICENSE}'
@@ -21,7 +21,6 @@ jobs:
       
       - name: build win32 debug
         shell: cmd
-        id: build_win32_debug
         working-directory: scripts
         run: build.bat Debug Win32
 
@@ -30,13 +29,36 @@ jobs:
         working-directory: Win32\Debug
         run: Sempare.Template.Tester.exe -cm:quiet -exit:continue -b -xmlfile:../../test-results.xml
 
-      - name: Publish win32 debug Test Results
+      - name: publish win32 debug test results
         uses: actions/upload-artifact@v2
         with:
-          name: TestResults
+          name: Win32 Debug Results
           path: './test-results.xml'
 
-      - name: Publish win32 debug test results
+      - name: publish win32 debug test results
         uses: mikepenz/action-junit-report@v3
         with:
           report_paths: './test-results.xml'
+
+
+      - name: build win32 release
+        shell: cmd
+        working-directory: scripts
+        run: build.bat Release Win32
+
+      - name: run win32 release tests
+        shell: cmd
+        working-directory: Win32\Release
+        run: Sempare.Template.Tester.exe -cm:quiet -exit:continue -b -xmlfile:../../test-results-release.xml
+
+      - name: publish win32 release test results
+        uses: actions/upload-artifact@v2
+        with:
+          name: Win32 Release Results
+          path: './test-results-release.xml'
+
+      - name: publish win32 release test results
+        uses: mikepenz/action-junit-report@v3
+        with:
+          report_paths: './test-results-release.xml'
+
