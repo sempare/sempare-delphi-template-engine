@@ -27,19 +27,20 @@ jobs:
       - name: run win32 debug tests
         shell: cmd
         working-directory: Win32\Debug
-        run: Sempare.Template.Tester.exe -cm:quiet -exit:continue -b -xmlfile:../../test-results.xml
+        run: Sempare.Template.Tester.exe -cm:quiet -exit:continue -b -xmlfile:./test-results.xml
 
       - name: publish win32 debug test results
         uses: actions/upload-artifact@v2
         with:
           name: Win32 Debug Results
-          path: './test-results.xml'
+          path: './Win32/Debug/test-results.xml'
 
       - name: publish win32 debug test results
         uses: mikepenz/action-junit-report@v3
         with:
           summary: Win32 Debug Results
-          report_paths: './test-results.xml'
+          job_name: Win32 Debug Results
+          report_paths: './Win32/Debug/test-results.xml'
 
 
       - name: build win32 release
@@ -50,17 +51,18 @@ jobs:
       - name: run win32 release tests
         shell: cmd
         working-directory: Win32\Release
-        run: Sempare.Template.Tester.exe -cm:quiet -exit:continue -b -xmlfile:../../test-results-release.xml
+        run: Sempare.Template.Tester.exe -cm:quiet -exit:continue -b -xmlfile:./test-results-release.xml
 
       - name: publish win32 release test results
         uses: actions/upload-artifact@v2
         with:
           name: Win32 Release Results
-          path: './test-results-release.xml'
+          path: './Win32/Release/test-results-release.xml'
 
       - name: publish win32 release test results
         uses: mikepenz/action-junit-report@v3
         with:
           summary: Win32 Release Results
-          report_paths: './test-results-release.xml'
+          job_name: Win32 Release Results
+          report_paths: './Win32/Release/test-results-release.xml'
 
