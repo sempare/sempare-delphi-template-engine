@@ -38,6 +38,7 @@ jobs:
       - name: publish win32 debug test results
         uses: mikepenz/action-junit-report@v3
         with:
+          summary: Win32 Debug Results
           report_paths: './test-results.xml'
 
 
@@ -60,5 +61,6 @@ jobs:
       - name: publish win32 release test results
         uses: mikepenz/action-junit-report@v3
         with:
+          summary: Win32 Release Results
           report_paths: './test-results-release.xml'
 
