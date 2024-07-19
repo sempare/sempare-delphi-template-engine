@@ -76,7 +76,7 @@
 {$ENDIF}
 // -----------------------------------------------
 {$IF CompilerVersion >= 33}  // from Delphi 10.3 Rio onwards
-{$DEFINE SUPPORT_CUSTOM_MANAGED_RECORDS}
+	{$DEFINE SUPPORT_CUSTOM_MANAGED_RECORDS}
 {$ENDIF}
 // -----------------------------------------------
 
@@ -84,18 +84,19 @@
 // {$DEFINE SEMPARE_TEMPLATE_NO_INDY}
 
 {$IFNDEF SEMPARE_TEMPLATE_NO_INDY}
-{$DEFINE SEMPARE_TEMPLATE_INDY}
+	{$DEFINE SEMPARE_TEMPLATE_INDY}
 {$ENDIF}
 // -----------------------------------------------
 
-// the following uses the defines above to snure the correct defines
+// the following uses the defines above to ensure the correct defines
 // are in place
 {$IF defined(SEMPARE_TEMPLATE_INDY) or defined(SUPPORT_NET_ENCODING)}
-{$IFDEF SUPPORT_NET_ENCODING}
-{$UNDEF SEMPARE_TEMPLATE_INDY}
-{$ENDIF}
-{$DEFINE SEMPARE_TEMPLATE_HAS_HTML_ENCODER}
+	//prefer net encoding if available
+	{$IFDEF SUPPORT_NET_ENCODING}
+		{$UNDEF SEMPARE_TEMPLATE_INDY}
+	{$ENDIF}
+	{$DEFINE SEMPARE_TEMPLATE_HAS_HTML_ENCODER}
 {$ENDIF}
 {$IFNDEF SEMPARE_TEMPLATE_HAS_HTML_ENCODER}
-{$MESSAGE 'No default html encoder present.'}
+	{$MESSAGE 'No default html encoder present.'}
 {$ENDIF}
