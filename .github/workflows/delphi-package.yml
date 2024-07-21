@@ -1,6 +1,6 @@
 name: Delphi package
 
-on: [push, pull_request]
+on: [push]
 
 jobs:
   build_sempare_template_engine:
@@ -11,15 +11,56 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 2
+
+      - name: remove comment from specific line in file
+        run: |
+          $filePath = "src/Sempare.Template.Compiler.inc"
+          $lineToFind = '// {$DEFINE SEMPARE_TEMPLATE_CONFIRM_LICENSE}'
+          $newLine = '{$DEFINE SEMPARE_TEMPLATE_CONFIRM_LICENSE}'
+          (Get-Content $filePath) -replace [regex]::Escape($lineToFind), $newLine | Set-Content $filePath
+      
       - name: build win32 debug
         shell: cmd
-        id: build_win32_debug
         working-directory: scripts
-        run: bootstrap.bat Debug Win32
+        run: build.bat Debug Win32
+
+      - name: run win32 debug tests
+        shell: cmd
+        working-directory: Win32\Debug
+        run: Sempare.Template.Tester.exe -cm:quiet -exit:continue -b -xmlfile:.\results.xml
+
+      - name: publish win32 debug test results
+        uses: actions/upload-artifact@v2
+        with:
+          name: Win32 Debug Results
+          path: './Win32/Debug/results.xml'
+
+      - name: publish win32 debug test results
+        uses: mikepenz/action-junit-report@v3
+        with:
+          check_name: Win32 Debug Results
+          report_paths: './Win32/Debug/results.xml'
+
 
       - name: build win32 release
-        id: build_win32_release
-        working-directory: scripts
         shell: cmd
-        run: bootstrap.bat Release Win32
+        working-directory: scripts
+        run: build.bat Release Win32
+
+      - name: run win32 release tests
+        shell: cmd
+        working-directory: Win32\Release
+        run: Sempare.Template.Tester.exe -cm:quiet -exit:continue -b -xmlfile:.\results.xml
+
+      - name: publish win32 release test results
+        uses: actions/upload-artifact@v2
+        with:
+          name: Win32 Release Results
+          path: './Win32/Release/results.xml'
+
+      - name: publish win32 release test results
+        uses: mikepenz/action-junit-report@v3
+        with:
+          check_name: Win32 Release Results
+          report_paths: './Win32/Release/results.xml'
 
