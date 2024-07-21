@@ -99,6 +99,8 @@ type
     procedure Unmanage(const AObject: TObject);
   end;
 
+  TGetRttiContext = reference to function : PRttiContext;
+
   ITemplateContext = interface
     ['{979D955C-B4BD-46BB-9430-1E74CBB999D4}']
 
@@ -173,10 +175,10 @@ type
     function GetVariableResolver: TTemplateVariableResolver;
     procedure SetVariableResolver(const AResolver: TTemplateVariableResolver);
 
-    function GetRttiContext: PRttiContext;
-    procedure SetRttiContext(const AContext: PRttiContext);
+    function GetRttiContext: TGetRttiContext;
+    procedure SetRttiContext(const AContext: TGetRttiContext);
 
-    property RttiContext: PRttiContext read GetRttiContext write SetRttiContext;
+    property RttiContext: TGetRttiContext read GetRttiContext write SetRttiContext;
     property Functions: ITemplateFunctions read GetFunctions write SetFunctions;
     property NewLine: string read GetNewLine write SetNewLine;
     property WhitespaceChar: char read GetWhitespace write SetWhiteSpace;
@@ -286,13 +288,13 @@ type
     FPrettyPrintOutput: TPrettyPrintOutput;
     FWhiteSpace: char;
     FVariableResolver: TTemplateVariableResolver;
-    FRttiContext: PRttiContext;
+    FRttiContext: TGetRttiContext;
   public
     constructor Create(const AOptions: TTemplateEvaluationOptions);
     destructor Destroy; override;
 
-    function GetRttiContext: PRttiContext;
-    procedure SetRttiContext(const AContext: PRttiContext);
+    function GetRttiContext: TGetRttiContext;
+    procedure SetRttiContext(const AContext: TGetRttiContext);
 
     function TryGetBlock(const AName: string; out ABlock: IBlockStmt): boolean;
     procedure AddBlock(const AName: string; const ABlock: IBlockStmt);
@@ -426,7 +428,7 @@ end;
 
 constructor TTemplateContext.Create(const AOptions: TTemplateEvaluationOptions);
 begin
-  FRttiContext := @GRttiContext;
+  FRttiContext := function : PRttiContext begin exit(@GRttiContext) end;
   FOptions := AOptions + [eoFlattenTemplate, eoOptimiseTemplate];
   FMaxRuntimeMs := GDefaultRuntimeMS;
   FPrettyPrintOutput := GPrettyPrintOutput;
@@ -542,9 +544,9 @@ begin
   result := FPrettyPrintOutput;
 end;
 
-function TTemplateContext.GetRttiContext: PRttiContext;
+function TTemplateContext.GetRttiContext: TGetRttiContext;
 begin
-  exit(FRttiContext);
+  exit(TGetRttiContext(FRttiContext));
 end;
 
 function TTemplateContext.GetVariable(const AName: string): TValue;
@@ -699,7 +701,7 @@ begin
   FPrettyPrintOutput := APrettyPrintOutput;
 end;
 
-procedure TTemplateContext.SetRttiContext(const AContext: PRttiContext);
+procedure TTemplateContext.SetRttiContext(const AContext: TGetRttiContext);
 begin
   FRttiContext := AContext;
 end;
