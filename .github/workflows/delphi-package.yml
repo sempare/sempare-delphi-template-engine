@@ -64,3 +64,46 @@ jobs:
           check_name: Win32 Release Results
           report_paths: './Win32/Release/results.xml'
 
+      - name: build win64 debug
+        shell: cmd
+        working-directory: scripts
+        run: build.bat Debug Win64
+
+      - name: run win64 debug tests
+        shell: cmd
+        working-directory: Win64\Debug
+        run: Sempare.Template.Tester.exe -cm:quiet -exit:continue -b -xmlfile:.\results.xml
+
+      - name: publish win64 debug test results
+        uses: actions/upload-artifact@v2
+        with:
+          name: Win64 Debug Results
+          path: './Win64/Debug/results.xml'
+
+      - name: publish win64 debug test results
+        uses: mikepenz/action-junit-report@v3
+        with:
+          check_name: Win64 Debug Results
+          report_paths: './Win64/Debug/results.xml'
+
+      - name: build win64 release
+        shell: cmd
+        working-directory: scripts
+        run: build.bat Release Win64
+
+      - name: run win64 release tests
+        shell: cmd
+        working-directory: Win64\Release
+        run: Sempare.Template.Tester.exe -cm:quiet -exit:continue -b -xmlfile:.\results.xml
+
+      - name: publish win64 release test results
+        uses: actions/upload-artifact@v2
+        with:
+          name: Win64 Release Results
+          path: './Win64/Release/results.xml'
+
+      - name: publish win64 release test results
+        uses: mikepenz/action-junit-report@v3
+        with:
+          check_name: Win64 Release Results
+          report_paths: './Win64/Release/results.xml'
