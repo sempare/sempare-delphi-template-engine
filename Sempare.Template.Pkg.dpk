@@ -62,8 +62,7 @@ package Sempare.Template.Pkg;
 
 requires
   rtl,
-  dbrtl,
-  vcl;
+  dbrtl;
 
 contains
   Sempare.Template.BlockResolver in 'src\Sempare.Template.BlockResolver.pas',
