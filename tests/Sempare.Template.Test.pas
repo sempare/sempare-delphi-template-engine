@@ -686,10 +686,10 @@ begin
 
   LTemplate := Template.Parse('<% if x = 1 ; print(trim(var)); end %>');
   Template.ExtractReferences(LTemplate, LVariables, LFunctions);
-  Assert.AreEqual(2, length(LVariables));
+  Assert.AreEqual(2, integer(length(LVariables)));
   Assert.AreEqual('x', LVariables[0]);
   Assert.AreEqual('var', LVariables[1]);
-  Assert.AreEqual(1, length(LFunctions));
+  Assert.AreEqual(1, integer(length(LFunctions)));
   Assert.AreEqual('Trim', LFunctions[0]);
 
   // class procedure ExtractBlocks(const ATemplate: ITemplate; var ABlocks: TDictionary<string, ITemplate>); static;
@@ -697,7 +697,7 @@ begin
   LBlocks := TDictionary<string, ITemplate>.Create;
   try
     Template.ExtractBlocks(LTemplate, LBlocks);
-    Assert.AreEqual(2, LBlocks.Count);
+    Assert.AreEqual(2, integer(LBlocks.Count));
     Assert.IsTrue(LBlocks.ContainsKey('header'));
     Assert.IsTrue(LBlocks.ContainsKey('footer'));
   finally
