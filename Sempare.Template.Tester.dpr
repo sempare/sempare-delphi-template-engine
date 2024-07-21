@@ -41,7 +41,7 @@ uses
   TestInsight.DUnitX,
   {$ENDIF }
   DUnitX.Loggers.Console,
-  DUnitX.Loggers.Xml.NUnit,
+  DUnitX.Loggers.Xml.JUnit,
   DUnitX.TestFramework,
   Sempare.Template.TestIf in 'tests\Sempare.Template.TestIf.pas',
   Sempare.Template.TestContext in 'tests\Sempare.Template.TestContext.pas',
@@ -86,7 +86,7 @@ begin
     logger := TDUnitXConsoleLogger.Create(true);
     runner.AddLogger(logger);
     //Generate an NUnit compatible XML File
-    nunitLogger := TDUnitXXMLNUnitFileLogger.Create(TDUnitX.Options.XMLOutputFile);
+    nunitLogger := TDUnitXXMLJUnitFileLogger.Create(TDUnitX.Options.XMLOutputFile);
     runner.AddLogger(nunitLogger);
     runner.FailsOnNoAsserts := False; //When true, Assertions must be made during tests;
 

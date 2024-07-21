@@ -523,7 +523,7 @@ var
       RaiseErrorRes(AStmt, @SValueIsNotEnumerable);
     LEnumObj := LEnumValue.AsObject;
     try
-      LLoopExprType := GRttiContext.GetType(LEnumObj.ClassType);
+      LLoopExprType := FContext.RttiContext.GetType(LEnumObj.ClassType);
       LEnumMoveNextMethod := LLoopExprType.GetMethod('MoveNext');
       LEnumCurrentProperty := LLoopExprType.getProperty('Current');
       LRaiseIfMissing := eoRaiseErrorWhenVariableNotFound in FContext.Options;
@@ -630,7 +630,7 @@ var
 
   procedure VisitRecord;
   begin
-    if MatchMap(LLoopExpr.TypeInfo) then
+    if MatchMap(FContext, LLoopExpr.TypeInfo) then
     begin
       if AStmt.ForOp = foIn then
         LLoopExpr := TValue.From(LLoopExpr.AsType<TMap>.ToKeyArray)
@@ -662,7 +662,7 @@ begin
   try
     if not LLoopExpr.IsEmpty then
     begin
-      LLoopExprType := GRttiContext.GetType(LLoopExpr.TypeInfo);
+      LLoopExprType := FContext.RttiContext.GetType(LLoopExpr.TypeInfo);
 
       case LLoopExprType.TypeKind of
         tkInterface:
@@ -930,7 +930,7 @@ begin
     exit;
   LExpr := EvalExpr(AStmt.Condition);
   LIsObject := LExpr.IsObject;
-  if LIsObject and not IsEmptyObject(LExpr.AsObject) or isStrLike(LExpr) and (AsString(LExpr, FContext) <> '') or not LIsObject and AsBoolean(LExpr) then
+  if LIsObject and not IsEmptyObject(FContext, LExpr.AsObject) or isStrLike(LExpr) and (AsString(LExpr, FContext) <> '') or not LIsObject and AsBoolean(LExpr) then
     AcceptVisitor(AStmt.TrueContainer, self)
   else if AStmt.FalseContainer <> nil then
     AcceptVisitor(AStmt.FalseContainer, self);
@@ -1113,7 +1113,7 @@ var
   LObject: TValue;
   LMethod: TRttiMethod;
 begin
-  LObjType := GRttiContext.GetType(AObject.TypeInfo);
+  LObjType := FContext.RttiContext.GetType(AObject.TypeInfo);
   LMethod := LObjType.GetMethod(AExpr.Method);
   LObject := AObject;
   if AObject.IsType<TValue> then
@@ -1197,7 +1197,7 @@ var
 begin
   if HasBreakOrContinue then
     exit;
-  LInputType := GRttiContext.GetType(FStackFrames.peek['_'].TypeInfo).Name.ToLower;
+  LInputType := FContext.RttiContext.GetType(FStackFrames.peek['_'].TypeInfo).Name.ToLower;
   LExprs := ExprListArgs(AStmt.exprlist);
   if length(LExprs) = 0 then
     exit;
