@@ -1,13 +1,13 @@
 {
  "metadata": {
   "id": "Sempare.TemplateEngine",
-  "version": "1.7.5",
+  "version": "1.7.6",
   "description": "Sempare Template Engine for Delphi allows for flexible text manipulation. It can be used for generating email, html, source code, xml, configuration, etc.\r\n\r\nCommercial non-gpl license available.",
   "icon": "images\\sempare-logo-45px.png",
   "authors": "Sempare Limited",
   "projectUrl": "https://github.com/sempare/sempare-delphi-template-engine",
   "repositoryUrl": "https://github.com/sempare/sempare-delphi-template-engine",
-  "license": "GPL-3.0-only",
+  "license": "GPL-3.0 or Sempare Commercial License",
   "copyright": "",
   "tags": "template parser"
  },

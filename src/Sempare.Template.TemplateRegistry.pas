@@ -247,7 +247,7 @@ begin
 
   FFileNameResolver := function(const AName: string): string
     begin
-      result := TPath.Combine(TTemplateRegistry.Instance.TemplateRootFolder, AName);
+      result := TPath.Combine(TemplateRootFolder, AName);
 {$IFDEF MSWINDOWS}
       exit(result.Replace('/', '\'));
 {$ELSE}
@@ -528,7 +528,7 @@ begin
   LExts[1] := '';
   LFound := false;
 
-  for LLoadStrategy in TTemplateRegistry.Instance.LoadStrategy do
+  for LLoadStrategy in LoadStrategy do
   begin
     for i := 0 to LAttempts - 1 do
     begin
@@ -634,7 +634,7 @@ begin
       begin
         while true do
         begin
-          case FShutdown.WaitFor(TTemplateRegistry.Instance.RefreshIntervalS * 1000) of
+          case FShutdown.WaitFor(RefreshIntervalS * 1000) of
             wrSignaled:
               break;
             wrTimeout:
@@ -789,7 +789,18 @@ begin
 {$ELSE}
   LStream := TFileStream.Create(AFilename, fmOpenRead or fmShareDenyNone);
 {$ENDIF}
-  FTemplate := Template.Parse(FContext, LStream);
+  try
+    FTemplate := Template.Parse(FContext, LStream);
+  except
+    on e: Exception do
+    begin
+    {$IFDEF DEBUG}
+      FTemplate := Template.Parse(Format('Error in %s: %s', [AFilename, e.message]));
+    {$ELSE}
+      FTemplate := Template.Parse(Format('Error in %s', [TPath.GetFilename(AFilename)]));
+    {$ENDIF}
+    end;
+  end;
   FTemplate.FileName := AFilename;
   FModifiedAt := ATime;
 end;

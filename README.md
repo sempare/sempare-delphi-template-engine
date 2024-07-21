@@ -212,6 +212,13 @@ Most features have some basic tests in place. If a bug is been discovered, pleas
 
 Review [contibution terms and conditions](./docs/CONTRIBUTION.pdf) to contribute to the project.
 
+Please followow the following steps when adding a feature or making an update:
+- clone the repository
+- create a feature branch
+- create a pull request to the 'dev' branch
+
+The deployment process is based off the dev branch. Once we decide to push a new version, we will merge 'dev' into 'main'.
+
 <a name="License"><h2>License</h3></a>
 
 The Sempare Template Engine is dual-licensed. You may choose to use it under the restrictions of the [GPL v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html) at
@@ -223,7 +230,7 @@ A commercial licence grants you the right to use Sempare Template Engine in your
 Sempare Template Engine or to any other party. A commercial license lasts into perpetuity, and entitles you to all future updates.
 
 A commercial licence is provided per developer developing applications that uses the Sempare Template Engine. The initial license fee is $70 per developer.
-For support thereafter, at your discretion, a support fee of $30 per developer per year would be appreciated. The initial site licensing fee is $1,500 and the annual site support licensing fee is $500.
+For support thereafter, at your discretion, a support fee of $30 per developer per year would be appreciated.
 
 The following payment links allow you to quickly subscribe. Please note that the initial license and support links are seperate.
 - [Initial License Fee](https://buy.stripe.com/aEU7t61N88pffQIdQQ)
@@ -236,3 +243,4 @@ The following payment links are available for site licenses. Please note that th
 Please send an e-mail to info@sempare.ltd to request an invoice which will contain alternative payment details.
 
 Support and enhancement requests submitted by users that pay for support will be prioritised. New developments may incur additional costs depending on time required for implementation.
+

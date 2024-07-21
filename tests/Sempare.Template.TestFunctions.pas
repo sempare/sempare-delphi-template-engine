@@ -359,16 +359,16 @@ end;
 
 procedure TFunctionTest.TestFmtDate;
 var
-  ctx: ITemplateContext;
+  LCtx: ITemplateContext;
   Functions: ITemplateFunctions;
 begin
-  Functions := CreateTemplateFunctions;
+  LCtx := Template.Context([eoNoDefaultFunctions]);
+  Functions := CreateTemplateFunctions(LCtx);
   Functions.RegisterDefaults;
   Functions.AddFunctions(TDTNow);
 
-  ctx := Template.Context([eoNoDefaultFunctions]);
-  ctx.Functions := Functions;
-  Assert.AreEqual('2019-12-22', Template.Eval(ctx, '<% fmtdt(''yyyy-mm-dd'', dtnow()) %>'));
+  LCtx.Functions := Functions;
+  Assert.AreEqual('2019-12-22', Template.Eval(LCtx, '<% fmtdt(''yyyy-mm-dd'', dtnow()) %>'));
 end;
 
 procedure TFunctionTest.TestInt;
@@ -450,17 +450,17 @@ end;
 
 procedure TFunctionTest.TestProcedure;
 var
-  ctx: ITemplateContext;
+  LCtx: ITemplateContext;
   Functions: ITemplateFunctions;
 begin
-  Functions := CreateTemplateFunctions;
+  LCtx := Template.Context([eoNoDefaultFunctions]);
+  Functions := CreateTemplateFunctions(LCtx);
   Functions.RegisterDefaults;
   Functions.AddFunctions(TMyProc);
 
-  ctx := Template.Context([eoNoDefaultFunctions]);
-  ctx.Functions := Functions;
+  LCtx.Functions := Functions;
   Assert.AreEqual('', TMyProc.myval);
-  Assert.AreEqual('', Template.Eval(ctx, '<% myproc(''test'') %>'));
+  Assert.AreEqual('', Template.Eval(LCtx, '<% myproc(''test'') %>'));
   Assert.AreEqual('test', TMyProc.myval);
 end;
 

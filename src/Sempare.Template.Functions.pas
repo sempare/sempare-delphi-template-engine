@@ -44,11 +44,8 @@ uses
 type
   ETemplateFunction = class(ETemplate);
 
-function CreateTemplateFunctions(const ARegisterDefaults: boolean = true): ITemplateFunctions;
+function CreateTemplateFunctions(const AContext: ITemplateContext; const ARegisterDefaults: boolean = true): ITemplateFunctions;
 function ToArrayTVarRec(const AArgs: TArray<TValue>): TArray<TVarrec>;
-
-var
-  GFunctions: ITemplateFunctions;
 
 implementation
 
@@ -85,9 +82,11 @@ type
 
   TTemplateFunctions = class(TInterfacedObject, ITemplateFunctions)
   private
+    [Weak]
+    FContext: ITemplateContext;
     FFunctions: TDictionary<string, TArray<TRttiMethod>>;
   public
-    constructor Create;
+    constructor Create(const AContext: ITemplateContext);
     destructor Destroy; override;
 
     function GetIsEmpty: boolean;
@@ -103,9 +102,9 @@ type
 var
   GValueCompare: IComparer<TValue>;
 
-function CreateTemplateFunctions(const ARegisterDefaults: boolean): ITemplateFunctions;
+function CreateTemplateFunctions(const AContext: ITemplateContext; const ARegisterDefaults: boolean): ITemplateFunctions;
 begin
-  result := TTemplateFunctions.Create;
+  result := TTemplateFunctions.Create(AContext);
   if ARegisterDefaults then
     result.RegisterDefaults;
 end;
@@ -140,7 +139,7 @@ var
   LClassType: TRttiType;
   LMethod: TRttiMethod;
 begin
-  LClassType := GRttiContext.GetType(AClass);
+  LClassType := FContext.RttiContext.GetType(AClass);
   for LMethod in LClassType.GetMethods do
     Add(LMethod);
 end;
@@ -161,7 +160,7 @@ type
     class function Substring(const AString: string; AStartOffset: integer): string; overload; static;
     class function Pos(const search, Str: string; offset: integer): integer; overload; static;
     class function Pos(const search, Str: string): integer; overload; static;
-    class function Len(const AString: TValue): integer; static;
+    class function Len(const AContext: ITemplateContext; const AString: TValue): integer; static;
     class function Fmt(const AContext: ITemplateContext; const AArgs: TArray<TValue>): string; static;
     class function FmtDt(const AFormat: string; const ADateTime: TDateTime): string; static;
     class function DtNow: TDateTime; static;
@@ -175,8 +174,8 @@ type
     class function ContainsKey(const AContext: ITemplateContext; const AValue: TValue; const AKey: string): boolean; static;
     class function IsNull(const AValue: TValue): boolean; static;
     class function IsNil(const AValue: TValue): boolean; static;
-    class function IsEmpty(const AValue: TValue): boolean; static;
-    class function IsMap(const AValue: TValue): boolean; static;
+    class function IsEmpty(const AContext: ITemplateContext; const AValue: TValue): boolean; static;
+    class function IsMap(const AContext: ITemplateContext; const AValue: TValue): boolean; static;
     class function IsObject(const AValue: TValue): boolean; static;
     class function IsRecord(const AValue: TValue): boolean; static;
     class function IsStr(const AValue: TValue): boolean; static;
@@ -187,7 +186,7 @@ type
     class function StartsWith(const AString, ASearch: string; const AIgnoreCase: boolean): boolean; overload; static;
     class function EndsWith(const AString, ASearch: string): boolean; overload; static;
     class function EndsWith(const AString, ASearch: string; const AIgnoreCase: boolean): boolean; overload; static;
-    class function TypeOf(const AValue: TValue): string; static;
+    class function TypeOf(const AContext: ITemplateContext; const AValue: TValue): string; static;
     class function Replace(const AValue, AWith, AIn: string): string; static;
     class function Match(const AValue, ARegex: string): boolean; static;
     class function Sort(const AArray: TValue): TValue; static;
@@ -235,7 +234,7 @@ type
     class function StackDepth(const AStackFrames: TObjectStack<TStackFrame>): integer; static;
     class procedure SetMapValue(const AMap: TValue; const AKey: string; const AValue: TValue); static;
     class function SempareVersion(): string; static;
-    class function Default(const AValue: TValue; const ADefault: TValue): TValue; static;
+    class function Default(const AContext: ITemplateContext; const AValue: TValue; const ADefault: TValue): TValue; static;
     class function DomId(const AContext: ITemplateContext; const AValue: TValue; const AExtraContext: string): string; overload; static;
     class function DomId(const AContext: ITemplateContext; const AValue: TValue): string; overload; static;
   end;
@@ -527,13 +526,13 @@ begin
   exit(AString.TrimRight);
 end;
 
-class function TInternalFuntions.TypeOf(const AValue: TValue): string;
+class function TInternalFuntions.TypeOf(const AContext: ITemplateContext; const AValue: TValue): string;
 var
   lmsg: string;
   lpos: integer;
 begin
   try
-    exit(GRttiContext.GetType(AValue.AsType<TValue>.TypeInfo).QualifiedName);
+    exit(AContext.RttiContext.GetType(AValue.AsType<TValue>.TypeInfo).QualifiedName);
   except
     on e: exception do
     begin
@@ -588,13 +587,13 @@ begin
   exit(System.Pos(search, Str, offset));
 end;
 
-class function TInternalFuntions.Len(const AString: TValue): integer;
+class function TInternalFuntions.Len(const AContext: ITemplateContext; const AString: TValue): integer;
 begin
   if AString.IsType<string> then
     exit(length(AString.AsType<string>()))
   else if AString.Kind in [tkDynArray, tkArray] then
     exit(AString.GetArrayLength)
-  else if MatchMap(AString.TypeInfo) then
+  else if MatchMap(AContext, AString.TypeInfo) then
     exit(AString.AsType<TMap>.count)
   else
     exit(-1);
@@ -785,9 +784,9 @@ begin
   end;
 end;
 
-class function TInternalFuntions.Default(const AValue, ADefault: TValue): TValue;
+class function TInternalFuntions.Default(const AContext: ITemplateContext; const AValue, ADefault: TValue): TValue;
 begin
-  if IsEmpty(AValue) then
+  if IsEmpty(AContext, AValue) then
     exit(ADefault)
   else
     exit(AValue);
@@ -825,7 +824,7 @@ begin
   end;
   if LIsRecord or LIsObject then
   begin
-    LType := GRttiContext.GetType(AValue.TypeInfo);
+    LType := AContext.RttiContext.GetType(AValue.TypeInfo);
     LField := LType.GetField('id');
     LPtr := GetPtr;
     if LField <> nil then
@@ -952,9 +951,9 @@ begin
   exit(IsIntLike(AValue));
 end;
 
-class function TInternalFuntions.IsMap(const AValue: TValue): boolean;
+class function TInternalFuntions.IsMap(const AContext: ITemplateContext; const AValue: TValue): boolean;
 begin
-  exit(MatchMap(AValue.TypeInfo) or AValue.IsType<IMapExpr>);
+  exit(MatchMap(AContext, AValue.TypeInfo) or AValue.IsType<IMapExpr>);
 end;
 
 class function TInternalFuntions.IsBool(const AValue: TValue): boolean;
@@ -962,7 +961,7 @@ begin
   exit(Sempare.Template.Rtti.IsBool(AValue));
 end;
 
-class function TInternalFuntions.IsEmpty(const AValue: TValue): boolean;
+class function TInternalFuntions.IsEmpty(const AContext: ITemplateContext; const AValue: TValue): boolean;
 var
   LObject: TObject;
 begin
@@ -973,7 +972,7 @@ begin
     exit(false);
   end;
   LObject := AValue.AsObject;
-  exit(not assigned(LObject) or IsEmptyObject(LObject));
+  exit(not assigned(LObject) or IsEmptyObject(AContext, LObject));
 end;
 
 class function TInternalFuntions.IsNum(const AValue: TValue): boolean;
@@ -991,8 +990,9 @@ begin
   exit(AValue.Kind in [tkRecord{$IFDEF SUPPORT_CUSTOM_MANAGED_RECORDS}, tkMRecord{$ENDIF}]);
 end;
 
-constructor TTemplateFunctions.Create;
+constructor TTemplateFunctions.Create(const AContext: ITemplateContext);
 begin
+  FContext := AContext;
   FFunctions := TDictionary < string, TArray < TRttiMethod >>.Create;
 end;
 
@@ -1059,12 +1059,10 @@ end;
 
 initialization
 
-GFunctions := CreateTemplateFunctions();
 GValueCompare := TValueCompare.Create;
 
 finalization
 
-GFunctions := nil;
 GValueCompare := nil;
 
 end.
