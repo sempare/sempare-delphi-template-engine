@@ -1,0 +1,109 @@
+{
+ "metadata": {
+  "id": "Sempare.TemplateEngine",
+  "version": "1.7.5",
+  "description": "Sempare Template Engine for Delphi allows for flexible text manipulation. It can be used for generating email, html, source code, xml, configuration, etc.\r\n\r\nCommercial non-gpl license available.",
+  "icon": "images\\sempare-logo-45px.png",
+  "authors": "Sempare Limited",
+  "projectUrl": "https://github.com/sempare/sempare-delphi-template-engine",
+  "repositoryUrl": "https://github.com/sempare/sempare-delphi-template-engine",
+  "license": "GPL-3.0-only",
+  "copyright": "",
+  "tags": "template parser"
+ },
+ "targetPlatforms": [
+  {
+   "compiler": "XE4",
+   "platforms": "Win32, Win64, OSX32, iOS32, iOSSimulator",
+   "template": "default"
+  },
+  {
+   "compiler": "XE5",
+   "platforms": "Win32, Win64, OSX32, Android, iOS32, iOSSimulator",
+   "template": "default"
+  },
+  {
+   "compiler": "XE6",
+   "platforms": "Win32, Win64, OSX32, Android, iOS32, iOSSimulator",
+   "template": "default"
+  },
+  {
+   "compiler": "XE7",
+   "platforms": "Win32, Win64, OSX32, Android, iOS32, iOSSimulator",
+   "template": "default"
+  },
+  {
+   "compiler": "XE8",
+   "platforms": "Win32, Win64, OSX32, Android, iOS32, iOS64, iOSSimulator",
+   "template": "default"
+  },
+  {
+   "compiler": "10.0",
+   "platforms": "Win32, Win64, OSX32, Android, iOS32, iOS64, iOSSimulator",
+   "template": "default"
+  },
+  {
+   "compiler": "10.1",
+   "platforms": "Win32, Win64, OSX32, Android, iOS32, iOS64, iOSSimulator",
+   "template": "default"
+  },
+  {
+   "compiler": "10.2",
+   "platforms": "Win32, Win64, OSX32, Android, iOS32, iOS64, iOSSimulator",
+   "template": "default"
+  },
+  {
+   "compiler": "10.3",
+   "platforms": "Win32, Win64, OSX32, OSX64, Android, Android64, iOS32, iOS64, iOSSimulator, LinuxIntel64",
+   "template": "default"
+  },
+  {
+   "compiler": "11.0",
+   "platforms": "Win32, Win64, OSX64, OSXARM64, Android, Android64, iOS64, LinuxIntel64",
+   "template": "default"
+  },
+  {
+   "compiler": "12.0",
+   "platforms": "Win32, Win64, OSX64, OSXARM64, Android, Android64, iOS64, LinuxIntel64",
+   "template": "default"
+  },
+  {
+   "compiler": "10.4",
+   "platforms": "Win32, Win64, OSX64, Android, Android64, iOS64, iOSSimulator, LinuxIntel64",
+   "template": "default"
+  }
+ ],
+ "templates": [
+  {
+   "name": "default",
+   "source": [
+    {
+     "src": "src\\**\\*",
+     "dest": "src"
+    }
+   ],
+   "searchPaths": [
+    {
+     "path": "src"
+    }
+   ],
+   "build": [
+    {
+     "id": "runtime",
+     "project": ".\\Sempare.Template.Pkg.dproj",
+     "config": "Release"
+    }
+   ],
+   "files": [
+    {
+     "src": ".\\Sempare.Template.Pkg.*",
+     "dest": "",
+     "exclude": [
+      "*.identcache",
+      "*.local"
+     ]
+    }
+   ]
+  }
+ ]
+}
