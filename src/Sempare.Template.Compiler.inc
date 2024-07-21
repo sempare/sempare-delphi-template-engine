@@ -79,7 +79,10 @@
 {$DEFINE SUPPORT_CUSTOM_MANAGED_RECORDS}
 {$ENDIF}
 // -----------------------------------------------
-
+{$IF CompilerVersion >= 36}  // from Delphi 12 Athens onwards
+{$DEFINE SUPPORT_DUNITX_JUNIT}
+{$ENDIF}
+// -----------------------------------------------
 // Uncomment the following if Indy is not present
 // {$DEFINE SEMPARE_TEMPLATE_NO_INDY}
 

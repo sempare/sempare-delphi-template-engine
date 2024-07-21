@@ -41,7 +41,11 @@ uses
   TestInsight.DUnitX,
   {$ENDIF }
   DUnitX.Loggers.Console,
+{$IFDEF SUPPORT_DUNITX_JUNIT}
+  DUnitX.Loggers.XML.JUnit,
+{$ELSE}
   DUnitX.Loggers.Xml.NUnit,
+{$ENDIF}
   DUnitX.TestFramework,
   Sempare.Template.TestIf in 'tests\Sempare.Template.TestIf.pas',
   Sempare.Template.TestContext in 'tests\Sempare.Template.TestContext.pas',
@@ -83,7 +87,11 @@ begin
     runner.UseRTTI := True;
     //tell the runner how we will log things
     //Log to the console window
-    logger := TDUnitXConsoleLogger.Create(true);
+{$IFDEF SUPPORT_DUNITX_JUNIT}
+logger := TDUnitXXMLJUnitLogger.Create(true);
+{$ELSE}
+logger := TDUnitXConsoleLogger.Create(true);
+{$ENDIF}
     runner.AddLogger(logger);
     //Generate an NUnit compatible XML File
     nunitLogger := TDUnitXXMLNUnitFileLogger.Create(TDUnitX.Options.XMLOutputFile);
