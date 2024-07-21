@@ -212,6 +212,13 @@ Most features have some basic tests in place. If a bug is been discovered, pleas
 
 Review [contibution terms and conditions](./docs/CONTRIBUTION.pdf) to contribute to the project.
 
+Please followow the following steps when adding a feature or making an update:
+- clone the repository
+- create a feature branch
+- create a pull request to the 'dev' branch
+
+The deployment process is based off the dev branch. Once we decide to push a new version, we will merge 'dev' into 'main'.
+
 <a name="License"><h2>License</h3></a>
 
 The Sempare Template Engine is dual-licensed. You may choose to use it under the restrictions of the [GPL v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html) at
