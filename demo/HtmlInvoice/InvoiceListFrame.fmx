@@ -1,0 +1,164 @@
+object ListInvoicesFrame: TListInvoicesFrame
+  Align = Client
+  Size.Width = 703.000000000000000000
+  Size.Height = 332.000000000000000000
+  Size.PlatformDefault = False
+  object tv: TTMSFNCTreeView
+    Align = Client
+    Size.Width = 703.000000000000000000
+    Size.Height = 291.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    Stroke.Color = claDarkgray
+    Groups = <>
+    GroupsAppearance.TopSize = 50.000000000000000000
+    GroupsAppearance.BottomSize = 50.000000000000000000
+    GroupsAppearance.TopFill.Kind = gfkNone
+    GroupsAppearance.BottomFill.Kind = gfkNone
+    GroupsAppearance.TopFont.Color = xFF454545
+    GroupsAppearance.BottomFont.Color = xFF454545
+    Columns = <
+      item
+        Name = 'invNo'
+        Text = 'Invoice No'
+        Width = 100.000000000000000000
+      end
+      item
+        Name = 'company'
+        Text = 'Company'
+        Width = 100.000000000000000000
+      end
+      item
+        Name = 'amount'
+        Text = 'Amount'
+        Width = 100.000000000000000000
+      end
+      item
+        Name = 'status'
+        Text = 'Status'
+        Width = 100.000000000000000000
+      end
+      item
+        Name = 'billingperiod'
+        Text = 'Billing Period'
+        Width = 100.000000000000000000
+      end
+      item
+        Name = 'horsworked'
+        Text = 'Hours Worked'
+        Width = 100.000000000000000000
+      end
+      item
+        Name = 'hourlyrate'
+        Text = 'Hourly Rate'
+        Width = 100.000000000000000000
+      end
+      item
+        Name = 'worktotal'
+        Text = 'Work Total'
+        Width = 100.000000000000000000
+      end
+      item
+        Name = 'expenses'
+        Text = 'Expenses'
+        Width = 100.000000000000000000
+      end>
+    Nodes = <>
+    ColumnsAppearance.Stretch = False
+    ColumnsAppearance.StretchColumn = 0
+    ColumnsAppearance.StretchAll = False
+    ColumnsAppearance.TopSize = 36.000000000000000000
+    ColumnsAppearance.BottomSize = 25.000000000000000000
+    ColumnsAppearance.TopFont.Size = 14.000000000000000000
+    ColumnsAppearance.TopFont.Color = xFF454545
+    ColumnsAppearance.TopFont.StyleExt = {00070000000000000004000000}
+    ColumnsAppearance.BottomFont.Color = xFF454545
+    ColumnsAppearance.TopFill.Color = xFFEEF2F9
+    ColumnsAppearance.BottomFill.Kind = gfkNone
+    ColumnsAppearance.BottomFill.Color = xFFEEF2F9
+    ColumnsAppearance.TopStroke.Kind = gskNone
+    NodesAppearance.ShowFocus = False
+    NodesAppearance.ExpandWidth = 18.000000000000000000
+    NodesAppearance.ExpandHeight = 18.000000000000000000
+    NodesAppearance.LevelIndent = 20.000000000000000000
+    NodesAppearance.FixedHeight = 25.000000000000000000
+    NodesAppearance.VariableMinimumHeight = 25.000000000000000000
+    NodesAppearance.Font.Color = xFF7A7A7A
+    NodesAppearance.SelectedFontColor = xFF454545
+    NodesAppearance.ExtendedFontColor = xFF454545
+    NodesAppearance.SelectedFill.Color = xFFF6F8FC
+    NodesAppearance.SelectedStroke.Color = xFF2D9BEF
+    NodesAppearance.SelectedStroke.Width = 2.000000000000000000
+    NodesAppearance.ExpandNodeIcon.PNG = {
+      89504E470D0A1A0A0000000D494844520000000B0000000B0806000000A9AC77
+      260000000473424954080808087C0864880000004C49444154189563ACAEADFE
+      CF4024606160606068696A21A8B0A6AE8681099B84B79F37560D5815E3022429
+      66C16535327FEBA6ADA88A61023085C87CB29C41B9626C4E6060606060242506
+      01E68213FFE244E4900000000049454E44AE426082}
+    NodesAppearance.CollapseNodeIcon.PNG = {
+      89504E470D0A1A0A0000000D494844520000000B0000000B0806000000A9AC77
+      260000000473424954080808087C0864880000003F49444154189563ACAEADFE
+      CF4024606160606068696A21A8B0A6AE868189585319181868A8980599E3EDE7
+      8DA160EBA6ADD815234B50EC0CDA296624250601CC3B0D1BF7C7987500000000
+      49454E44AE426082}
+    NodesAppearance.ExpandNodeIconLarge.PNG = {
+      89504E470D0A1A0A0000000D4948445200000016000000160806000000C4B46C
+      3B0000000473424954080808087C0864880000006C49444154388D63ACAEADFE
+      CF4003C0440B431918181858608C96A616AA18585357C3C0C0404317136DB0B7
+      9F3783B79F37F50D26158C1A4C7B8359D00508C53C2EF9AD9BB6A2F0E9E76274
+      9B6100E6525CF2E860E845DEA8C17080912A70016253030CD0CCC58C43AECE03
+      00611914FB4992B31E0000000049454E44AE426082}
+    NodesAppearance.CollapseNodeIconLarge.PNG = {
+      89504E470D0A1A0A0000000D4948445200000016000000160806000000C4B46C
+      3B0000000473424954080808087C0864880000005149444154388D63ACAEADFE
+      CF4003C0440B431918181858608C96A616AA18585357C3C0C04043178F1A3C6A
+      302660C125E1EDE74D94015B376DC52A4E7F17E37209B160E845DEA8C143D860
+      C62157E701007E4C0D315BBC7AA20000000049454E44AE426082}
+    GlobalFont.Name = 'Segoe UI'
+    OnAfterSelectNode = tvAfterSelectNode
+    DefaultViewJSONOptions.NameHTMLTemplate = '<#NAME>'
+    DefaultViewJSONOptions.ValueHTMLTemplate = '<#VALUE>'
+  end
+  object Panel1: TPanel
+    Align = Top
+    Size.Width = 703.000000000000000000
+    Size.Height = 41.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 1
+    object Button1: TButton
+      Position.X = 8.000000000000000000
+      Position.Y = 8.000000000000000000
+      Size.Width = 33.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 2
+      Text = '+'
+      TextSettings.Trimming = None
+      OnClick = Button1Click
+    end
+    object Button2: TButton
+      Anchors = [akTop, akRight]
+      Position.X = 616.000000000000000000
+      Position.Y = 8.000000000000000000
+      Size.Width = 65.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 1
+      Text = 'Settings'
+      TextSettings.Trimming = None
+      OnClick = Button2Click
+    end
+    object Button3: TButton
+      Anchors = [akTop, akRight]
+      Position.X = 536.000000000000000000
+      Position.Y = 8.000000000000000000
+      Size.Width = 65.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 0
+      Text = 'Print'
+      TextSettings.Trimming = None
+      OnClick = Button3Click
+    end
+  end
+end

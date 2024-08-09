@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        .invoice-container {
+            max-width: 800px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border: 1px solid #ddd;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 20px;
+        }
+        .logo {
+            width: 100px;
+            margin-bottom: 20px;
+        }
+        .company-details, .client-details {
+            margin-bottom: 20px;
+        }
+        .details {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .details div {
+            width: 48%;
+        }
+        .invoice-details, .bank-details {
+            margin: 20px 0;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 20px;
+        }
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .invoice-table th, .invoice-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        .invoice-table th {
+            background-color: #4CAF50;
+            color: #fff;
+        }
+        .total {
+            text-align: right;
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <div class="header">
+            <img src="logo-placeholder.png" alt="Company Logo" class="logo">
+            <h1>Invoice</h1>
+        </div>
+        <div class="details">
+            <div class="company-details">
+                <h3>Your Company Name</h3>
+                <p>Company No: 123456789</p>
+                <p>Address Line 1</p>
+                <p>Address Line 2</p>
+            </div>
+            <div class="client-details">
+                <h3>Client Name</h3>
+                <p>Address Line 1</p>
+                <p>Address Line 2</p>
+            </div>
+        </div>
+        <div class="invoice-details">
+            <p><strong>Invoice No:</strong> INV-001</p>
+            <p><strong>Invoice Date:</strong> 2023-08-07</p>
+        </div>
+        <table class="invoice-table">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Worked Hours</td>
+                    <td>40</td>
+                </tr>
+                <tr>
+                    <td>Billing Period</td>
+                    <td>2023-07-01 to 2023-07-31</td>
+                </tr>
+                <tr>
+                    <td>Hourly Rate</td>
+                    <td>$50</td>
+                </tr>
+                <tr>
+                    <td>Worked Total</td>
+                    <td>$2000</td>
+                </tr>
+                <tr>
+                    <td>Expenses Total</td>
+                    <td>$150</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="total">
+            <p>Total: $2150</p>
+        </div>
+        <div class="bank-details">
+            <h3>Banking Details</h3>
+            <p><strong>Bank:</strong> Your Bank Name</p>
+            <p><strong>Details 1:</strong> Your Bank Details 1</p>
+            <p><strong>Details 2:</strong> Your Bank Details 2</p>
+        </div>
+        <div class="footer">
+            <p>Thank you for your business!</p>
+        </div>
+    </div>
+</body>
+</html>
