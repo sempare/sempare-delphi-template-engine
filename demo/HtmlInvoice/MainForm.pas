@@ -50,7 +50,7 @@ begin
   FConfig.Bank := 'Starling Bank';
   FConfig.BankDetails1 := 'Account No: 123123, Sort Code: 12-12-12';
   FConfig.BankDetails2 := 'IBAN: 121212123123';
-  FConfig.LogoPath := 'Y:\sempare-delphi-sempare-boot-pro\sempare-boot-pro-bootstrap\images\sempare-logo.png';
+  FConfig.LogoPath := '.\images\sempare-logo.png';
   FListFrame := FrameStand.NewAndShow<TListInvoicesFrame>(body);
   FPreviewFrame := TPreviewInvoiceFrame.Create(preview);
   FPreviewFrame.parent := preview;

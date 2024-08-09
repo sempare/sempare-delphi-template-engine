@@ -43,7 +43,6 @@ var
   LListPath: string;
   LDryRun: boolean;
   LConfig: TConfig;
-
   LEmailTemplate: TEmailTemplate;
   LList: TArray<TArray<string>>;
   LAction: procedure(const AList: TArray<TArray<string>>; const ATemplate: TEmailTemplate; const AConfig: TConfig);
@@ -52,12 +51,13 @@ begin
   if paramcount = 0 then
   begin
     writeln(format('Usage: %s <templatepath> <template> <list> [<action>]', [TPath.GetFileName(paramstr(0))]));
+    exit;
   end;
   LTemplatePath := paramstr(1);
   LTemplate := paramstr(2);
   LListPath := paramstr(3);
 
-  LDryRun := not((paramcount > 3) and (paramstr(4) = 'email'));  // email or dryrun
+  LDryRun := not((paramcount > 3) and (paramstr(4) = 'email')); // email or dryrun
   if LDryRun then
     LAction := ConsoleLog
   else
