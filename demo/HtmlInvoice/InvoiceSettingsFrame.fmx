@@ -1,0 +1,185 @@
+object SettingsFrame: TSettingsFrame
+  Size.Width = 537.000000000000000000
+  Size.Height = 391.000000000000000000
+  Size.PlatformDefault = False
+  object TMSFNCHTMLText3: TTMSFNCHTMLText
+    Position.X = 8.000000000000000000
+    Position.Y = 15.000000000000000000
+    Size.Width = 113.000000000000000000
+    Size.Height = 25.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 19
+    Fill.Kind = gfkNone
+    Stroke.Kind = gskNone
+    Stroke.Color = claNull
+    Text = '<B>Company Details:</b>'
+  end
+  object edtCompany: TEdit
+    Touch.InteractiveGestures = [LongTap, DoubleTap]
+    TabOrder = 7
+    Position.X = 137.000000000000000000
+    Position.Y = 18.000000000000000000
+    Size.Width = 160.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TextPrompt = 'Enter your company name'
+  end
+  object edtCompanyAddr1: TEdit
+    Touch.InteractiveGestures = [LongTap, DoubleTap]
+    TabOrder = 3
+    Position.X = 137.000000000000000000
+    Position.Y = 48.000000000000000000
+    Size.Width = 160.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TextPrompt = 'Enter address details'
+  end
+  object edtCompanyAddr2: TEdit
+    Touch.InteractiveGestures = [LongTap, DoubleTap]
+    TabOrder = 1
+    Position.X = 137.000000000000000000
+    Position.Y = 78.000000000000000000
+    Size.Width = 160.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TextPrompt = 'Enter address details'
+  end
+  object TMSFNCHTMLText1: TTMSFNCHTMLText
+    Position.X = 8.000000000000000000
+    Position.Y = 143.000000000000000000
+    Size.Width = 113.000000000000000000
+    Size.Height = 25.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 15
+    Fill.Kind = gfkNone
+    Stroke.Kind = gskNone
+    Stroke.Color = claNull
+    Text = '<B>Currency:</b>'
+  end
+  object cmbCurrency: TComboBox
+    Items.Strings = (
+      'GBP'
+      'EUR'
+      'USD')
+    ItemIndex = 0
+    Position.X = 137.000000000000000000
+    Position.Y = 146.000000000000000000
+    TabOrder = 20
+  end
+  object butSave: TButton
+    Position.X = 8.000000000000000000
+    Position.Y = 344.000000000000000000
+    TabOrder = 21
+    Text = 'Save'
+    TextSettings.Trimming = None
+    OnClick = butSaveClick
+  end
+  object TMSFNCHTMLText2: TTMSFNCHTMLText
+    Position.X = 8.000000000000000000
+    Position.Y = 105.000000000000000000
+    Size.Width = 113.000000000000000000
+    Size.Height = 25.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 16
+    Fill.Kind = gfkNone
+    Stroke.Kind = gskNone
+    Stroke.Color = claNull
+    Text = '<B>Company No:</b>'
+  end
+  object edtCompanyNo: TEdit
+    Touch.InteractiveGestures = [LongTap, DoubleTap]
+    TabOrder = 4
+    Position.X = 137.000000000000000000
+    Position.Y = 108.000000000000000000
+    Size.Width = 160.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TextPrompt = 'Enter your company no'
+  end
+  object TMSFNCHTMLText4: TTMSFNCHTMLText
+    Position.X = 8.000000000000000000
+    Position.Y = 175.000000000000000000
+    Size.Width = 113.000000000000000000
+    Size.Height = 25.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 18
+    Fill.Kind = gfkNone
+    Stroke.Kind = gskNone
+    Stroke.Color = claNull
+    Text = '<B>Bank Details:</b>'
+  end
+  object edtBank: TEdit
+    Touch.InteractiveGestures = [LongTap, DoubleTap]
+    TabOrder = 6
+    Position.X = 137.000000000000000000
+    Position.Y = 178.000000000000000000
+    Size.Width = 160.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TextPrompt = 'Enter your bank'#39's name'
+  end
+  object edtBankDetails1: TEdit
+    Touch.InteractiveGestures = [LongTap, DoubleTap]
+    TabOrder = 2
+    Position.X = 137.000000000000000000
+    Position.Y = 208.000000000000000000
+    Size.Width = 160.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TextPrompt = 'Enter the bank details'
+  end
+  object edtBankDetails2: TEdit
+    Touch.InteractiveGestures = [LongTap, DoubleTap]
+    TabOrder = 0
+    Position.X = 137.000000000000000000
+    Position.Y = 238.000000000000000000
+    Size.Width = 160.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TextPrompt = 'Enter the bank details'
+  end
+  object TMSFNCHTMLText5: TTMSFNCHTMLText
+    Position.X = 8.000000000000000000
+    Position.Y = 265.000000000000000000
+    Size.Width = 113.000000000000000000
+    Size.Height = 25.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 17
+    Fill.Kind = gfkNone
+    Stroke.Kind = gskNone
+    Stroke.Color = claNull
+    Text = '<B>Logo:</b>'
+  end
+  object edtLogoPath: TEdit
+    Touch.InteractiveGestures = [LongTap, DoubleTap]
+    TabOrder = 5
+    Position.X = 137.000000000000000000
+    Position.Y = 268.000000000000000000
+    Size.Width = 160.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TextPrompt = 'Enter the path to your logo'
+  end
+  object imgLogo: TImage
+    MultiResBitmap = <
+      item
+      end>
+    Position.X = 160.000000000000000000
+    Position.Y = 304.000000000000000000
+    Size.Width = 137.000000000000000000
+    Size.Height = 62.000000000000000000
+    Size.PlatformDefault = False
+  end
+  object Button1: TButton
+    Position.X = 305.000000000000000000
+    Position.Y = 268.000000000000000000
+    TabOrder = 23
+    Text = 'Browse'
+    TextSettings.Trimming = None
+    OnClick = Button1Click
+  end
+  object OpenDialog1: TOpenDialog
+    Left = 392
+    Top = 312
+  end
+end

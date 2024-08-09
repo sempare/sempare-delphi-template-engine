@@ -1,0 +1,279 @@
+object InputFrame: TInputFrame
+  Align = Client
+  Size.Width = 415.000000000000000000
+  Size.Height = 373.000000000000000000
+  Size.PlatformDefault = False
+  object edtInvoiceNo: TEdit
+    Touch.InteractiveGestures = [LongTap, DoubleTap]
+    TabOrder = 1
+    Position.X = 97.000000000000000000
+    Position.Y = 44.000000000000000000
+    Size.Width = 160.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TextPrompt = 'Enter the invoice no'
+  end
+  object edtInvoiceDate: TTMSFNCDatePicker
+    Position.X = 97.000000000000000000
+    Position.Y = 14.000000000000000000
+    Size.Width = 90.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    FirstDay = 1
+    Events = <>
+    BadgeSize = 14
+    Header.Arrow.ArrowLeftBitmap = <>
+    Header.Arrow.ArrowRightBitmap = <>
+    Footer.Fill.Kind = gfkGradient
+    Footer.Fill.Color = xFFF6F8FC
+    Footer.Fill.ColorTo = xFFEEF2F9
+    Footer.Font.Size = 14.000000000000000000
+    Footer.Font.Color = xFF454545
+    DropDownWidth = 200.000000000000000000
+    DropDownHeight = 180.000000000000000000
+    SelectedDate = 45510.000000000000000000
+    WeekNumberAppearance.Font.Color = xFF7A7A7A
+    DateAppearance.Font.Color = xFF7A7A7A
+    DateAppearance.SelectedFill.Color = xFFEEF2F9
+    DateAppearance.SelectedFont.Size = 14.000000000000000000
+    DateAppearance.SelectedFont.Color = xFF454545
+    DateAppearance.SelectedFont.StyleExt = {00070000000000000004000000}
+    DateAppearance.SelectedStroke.Color = xFF2D9BEF
+    DateAppearance.DisabledFont.Color = claLightgray
+    DateAppearance.DateBeforeFont.Color = xFFBBBBBB
+    DateAppearance.DateAfterFont.Color = xFFBBBBBB
+    DateAppearance.TodayFont.Color = xFF2D9BEF
+    DateAppearance.TodayFont.StyleExt = {00070000000000000004000000}
+    DateAppearance.BadgeFont.Size = 10.000000000000000000
+    DateAppearance.BadgeFont.Color = claWhite
+    DateAppearance.ShowFocus = False
+    DayNameAppearance.Font.Color = xFF7A7A7A
+    LineAppearance.Stroke.Color = claDarkgray
+  end
+  object TMSFNCHTMLText1: TTMSFNCHTMLText
+    Position.X = 8.000000000000000000
+    Position.Y = 8.000000000000000000
+    Size.Width = 81.000000000000000000
+    Size.Height = 25.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 16
+    Fill.Kind = gfkNone
+    Stroke.Kind = gskNone
+    Stroke.Color = claNull
+    Text = '<B>Date:</b>'
+  end
+  object TMSFNCHTMLText2: TTMSFNCHTMLText
+    Position.X = 8.000000000000000000
+    Position.Y = 41.000000000000000000
+    Size.Width = 81.000000000000000000
+    Size.Height = 25.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 14
+    Fill.Kind = gfkNone
+    Stroke.Kind = gskNone
+    Stroke.Color = claNull
+    Text = '<B>Invoice No:</b>'
+  end
+  object TMSFNCHTMLText3: TTMSFNCHTMLText
+    Position.X = 8.000000000000000000
+    Position.Y = 71.000000000000000000
+    Size.Width = 81.000000000000000000
+    Size.Height = 25.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 13
+    Fill.Kind = gfkNone
+    Stroke.Kind = gskNone
+    Stroke.Color = claNull
+    Text = '<B>Client Details:</b>'
+  end
+  object edtClient: TEdit
+    Touch.InteractiveGestures = [LongTap, DoubleTap]
+    TabOrder = 2
+    Position.X = 97.000000000000000000
+    Position.Y = 74.000000000000000000
+    Size.Width = 160.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TextPrompt = 'Enter client name'
+  end
+  object edtClientAddr1: TEdit
+    Touch.InteractiveGestures = [LongTap, DoubleTap]
+    TabOrder = 3
+    Position.X = 97.000000000000000000
+    Position.Y = 104.000000000000000000
+    Size.Width = 160.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TextPrompt = 'Enter address details'
+  end
+  object edtClientAddr2: TEdit
+    Touch.InteractiveGestures = [LongTap, DoubleTap]
+    TabOrder = 4
+    Position.X = 97.000000000000000000
+    Position.Y = 134.000000000000000000
+    Size.Width = 160.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TextPrompt = 'Enter address details'
+  end
+  object TMSFNCHTMLText4: TTMSFNCHTMLText
+    Position.X = 8.000000000000000000
+    Position.Y = 199.000000000000000000
+    Size.Width = 89.000000000000000000
+    Size.Height = 25.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 12
+    Fill.Kind = gfkNone
+    Stroke.Kind = gskNone
+    Stroke.Color = claNull
+    Text = '<B>Hours Worked:</b>'
+  end
+  object TMSFNCHTMLText5: TTMSFNCHTMLText
+    Position.X = 8.000000000000000000
+    Position.Y = 232.000000000000000000
+    Size.Width = 89.000000000000000000
+    Size.Height = 25.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 11
+    Fill.Kind = gfkNone
+    Stroke.Kind = gskNone
+    Stroke.Color = claNull
+    Text = '<B>Hourly Rate:</b>'
+  end
+  object TMSFNCHTMLText6: TTMSFNCHTMLText
+    Position.X = 8.000000000000000000
+    Position.Y = 166.000000000000000000
+    Size.Width = 81.000000000000000000
+    Size.Height = 25.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 15
+    Fill.Kind = gfkNone
+    Stroke.Kind = gskNone
+    Stroke.Color = claNull
+    Text = '<B>Billing Period:</b>'
+  end
+  object edtBillingPeriodStart: TTMSFNCDatePicker
+    Position.X = 97.000000000000000000
+    Position.Y = 169.000000000000000000
+    Size.Width = 90.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 5
+    FirstDay = 1
+    Events = <>
+    BadgeSize = 14
+    Header.Arrow.ArrowLeftBitmap = <>
+    Header.Arrow.ArrowRightBitmap = <>
+    Footer.Fill.Kind = gfkGradient
+    Footer.Fill.Color = xFFF6F8FC
+    Footer.Fill.ColorTo = xFFEEF2F9
+    Footer.Font.Size = 14.000000000000000000
+    Footer.Font.Color = xFF454545
+    DropDownWidth = 200.000000000000000000
+    DropDownHeight = 180.000000000000000000
+    SelectedDate = 45510.000000000000000000
+    WeekNumberAppearance.Font.Color = xFF7A7A7A
+    DateAppearance.Font.Color = xFF7A7A7A
+    DateAppearance.SelectedFill.Color = xFFEEF2F9
+    DateAppearance.SelectedFont.Size = 14.000000000000000000
+    DateAppearance.SelectedFont.Color = xFF454545
+    DateAppearance.SelectedFont.StyleExt = {00070000000000000004000000}
+    DateAppearance.SelectedStroke.Color = xFF2D9BEF
+    DateAppearance.DisabledFont.Color = claLightgray
+    DateAppearance.DateBeforeFont.Color = xFFBBBBBB
+    DateAppearance.DateAfterFont.Color = xFFBBBBBB
+    DateAppearance.TodayFont.Color = xFF2D9BEF
+    DateAppearance.TodayFont.StyleExt = {00070000000000000004000000}
+    DateAppearance.BadgeFont.Size = 10.000000000000000000
+    DateAppearance.BadgeFont.Color = claWhite
+    DateAppearance.ShowFocus = False
+    DayNameAppearance.Font.Color = xFF7A7A7A
+    LineAppearance.Stroke.Color = claDarkgray
+  end
+  object edtBillingPeriodEnd: TTMSFNCDatePicker
+    Position.X = 216.000000000000000000
+    Position.Y = 169.000000000000000000
+    Size.Width = 90.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 6
+    FirstDay = 1
+    Events = <>
+    BadgeSize = 14
+    Header.Arrow.ArrowLeftBitmap = <>
+    Header.Arrow.ArrowRightBitmap = <>
+    Footer.Fill.Kind = gfkGradient
+    Footer.Fill.Color = xFFF6F8FC
+    Footer.Fill.ColorTo = xFFEEF2F9
+    Footer.Font.Size = 14.000000000000000000
+    Footer.Font.Color = xFF454545
+    DropDownWidth = 200.000000000000000000
+    DropDownHeight = 180.000000000000000000
+    SelectedDate = 45510.000000000000000000
+    WeekNumberAppearance.Font.Color = xFF7A7A7A
+    DateAppearance.Font.Color = xFF7A7A7A
+    DateAppearance.SelectedFill.Color = xFFEEF2F9
+    DateAppearance.SelectedFont.Size = 14.000000000000000000
+    DateAppearance.SelectedFont.Color = xFF454545
+    DateAppearance.SelectedFont.StyleExt = {00070000000000000004000000}
+    DateAppearance.SelectedStroke.Color = xFF2D9BEF
+    DateAppearance.DisabledFont.Color = claLightgray
+    DateAppearance.DateBeforeFont.Color = xFFBBBBBB
+    DateAppearance.DateAfterFont.Color = xFFBBBBBB
+    DateAppearance.TodayFont.Color = xFF2D9BEF
+    DateAppearance.TodayFont.StyleExt = {00070000000000000004000000}
+    DateAppearance.BadgeFont.Size = 10.000000000000000000
+    DateAppearance.BadgeFont.Color = claWhite
+    DateAppearance.ShowFocus = False
+    DayNameAppearance.Font.Color = xFF7A7A7A
+    LineAppearance.Stroke.Color = claDarkgray
+  end
+  object edtHoursWorked: TNumberBox
+    Touch.InteractiveGestures = [LongTap, DoubleTap]
+    TabOrder = 7
+    Cursor = crIBeam
+    Value = 40.000000000000000000
+    Position.X = 105.000000000000000000
+    Position.Y = 202.000000000000000000
+  end
+  object edtHourlyRate: TNumberBox
+    Touch.InteractiveGestures = [LongTap, DoubleTap]
+    TabOrder = 8
+    Cursor = crIBeam
+    Value = 50.000000000000000000
+    ValueType = Float
+    KeyboardType = NumbersAndPunctuation
+    Position.X = 105.000000000000000000
+    Position.Y = 232.000000000000000000
+  end
+  object TMSFNCHTMLText7: TTMSFNCHTMLText
+    Position.X = 8.000000000000000000
+    Position.Y = 281.000000000000000000
+    Size.Width = 89.000000000000000000
+    Size.Height = 25.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 10
+    Fill.Kind = gfkNone
+    Stroke.Kind = gskNone
+    Stroke.Color = claNull
+    Text = '<B>Expenses:</b>'
+  end
+  object edtExpenses: TNumberBox
+    Touch.InteractiveGestures = [LongTap, DoubleTap]
+    TabOrder = 9
+    Cursor = crIBeam
+    ValueType = Float
+    KeyboardType = NumbersAndPunctuation
+    Position.X = 105.000000000000000000
+    Position.Y = 281.000000000000000000
+  end
+  object Button1: TButton
+    Position.X = 16.000000000000000000
+    Position.Y = 328.000000000000000000
+    TabOrder = 17
+    Text = 'Add'
+    TextSettings.Trimming = None
+    OnClick = Button1Click
+  end
+end
