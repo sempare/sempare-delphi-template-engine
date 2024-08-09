@@ -37,6 +37,7 @@ interface
 {$I 'Sempare.Template.Compiler.inc'}
 
 uses
+  System.Generics.Collections,
   DUnitX.TestFramework;
 
 type
@@ -137,13 +138,16 @@ type
     constructor Create(const AData: string);
   end;
 
+  TTestListContainerContainer = record
+    data: TObjectList<TTestClass>;
+  end;
+
 implementation
 
 uses
   System.Classes,
   System.SysUtils,
   System.IOUtils,
-  System.Generics.Collections,
   System.Rtti, // remove inline expansion hint
   Sempare.Template.AST, // remove inline expansion hint
   Sempare.Template.TemplateRegistry, // remove inline expansion hint
@@ -285,15 +289,11 @@ begin
 end;
 
 procedure TTestTemplate.TestList;
-type
-  TContainer = record
-    data: TObjectList<TTestClass>;
-  end;
 
 var
   LList: TObjectList<TTestClass>;
-  LContainer: TContainer;
-  LEmptyContainer: TContainer;
+  LContainer: TTestListContainerContainer;
+  LEmptyContainer: TTestListContainerContainer;
 begin
   LList := TObjectList<TTestClass>.Create();
   try
@@ -307,7 +307,7 @@ begin
 
     Assert.AreEqual('2', Template.Eval('<% _.count %>', LList));
     Assert.AreEqual('2', Template.Eval('<% data.count %>', LContainer));
-    Assert.AreEqual('TObjectList<Sempare.Template.Test.TTestClass>', Template.Eval('<% typeof(data) %>', LContainer));
+    Assert.AreEqual('System.Generics.Collections.TObjectList<Sempare.Template.Test.TTestClass>', Template.Eval('<% typeof(data) %>', LContainer));
     Assert.AreEqual(' a b', Template.Eval('<% for x in data %> <% x.data %><% end %>', LContainer));
   finally
     LList.free;

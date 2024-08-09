@@ -1,7 +1,7 @@
 {
  "metadata": {
   "id": "Sempare.TemplateEngine",
-  "version": "1.7.6",
+  "version": "1.7.7",
   "description": "Sempare Template Engine for Delphi allows for flexible text manipulation. It can be used for generating email, html, source code, xml, configuration, etc.\r\n\r\nCommercial non-gpl license available.",
   "icon": "images\\sempare-logo-45px.png",
   "authors": "Sempare Limited",

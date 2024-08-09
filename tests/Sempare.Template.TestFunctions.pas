@@ -135,6 +135,8 @@ type
     procedure TestDefault;
     [Test]
     procedure TestDomId;
+    [Test]
+    procedure TestFormatWithFloat;
   end;
 
 type
@@ -249,6 +251,18 @@ procedure TFunctionTest.AddCustomFmt2;
 begin
 end;
 {$ENDIF}
+
+procedure TFunctionTest.TestFormatWithFloat;
+var
+  ctx: ITemplateContext;
+begin
+  ctx := Template.Context();
+  ctx.StartToken := '{{';
+  ctx.EndToken := '}}';
+  Assert.AreEqual(' 1.23', Template.Eval(ctx, '{{fmt("%5.3g", 1.2345)}}'));
+  Assert.AreEqual(' 1.23  54.3', Template.Eval(ctx, '{{fmt("%5.3g %5.3g", 1.2345, 54.321)}}'));
+  Assert.AreEqual('1.235 54.321 3.210', Template.Eval(ctx, '{{ x:= 3.21; fmt("%5.3f %5.3f %5.3f", 1.2345, 54.321, x)}}'));
+end;
 
 procedure TFunctionTest.AddCustomFmt3;
 var
