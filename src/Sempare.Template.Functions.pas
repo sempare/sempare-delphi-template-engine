@@ -664,11 +664,16 @@ var
 begin
   setlength(result, length(AArgs));
   for LIdx := 0 to high(AArgs) do
+  begin
 {$IFNDEF SUPPORT_AS_VARREC}
     result[LIdx] := AArgs[LIdx].AsLimitedVarRec;
 {$ELSE}
+    if AArgs[LIdx].Kind = tkFloat then
+      AArgs[LIdx] := extended(AArgs[LIdx].AsExtended);
+
     result[LIdx] := AArgs[LIdx].AsVarRec;
 {$ENDIF}
+  end;
 end;
 
 class function TInternalFuntions.EndsWith(const AString, ASearch: string): boolean;
