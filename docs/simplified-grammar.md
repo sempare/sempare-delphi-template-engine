@@ -32,7 +32,7 @@ include  : 'include' '(' expr [, expr ]')'
          ;
 if       : 'if' expr stmts ('elif' expr stmts)* ('else' stmts) 'end'
          ;
-for      : 'for' id 'in' expr loopstmts 'end'
+for      : 'for' id ( 'in', 'of' ) expr loopstmts 'end'
          | 'for' id ':=' expr ('to'|'downto') loopstmts 'end'
          ;
 while    : 'while' expr loopstmts 'end'
@@ -51,6 +51,7 @@ expr     : id '(' exprlist ')'
          | id
          | id '.' id
          | id '[' expr ']'
+         | '{' str ':' expr ( ',' str ':' expr ) +  '}'
          | '-' expr
          | 'not' expr
          | '(' expr ')'
