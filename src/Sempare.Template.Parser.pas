@@ -1014,7 +1014,6 @@ var
   LIncludeExpr: IExpr;
   LScopeExpr: IExpr;
   LContainerTemplate: TTemplate;
-  LValueSeparator: TTemplateSymbol;
   LBeforeNLStripActions: TStripActionSet;
   LAfterNLStripActions: TStripActionSet;
   LMatchBracket: boolean;
