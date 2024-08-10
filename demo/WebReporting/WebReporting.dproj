@@ -211,6 +211,7 @@
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
         <None Include="templates\index.tpl"/>
+        <None Include="templates\layout.tpl"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -260,6 +261,12 @@
                     </Platform>
                 </DeployFile>
                 <DeployFile LocalName="templates\index.tpl" Configuration="Debug" Class="ProjectFile">
+                    <Platform Name="Win32">
+                        <RemoteDir>.\</RemoteDir>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="templates\layout.tpl" Configuration="Debug" Class="ProjectFile">
                     <Platform Name="Win32">
                         <RemoteDir>.\</RemoteDir>
                         <Overwrite>true</Overwrite>

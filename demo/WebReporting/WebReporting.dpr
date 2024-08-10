@@ -20,6 +20,12 @@ type
     HighScores: TArray<TPerson>;
   end;
 
+  TWebReportingFunctions = class
+  public
+    class function JoinNames(const APerson: TPerson): string; static;
+
+  end;
+
   { TPerson }
 
 constructor TPerson.Create(const AFN, ALN: string; const AScore: integer);
@@ -29,8 +35,17 @@ begin
   Score := AScore;
 end;
 
+{ TWebReportingFunctions }
+
+class function TWebReportingFunctions.JoinNames(const APerson: TPerson): string;
+begin
+  exit(format('%s %s', [APerson.FirstName, APerson.LastName]));
+end;
+
 begin
   try
+    Template.Resolver.Context.Functions.AddFunctions(TWebReportingFunctions);
+
     THorse.Get('/',
       procedure(Req: THorseRequest; Res: THorseResponse)
       var
