@@ -590,6 +590,22 @@ begin
 
 include() can also take a second parameter, allowing for improved scoping of variables, similar to the _with_ statement.
 
+We have a 'functional' include syntax:
+```
+    <% template 'button' %>
+      <button text="<% text %>">
+    <% end %>
+    
+    <% button { text="add" } %>
+    
+              or 
+    
+    <% button text="remove" %>
+```
+
+Above we can see we don't need to use the explict 'include' statement.
+
+
 <a name="require"><h3>require</h3></a>
 
 ![require](./images/stmt_require.svg)

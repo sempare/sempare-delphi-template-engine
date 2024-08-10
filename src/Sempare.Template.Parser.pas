@@ -547,7 +547,8 @@ type
     function RuleCommentStmt: IStmt;
     function RuleIdStmt: IStmt;
     function RuleExprStmt: IStmt;
-    function RuleIncludeStmt: IStmt;
+    function RuleIncludeStmt: IStmt; overload;
+    function RuleIncludeStmt(const AName: IExpr): IStmt; overload;
     function RulePrintStmt: IStmt;
     function RuleContinueStmt: IStmt;
     function RuleBreakStmt: IStmt;
@@ -564,6 +565,7 @@ type
     function RuleValidateStmt: IStmt;
     function RuleNoopStmt: IStmt;
     function RuleMapExpr: IExpr;
+    function RuleExprMap: IExpr;
     function RuleExpression: IExpr;
     function RuleSimpleExpression: IExpr;
     function RuleTerm: IExpr;
@@ -813,7 +815,15 @@ end;
 
 procedure TTemplateParser.MatchClosingBracket(const AExpect: TTemplateSymbol);
 begin
-  assert(AExpect in [vsCloseRoundBracket, vsCloseSquareBracket]);
+  if AExpect = vsCloseCurlyBracket then
+  begin
+    assert(AExpect in [vsCloseRoundBracket, vsCloseSquareBracket, vsCloseCurlyBracket]);
+  end
+  else
+  begin
+    assert(AExpect in [vsCloseRoundBracket, vsCloseSquareBracket]);
+
+  end;
   if FLookahead.Token in ValueSeparators then
     Match(OppositeValueSepartor(FLookahead.Token));
   Match(AExpect);
@@ -998,6 +1008,50 @@ begin
   exit(RuleIgnoreOption(vsIgnoreWS, poStripWS));
 end;
 
+function TTemplateParser.RuleIncludeStmt(const AName: IExpr): IStmt;
+var
+  LSymbol: ITemplateSymbol;
+  LIncludeExpr: IExpr;
+  LScopeExpr: IExpr;
+  LContainerTemplate: TTemplate;
+  LBeforeNLStripActions: TStripActionSet;
+  LAfterNLStripActions: TStripActionSet;
+  LMatchBracket: boolean;
+  LVarExpr: IVariableExpr;
+begin
+  LVarExpr := AName as IVariableExpr;
+  LIncludeExpr := TValueExpr.Create(AName, LVarExpr.Variable);
+  LSymbol := FLookahead;
+
+  LAfterNLStripActions := FAfterNLStripActions;
+
+  LMatchBracket := false;
+  if FLookahead.Token = vsOpenCurlyBracket then
+  begin
+    Match(vsOpenCurlyBracket);
+    LMatchBracket := true;
+  end;
+
+  if FLookahead.Token in [vsID, vsString] then
+  begin
+    LScopeExpr := RuleExprMap;
+  end;
+
+  if LMatchBracket then
+    MatchClosingBracket(vsCloseCurlyBracket);
+
+  result := TIncludeStmt.Create(LSymbol.Position, LIncludeExpr);
+
+  if LScopeExpr <> nil then
+  begin
+    LContainerTemplate := TTemplate.Create();
+    LContainerTemplate.Add(result);
+    result := TWithStmt.Create(LSymbol.Position, LScopeExpr, LContainerTemplate);
+  end;
+
+  exit(WrapWithStripStmt(result, LBeforeNLStripActions, LAfterNLStripActions));
+end;
+
 function TTemplateParser.RuleIncludeStmt: IStmt;
 var
   LSymbol: ITemplateSymbol;
@@ -1044,8 +1098,8 @@ end;
 
 function TTemplateParser.RuleMapExpr: IExpr;
 
-  function ParseMap: TMap; forward;
-  function ParseExpr: TValue; forward;
+function ParseMap: TMap; forward;
+function ParseExpr: TValue; forward;
 
   function ParseArray: TArray<TValue>;
   var
@@ -1106,20 +1160,20 @@ function TTemplateParser.RuleMapExpr: IExpr;
     result := TMap.Create;
     i := 0;
     Match(vsOpenCurlyBracket);
-    while FLookahead.Token <> VsCloseCurlyBracket do
+    while FLookahead.Token <> vsCloseCurlyBracket do
     begin
       if i > 0 then
       begin
         Match(vsComma);
       end;
       LTok := vsString;
-      LKey := MatchValues([vsString, vsId], LTok);
+      LKey := MatchValues([vsString, vsID], LTok);
       Match(VsCOLON);
       LValue := TValue.From<IExpr>(RuleSimpleExpression);
       result.Add(LKey, LValue);
       inc(i);
     end;
-    Match(VsCloseCurlyBracket);
+    Match(vsCloseCurlyBracket);
   end;
 
 var
@@ -1426,7 +1480,7 @@ begin
       result := RuleRequireStmt;
     vsTemplate:
       result := RuleTemplateStmt;
-    vsId:
+    vsID:
       result := RuleIdStmt;
     vsBlock:
       result := RuleBlockStmt;
@@ -1457,7 +1511,7 @@ var
 begin
   LDone := false;
   LSymbol := FLookahead;
-  LId := MatchValue(vsId);
+  LId := MatchValue(vsID);
   if (eoEvalVarsEarly in FContext.Options) and FContext.TryGetVariable(LId, LIdVal) then
     result := TValueExpr.Create(LSymbol.Position, LIdVal)
   else
@@ -1488,7 +1542,7 @@ begin
       vsDOT:
         begin
           Match(vsDOT);
-          LExpr := TVariableExpr.Create(LSymbol.Position, MatchValue(vsId));
+          LExpr := TVariableExpr.Create(LSymbol.Position, MatchValue(vsID));
           if FLookahead.Token = vsOpenRoundBracket then
             result := RuleMethodExpr(result, LExpr)
           else
@@ -1881,7 +1935,7 @@ begin
       exit(TValueExpr.Create(LSymbol.Position, MatchNumber(vsNumber)));
     vsBoolean:
       exit(TValueExpr.Create(LSymbol.Position, MatchValue(vsBoolean) = 'true'));
-    vsId:
+    vsID:
       exit(self.RuleVariable());
     vsNOT:
       begin
@@ -1964,7 +2018,7 @@ begin
 
   LAfterNLStripActions := FAfterNLStripActions;
   Match(vsFor);
-  LId := MatchValue(vsId);
+  LId := MatchValue(vsID);
   if FLookahead.Token in [vsIn, vsOf] then
   begin
     LForOp := TemplateForop(LSymbol.Position, FLookahead.Token);
@@ -2088,6 +2142,10 @@ begin
   if FLookahead.Token = vsEQ then
   begin
     result := RuleAssignStmt(LExpr);
+  end
+  else if FLookahead.Token in [vsOpenCurlyBracket, vsID, vsString] then
+  begin
+    result := RuleIncludeStmt(LExpr);
   end
   else if FLookahead.Token in [vsEndScript, vsSemiColon] then
   begin
@@ -2312,6 +2370,108 @@ begin
     Match(LValueSeparator);
     result.AddExpr(RuleExpression);
   end;
+end;
+
+function TTemplateParser.RuleExprMap: IExpr;
+
+function ParseMap(const AMatchCurly: boolean): TMap; forward;
+function ParseExpr: TValue; forward;
+
+  function ParseArray: TArray<TValue>;
+  var
+    LSymbol: ITemplateSymbol;
+    i: integer;
+  begin
+    i := 0;
+    result := nil;
+    LSymbol := FLookahead;
+    Match(vsOpenSquareBracket);
+    while FLookahead.Token <> vsCloseSquareBracket do
+    begin
+      if i > 0 then
+      begin
+        Match(vsComma);
+      end;
+      SetLength(result, length(result) + 1);
+      result[high(result)] := ParseExpr;
+      inc(i);
+    end;
+    Match(vsCloseSquareBracket);
+  end;
+
+  function ParseExpr: TValue;
+  var
+    LSymbol: ITemplateSymbol;
+    LValue: TValue;
+    LArr: TArray<TValue>;
+  begin
+    LSymbol := FLookahead;
+    case LSymbol.Token of
+      vsString:
+        exit(MatchValue(vsString));
+      vsNumber:
+        exit(MatchNumber(vsNumber));
+      vsBoolean:
+        exit(MatchValue(vsBoolean) = 'true');
+      vsOpenSquareBracket:
+        begin
+          LArr := ParseArray;
+          LValue := TValue.From < TArray < TValue >> (LArr);
+          exit(LValue);
+        end;
+      vsOpenCurlyBracket:
+        begin
+          exit(TValue.From<TMap>(ParseMap(true)));
+        end;
+    end;
+  end;
+
+  function ParseMap(const AMatchCurly: boolean): TMap;
+  var
+    LKey: string;
+    i: integer;
+    LValue: TValue;
+    LTok: TTemplateSymbol;
+    LEnd: set of TTemplateSymbol;
+  begin
+    result := TMap.Create;
+    i := 0;
+    if AMatchCurly then
+    begin
+      Match(vsOpenCurlyBracket);
+      LEnd := [vsCloseCurlyBracket];
+    end
+    else
+    begin
+      LEnd := [vsEndScript, vsSemiColon, vsCloseCurlyBracket];
+    end;
+    while not(FLookahead.Token in LEnd) do
+    begin
+      if i > 0 then
+      begin
+        Match(vsComma);
+      end;
+      LTok := vsString;
+      LKey := MatchValues([vsString, vsID], LTok);
+      if not AMatchCurly then
+        Match(vsEQ)
+      else
+        Match(VsCOLON);
+      LValue := TValue.From<IExpr>(RuleSimpleExpression);
+      result.Add(LKey, LValue);
+      inc(i);
+    end;
+    if AMatchCurly then
+      Match(vsCloseCurlyBracket);
+  end;
+
+var
+  LSymbol: ITemplateSymbol;
+  LDict: TMap;
+begin
+  LSymbol := FLookahead;
+  LDict := ParseMap(false);
+  exit(TMapExpr.Create(LSymbol.Position, LDict));
 end;
 
 function TTemplateParser.RuleExprStmt: IStmt;
