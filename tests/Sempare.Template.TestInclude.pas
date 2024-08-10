@@ -99,6 +99,9 @@ type
     [Test]
     procedure TestResolver;
 
+    [Test]
+    procedure TestFunctionalInclude;
+
   end;
 
 implementation
@@ -237,6 +240,31 @@ begin
   LMember.Members[0].Name := 'Child';
 
   Assert.AreEqual('Parent'#13#10'Child', Template.Eval(LTpl, LMember));
+end;
+
+procedure TTestTemplateInclude.TestFunctionalInclude;
+var
+  LResult: string;
+begin
+
+  LResult := Template.Eval( //
+    '<% template "button" %>'#10 + //
+    '  <button id="<% id %>" value="<% text %>" onclick="javascript:<% onclick %>">'#10 + //
+    '<% end %>'#10 + //
+    '<% button { onclick="addEvent", id="add", text="add" } %>'#10 + //
+    '<% button { onclick="delEvent", id="delete", text="delete" } %>'#10 //
+    );
+  Assert.AreEqual(#$D#$A#$D#$A'  <button id="add" value="add" onclick="javascript:addEvent">'#$D#$A#$D#$A#$D#$A'  <button id="delete" value="delete" onclick="javascript:delEvent">'#$D#$A#$D#$A, LResult);
+
+  LResult := Template.Eval( //
+    '<% template "button" %>'#10 + //
+    '  <button id="<% id %>" value="<% text %>" onclick="javascript:<% onclick %>">'#10 + //
+    '<% end %>'#10 + //
+    '<% button onclick="addEvent", id="add", text="add" %>'#10 + //
+    '<% button onclick="delEvent", id="delete", text="delete" %>'#10 //
+    );
+  Assert.AreEqual(#$D#$A#$D#$A'  <button id="add" value="add" onclick="javascript:addEvent">'#$D#$A#$D#$A#$D#$A'  <button id="delete" value="delete" onclick="javascript:delEvent">'#$D#$A#$D#$A, LResult);
+
 end;
 
 procedure TTestTemplateInclude.TestInclude;
@@ -709,7 +737,7 @@ begin
   LStopWatch.Stop;
   LElapsedMs := LStopWatch.ElapsedMilliseconds / LIterations;
 {$IF defined( WIN32) OR defined(WIN64)}
-  writeln('Time: ' +  floattostr(LElapsedMs));
+  writeln('Time: ' + floattostr(LElapsedMs));
   Assert.IsTrue(LElapsedMs <= GetTestTimeTollerance(0.5, 6.0));
 {$ENDIF}
 end;
