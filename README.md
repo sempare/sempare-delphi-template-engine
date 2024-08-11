@@ -2,8 +2,8 @@
 ![platform compatibility](https://img.shields.io/badge/platform-Android32%20%7C%20Android64%20%7C%20Linux64%20%7C%20macOS64%20%7C%20Win32%20%7C%20Win64-lightgrey)
 ![license](https://img.shields.io/github/license/sempare/sempare-delphi-template-engine) 
 
-[![dev branch](https://github.com/sempare/sempare-delphi-template-engine/actions/workflows/delphi-package.yml/badge.svg?branch=dev&label=dev+branch)](https://github.com/sempare/sempare-delphi-template-engine/actions/workflows/delphi-package.yml)
-[![main branch](https://github.com/sempare/sempare-delphi-template-engine/actions/workflows/delphi-package.yml/badge.svg?branch=main&label=main+branch)](https://github.com/sempare/sempare-delphi-template-engine/actions/workflows/delphi-package.yml)
+[![dev branch](https://github.com/sempare/sempare-delphi-template-engine/actions/workflows/delphi-package.yml/badge.svg?branch=dev&label=dev+branch)](https://github.com/sempare/sempare-delphi-template-engine/actions/workflows/delphi-package.yml?label=dev+branch)
+[![main branch](https://github.com/sempare/sempare-delphi-template-engine/actions/workflows/delphi-package.yml/badge.svg?branch=main&label=main+branch)](https://github.com/sempare/sempare-delphi-template-engine/actions/workflows/delphi-package.yml?label=main+branch)
 
 
 # ![](./images/sempare-logo-45px.png) Sempare Template Engine
