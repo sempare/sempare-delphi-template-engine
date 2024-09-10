@@ -2,7 +2,6 @@
 ![platform compatibility](https://img.shields.io/badge/platform-Android32%20%7C%20Android64%20%7C%20Linux64%20%7C%20macOS64%20%7C%20Win32%20%7C%20Win64-lightgrey)
 ![license](https://img.shields.io/github/license/sempare/sempare-delphi-template-engine) 
 
-
 # ![](./images/sempare-logo-45px.png) Sempare Template Engine
 
 Copyright (c) 2019-2024 [Sempare Limited](http://www.sempare.ltd)
