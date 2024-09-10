@@ -139,7 +139,7 @@ var
   LClassType: TRttiType;
   LMethod: TRttiMethod;
 begin
-  LClassType := FContext.RttiContext.GetType(AClass);
+  LClassType := FContext.RttiContext().GetType(AClass);
   for LMethod in LClassType.GetMethods do
     Add(LMethod);
 end;
@@ -385,7 +385,11 @@ var
 begin
   if (AStackFrames = nil) or (AStackFrames.count = 0) or (AStackOffset > 0) or (-AStackOffset > AStackFrames.count) then
     exit;
+  {$IFDEF DEFINE SUPPORT_STACK_LIST_PROPERTY}
   LStackFrame := AStackFrames.List[AStackFrames.count + AStackOffset];
+  {$ELSE}
+  LStackFrame := AStackFrames.ToArray[AStackFrames.count + AStackOffset];
+  {$ENDIF}
   LStackFrame[AVariable] := AValue;
 end;
 
@@ -532,7 +536,7 @@ var
   lpos: integer;
 begin
   try
-    exit(AContext.RttiContext.GetType(AValue.AsType<TValue>.TypeInfo).QualifiedName);
+    exit(AContext.RttiContext().GetType(AValue.AsType<TValue>.TypeInfo).QualifiedName);
   except
     on e: exception do
     begin
@@ -702,7 +706,11 @@ var
 begin
   if (AStackFrames = nil) or (AStackFrames.count = 0) or (AStackOffset > 0) or (-AStackOffset > AStackFrames.count) then
     exit;
+  {$IFDEF DEFINE SUPPORT_STACK_LIST_PROPERTY}
   LStackFrame := AStackFrames.List[AStackFrames.count + AStackOffset];
+  {$ELSE}
+  LStackFrame := AStackFrames.ToArray[AStackFrames.count + AStackOffset];
+  {$ENDIF}
   exit(LStackFrame[AVariable]);
 end;
 
@@ -829,7 +837,7 @@ begin
   end;
   if LIsRecord or LIsObject then
   begin
-    LType := AContext.RttiContext.GetType(AValue.TypeInfo);
+    LType := AContext.RttiContext().GetType(AValue.TypeInfo);
     LField := LType.GetField('id');
     LPtr := GetPtr;
     if LField <> nil then
