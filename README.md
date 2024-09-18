@@ -1,6 +1,5 @@
 ![delphi compatibility](https://img.shields.io/badge/delphi%20compatability-XE%204%20or%20newer-brightgreen)
 ![platform compatibility](https://img.shields.io/badge/platform-Android32%20%7C%20Android64%20%7C%20Linux64%20%7C%20macOS64%20%7C%20Win32%20%7C%20Win64-lightgrey)
-![license](https://img.shields.io/github/license/sempare/sempare-delphi-template-engine) 
 
 # ![](./images/sempare-logo-45px.png) Sempare Template Engine
 
@@ -11,6 +10,8 @@ Contact: <info@sempare.ltd>
 License: [GPL v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html) or [Sempare Limited Commercial License](./docs/commercial.license.md)
 
 Open Source: https://github.com/sempare/sempare-delphi-template-engine
+
+*Questionaire*: https://docs.google.com/forms/d/e/1FAIpQLScioIiDxvsWK01fMFqYr9aJ6KhCGeiw4UaU_esGuztEE7vYwA/viewform
 
 ## Contents
 - [Introduction](#Introduction)

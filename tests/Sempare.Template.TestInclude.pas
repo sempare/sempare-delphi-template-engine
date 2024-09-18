@@ -102,6 +102,9 @@ type
     [Test]
     procedure TestFunctionalInclude;
 
+    [Test]
+    procedure TestVariableAfterInclude;
+
   end;
 
 implementation
@@ -240,6 +243,14 @@ begin
   LMember.Members[0].Name := 'Child';
 
   Assert.AreEqual('Parent'#13#10'Child', Template.Eval(LTpl, LMember));
+end;
+
+procedure TTestTemplateInclude.TestVariableAfterInclude;
+var
+  LResult: string;
+begin
+  LResult := Template.Eval('<% template "my_template" %><% _.var %><% end %><% var := 345 %><% my_template { "var"= 123 } %> <% var %>');
+  Assert.AreEqual('123 345', LResult);
 end;
 
 procedure TTestTemplateInclude.TestFunctionalInclude;

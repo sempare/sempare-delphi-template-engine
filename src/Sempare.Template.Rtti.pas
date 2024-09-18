@@ -915,6 +915,8 @@ function TryDeref(const APosition: IPosition; const AVar, ADeref: TValue; const 
   var
     LFunctionPair: TPair<TDerefMatchInterfaceFunction, TDerefFunction>;
     LIntf: IInterface;
+    LProperty: TRttiProperty;
+    LType: TRttiType;
   begin
     LIntf := AObj.AsInterface;
     for LFunctionPair in GDerefInterfaceFunctions do
@@ -925,10 +927,14 @@ function TryDeref(const APosition: IPosition; const AVar, ADeref: TValue; const 
           exit(true);
       end;
     end;
+    LType := AContext.RttiContext.GetType(AObj.TypeInfo);
+    LProperty := LType.GetProperty(ADeref.AsString);
+    if assigned(LProperty) then
+      AResult := LProperty.GetValue(AObj.AsType<pointer>);
     exit(ExitEmpty(AResult));
   end;
 
-  function FixTValue(var AValue: TValue; const AResult:boolean=true): boolean;
+  function FixTValue(var AValue: TValue; const AResult: boolean = true): boolean;
   begin
     if (AValue.Kind = tkRecord) and MatchValue(AValue.TypeInfo) then
     begin
