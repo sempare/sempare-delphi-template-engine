@@ -1112,12 +1112,23 @@ var
   LObjType: TRttiType;
   LObject: TValue;
   LMethod: TRttiMethod;
+  LIntf: IInterface;
 begin
   LObjType := FContext.RttiContext.GetType(AObject.TypeInfo);
-  LMethod := LObjType.GetMethod(AExpr.Method);
   LObject := AObject;
-  if AObject.IsType<TValue> then
-    LObject := AObject.AsType<TValue>;
+  if LObject.Kind = tkInterface then
+  begin
+    LIntf := LObject.AsInterface;
+    LObject := TObject(LIntf);
+    LObjType := FContext.RttiContext.GetType(LObject.TypeInfo);
+  end
+  else
+  begin
+    if AObject.IsType<TValue> then
+      LObject := AObject.AsType<TValue>;
+  end;
+  LMethod := LObjType.GetMethod(AExpr.Method);
+
   exit(DoInvoke(AExpr, LMethod, LObject, AArgs, AHasResult));
 end;
 
