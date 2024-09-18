@@ -523,7 +523,7 @@ var
       RaiseErrorRes(AStmt, @SValueIsNotEnumerable);
     LEnumObj := LEnumValue.AsObject;
     try
-      LLoopExprType := FContext.RttiContext.GetType(LEnumObj.ClassType);
+      LLoopExprType := FContext.RttiContext().GetType(LEnumObj.ClassType);
       LEnumMoveNextMethod := LLoopExprType.GetMethod('MoveNext');
       LEnumCurrentProperty := LLoopExprType.getProperty('Current');
       LRaiseIfMissing := eoRaiseErrorWhenVariableNotFound in FContext.Options;
@@ -662,7 +662,7 @@ begin
   try
     if not LLoopExpr.IsEmpty then
     begin
-      LLoopExprType := FContext.RttiContext.GetType(LLoopExpr.TypeInfo);
+      LLoopExprType := FContext.RttiContext().GetType(LLoopExpr.TypeInfo);
 
       case LLoopExprType.TypeKind of
         tkInterface:
@@ -1114,7 +1114,8 @@ var
   LMethod: TRttiMethod;
   LIntf: IInterface;
 begin
-  LObjType := FContext.RttiContext.GetType(AObject.TypeInfo);
+  LObjType := FContext.RttiContext().GetType(AObject.TypeInfo);
+  LMethod := LObjType.GetMethod(AExpr.Method);
   LObject := AObject;
   if LObject.Kind = tkInterface then
   begin
@@ -1208,7 +1209,7 @@ var
 begin
   if HasBreakOrContinue then
     exit;
-  LInputType := FContext.RttiContext.GetType(FStackFrames.peek['_'].TypeInfo).Name.ToLower;
+  LInputType := FContext.RttiContext().GetType(FStackFrames.peek['_'].TypeInfo).Name.ToLower;
   LExprs := ExprListArgs(AStmt.exprlist);
   if length(LExprs) = 0 then
     exit;

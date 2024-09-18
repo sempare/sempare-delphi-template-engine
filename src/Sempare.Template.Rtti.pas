@@ -209,7 +209,7 @@ var
       RaiseError(APosition, SValueIsNotEnumerable);
     LEnumObject := LValue.AsObject;
     try
-      TRightType := AContext.RttiContext.GetType(LEnumObject.ClassType);
+      TRightType := AContext.RttiContext().GetType(LEnumObject.ClassType);
       LEnumMoveNextMethod := TRightType.GetMethod('MoveNext');
       LEnumCurrentProperty := TRightType.GetProperty('Current');
       while LEnumMoveNextMethod.Invoke(LEnumObject, []).AsBoolean do
@@ -300,7 +300,7 @@ begin
   result := false;
   if not IsEnumerable(AContext, ARight) and not MatchMap(AContext, ARight) then
     RaiseError(APosition, SValueIsNotEnumerableOrMap);
-  TRightType := AContext.RttiContext.GetType(ARight.TypeInfo);
+  TRightType := AContext.RttiContext().GetType(ARight.TypeInfo);
   case TRightType.TypeKind of
     tkInterface:
       VisitInterface;
@@ -323,7 +323,7 @@ begin
     tkDynArray, tkArray:
       exit(true);
     tkClass, tkClassRef:
-      exit(AContext.RttiContext.GetType(AValue.TypeInfo).GetMethod('GetEnumerator') <> nil);
+      exit(AContext.RttiContext().GetType(AValue.TypeInfo).GetMethod('GetEnumerator') <> nil);
   else
     exit(false);
   end;
@@ -480,7 +480,7 @@ begin
       if AValue.TypeInfo = TypeInfo(TValue) then
         exit(AsString(AValue.AsType<TValue>(), AContext))
       else
-        exit(AContext.RttiContext.GetType(AValue.TypeInfo).Name);
+        exit(AContext.RttiContext().GetType(AValue.TypeInfo).Name);
   else
     exit('');
   end;
@@ -515,7 +515,7 @@ var
 begin
   // Ideally wuld like to use TryGetItem, but couldn't get it working
   // with TValue result...
-  LObjectType := AContext.RttiContext.GetType(AObj.TypeInfo);
+  LObjectType := AContext.RttiContext().GetType(AObj.TypeInfo);
   LContainsKeyMethod := LObjectType.GetMethod('ContainsKey');
   try
     if not LContainsKeyMethod.Invoke(AObj, [ADeref]).AsBoolean then
@@ -607,7 +607,7 @@ begin
       end;
     end;
   end;
-  exit(TryGetFieldOrProperty(obj.AsObject, AContext.RttiContext.GetType(obj.TypeInfo), ADeref, AContext, AResult));
+  exit(TryGetFieldOrProperty(obj.AsObject, AContext.RttiContext().GetType(obj.TypeInfo), ADeref, AContext, AResult));
 end;
 
 function TryDerefList(const APosition: IPosition; const AObj: TValue; const ADeref: TValue; const ARaiseIfMissing: boolean; const AContext: ITemplateContext; out AResult: TValue): boolean;
@@ -616,7 +616,7 @@ var
   LProperty: TRttiProperty;
   LIndexedProperty: TRttiIndexedProperty;
 begin
-  LType := AContext.RttiContext.GetType(AObj.TypeInfo);
+  LType := AContext.RttiContext().GetType(AObj.TypeInfo);
   try
     if IsIntLike(ADeref) then
     begin
@@ -656,7 +656,7 @@ var
   LIndexedProperty: TRttiIndexedProperty;
   LDerefValue: TValue;
 begin
-  LType := AContext.RttiContext.GetType(AObj.TypeInfo);
+  LType := AContext.RttiContext().GetType(AObj.TypeInfo);
   try
     if IsStrLike(ADeref) then
     begin
@@ -868,7 +868,7 @@ function TryDeref(const APosition: IPosition; const AVar, ADeref: TValue; const 
     LMax: int64;
   begin
     LIndex := AsInt(ADeref, AContext);
-    LElementType := AContext.RttiContext.GetType(AObj.TypeInfo) as TRttiArrayType;
+    LElementType := AContext.RttiContext().GetType(AObj.TypeInfo) as TRttiArrayType;
     LArrayDimType := LElementType.Dimensions[0];
     LMin := 0;
     if LArrayDimType <> nil then
@@ -908,7 +908,7 @@ function TryDeref(const APosition: IPosition; const AVar, ADeref: TValue; const 
         exit(true);
     end;
 
-    exit(TryGetFieldOrProperty(LObj.GetReferenceToRawData, AContext.RttiContext.GetType(AObj.TypeInfo), ADeref, AContext, AResult));
+    exit(TryGetFieldOrProperty(LObj.GetReferenceToRawData, AContext.RttiContext().GetType(AObj.TypeInfo), ADeref, AContext, AResult));
   end;
 
   function TryDerefInterface(const AObj: TValue; const ADeref: TValue; out AResult: TValue): boolean;
@@ -1053,7 +1053,9 @@ begin
     (ATypeInfo = TypeInfo(TJSONNull)) or //
     (ATypeInfo = TypeInfo(TJSONNumber)) or //
     (ATypeInfo = TypeInfo(TJSONString)) or //
+    {$IFDEF SUPPORT_JSON_BOOL}
     (ATypeInfo = TypeInfo(TJSONBool)) or //
+    {$ENDIF}
     (ATypeInfo = TypeInfo(TJSONTrue)) or //
     (ATypeInfo = TypeInfo(TJSONFalse)) //
     );
@@ -1122,7 +1124,7 @@ begin
   LMethod := ARttiType.GetMethod('GetEnumerator');
   LEnumObject := LMethod.Invoke(LDictionary, []).AsObject;
   try
-    LEnumType := AContext.RttiContext.GetType(LEnumObject.ClassType);
+    LEnumType := AContext.RttiContext().GetType(LEnumObject.ClassType);
     LEnumMoveNextMethod := LEnumType.GetMethod('MoveNext');
     LEnumCurrentProperty := LEnumType.GetProperty('Current');
     LPairKeyField := nil;
@@ -1133,7 +1135,7 @@ begin
       LPairRecordPtr := LEnumPair.GetReferenceToRawData;
       if LPairKeyField = nil then
       begin
-        LEnumType := AContext.RttiContext.GetType(LEnumPair.TypeInfo);
+        LEnumType := AContext.RttiContext().GetType(LEnumPair.TypeInfo);
         LPairKeyField := LEnumType.GetField('Key');
         LPairValueField := LEnumType.GetField('Value');
       end;
@@ -1162,7 +1164,7 @@ var
 begin
   if AObject = nil then
     exit(true);
-  LType := AContext.RttiContext.GetType(AObject.ClassType);
+  LType := AContext.RttiContext().GetType(AObject.ClassType);
   LCountProp := LType.GetProperty('RecordCount');
   LCount := LCountProp.GetValue(AObject).AsInteger;
   exit(LCount = 0);
@@ -1174,7 +1176,7 @@ var
   LCount: integer;
   LCountProp: TRttiMethod;
 begin
-  LType := AContext.RttiContext.GetType(AObject.TypeInfo);
+  LType := AContext.RttiContext().GetType(AObject.TypeInfo);
   LCountProp := LType.GetMethod('GetCount');
   LCount := LCountProp.Invoke(AObject, []).AsInteger;
   exit(LCount = 0);
@@ -1188,7 +1190,7 @@ var
 begin
   if AObject = nil then
     exit(true);
-  LType := AContext.RttiContext.GetType(AObject.ClassType);
+  LType := AContext.RttiContext().GetType(AObject.ClassType);
   LCountProp := LType.GetProperty('Count');
   LCount := LCountProp.GetValue(AObject).AsInteger;
   exit(LCount = 0);

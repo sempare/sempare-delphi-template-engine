@@ -45,11 +45,11 @@
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
         <Icon_MainIcon>$(BDS)\bin\delphi_PROJECTICON.ico</Icon_MainIcon>
         <Icns_MainIcns>$(BDS)\bin\delphi_PROJECTICNS.icns</Icns_MainIcns>
-        <DCC_UnitSearchPath>$(DUnitX);src;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>thirdparty\DUnitX\Source;$(DUnitX);src;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <SanitizedProjectName>Sempare_Template_Tester</SanitizedProjectName>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win32)'!=''">
-        <DCC_UsePackage>DBXSqliteDriver;RESTComponents;vclFireDAC;tethering;FireDACADSDriver;vcltouch;vcldb;bindcompfmx;inetdb;fmx;FireDACIBDriver;fmxdae;vquery260;dacvcl260;dbexpress;vclx;dsnap;FireDACCommon;RESTBackendComponents;VCLRESTComponents;soapserver;vclie;bindengine;DBXMySQLDriver;CloudService;FireDACMySQLDriver;FireDACCommonDriver;inet;bindcompdbx;vcl;ADODataProvider;dsnapcon;FireDACDataProvider;FireDACMSAccDriver;vclimg;FireDAC;DBXDataProvider;FireDACSqliteDriver;FireDACPgDriver;crcontrols260;soaprtl;DbxCommonDriver;xmlrtl;soapmidas;fmxobj;vclwinx;dac260;rtl;DbxClientDriver;CustomIPTransport;vcldsnap;DOSCommandDR;bindcomp;appanalytics;bindcompvcl;dbxcds;adortl;dsnapxml;dbrtl;inetdbxpress;fmxase;$(DCC_UsePackage)</DCC_UsePackage>
+        <DCC_UsePackage>$(DCC_UsePackage)</DCC_UsePackage>
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
         <BT_BuildType>Debug</BT_BuildType>
         <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.5.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=ltd.sempare.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.5.0.0;Comments=</VerInfo_Keys>

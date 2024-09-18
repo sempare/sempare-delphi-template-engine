@@ -458,7 +458,7 @@ begin
     );
   try
     LConfirmLicense.Position := 0;
-    AStream.CopyFrom(LConfirmLicense);
+    AStream.CopyFrom(LConfirmLicense, LConfirmLicense.Size);
   finally
     LConfirmLicense.Free;
   end;

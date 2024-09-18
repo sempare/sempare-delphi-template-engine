@@ -1,0 +1,3 @@
+[submodule "thirdparty/DUnitX"]
+	path = thirdparty/DUnitX
+	url = git@github.com:VSoftTechnologies/DUnitX.git
