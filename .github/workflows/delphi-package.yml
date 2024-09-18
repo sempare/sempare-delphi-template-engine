@@ -75,7 +75,7 @@ jobs:
         run: Sempare.Template.Tester.exe -cm:quiet -exit:continue -b -xmlfile:.\results.xml
 
       - name: publish win64 debug test results
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: Win64 Debug Results
           path: './Win64/Debug/results.xml'
@@ -97,7 +97,7 @@ jobs:
         run: Sempare.Template.Tester.exe -cm:quiet -exit:continue -b -xmlfile:.\results.xml
 
       - name: publish win64 release test results
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: Win64 Release Results
           path: './Win64/Release/results.xml'
