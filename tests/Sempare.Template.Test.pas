@@ -130,6 +130,9 @@ type
 
     [Test]
     procedure TestVariableResolver;
+
+    [Test]
+    procedure TestErrorClosingScript;
   end;
 
 type
@@ -713,11 +716,13 @@ begin
   ctx.DecimalSeparator := ',';
   ctx.ValueSeparator := ';';
   Assert.AreEqual('', Template.Eval(ctx, '<% a := ["a"; "b"] %>'));
-  Assert.WillRaise(
+  Assert.WillRaiseWithMessage(
     procedure
     begin // expecting ;
+
       Assert.AreEqual('', Template.Eval(ctx, '<% a := ["a", "b"] %>'));
-    end);
+
+    end, ETemplateEvaluationError, ' (Line 1, Column 14) Parsing error. Expecting: ;');
   ctx.DecimalSeparator := '.';
   ctx.ValueSeparator := ',';
   Assert.AreEqual('', Template.Eval(ctx, '<% a := ["a", "b"] %>'));
@@ -725,7 +730,7 @@ begin
     procedure
     begin // expecting ,
       Assert.AreEqual('', Template.Eval(ctx, '<% a := ["a"; "b"] %>'));
-    end);
+    end, ETemplateEvaluationError, ' (Line 1, Column 14) Parsing error. Expecting: ,');
 end;
 
 procedure TTestTemplate.TestDecimalEncodingErrorWithListsDefaultValueSeparator;
@@ -788,6 +793,15 @@ end;
 procedure TTestTemplate.TestEmpty;
 begin
   Assert.AreEqual('', Template.Eval(''));
+end;
+
+procedure TTestTemplate.TestErrorClosingScript;
+begin
+  Assert.WillRaiseWithMessage(
+    procedure
+    begin
+      Template.Parse('<% %');
+    end, ETemplateEvaluationError, ' (Line 1, Column 4) Parsing error. Expecting: %>');
 end;
 
 procedure TTestTemplate.TestException;
@@ -866,11 +880,13 @@ var
 begin
   LCtx := Template.Context();
   LCtx.Options := LCtx.Options + [eoRaiseErrorWhenVariableNotFound];
-  Assert.WillRaise(
+  Assert.WillRaiseWithMessage(
     procedure
     begin // expects  abc
+
       Assert.AreEqual('', Template.Eval(LCtx, '<% abc %>'));
-    end);
+
+    end, ETemplateEvaluationError, ' (Line 1, Column 4) Cannot find variable ''abc''');
 end;
 
 procedure TTestTemplate.TestVariableResolver;

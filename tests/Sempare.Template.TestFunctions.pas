@@ -726,32 +726,22 @@ procedure TFunctionTest.TestCallingNonExistingMethod;
 var
   LRec1: TMyId1;
 begin
-  Assert.WillRaise(
+  Assert.WillRaiseWithMessage(
     procedure
     begin
-      try
-        Template.Eval('<% _.nonexisting() %>', LRec1);
-      except
-        on e: exception do
-          raise;
-      end;
-    end);
+      Template.Eval('<% _.nonexisting() %>', LRec1);
+    end, ETemplateEvaluationError, ' (Line 1, Column 18) Method TMyId1.nonexisting does not exist.');
 end;
 
 procedure TFunctionTest.TestCallingNonExistingFunction;
 var
   LRec1: TMyId1;
 begin
-  Assert.WillRaise(
+  Assert.WillRaiseWithMessage(
     procedure
     begin
-      try
-        Template.Eval('<% nonexisting() %>', LRec1);
-      except
-        on e: exception do
-          raise;
-      end;
-    end);
+      Template.Eval('<% nonexisting() %>', LRec1);
+    end, ETemplateEvaluationError, ' (Line 1, Column 16) Function nonexisting not registered in context.');
 end;
 
 initialization
