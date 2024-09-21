@@ -2154,7 +2154,7 @@ begin
   end
   else
   begin
-    RaiseError(LSymbol.Position, format(SParsingErrorExpecting, ['variable reference, function call or assignment']));
+    RaiseError(LSymbol.Position, SParsingErrorExpecting, ['variable reference, function call or assignment']);
   end;
   LBeforeNLStripActions := MatchEndOfScript;
 
@@ -2598,7 +2598,7 @@ begin
     FLookahead := FLexer.GetToken;
     exit;
   end;
-  RaiseError(LSymbol.Position, format(SParsingErrorExpecting, [TemplateSymbolToString(ASymbol)]));
+  RaiseError(LSymbol.Position, SParsingErrorExpecting, [TemplateSymbolToString(ASymbol)]);
 end;
 
 function TTemplateParser.Match(ASymbols: TTemplateSymbolSet; var AMatchSymbol: TTemplateSymbol): TStripActionSet;
@@ -2616,7 +2616,7 @@ begin
     FLookahead := FLexer.GetToken;
     exit(LSymbol.StripActions);
   end;
-  RaiseError(LSymbol.Position, format(SParsingErrorExpecting, [TemplateSymbolToString(AMatchSymbol)]));
+  RaiseError(LSymbol.Position, SParsingErrorExpecting, [TemplateSymbolToString(AMatchSymbol)]);
 end;
 
 procedure TTemplateParser.Match(const ASymbol: ITemplateSymbol);
@@ -2641,7 +2641,7 @@ begin
     FLookahead := FLexer.GetToken;
     exit;
   end;
-  RaiseError(LSymbol.Position, format(SParsingErrorExpecting, [TemplateSymbolToString(ASymbol)]));
+  RaiseError(LSymbol.Position, SParsingErrorExpecting, [TemplateSymbolToString(ASymbol)]);
 end;
 
 function TTemplateParser.MatchValue(const ASymbol: TTemplateSymbol): string;
@@ -2656,7 +2656,7 @@ begin
     FLookahead := FLexer.GetToken;
     exit;
   end;
-  RaiseError(LSymbol.Position, format(SParsingErrorExpecting, [TemplateSymbolToString(ASymbol)]));
+  RaiseError(LSymbol.Position, SParsingErrorExpecting, [TemplateSymbolToString(ASymbol)]);
 end;
 
 function TTemplateParser.Parse(const AStream: TStream; const AManagedStream: boolean): ITemplate;
