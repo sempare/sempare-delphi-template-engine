@@ -65,6 +65,7 @@ resourcestring
   SEndNotExpected = 'End not expected';
   SUnexpectedToken = 'UnexpectedToken';
   SFunctionNotRegisteredInContext = 'Function %s not registered in context.';
+  SMethodNotRegisteredOnObject = 'Method %s.%s does not exist.';
   SParsingErrorExpecting = 'Parsing error. Expecting: %s';
   SStringOrNumericTypesExpected = 'String or numeric types expected';
   SBinOpNotSupported = 'Binop not supported';

@@ -1115,7 +1115,6 @@ var
   LIntf: IInterface;
 begin
   LObjType := FContext.RttiContext().GetType(AObject.TypeInfo);
-  LMethod := LObjType.GetMethod(AExpr.Method);
   LObject := AObject;
   if LObject.Kind = tkInterface then
   begin
@@ -1129,7 +1128,10 @@ begin
       LObject := AObject.AsType<TValue>;
   end;
   LMethod := LObjType.GetMethod(AExpr.Method);
-
+  if LMethod = nil then
+  begin
+    RaiseErrorRes(AExpr, @SMethodNotRegisteredOnObject, [LObject.TypeInfo.Name, AExpr.Method]);
+  end;
   exit(DoInvoke(AExpr, LMethod, LObject, AArgs, AHasResult));
 end;
 

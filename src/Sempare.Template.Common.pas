@@ -171,8 +171,11 @@ begin
 end;
 
 procedure RaiseError(const APositional: IPosition; const AFormat: string; const AArgs: array of const); overload;
+var
+  LStr: string;
 begin
-  raise ETemplateEvaluationError.Create(APositional, Position(APositional) + format(AFormat, AArgs));
+  LStr := format(AFormat, AArgs);
+  raise ETemplateEvaluationError.Create(APositional, Position(APositional) + LStr);
 end;
 
 procedure RaiseError(const APositional: IPosition; const AFormat: string); overload;

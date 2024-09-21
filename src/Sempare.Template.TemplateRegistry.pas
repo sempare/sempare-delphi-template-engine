@@ -482,7 +482,7 @@ var
         on e: ETemplateEvaluationError do
         begin
           LogException(e);
-          exit(true);
+          raise;
         end;
         on e: Exception do
         begin

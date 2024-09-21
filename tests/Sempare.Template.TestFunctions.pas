@@ -137,6 +137,10 @@ type
     procedure TestDomId;
     [Test]
     procedure TestFormatWithFloat;
+    [Test]
+    procedure TestCallingNonExistingMethod;
+    [Test]
+    procedure TestCallingNonExistingFunction;
   end;
 
 type
@@ -716,6 +720,38 @@ begin
   finally
     LRec3.Free;
   end;
+end;
+
+procedure TFunctionTest.TestCallingNonExistingMethod;
+var
+  LRec1: TMyId1;
+begin
+  Assert.WillRaise(
+    procedure
+    begin
+      try
+        Template.Eval('<% _.nonexisting() %>', LRec1);
+      except
+        on e: exception do
+          raise;
+      end;
+    end);
+end;
+
+procedure TFunctionTest.TestCallingNonExistingFunction;
+var
+  LRec1: TMyId1;
+begin
+  Assert.WillRaise(
+    procedure
+    begin
+      try
+        Template.Eval('<% nonexisting() %>', LRec1);
+      except
+        on e: exception do
+          raise;
+      end;
+    end);
 end;
 
 initialization
