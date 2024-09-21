@@ -1169,6 +1169,8 @@ begin
       LResult := '';
     FEvalStack.push(LResult);
   except
+    on ETemplateEvaluationError do
+      raise;
     on e: exception do
       RaiseError(AExpr, AExpr.Method + ':' + e.Message);
   end;

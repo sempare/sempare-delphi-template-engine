@@ -99,7 +99,7 @@ type
     procedure Unmanage(const AObject: TObject);
   end;
 
-  TGetRttiContext = reference to function : PRttiContext;
+  TGetRttiContext = reference to function: PRttiContext;
 
   ITemplateContext = interface
     ['{979D955C-B4BD-46BB-9430-1E74CBB999D4}']
@@ -428,7 +428,10 @@ end;
 
 constructor TTemplateContext.Create(const AOptions: TTemplateEvaluationOptions);
 begin
-  FRttiContext := function : PRttiContext begin exit(@GRttiContext) end;
+  FRttiContext := function: PRttiContext
+    begin
+      exit(@GRttiContext)
+    end;
   FOptions := AOptions + [eoFlattenTemplate, eoOptimiseTemplate];
   FMaxRuntimeMs := GDefaultRuntimeMS;
   FPrettyPrintOutput := GPrettyPrintOutput;
