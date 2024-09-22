@@ -96,9 +96,6 @@ type
       constructor Create(const AInput: char; const AEof: Boolean);
     end;
   private
-    class var FIDRegex: TRegEx;
-    class constructor Create; overload;
-  private
     FReader: TStreamReader;
     FNextToken: TQueue<ITemplateSymbol>;
     FStream: TStream;
@@ -193,11 +190,6 @@ begin
   FAccumulator := TStringBuilder.Create;
 end;
 
-class constructor TTemplateLexer.Create;
-begin
-  FIDRegex := TRegEx.Create('^[a-zA-Z_][a-zA-Z_0-9]*$');
-end;
-
 destructor TTemplateLexer.Destroy;
 begin
   FNextToken.Free;
@@ -267,11 +259,6 @@ var
       GetInput;
   end;
 
-  function IsValidId(const AId: string): Boolean;
-  begin
-    exit(FIDRegex.IsMatch(AId));
-  end;
-
   function ValueToken(const ASymbol: TTemplateSymbol): ITemplateSymbol;
   var
     LId: string;
@@ -279,7 +266,7 @@ var
   begin
     LId := FAccumulator.ToString;
     LPosition := MakePosition;
-    if (ASymbol = vsID) and not IsValidId(LId) then
+    if (ASymbol = vsID) and not IsValidIdent(LId) then
     begin
       RaiseErrorRes(LPosition, @SInvalidCharacterDetected);
     end;
