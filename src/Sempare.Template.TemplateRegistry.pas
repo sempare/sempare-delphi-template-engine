@@ -71,7 +71,7 @@ type
     function GetCount: integer;
     function GetLastItem: IStmt;
     procedure FlattenTemplate;
-    procedure OptimiseTemplate(const AOptions: TParserOptions);
+    procedure OptimiseTemplate(const AOptions: TParserOptions; const ANewLine: string);
     procedure Accept(const AVisitor: ITemplateVisitor);
     function GetFilename: string;
     procedure SetFilename(const AFilename: string);
@@ -736,9 +736,9 @@ begin
   FTemplate.FlattenTemplate;
 end;
 
-procedure TAbstractProxyTemplate.OptimiseTemplate(const AOptions: TParserOptions);
+procedure TAbstractProxyTemplate.OptimiseTemplate(const AOptions: TParserOptions; const ANewLine: string);
 begin
-  FTemplate.OptimiseTemplate(AOptions);
+  FTemplate.OptimiseTemplate(AOptions, ANewLine);
 end;
 
 procedure TAbstractProxyTemplate.SetFilename(const AFilename: string);
@@ -794,11 +794,11 @@ begin
   except
     on e: Exception do
     begin
-    {$IFDEF DEBUG}
+{$IFDEF DEBUG}
       FTemplate := Template.Parse(Format('Error in %s: %s', [AFilename, e.message]));
-    {$ELSE}
+{$ELSE}
       FTemplate := Template.Parse(Format('Error in %s', [TPath.GetFilename(AFilename)]));
-    {$ENDIF}
+{$ENDIF}
     end;
   end;
   FTemplate.FileName := AFilename;

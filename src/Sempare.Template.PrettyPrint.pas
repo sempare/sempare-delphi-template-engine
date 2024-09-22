@@ -92,6 +92,9 @@ type
     procedure Visit(const AStmt: IBlockStmt); overload; override;
     procedure Visit(const AStmt: IExtendsStmt); overload; override;
 
+    procedure Visit(const AStmt: IIgnoreNLStmt); overload; override;
+    procedure Visit(const AStmt: IIgnoreWSStmt); overload; override;
+
   end;
 
 function BinOpToStr(const ASymbol: TBinOp): string;
@@ -610,6 +613,28 @@ end;
 procedure TPrettyPrintTemplateVisitor.Visit(const AExpr: IMapExpr);
 begin
   write(AExpr.GetMap.ToJson);
+end;
+
+procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IIgnoreWSStmt);
+begin
+  tab();
+  writeln('<%% ignorews %%>');
+  delta(4);
+  AcceptVisitor(AStmt.Container, self);
+  delta(-4);
+  tab();
+  writeln('<%% end %%>');
+end;
+
+procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IIgnoreNLStmt);
+begin
+  tab();
+  writeln('<%% ignorenl %%>');
+  delta(4);
+  AcceptVisitor(AStmt.Container, self);
+  delta(-4);
+  tab();
+  writeln('<%% end %%>');
 end;
 
 initialization
