@@ -57,9 +57,9 @@ type
   TJsonArray = Data.DBXJSON.TJsonArray;
 {$ELSE}
   TJsonValue = System.JSON.TJsonValue;
-  {$IFDEF SUPPORT_JSON_BOOL}
+{$IFDEF SUPPORT_JSON_BOOL}
   TJSONBool = System.JSON.TJSONBool; // not in XE6
-  {$ENDIF}
+{$ENDIF}
   TJSONString = System.JSON.TJSONString;
   TJSONNumber = System.JSON.TJSONNumber;
   TJsonObject = System.JSON.TJsonObject;

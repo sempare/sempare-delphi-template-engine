@@ -385,11 +385,11 @@ var
 begin
   if (AStackFrames = nil) or (AStackFrames.count = 0) or (AStackOffset > 0) or (-AStackOffset > AStackFrames.count) then
     exit;
-  {$IFDEF DEFINE SUPPORT_STACK_LIST_PROPERTY}
+{$IFDEF DEFINE SUPPORT_STACK_LIST_PROPERTY}
   LStackFrame := AStackFrames.List[AStackFrames.count + AStackOffset];
-  {$ELSE}
+{$ELSE}
   LStackFrame := AStackFrames.ToArray[AStackFrames.count + AStackOffset];
-  {$ENDIF}
+{$ENDIF}
   LStackFrame[AVariable] := AValue;
 end;
 
@@ -706,11 +706,11 @@ var
 begin
   if (AStackFrames = nil) or (AStackFrames.count = 0) or (AStackOffset > 0) or (-AStackOffset > AStackFrames.count) then
     exit;
-  {$IFDEF DEFINE SUPPORT_STACK_LIST_PROPERTY}
+{$IFDEF DEFINE SUPPORT_STACK_LIST_PROPERTY}
   LStackFrame := AStackFrames.List[AStackFrames.count + AStackOffset];
-  {$ELSE}
+{$ELSE}
   LStackFrame := AStackFrames.ToArray[AStackFrames.count + AStackOffset];
-  {$ENDIF}
+{$ENDIF}
   exit(LStackFrame[AVariable]);
 end;
 
