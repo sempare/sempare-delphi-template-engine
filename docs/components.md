@@ -1,6 +1,6 @@
 # ![](../images/sempare-logo-45px.png) Sempare Template Engine
 
-Copyright (c) 2019-2023 [Sempare Limited](http://www.sempare.ltd)
+Copyright (c) 2019-2024 [Sempare Limited](http://www.sempare.ltd)
 
 ## Components
 
