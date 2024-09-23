@@ -55,8 +55,6 @@ type
     [Test]
     procedure TestStripLeft;
     [Test]
-    procedure TestStripRight;
-    [Test]
     procedure TestStripRecurringSpacesOption;
     [Test]
     procedure TestStripRecurringNewlineOption;
@@ -130,9 +128,7 @@ end;
 
 procedure TTestNewLineOption.TestStripLeft;
 begin
-  Assert.AreEqual('begin'#13#10'x  '#13#10'end', Template.Eval('begin'#13#10'   <%- "x" %>  '#13#10'end'));
-  Assert.AreEqual('begin x  '#13#10'end', Template.Eval('begin'#13#10'   <%+ "x" %>  '#13#10'end'));
-  Assert.AreEqual('beginx  '#13#10'end', Template.Eval('begin'#13#10'   <%* "x" %>  '#13#10'end'));
+  Assert.AreEqual('begin'#13#10'x'#13#10'end', Template.Eval('begin'#13#10'  <%- "x" %>     '#13#10#13#10'end'));
 end;
 
 procedure TTestNewLineOption.TestStripRecurringNewlineOption;
@@ -149,13 +145,6 @@ var
 begin
   LCtx := Template.Context([eoStripRecurringSpaces]);
   Assert.AreEqual('abc text text end', Template.Eval(LCtx, 'abc   text  text end'));
-end;
-
-procedure TTestNewLineOption.TestStripRight;
-begin
-  Assert.AreEqual('begin'#13#10'   x'#13#10'end', Template.Eval('begin'#13#10'   <% "x" -%>  '#13#10'end'));
-  Assert.AreEqual('begin'#13#10'   x end', Template.Eval('begin'#13#10'   <% "x" +%>  '#13#10'end'));
-  Assert.AreEqual('begin'#13#10'   xend', Template.Eval('begin'#13#10'   <% "x" *%>  '#13#10'end'));
 end;
 
 procedure TTestNewLineOption.TestTabsToSpacesOption;

@@ -171,20 +171,15 @@ end;
 
 procedure TTestTemplateLexer.TestStripCharLeftAndRight;
 begin
-  Assert.AreEqual('hello world', Template.Eval('<%- ''hello'' + '' '' + ''world'' -%>'));
-  Assert.AreEqual('hello world', Template.Eval('<%* ''hello'' + '' '' + ''world'' *%>'));
+  Assert.AreEqual('hello world', Template.Eval('<%- ''hello'' + '' '' + ''world'' %>'));
   Assert.AreEqual('123', Template.Eval('<%- 123%>'));
   Assert.AreEqual('-123', Template.Eval('<%- -123%>'));
 end;
 
 procedure TTestTemplateLexer.TestStripWhitespace;
 begin
-  Assert.AreEqual('helloworld    '#13#10, Template.Eval('hello    <%- "world" %>    '#13#10));
-  Assert.AreEqual('helloworld'#13#10, Template.Eval('hello    <%- "world" -%>    '#13#10));
-
-  Assert.AreEqual('hello world    '#13#10, Template.Eval('hello    <%+ "world" %>    '#13#10));
-  Assert.AreEqual('hello world ', { .  . } Template.Eval('hello    <%+ "world" +%>    '#13#10));
-  Assert.AreEqual('hello world', { .   . } Template.Eval('hello    <%+ "world" *%>    '#13#10));
+  Assert.AreEqual('helloworld', Template.Eval('hello    <%- "world" %>    '#13#10));
+  Assert.AreEqual('helloworld'#13#10, Template.Eval('hello    <%- "world" %>    '#13#10#13#10));
 end;
 
 procedure TTestTemplateLexer.TestUnicodeQuotedString;

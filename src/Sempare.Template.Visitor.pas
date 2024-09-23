@@ -84,6 +84,8 @@ type
     procedure Visit(const AStmt: INoopStmt); overload; virtual;
     procedure Visit(const AStmt: IBlockStmt); overload; virtual;
     procedure Visit(const AStmt: IExtendsStmt); overload; virtual;
+    procedure Visit(const AStmt: IIgnoreNLStmt); overload; virtual;
+    procedure Visit(const AStmt: IIgnoreWSStmt); overload; virtual;
   end;
 
   TNoExprTemplateVisitor = class(TBaseTemplateVisitor, ITemplateVisitor)
@@ -335,6 +337,16 @@ end;
 procedure TBaseTemplateVisitor.Visit(const AStmt: INoopStmt);
 begin
 
+end;
+
+procedure TBaseTemplateVisitor.Visit(const AStmt: IIgnoreWSStmt);
+begin
+  AcceptVisitor(AStmt.Container, self);
+end;
+
+procedure TBaseTemplateVisitor.Visit(const AStmt: IIgnoreNLStmt);
+begin
+  AcceptVisitor(AStmt.Container, self);
 end;
 
 { TNoExprTemplateVisitor }

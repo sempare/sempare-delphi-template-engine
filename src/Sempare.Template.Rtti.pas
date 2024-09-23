@@ -1053,9 +1053,9 @@ begin
     (ATypeInfo = TypeInfo(TJSONNull)) or //
     (ATypeInfo = TypeInfo(TJSONNumber)) or //
     (ATypeInfo = TypeInfo(TJSONString)) or //
-    {$IFDEF SUPPORT_JSON_BOOL}
+{$IFDEF SUPPORT_JSON_BOOL}
     (ATypeInfo = TypeInfo(TJSONBool)) or //
-    {$ENDIF}
+{$ENDIF}
     (ATypeInfo = TypeInfo(TJSONTrue)) or //
     (ATypeInfo = TypeInfo(TJSONFalse)) //
     );

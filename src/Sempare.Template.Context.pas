@@ -169,8 +169,8 @@ type
     procedure SetPrettyPrintOutput(const APrettyPrintOutput: TPrettyPrintOutput);
     function GetPrettyPrintOutput: TPrettyPrintOutput;
 
-    function GetWhitespace: char;
-    procedure SetWhiteSpace(const AWS: char);
+    function GetWhitespace: string;
+    procedure SetWhiteSpace(const AWS: string);
 
     function GetVariableResolver: TTemplateVariableResolver;
     procedure SetVariableResolver(const AResolver: TTemplateVariableResolver);
@@ -181,7 +181,7 @@ type
     property RttiContext: TGetRttiContext read GetRttiContext write SetRttiContext;
     property Functions: ITemplateFunctions read GetFunctions write SetFunctions;
     property NewLine: string read GetNewLine write SetNewLine;
-    property WhitespaceChar: char read GetWhitespace write SetWhiteSpace;
+    property WhitespaceChar: string read GetWhitespace write SetWhiteSpace;
     property TemplateResolver: TTemplateResolver read GetTemplateResolver write SetTemplateResolver;
     property TemplateResolverWithContext: TTemplateResolverWithContext read GetTemplateResolverWithContext write SetTemplateResolverWithContext;
     property MaxRunTimeMs: integer read GetMaxRunTimeMs write SetMaxRunTimeMs;
@@ -227,8 +227,6 @@ var
   GUTF8WithoutPreambleEncoding: TUTF8WithoutPreambleEncoding;
   GStreamWriterProvider: TStreamWriterProvider;
   GPrettyPrintOutput: TPrettyPrintOutput;
-  GDefaultOpenStripWSTag: string = '<|';
-  GDefaultCloseWSTag: string = '|>';
 
 implementation
 
@@ -286,7 +284,7 @@ type
     FFormatSettings: TFormatSettings;
     FDebugFormat: string;
     FPrettyPrintOutput: TPrettyPrintOutput;
-    FWhiteSpace: char;
+    FWhiteSpace: string;
     FVariableResolver: TTemplateVariableResolver;
     FRttiContext: TGetRttiContext;
   public
@@ -376,8 +374,8 @@ type
     function GetDebugErrorFormat: string;
     procedure SetDebugErrorFormat(const AFormat: string);
 
-    function GetWhitespace: char;
-    procedure SetWhiteSpace(const AWS: char);
+    function GetWhitespace: string;
+    procedure SetWhiteSpace(const AWS: string);
 
     function GetVariableResolver: TTemplateVariableResolver;
     procedure SetVariableResolver(const AResolver: TTemplateVariableResolver);
@@ -438,8 +436,6 @@ begin
   SetEncoding(GDefaultEncoding);
   FStartToken := GDefaultOpenTag;
   FEndToken := GDefaultCloseTag;
-  FStartStripToken := GDefaultOpenStripWSTag;
-  FEndStripToken := GDefaultCloseWSTag;
   FTemplates := TDictionary<string, ITemplate>.Create;
   FVariables := TTemplateVariables.Create;
   FFunctions := CreateTemplateFunctions(self);
@@ -579,7 +575,7 @@ begin
   exit(FVariables);
 end;
 
-function TTemplateContext.GetWhitespace: char;
+function TTemplateContext.GetWhitespace: string;
 begin
   exit(FWhiteSpace);
 end;
@@ -738,7 +734,7 @@ begin
   FVariableResolver := AResolver;
 end;
 
-procedure TTemplateContext.SetWhiteSpace(const AWS: char);
+procedure TTemplateContext.SetWhiteSpace(const AWS: string);
 begin
   FWhiteSpace := AWS;
 end;

@@ -67,7 +67,7 @@ type
     [Test]
     procedure TestParseJson;
 
-    [test]
+    [Test]
     procedure TestMapWithExpression;
   end;
 
