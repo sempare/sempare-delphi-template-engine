@@ -1,6 +1,6 @@
 # ![](../images/sempare-logo-45px.png) Sempare Template Engine
 
-Copyright (c) 2019-2023 [Sempare Limited](http://www.sempare.ltd)
+Copyright (c) 2019-202 [Sempare Limited](http://www.sempare.ltd)
 
 ## Whitespace Removal
 
@@ -16,107 +16,34 @@ Below are some other ways in which hints can be provided to help trip whitespace
 ### Using script tag hints
 
 Scripts start with <% and close with %>. These tags may have additional hints to assist with the removal of whitespace.
-
-| Hint | Note |
-|---|---|
-| - | Removes whitespace only.  |
-| + | Removes whitespace as well as a newline, but leaves one space.  |
-| * | Removes whitespace as well as a newline.  |
+ 
 
 #### Using -
 
 ```
-hello••••<%- 'world' %>••••<NL>
-```
-
-This yields:
-```
-helloworld••••<NL>
-```
-
-This stops on the first non whitespace character or newline. The newline will be preserved.
-
-```
-hello••••<%- 'world' -%>••••<NL>
+hello&bull;&bull;&bull;&bull;<%- 'world' %>&bull;&bull;&bull;&bull;&bull;<NL>
 ```
 
 This yields:
 ```
 helloworld<NL>
 ```
+ 
+whitespace is removed before the '<%-', whitespace and a single newline is removed after the '%>'
+ 
+ 
+#### block statements
 
-
-#### Using +
-
-```
-hello••••<%+ 'world' %>••••<NL>
-```
-
-This yields:
-```
-hello•world••••<NL>
-```
-
-This stops on the first non whitespace character or newline. The newline will be preserved.
-
-```
-hello••••<%+ 'world' +%>••••<NL>
-```
-
-This yields:
-```
-hello•world•
-```
-
-#### Using *
-
-```
-hello••••<%+ 'world' *%>••••<NL>
-```
-
-This yields:
-```
-hello•world
-```
-
-This stops on the first non whitespace character or including newline. The newline will be removed.
-
-#### Using around scripts with content
-
-```
-••••<%- if cond *%>••••<NL>
-••••<% 'hello' %>••••<NL>
-••••<%- end *%>••••<NL>
-```
-
-If cond is true, it evaluates to:
-```
-••••hello••••<NL>
-```
-
-Note that content ••••&lt;NL&gt; after *%> is part of the content rendered with the condition.
-
-Similar for •••• before the <%- end *%>.
-
-This is important to appreciate especially when dealing with looping.
-
-
-#### General notes
-
-- If you want to remove a script block from the output, use <%- *%>
-- Use the template engine demo to play to see how it behaves.
+This works with block statements as well
 
 e.g.
 ```
-••••<%- if cond *%>••••<NL>
-••••<% 'hello' %>••••<NL>
-••••<% end %>••••<NL>
+&bull;&bull;&bull;&bull;<%- if cond %>&bull;&bull;&bull;&bull;<NL>
+&bull;&bull;&bull;&bull;<% 'hello' %>&bull;&bull;&bull;&bull;<NL>
+&bull;&bull;&bull;&bull;<% end %&bull;&bull;&bull;&bull;<NL>
 ```
 
-The above example illustrates what happens in a script block. Rather than having to apply the hinting at each level, the hinting will
-be applied to all lines within the block.
-
-Thus the above would result in the following if the cond is true:
+This results in:
 ```
-hello
+&bull;&bull;&bull;&bull;hello&bull;&bull;&bull;&bull;<NL>
 ```
