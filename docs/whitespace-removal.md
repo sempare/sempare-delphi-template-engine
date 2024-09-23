@@ -1,6 +1,6 @@
 # ![](../images/sempare-logo-45px.png) Sempare Template Engine
 
-Copyright (c) 2019-202 [Sempare Limited](http://www.sempare.ltd)
+Copyright (c) 2019-2024 [Sempare Limited](http://www.sempare.ltd)
 
 ## Whitespace Removal
 
@@ -21,12 +21,14 @@ Scripts start with <% and close with %>. These tags may have additional hints to
 #### Using -
 
 ```
-hello&bull;&bull;&bull;&bull;<%- 'world' %>&bull;&bull;&bull;&bull;&bull;<NL>
+hello    <%- 'world' %>    <NL>
+<NL>
 ```
 
 This yields:
 ```
-helloworld<NL>
+helloworld
+<NL>
 ```
  
 whitespace is removed before the '<%-', whitespace and a single newline is removed after the '%>'
@@ -38,12 +40,12 @@ This works with block statements as well
 
 e.g.
 ```
-&bull;&bull;&bull;&bull;<%- if cond %>&bull;&bull;&bull;&bull;<NL>
-&bull;&bull;&bull;&bull;<% 'hello' %>&bull;&bull;&bull;&bull;<NL>
-&bull;&bull;&bull;&bull;<% end %&bull;&bull;&bull;&bull;<NL>
+    <%- if cond %>    <NL>
+    <% 'hello' %><NL>
+    <% end %><NL>
 ```
 
 This results in:
 ```
-&bull;&bull;&bull;&bull;hello&bull;&bull;&bull;&bull;<NL>
+    hello<NL>
 ```
