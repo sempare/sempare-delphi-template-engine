@@ -227,7 +227,7 @@ The dual-licensing scheme allows you to use and test the library under the appro
 A commercial licence grants you the right to use Sempare Template Engine in your own applications, royalty free, and without any requirement to disclose your source code nor any modifications to
 Sempare Template Engine or to any other party. A commercial license helps to ensure the project is maintained with continuous integration, patches, etc.
 
-A support license of $70 per developer is appreciated.
+A support fee of $70 per developer is appreciated.
 
 The following payment links allow you to quickly subscribe. Please note that the initial license and support links are seperate.
 - [Initial License Fee](https://buy.stripe.com/aEU7t61N88pffQIdQQ)
