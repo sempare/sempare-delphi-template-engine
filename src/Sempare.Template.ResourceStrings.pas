@@ -16,11 +16,11 @@
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
- * Licensed under the GPL Version 3.0 or the Sempare Commercial License                             *
+ * Licensed under the Apache Version 2.0 or the Sempare Commercial License                          *
  * You may not use this file except in compliance with one of these Licenses.                       *
  * You may obtain a copy of the Licenses at                                                         *
  *                                                                                                  *
- * https://www.gnu.org/licenses/gpl-3.0.en.html                                                     *
+ * https://www.apache.org/licenses/LICENSE-2.0                                                      *
  * https://github.com/sempare/sempare-delphi-template-engine/blob/master/docs/commercial.license.md *
  *                                                                                                  *
  * Unless required by applicable law or agreed to in writing, software                              *
@@ -65,6 +65,7 @@ resourcestring
   SEndNotExpected = 'End not expected';
   SUnexpectedToken = 'UnexpectedToken';
   SFunctionNotRegisteredInContext = 'Function %s not registered in context.';
+  SMethodNotRegisteredOnObject = 'Method %s.%s does not exist.';
   SParsingErrorExpecting = 'Parsing error. Expecting: %s';
   SStringOrNumericTypesExpected = 'String or numeric types expected';
   SBinOpNotSupported = 'Binop not supported';

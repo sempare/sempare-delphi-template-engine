@@ -12,9 +12,7 @@ If you have obtained a site license, the license applies to all users in your or
 
 The Sempare Template Engine may NOT be included or distributed as part of another commercial library or framework without approval / commercial review.
 
-A commercial licence is licensed per developer developing applications that use Sempare Template Engine for Delphi. 
-The initial license fee is $70 per developer and includes first year of support. For support thereafter, at your discretion, 
-a support fee of $30 per developer per year would be appreciated. The initial site licensing fee is $1,500 and the annual site support licensing fee is $500.
+The supports fee of $70 per developer is appreciated.
 
 Please send an e-mail to info@sempare.ltd to request an invoice which will contain the bank details.
 

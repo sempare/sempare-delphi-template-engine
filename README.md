@@ -1,6 +1,5 @@
 ![delphi compatibility](https://img.shields.io/badge/delphi%20compatability-XE%204%20or%20newer-brightgreen)
 ![platform compatibility](https://img.shields.io/badge/platform-Android32%20%7C%20Android64%20%7C%20Linux64%20%7C%20macOS64%20%7C%20Win32%20%7C%20Win64-lightgrey)
-![license](https://img.shields.io/github/license/sempare/sempare-delphi-template-engine) 
 
 # ![](./images/sempare-logo-45px.png) Sempare Template Engine
 
@@ -8,9 +7,60 @@ Copyright (c) 2019-2024 [Sempare Limited](http://www.sempare.ltd)
 
 Contact: <info@sempare.ltd>
 
-License: [GPL v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html) or [Sempare Limited Commercial License](./docs/commercial.license.md)
+License: [Apache v2.0](https://www.apache.org/licenses/LICENSE-2.0) or [Sempare Limited Commercial License](./docs/commercial.license.md)
 
 Open Source: https://github.com/sempare/sempare-delphi-template-engine
+
+*Questionaire*: https://docs.google.com/forms/d/e/1FAIpQLScioIiDxvsWK01fMFqYr9aJ6KhCGeiw4UaU_esGuztEE7vYwA/viewform
+
+<a name="Introduction"><h2>Introduction</h3></a>
+
+Template engines are used often in technology where text needs to be customised by substituting variables with values from a data source. Examples where this may take place:
+- web sites using template engines (for server side scripting)
+- code generation
+- mail merge
+- notification messages
+
+The Sempare Template Engine is a small templating (scripting) engine for [Delphi](https://www.embarcadero.com/products/delphi) (Object Pascal) that allows for templates to be created easily and efficiently by providing a simple and easy to use API.
+
+Example usage:
+```
+program Example;
+uses
+    Sempare.Template;
+type
+    TInformation = record
+        name: string;
+        favourite_sport : string;
+        count : integer;
+    end;
+begin
+    var tpl := Template.Parse(
+       'My name is <% name %>.'#13#10 +
+       'My favourite sport is <% favourite_sport %>.'#13#10 +
+       'Counting... <% for i := 1 to count %><% i %><% betweenitems %>, <% end %>' +
+       'Counting... <% for i := 1 to count ; print(i) ; betweenitems ; print(', '); onbegin; print('[ '); onend; print('] '); end %>'
+    );
+    var info : TInformation;
+    info.name := 'conrad';
+    info.favourite_sport := 'ultimate';
+    info.count := 3;
+    writeln(Template.Eval(tpl, info));
+end.
+```
+
+The project allows for almost any type to be dereferenced within the template script.
+
+In the example above, you can see that the '<%' start and '%>' end the scripting statement respectively. Within a scripting statement, you can reference variables, assign variables, use conditions, for and while loops, and include other templates.
+
+**NOTE** In examples in this documentation I may use the latest Delphi syntax, e.g. inline variable declarations. This is not backward compatible as they were introduced in Delphi 10.2 and are used to shorten the code/examples being illustrated in the documentation. The codebase will attempt to be as backward compatible as possible.
+
+<a name="CallToAction"><h2>Call to action</h3></a>
+
+Please 'star' the project on github.
+
+![](./images/sempare-template-engine-start-cta.png)
+
 
 ## Contents
 - [Introduction](#Introduction)
@@ -43,56 +93,6 @@ Open Source: https://github.com/sempare/sempare-delphi-template-engine
 - [Restrictions/Limitations/Known Bugs](./docs/restrictions.md)
 - [License](#License)
 
-<a name="Introduction"><h2>Introduction</h3></a>
-
-Template engines are used often in technology where text needs to be customised by substituting variables with values from a data source. Examples where this may take place:
-- web sites using template engines (for server side scripting)
-- code generation
-- mail merge 
-- notification messages
-
-Please review the [License](#License) section below before including the Sempare Template Engine in commercial products.
-
-The Sempare Template Engine is a small templating engine for [Delphi](https://www.embarcadero.com/products/delphi) (Object Pascal) that allows for templates to be created easily and efficiently by providing a simple and easy to use API.
-
-Example usage:
-```
-program Example;
-uses
-    Sempare.Template;
-type
-    TInformation = record
-        name: string;
-        favourite_sport : string;
-        count : integer;
-    end;
-begin
-    var tpl := Template.Parse(
-       'My name is <% name %>.'#13#10 + 
-       'My favourite sport is <% favourite_sport %>.'#13#10 + 
-       'Counting... <% for i := 1 to count %><% i %><% betweenitems %>, <% end %>' +
-       'Counting... <% for i := 1 to count ; print(i) ; betweenitems ; print(', '); onbegin; print('[ '); onend; print('] '); end %>'
-    );
-    var info : TInformation;
-    info.name := 'conrad';
-    info.favourite_sport := 'ultimate';
-    info.count := 3;
-    writeln(Template.Eval(tpl, info));	
-end.
-```
-
-The project uses Run-time Type Information (RTTI) to allow for almost any type to be dereferenced within the template script.
-
-In the example above, you can see that the '<%' start and '%>' end the scripting statement respectively. Within a scripting statement, you can reference variables, assign variables, use conditions, for and while loops, and include other templates.
-
-**NOTE** In examples in this documentation I may use the latest Delphi syntax, e.g. inline variable declarations. This is not backward compatible as they were introduced in Delphi 10.2 and are used to shorten the code/examples being illustrated in the documentation. The codebase will attempt to be as backward compatible as possible.
-
-<a name="CallToAction"><h2>Call to action</h3></a>
-
-Please 'star' the project on github.
-
-![](./images/sempare-template-engine-start-cta.png)
-
 <a name="Quickstart"><h2>Quickstart</h3></a>
 
 There are a few ways to get started quickly.
@@ -117,7 +117,7 @@ There are a few ways to get started quickly.
   - simple expression evaluation (logical, numerical and string)
   - variable definition
   - functions and methods calls
-  - dereference records, custom managed records, classes, arrays, JSON objects, TDataSet descendants and dynamic arrays
+  - dereference records, custom managed records, classes, interfaces, arrays, JSON objects, TDataSet descendants and dynamic arrays
   - ternary operator
 - safety
   - max run-time protection
@@ -158,7 +158,6 @@ There should be no platform specific restrictions.
 Have a look at Sempare.Template.Compiler.inc. The following defines can be defined if appropriate:
 
 - SEMPARE_TEMPLATE_NO_INDY - if Indy is not present. This is used to access an html encoder if TNetEncoding is not available.
-- SEMPARE_TEMPLATE_CONFIRM_LICENSE - if present, you confirm you understand the conditions.
 
 <a name="Installation"><h2>Installation</h3></a>
 
@@ -220,16 +219,15 @@ The deployment process is based off the dev branch. Once we decide to push a new
 
 <a name="License"><h2>License</h3></a>
 
-The Sempare Template Engine is dual-licensed. You may choose to use it under the restrictions of the [GPL v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html) at
+The Sempare Template Engine is dual-licensed. You may choose to use it under the restrictions of the [Apache v2.0](https://www.apache.org/licenses/LICENSE-2.0) at
 no cost to you, or you may license it for use under the [Sempare Limited Commercial License](./docs/commercial.license.md)
 
-The dual-licensing scheme allows you to use and test the library with no restrictions, but subject to the terms of the GPL. A nominal fee is requested to support the maintenance of the library if the product is to be used in commercial products. This support fee binds you to the commercial license, removing any of the GPL restrictions, and allowing you to use the library in your products as you will. The Sempare Template Engine may NOT be included or distributed as part of another commercial library or framework without approval / commercial review.
+The dual-licensing scheme allows you to use and test the library under the appropriate license.
 
 A commercial licence grants you the right to use Sempare Template Engine in your own applications, royalty free, and without any requirement to disclose your source code nor any modifications to
-Sempare Template Engine or to any other party. A commercial license lasts into perpetuity, and entitles you to all future updates.
+Sempare Template Engine or to any other party. A commercial license helps to ensure the project is maintained with continuous integration, patches, etc.
 
-A commercial licence is provided per developer developing applications that uses the Sempare Template Engine. The initial license fee is $70 per developer.
-For support thereafter, at your discretion, a support fee of $30 per developer per year would be appreciated.
+A support fee of $70 per developer is appreciated.
 
 The following payment links allow you to quickly subscribe. Please note that the initial license and support links are seperate.
 - [Initial License Fee](https://buy.stripe.com/aEU7t61N88pffQIdQQ)

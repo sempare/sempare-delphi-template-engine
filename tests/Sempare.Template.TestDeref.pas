@@ -16,11 +16,11 @@
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
- * Licensed under the GPL Version 3.0 or the Sempare Commercial License                             *
+ * Licensed under the Apache Version 2.0 or the Sempare Commercial License                          *
  * You may not use this file except in compliance with one of these Licenses.                       *
  * You may obtain a copy of the Licenses at                                                         *
  *                                                                                                  *
- * https://www.gnu.org/licenses/gpl-3.0.en.html                                                     *
+ * https://www.apache.org/licenses/LICENSE-2.0                                                      *
  * https://github.com/sempare/sempare-delphi-template-engine/blob/master/docs/commercial.license.md *
  *                                                                                                  *
  * Unless required by applicable law or agreed to in writing, software                              *
@@ -54,6 +54,12 @@ type
     procedure TestDerefError;
     [Test]
     procedure TestDerefNull;
+
+    [Test]
+    procedure TestIntfProperty;
+
+    [Test]
+    procedure TestIntfMethod;
   end;
 
   TNullable = class
@@ -62,12 +68,29 @@ type
     Other: TNullable;
   end;
 
+  ITestData = interface
+    ['{7F66CDA3-3C98-41AF-A762-8B48FEBF8700}']
+    function GetData: string;
+    property Data: string read GetData;
+  end;
+
+  TTestData = class(TInterfacedObject, ITestData)
+    function GetData: string;
+  end;
+
 implementation
 
 uses
+  System.Rtti,
   System.SysUtils,
   Sempare.Template.Context,
   Sempare.Template;
+
+{ TTestData }
+function TTestData.GetData: string;
+begin
+  exit('hello');
+end;
 
 { TTestTemplateDeref }
 
@@ -127,6 +150,28 @@ begin
   rec.a.b.abcghi := '456';
 
   Test(rec, '''before  123 after ''', '''before <% suffix := ''def'' %> <% a.b[''abc'' + suffix] %> after ''');
+end;
+
+procedure TTestTemplateDeref.TestIntfMethod;
+var
+  LIntf: ITestData;
+begin
+  LIntf := TTestData.Create;
+
+  Assert.AreEqual('hello', Template.Eval('<% _.GetData() %>', TValue.From<ITestData>(LIntf)));
+
+end;
+
+procedure TTestTemplateDeref.TestIntfProperty;
+var
+  LIntf: ITestData;
+begin
+  LIntf := TTestData.Create;
+  Assert.WillRaise(
+    procedure
+    begin
+      Assert.AreEqual('hello', Template.Eval('<% _.data %>', TValue.From<ITestData>(LIntf)));
+    end);
 end;
 
 procedure TTestTemplateDeref.TestSimpleDrefef;

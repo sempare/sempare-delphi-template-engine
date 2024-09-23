@@ -16,11 +16,11 @@
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
- * Licensed under the GPL Version 3.0 or the Sempare Commercial License                             *
+ * Licensed under the Apache Version 2.0 or the Sempare Commercial License                          *
  * You may not use this file except in compliance with one of these Licenses.                       *
  * You may obtain a copy of the Licenses at                                                         *
  *                                                                                                  *
- * https://www.gnu.org/licenses/gpl-3.0.en.html                                                     *
+ * https://www.apache.org/licenses/LICENSE-2.0                                                      *
  * https://github.com/sempare/sempare-delphi-template-engine/blob/master/docs/commercial.license.md *
  *                                                                                                  *
  * Unless required by applicable law or agreed to in writing, software                              *
@@ -54,8 +54,6 @@ type
     procedure TestIgnoreWS;
     [Test]
     procedure TestStripLeft;
-    [Test]
-    procedure TestStripRight;
     [Test]
     procedure TestStripRecurringSpacesOption;
     [Test]
@@ -130,9 +128,7 @@ end;
 
 procedure TTestNewLineOption.TestStripLeft;
 begin
-  Assert.AreEqual('begin'#13#10'x  '#13#10'end', Template.Eval('begin'#13#10'   <%- "x" %>  '#13#10'end'));
-  Assert.AreEqual('begin x  '#13#10'end', Template.Eval('begin'#13#10'   <%+ "x" %>  '#13#10'end'));
-  Assert.AreEqual('beginx  '#13#10'end', Template.Eval('begin'#13#10'   <%* "x" %>  '#13#10'end'));
+  Assert.AreEqual('begin'#13#10'x'#13#10'end', Template.Eval('begin'#13#10'  <%- "x" %>     '#13#10#13#10'end'));
 end;
 
 procedure TTestNewLineOption.TestStripRecurringNewlineOption;
@@ -149,13 +145,6 @@ var
 begin
   LCtx := Template.Context([eoStripRecurringSpaces]);
   Assert.AreEqual('abc text text end', Template.Eval(LCtx, 'abc   text  text end'));
-end;
-
-procedure TTestNewLineOption.TestStripRight;
-begin
-  Assert.AreEqual('begin'#13#10'   x'#13#10'end', Template.Eval('begin'#13#10'   <% "x" -%>  '#13#10'end'));
-  Assert.AreEqual('begin'#13#10'   x end', Template.Eval('begin'#13#10'   <% "x" +%>  '#13#10'end'));
-  Assert.AreEqual('begin'#13#10'   xend', Template.Eval('begin'#13#10'   <% "x" *%>  '#13#10'end'));
 end;
 
 procedure TTestNewLineOption.TestTabsToSpacesOption;

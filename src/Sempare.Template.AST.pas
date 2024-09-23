@@ -16,11 +16,11 @@
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
- * Licensed under the GPL Version 3.0 or the Sempare Commercial License                             *
+ * Licensed under the Apache Version 2.0 or the Sempare Commercial License                          *
  * You may not use this file except in compliance with one of these Licenses.                       *
  * You may obtain a copy of the Licenses at                                                         *
  *                                                                                                  *
- * https://www.gnu.org/licenses/gpl-3.0.en.html                                                     *
+ * https://www.apache.org/licenses/LICENSE-2.0                                                      *
  * https://github.com/sempare/sempare-delphi-template-engine/blob/master/docs/commercial.license.md *
  *                                                                                                  *
  * Unless required by applicable law or agreed to in writing, software                              *
@@ -56,8 +56,7 @@ type
 
   TStripAction = ( //
     saWhitespace, //
-    saNL, //
-    saKeepOneSpace //
+    saNL //
     );
 
   TStripActionSet = set of TStripAction;
@@ -150,10 +149,8 @@ type
     vsBlock, //
 
     vsNewLine, //
-    vsWhiteSpace, //
+    vsWhiteSpace //
 
-    vsSingleton, //
-    vsValidate //
     );
 
   TTemplateSymbolSet = set of TTemplateSymbol;
@@ -201,9 +198,13 @@ type
     ['{8C539211-ED84-4963-B894-C569C2F7B2FE}']
   end;
 
+  TParserOption = (poAllowEnd, poAllowElse, poAllowElIf, poHasElse, poInLoop, poStripNL, poStripWS, poStripRecurringNL);
+  TParserOptions = set of TParserOption;
+
   IStmt = interface(ITemplateVisitorHost)
     ['{6D37028E-A0C0-41F1-8A59-EDC0C9ADD9C7}']
     function Flatten: TArray<IStmt>;
+    procedure OptimiseTemplate(const AOptions: TParserOptions; const ANewLine: string);
     function GetHasEnd: boolean;
     property HasEnd: boolean read GetHasEnd;
   end;
@@ -214,22 +215,19 @@ type
     property Stmt: IStmt read GetStmt;
   end;
 
-  TParserOption = (poAllowEnd, poAllowElse, poAllowElIf, poHasElse, poInLoop, poStripNL, poStripWS);
-  TParserOptions = set of TParserOption;
-
   ITemplate = interface(ITemplateVisitorHost)
     ['{93AAB971-5B4B-4959-93F2-6C7DAE15C91B}']
     function GetItem(const AOffset: integer): IStmt;
     function GetCount: integer;
     function GetLastItem: IStmt;
     procedure FlattenTemplate;
-    procedure OptimiseTemplate(const AOptions: TParserOptions);
+    procedure OptimiseTemplate(const AOptions: TParserOptions; const ANewLine: string);
     property Items[const AOffset: integer]: IStmt read GetItem;
     property Count: integer read GetCount;
     property LastItem: IStmt read GetLastItem;
   end;
 
-  TAddLocation = (alLast, alBeforeNL, alAfterNL);
+  TAddLocation = (alLast, alFront);
 
   ITemplateAdd = interface(ITemplate)
     ['{64465D68-0E9D-479F-9EF3-A30E75967809}']
@@ -260,7 +258,7 @@ type
     ['{FB4CC3AB-BFEC-4189-B555-153DDA490D15}']
   end;
 
-  TStripDirection = (sdEnd, sdLeft, sdRight, sdBeforeNewLine, sdAfterNewLine);
+  TStripDirection = (sdLeft, sdRight);
 
   IStripStmt = interface(IStmt)
     ['{3313745B-D635-4453-9808-660DC462E15C}']
@@ -366,6 +364,16 @@ type
     function GetExpr: IExpr;
     function GetContainer: ITemplate;
     property Expr: IExpr read GetExpr;
+    property Container: ITemplate read GetContainer;
+  end;
+
+  IIgnoreNLStmt = interface(IStmt)
+    function GetContainer: ITemplate;
+    property Container: ITemplate read GetContainer;
+  end;
+
+  IIgnoreWSStmt = interface(IStmt)
+    function GetContainer: ITemplate;
     property Container: ITemplate read GetContainer;
   end;
 
@@ -580,7 +588,10 @@ type
     procedure Visit(const AStmt: IBlockStmt); overload;
     procedure Visit(const AStmt: IExtendsStmt); overload;
     procedure Visit(const AStmt: ICompositeStmt); overload;
+    procedure Visit(const AStmt: INoopStmt); overload;
     procedure Visit(const AStmt: IStripStmt); overload;
+    procedure Visit(const AStmt: IIgnoreNLStmt); overload;
+    procedure Visit(const AStmt: IIgnoreWSStmt); overload;
   end;
 
   IEvaluationTemplateVisitor = interface(ITemplateVisitor)
@@ -614,6 +625,7 @@ type
   protected
     function Flatten: TArray<IStmt>; virtual;
     function GetHasEnd: boolean; virtual;
+    procedure OptimiseTemplate(const AOptions: TParserOptions; const ANewLine: string); virtual;
   public
     constructor Create(const APosition: IPosition);
   end;
@@ -632,12 +644,11 @@ type
 
 const
   StripDirectionStr: array [TStripDirection] of string = ( //
-    'sdEnd', 'sdLeft', 'sdRight', 'sdBeforeNewLine', 'sdAfterNewLine');
+    'sdLeft', 'sdRight' //
+    );
 
   StripActionStr: array [TStripAction] of string = ( //
-    'saWhitespace', //
-    'saNL', //
-    'saKeepOneSpace' //
+    'saWhitespace', 'saNL' //
     );
 
 type
@@ -742,6 +753,11 @@ end;
 function TAbstractStmt.GetHasEnd: boolean;
 begin
   exit(false);
+end;
+
+procedure TAbstractStmt.OptimiseTemplate(const AOptions: TParserOptions; const ANewLine: string);
+begin
+
 end;
 
 end.

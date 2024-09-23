@@ -16,11 +16,11 @@
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
- * Licensed under the GPL Version 3.0 or the Sempare Commercial License                             *
+ * Licensed under the Apache Version 2.0 or the Sempare Commercial License                          *
  * You may not use this file except in compliance with one of these Licenses.                       *
  * You may obtain a copy of the Licenses at                                                         *
  *                                                                                                  *
- * https://www.gnu.org/licenses/gpl-3.0.en.html                                                     *
+ * https://www.apache.org/licenses/LICENSE-2.0                                                      *
  * https://github.com/sempare/sempare-delphi-template-engine/blob/master/docs/commercial.license.md *
  *                                                                                                  *
  * Unless required by applicable law or agreed to in writing, software                              *
@@ -440,29 +440,7 @@ var
   LTemplateVisitor: IEvaluationTemplateVisitor;
   LResolveContext: TTemplateValue;
   LValue: TTemplateValue;
-{$IFNDEF SEMPARE_TEMPLATE_CONFIRM_LICENSE}
-  LConfirmLicense: TStringStream;
-{$ENDIF}
 begin
-{$IFDEF RELEASE}
-  {$IFNDEF SEMPARE_TEMPLATE_CONFIRM_LICENSE }
-    {$MESSAGE FATAL 'The SEMPARE_TEMPLATE_CONFIRM_LICENSE define must be set in RELEASE mode.'}
-  {$ENDIF}
-{$ENDIF}
-{$IFNDEF SEMPARE_TEMPLATE_CONFIRM_LICENSE}
-  LConfirmLicense := TStringStream.Create('Thank you for trying the Sempare Template Engine.'#13#10#13#10 + //
-    'To supress this message, set the conditional define SEMPARE_TEMPLATE_CONFIRM_LICENSE in the project options.'#13#10#13#10#13#10 + //
-    'Please remember the library is dual licensed. This is open source - Free as in speech, not Free as in beer. You are free to use it under conditions of the GPL or you can support the project with a commercial license to keep it alive as per:'#13#10#13#10#13#10 + //
-    'https://github.com/sempare/sempare-delphi-template-engine/blob/main/docs/commercial.license.md'#13#10#13#10#13#10 + //
-    'NOTE: Downloading the Sempare Template Engine through GetIt does not mean you are exempt of licensing for commercial use.'#13#10#13#10#13#10 //
-    );
-  try
-    LConfirmLicense.Position := 0;
-    AStream.CopyFrom(LConfirmLicense);
-  finally
-    LConfirmLicense.Free;
-  end;
-{$ENDIF}
   LResolveContext := AResolveContext;
   if LResolveContext.IsType<TTemplateValue> then
     LResolveContext := LResolveContext.AsType<TTemplateValue>;

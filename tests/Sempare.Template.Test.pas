@@ -16,11 +16,11 @@
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
- * Licensed under the GPL Version 3.0 or the Sempare Commercial License                             *
+ * Licensed under the Apache Version 2.0 or the Sempare Commercial License                          *
  * You may not use this file except in compliance with one of these Licenses.                       *
  * You may obtain a copy of the Licenses at                                                         *
  *                                                                                                  *
- * https://www.gnu.org/licenses/gpl-3.0.en.html                                                     *
+ * https://www.apache.org/licenses/LICENSE-2.0                                                      *
  * https://github.com/sempare/sempare-delphi-template-engine/blob/master/docs/commercial.license.md *
  *                                                                                                  *
  * Unless required by applicable law or agreed to in writing, software                              *
@@ -130,6 +130,9 @@ type
 
     [Test]
     procedure TestVariableResolver;
+
+    [Test]
+    procedure TestErrorClosingScript;
   end;
 
 type
@@ -239,53 +242,63 @@ procedure TTestTemplate.TestIgnoreNL;
 var
   LStringBuilder: TStringBuilder;
   LString, LResult: string;
-  LPreserveGlobalNL: IPreserveValue<string>;
+  LPreserveGlobalNL: string;
 begin
-  LPreserveGlobalNL := Preserve.Value<string>(GNewLine, #10);
-  LStringBuilder := TStringBuilder.Create;
+  LPreserveGlobalNL := GNewLine;
+  GNewLine := #10;
   try
-    LStringBuilder.append('hello ').append(#10);
-    LStringBuilder.append('world').append(#10);
-    LString := LStringBuilder.ToString;
+    LStringBuilder := TStringBuilder.Create;
+    try
+      LStringBuilder.append('hello ').append(#10);
+      LStringBuilder.append('world').append(#10);
+      LString := LStringBuilder.ToString;
+    finally
+      LStringBuilder.free;
+    end;
+
+    LResult := Template.Eval(LString);
+    Assert.AreEqual(LString, LResult);
+
+    LString := '<% ignorenl %>' + LString + '<%end%>';
+    LResult := Template.Eval(LString);
+    Assert.AreEqual('hello world', LResult);
   finally
-    LStringBuilder.free;
+    GNewLine := LPreserveGlobalNL;
   end;
-
-  LResult := Template.Eval(LString);
-  Assert.AreEqual(LString, LResult);
-
-  LString := '<% ignorenl %>' + LString + '<%end%>';
-  LResult := Template.Eval(LString);
-  Assert.AreEqual('hello world', LResult);
 end;
 
 procedure TTestTemplate.TestIgnoreNL2;
 var
   LStringBuilder: TStringBuilder;
   LString, LResult: string;
-  LPreserveGlobalNL: IPreserveValue<string>;
+  LPreserveGlobalNL: string;
 begin
-  LPreserveGlobalNL := Preserve.Value<string>(GNewLine, #10);
-  LStringBuilder := TStringBuilder.Create;
+  LPreserveGlobalNL := GNewLine;
+  GNewLine := #10;
   try
-    LStringBuilder.append('<table>').append(#10);
-    LStringBuilder.append('<tr>').append(#10);
-    LStringBuilder.append('<td>col1</td>').append(#10);
-    LStringBuilder.append('<td>col2</td>').append(#10);
-    LStringBuilder.append('</tr>').append(#10);
-    LStringBuilder.append('</table>').append(#10);
-    LString := LStringBuilder.ToString;
+    LStringBuilder := TStringBuilder.Create;
+    try
+      LStringBuilder.append('<table>').append(#10);
+      LStringBuilder.append('<tr>').append(#10);
+      LStringBuilder.append('<td>col1</td>').append(#10);
+      LStringBuilder.append('<td>col2</td>').append(#10);
+      LStringBuilder.append('</tr>').append(#10);
+      LStringBuilder.append('</table>').append(#10);
+      LString := LStringBuilder.ToString;
+    finally
+      LStringBuilder.free;
+    end;
+
+    LResult := Template.Eval(LString);
+
+    Assert.AreEqual(LString, LResult);
+
+    LString := '<% ignorenl %>' + LString + '<%end%>';
+    LResult := Template.Eval(LString, []);
+    Assert.AreEqual('<table><tr><td>col1</td><td>col2</td></tr></table>', LResult);
   finally
-    LStringBuilder.free;
+    GNewLine := LPreserveGlobalNL;
   end;
-
-  LResult := Template.Eval(LString);
-
-  Assert.AreEqual(LString, LResult);
-
-  LString := '<% ignorenl %>' + LString + '<%end%>';
-  LResult := Template.Eval(LString, []);
-  Assert.AreEqual('<table><tr><td>col1</td><td>col2</td></tr></table>', LResult);
 end;
 
 procedure TTestTemplate.TestList;
@@ -713,11 +726,13 @@ begin
   ctx.DecimalSeparator := ',';
   ctx.ValueSeparator := ';';
   Assert.AreEqual('', Template.Eval(ctx, '<% a := ["a"; "b"] %>'));
-  Assert.WillRaise(
+  Assert.WillRaiseWithMessage(
     procedure
     begin // expecting ;
+
       Assert.AreEqual('', Template.Eval(ctx, '<% a := ["a", "b"] %>'));
-    end);
+
+    end, ETemplateEvaluationError, ' (Line 1, Column 14) Parsing error. Expecting: ;');
   ctx.DecimalSeparator := '.';
   ctx.ValueSeparator := ',';
   Assert.AreEqual('', Template.Eval(ctx, '<% a := ["a", "b"] %>'));
@@ -725,7 +740,7 @@ begin
     procedure
     begin // expecting ,
       Assert.AreEqual('', Template.Eval(ctx, '<% a := ["a"; "b"] %>'));
-    end);
+    end, ETemplateEvaluationError, ' (Line 1, Column 14) Parsing error. Expecting: ,');
 end;
 
 procedure TTestTemplate.TestDecimalEncodingErrorWithListsDefaultValueSeparator;
@@ -788,6 +803,15 @@ end;
 procedure TTestTemplate.TestEmpty;
 begin
   Assert.AreEqual('', Template.Eval(''));
+end;
+
+procedure TTestTemplate.TestErrorClosingScript;
+begin
+  Assert.WillRaiseWithMessage(
+    procedure
+    begin
+      Template.Parse('<% %');
+    end, ETemplateEvaluationError, ' (Line 1, Column 4) Parsing error. Expecting: %>');
 end;
 
 procedure TTestTemplate.TestException;
@@ -866,11 +890,13 @@ var
 begin
   LCtx := Template.Context();
   LCtx.Options := LCtx.Options + [eoRaiseErrorWhenVariableNotFound];
-  Assert.WillRaise(
+  Assert.WillRaiseWithMessage(
     procedure
     begin // expects  abc
+
       Assert.AreEqual('', Template.Eval(LCtx, '<% abc %>'));
-    end);
+
+    end, ETemplateEvaluationError, ' (Line 1, Column 4) Cannot find variable ''abc''');
 end;
 
 procedure TTestTemplate.TestVariableResolver;

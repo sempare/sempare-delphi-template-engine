@@ -16,11 +16,11 @@
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
- * Licensed under the GPL Version 3.0 or the Sempare Commercial License                             *
+ * Licensed under the Apache Version 2.0 or the Sempare Commercial License                          *
  * You may not use this file except in compliance with one of these Licenses.                       *
  * You may obtain a copy of the Licenses at                                                         *
  *                                                                                                  *
- * https://www.gnu.org/licenses/gpl-3.0.en.html                                                     *
+ * https://www.apache.org/licenses/LICENSE-2.0                                                      *
  * https://github.com/sempare/sempare-delphi-template-engine/blob/master/docs/commercial.license.md *
  *                                                                                                  *
  * Unless required by applicable law or agreed to in writing, software                              *
@@ -101,6 +101,9 @@ type
 
     [Test]
     procedure TestFunctionalInclude;
+
+    [Test]
+    procedure TestVariableAfterInclude;
 
   end;
 
@@ -240,6 +243,14 @@ begin
   LMember.Members[0].Name := 'Child';
 
   Assert.AreEqual('Parent'#13#10'Child', Template.Eval(LTpl, LMember));
+end;
+
+procedure TTestTemplateInclude.TestVariableAfterInclude;
+var
+  LResult: string;
+begin
+  LResult := Template.Eval('<% template "my_template" %><% _.var %><% end %><% var := 345 %><% my_template { "var"= 123 } %> <% var %>');
+  Assert.AreEqual('123 345', LResult);
 end;
 
 procedure TTestTemplateInclude.TestFunctionalInclude;

@@ -16,11 +16,11 @@
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
- * Licensed under the GPL Version 3.0 or the Sempare Commercial License                             *
+ * Licensed under the Apache Version 2.0 or the Sempare Commercial License                          *
  * You may not use this file except in compliance with one of these Licenses.                       *
  * You may obtain a copy of the Licenses at                                                         *
  *                                                                                                  *
- * https://www.gnu.org/licenses/gpl-3.0.en.html                                                     *
+ * https://www.apache.org/licenses/LICENSE-2.0                                                      *
  * https://github.com/sempare/sempare-delphi-template-engine/blob/master/docs/commercial.license.md *
  *                                                                                                  *
  * Unless required by applicable law or agreed to in writing, software                              *
@@ -91,6 +91,9 @@ type
 
     procedure Visit(const AStmt: IBlockStmt); overload; override;
     procedure Visit(const AStmt: IExtendsStmt); overload; override;
+
+    procedure Visit(const AStmt: IIgnoreNLStmt); overload; override;
+    procedure Visit(const AStmt: IIgnoreWSStmt); overload; override;
 
   end;
 
@@ -610,6 +613,28 @@ end;
 procedure TPrettyPrintTemplateVisitor.Visit(const AExpr: IMapExpr);
 begin
   write(AExpr.GetMap.ToJson);
+end;
+
+procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IIgnoreWSStmt);
+begin
+  tab();
+  writeln('<%% ignorews %%>');
+  delta(4);
+  AcceptVisitor(AStmt.Container, self);
+  delta(-4);
+  tab();
+  writeln('<%% end %%>');
+end;
+
+procedure TPrettyPrintTemplateVisitor.Visit(const AStmt: IIgnoreNLStmt);
+begin
+  tab();
+  writeln('<%% ignorenl %%>');
+  delta(4);
+  AcceptVisitor(AStmt.Container, self);
+  delta(-4);
+  tab();
+  writeln('<%% end %%>');
 end;
 
 initialization

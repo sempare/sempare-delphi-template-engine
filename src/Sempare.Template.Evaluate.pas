@@ -16,11 +16,11 @@
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
- * Licensed under the GPL Version 3.0 or the Sempare Commercial License                             *
+ * Licensed under the Apache Version 2.0 or the Sempare Commercial License                          *
  * You may not use this file except in compliance with one of these Licenses.                       *
  * You may obtain a copy of the Licenses at                                                         *
  *                                                                                                  *
- * https://www.gnu.org/licenses/gpl-3.0.en.html                                                     *
+ * https://www.apache.org/licenses/LICENSE-2.0                                                      *
  * https://github.com/sempare/sempare-delphi-template-engine/blob/master/docs/commercial.license.md *
  *                                                                                                  *
  * Unless required by applicable law or agreed to in writing, software                              *
@@ -46,7 +46,8 @@ uses
   Sempare.Template.StackFrame,
   Sempare.Template.Common,
   Sempare.Template.Context,
-  Sempare.Template.Visitor;
+  Sempare.Template.Visitor,
+  Sempare.Template.Util;
 
 type
   ETemplateEval = class(ETemplate);
@@ -60,7 +61,7 @@ type
     FStackFrames: TObjectStack<TStackFrame>;
     FEvalStack: TStack<TValue>;
     FStream: TStream;
-    FStreamWriter: TStreamWriter;
+    FStreamWriter: TTemplateStreamWriter;
     FLoopOptions: TLoopOptions;
     FContext: ITemplateContext;
     FEvaluationContext: ITemplateEvaluationContext;
@@ -68,6 +69,7 @@ type
     FLocalTemplates: TDictionary<string, ITemplate>;
     FResolveContext: TTemplateValue;
     FTemplate: ITemplate;
+
     function HasBreakOrContinue: boolean; inline;
     function EncodeVariable(const AValue: TValue): TValue;
     procedure CheckRunTime(const APosition: IPosition);
@@ -120,6 +122,8 @@ type
     procedure Visit(const AStmt: IStripStmt); overload; override;
     procedure Visit(const AStmt: IBlockStmt); overload; override;
     procedure Visit(const AStmt: IExtendsStmt); overload; override;
+    procedure Visit(const AStmt: IIgnoreNLStmt); overload; override;
+    procedure Visit(const AStmt: IIgnoreWSStmt); overload; override;
   end;
 
 implementation
@@ -129,8 +133,7 @@ uses
   System.TypInfo, // needed for XE6 and below to access the TTypeKind variables
   Sempare.Template.BlockResolver,
   Sempare.Template.ResourceStrings,
-  Sempare.Template.Rtti,
-  Sempare.Template.Util;
+  Sempare.Template.Rtti;
 
 const
   LOOP_IDX_NAME: string = '_loop_idx_';
@@ -198,18 +201,22 @@ var
   LDerefKey: TValue;
   LDerefObj: TValue;
   LDerefedValue: TValue;
-  LAllowRootDeref: IPreserveValue<boolean>;
+  LAllowRootDeref: boolean;
 begin
-  LAllowRootDeref := Preserve.Value<boolean>(FAllowRootDeref, true);
+  LAllowRootDeref := FAllowRootDeref;
+  FAllowRootDeref := true;
+  try
+    LDerefObj := EvalExpr(AExpr.variable);
 
-  LDerefObj := EvalExpr(AExpr.variable);
-
-  LAllowRootDeref.SetValue(AExpr.DerefType = dtArray);
-  LDerefKey := EvalExpr(AExpr.DerefExpr);
-  LDerefedValue := Deref(AExpr, LDerefObj, LDerefKey, eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext);
-  if LDerefedValue.IsType<TValue> then
-    LDerefedValue := LDerefedValue.AsType<TValue>();
-  FEvalStack.push(LDerefedValue);
+    FAllowRootDeref := AExpr.DerefType = dtArray;
+    LDerefKey := EvalExpr(AExpr.DerefExpr);
+    LDerefedValue := Deref(AExpr, LDerefObj, LDerefKey, eoRaiseErrorWhenVariableNotFound in FContext.Options, FContext);
+    if LDerefedValue.IsType<TValue> then
+      LDerefedValue := LDerefedValue.AsType<TValue>();
+    FEvalStack.push(LDerefedValue);
+  finally
+    FAllowRootDeref := LAllowRootDeref;
+  end;
 end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AExpr: IBinopExpr);
@@ -345,7 +352,7 @@ end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AStmt: IWhileStmt);
 var
-  LLoopOptions: IPreserveValue<TLoopOptions>;
+  LLoopOptions: TLoopOptions;
   LOffset: int64;
   LLimit: int64;
   i, LLoops: int64;
@@ -365,53 +372,58 @@ var
 begin
   if HasBreakOrContinue then
     exit;
-  LLoopOptions := Preserve.Value<TLoopOptions>(FLoopOptions, []);
-  FStackFrames.push(FStackFrames.peek.Clone);
-
-  LOffset := GetValue(AStmt.OffsetExpr);
-  LLimit := GetValue(AStmt.LimitExpr);
-
-  i := 0;
-  LLoops := 0;
-  LFirst := true;
+  LLoopOptions := FLoopOptions;
+  FLoopOptions := [];
   try
-    while ((LLimit = -1) or (LLoops < LLimit)) do
-    begin
-      if not EvalExprAsBoolean(AStmt.Condition) or (coBreak in FLoopOptions) then
-        break;
-      CheckRunTime(AStmt);
-      FStackFrames.peek[LOOP_IDX_NAME] := i;
-      if (LOffset = -1) or (i >= LOffset) then
+    FStackFrames.push(FStackFrames.peek.Clone);
+
+    LOffset := GetValue(AStmt.OffsetExpr);
+    LLimit := GetValue(AStmt.LimitExpr);
+
+    i := 0;
+    LLoops := 0;
+    LFirst := true;
+    try
+      while ((LLimit = -1) or (LLoops < LLimit)) do
       begin
-        if LFirst then
+        if not EvalExprAsBoolean(AStmt.Condition) or (coBreak in FLoopOptions) then
+          break;
+        CheckRunTime(AStmt);
+        FStackFrames.peek[LOOP_IDX_NAME] := i;
+        if (LOffset = -1) or (i >= LOffset) then
         begin
-          LFirst := false;
-          if AStmt.OnBeginContainer <> nil then
-            AcceptVisitor(AStmt.OnBeginContainer, self);
-        end
-        else
-        begin
-          if AStmt.BetweenItemsContainer <> nil then
-            AcceptVisitor(AStmt.BetweenItemsContainer, self);
+          if LFirst then
+          begin
+            LFirst := false;
+            if AStmt.OnBeginContainer <> nil then
+              AcceptVisitor(AStmt.OnBeginContainer, self);
+          end
+          else
+          begin
+            if AStmt.BetweenItemsContainer <> nil then
+              AcceptVisitor(AStmt.BetweenItemsContainer, self);
+          end;
+          exclude(FLoopOptions, coContinue);
+          AcceptVisitor(AStmt.Container, self);
+          inc(LLoops);
         end;
-        exclude(FLoopOptions, coContinue);
-        AcceptVisitor(AStmt.Container, self);
-        inc(LLoops);
+        inc(i);
       end;
-      inc(i);
+    finally
+      FStackFrames.pop;
+    end;
+    if LLoops = 0 then
+    begin
+      if AStmt.OnEmptyContainer <> nil then
+        AcceptVisitor(AStmt.OnEmptyContainer, self);
+    end
+    else
+    begin
+      if AStmt.OnEndContainer <> nil then
+        AcceptVisitor(AStmt.OnEndContainer, self);
     end;
   finally
-    FStackFrames.pop;
-  end;
-  if LLoops = 0 then
-  begin
-    if AStmt.OnEmptyContainer <> nil then
-      AcceptVisitor(AStmt.OnEmptyContainer, self);
-  end
-  else
-  begin
-    if AStmt.OnEndContainer <> nil then
-      AcceptVisitor(AStmt.OnEndContainer, self);
+    FLoopOptions := LLoopOptions;
   end;
 end;
 
@@ -437,7 +449,7 @@ end;
 
 procedure TEvaluationTemplateVisitor.Visit(const AStmt: IForInStmt);
 var
-  LLoopOptions: IPreserveValue<TLoopOptions>;
+  LLoopOptions: TLoopOptions;
   LVariableName: string;
   LLoopExpr: TValue;
   LLoopExprType: TRttiType;
@@ -523,7 +535,7 @@ var
       RaiseErrorRes(AStmt, @SValueIsNotEnumerable);
     LEnumObj := LEnumValue.AsObject;
     try
-      LLoopExprType := FContext.RttiContext.GetType(LEnumObj.ClassType);
+      LLoopExprType := FContext.RttiContext().GetType(LEnumObj.ClassType);
       LEnumMoveNextMethod := LLoopExprType.GetMethod('MoveNext');
       LEnumCurrentProperty := LLoopExprType.getProperty('Current');
       LRaiseIfMissing := eoRaiseErrorWhenVariableNotFound in FContext.Options;
@@ -646,53 +658,58 @@ var
 begin
   if HasBreakOrContinue then
     exit;
-  LLoopOptions := Preserve.Value<TLoopOptions>(FLoopOptions, []);
-  FStackFrames.push(FStackFrames.peek.Clone);
-  LVariableName := AStmt.variable;
-
-  LLoopExpr := EvalExpr(AStmt.Expr);
-  if LLoopExpr.IsType<TValue> then
-    LLoopExpr := LLoopExpr.AsType<TValue>();
-  LOffset := GetValue(AStmt.OffsetExpr);
-  LLimit := GetValue(AStmt.LimitExpr);
-
-  i := 0;
-  LLoops := 0;
-  LFirst := true;
+  LLoopOptions := FLoopOptions;
+  FLoopOptions := [];
   try
-    if not LLoopExpr.IsEmpty then
-    begin
-      LLoopExprType := FContext.RttiContext.GetType(LLoopExpr.TypeInfo);
+    FStackFrames.push(FStackFrames.peek.Clone);
+    LVariableName := AStmt.variable;
 
-      case LLoopExprType.TypeKind of
-        tkInterface:
-          VisitInterface;
-        tkRecord{$IFDEF SUPPORT_CUSTOM_MANAGED_RECORDS}, tkMRecord{$ENDIF}:
-          VisitRecord;
-        tkClass, tkClassRef:
-          VisitObject;
-        tkArray:
-          VisitArray;
-        tkDynArray:
-          VisitDynArray(AStmt.ForOp);
-        tkString, tkWString, tkLString, tkUString:
-          exit; // we return empty when there are issues, so lets ignore it
-      else
-        RaiseError(AStmt, SGetEnumeratorNotFoundOnObject);
+    LLoopExpr := EvalExpr(AStmt.Expr);
+    if LLoopExpr.IsType<TValue> then
+      LLoopExpr := LLoopExpr.AsType<TValue>();
+    LOffset := GetValue(AStmt.OffsetExpr);
+    LLimit := GetValue(AStmt.LimitExpr);
+
+    i := 0;
+    LLoops := 0;
+    LFirst := true;
+    try
+      if not LLoopExpr.IsEmpty then
+      begin
+        LLoopExprType := FContext.RttiContext().GetType(LLoopExpr.TypeInfo);
+
+        case LLoopExprType.TypeKind of
+          tkInterface:
+            VisitInterface;
+          tkRecord{$IFDEF SUPPORT_CUSTOM_MANAGED_RECORDS}, tkMRecord{$ENDIF}:
+            VisitRecord;
+          tkClass, tkClassRef:
+            VisitObject;
+          tkArray:
+            VisitArray;
+          tkDynArray:
+            VisitDynArray(AStmt.ForOp);
+          tkString, tkWString, tkLString, tkUString:
+            exit; // we return empty when there are issues, so lets ignore it
+        else
+          RaiseError(AStmt, SGetEnumeratorNotFoundOnObject);
+        end;
       end;
+    finally
+      FStackFrames.pop;
+    end;
+    if LLoops = 0 then
+    begin
+      if AStmt.OnEmptyContainer <> nil then
+        AcceptVisitor(AStmt.OnEmptyContainer, self);
+    end
+    else
+    begin
+      if AStmt.OnEndContainer <> nil then
+        AcceptVisitor(AStmt.OnEndContainer, self);
     end;
   finally
-    FStackFrames.pop;
-  end;
-  if LLoops = 0 then
-  begin
-    if AStmt.OnEmptyContainer <> nil then
-      AcceptVisitor(AStmt.OnEmptyContainer, self);
-  end
-  else
-  begin
-    if AStmt.OnEndContainer <> nil then
-      AcceptVisitor(AStmt.OnEndContainer, self);
+    FLoopOptions := LLoopOptions;
   end;
 end;
 
@@ -707,6 +724,7 @@ var
   LApply: ITemplateContextForScope;
 begin
   inherited Create();
+
   FTemplate := ATemplate;
   FResolveContext := AResolveContext;
   FAllowRootDeref := true;
@@ -723,7 +741,11 @@ begin
 
   FStream := AStream;
 
-  FStreamWriter := FContext.StreamWriterProvider(FStream, FContext);
+  FStreamWriter := TTemplateStreamWriter.Create(FContext.StreamWriterProvider(FStream, FContext));
+
+  if eoTrimLines in AContext.Options then
+    FStreamWriter.TrimLines := true;
+
   FEvalStack := TStack<TValue>.Create;
   FStackFrames := TObjectStack<TStackFrame>.Create;
   FStackFrames.push(AStackFrame);
@@ -811,7 +833,7 @@ procedure TEvaluationTemplateVisitor.Visit(const AStmt: IForRangeStmt);
 type
   TCompare = function(const ALow: integer; const AHigh: integer): boolean;
 var
-  LLoopOptions: IPreserveValue<TLoopOptions>;
+  LLoopOptions: TLoopOptions;
   LIdx: int64;
   LStartVal: int64;
   LEndVal: int64;
@@ -837,73 +859,78 @@ begin
   if HasBreakOrContinue then
     exit;
   LVariable := AStmt.variable;
-  LLoopOptions := Preserve.Value<TLoopOptions>(FLoopOptions, []);
-  LStartVal := EvalExprAsInt(AStmt.LowExpr);
-  LEndVal := EvalExprAsInt(AStmt.HighExpr);
-
-  LStep := GetValue(AStmt.StepExpr);
-  LFirst := true;
-  LDelta := 0;
-  LDirectionTestFunc := nil;
-  case AStmt.ForOp of
-    foTo:
-      begin
-        LDelta := 1;
-        LDirectionTestFunc := ForToCond;
-      end;
-    foDownto:
-      begin
-        LDelta := -1;
-        LDirectionTestFunc := ForDownToCond;
-      end
-  else
-    begin
-      RaiseErrorRes(AStmt, @STypeNotSupported);
-    end;
-  end;
-  if LStep <> -1 then
-  begin
-    LDelta := LDelta * abs(LStep);
-  end;
-  FStackFrames.push(FStackFrames.peek.Clone);
-  LIdx := LStartVal;
-  i := 0;
+  LLoopOptions := FLoopOptions;
+  FLoopOptions := [];
   try
-    while LDirectionTestFunc(LIdx, LEndVal) do
-    begin
-      FStackFrames.peek[LVariable] := LIdx;
-      FStackFrames.peek[LOOP_IDX_NAME] := i;
-      if coBreak in FLoopOptions then
-        break;
-      if LFirst then
+    LStartVal := EvalExprAsInt(AStmt.LowExpr);
+    LEndVal := EvalExprAsInt(AStmt.HighExpr);
+
+    LStep := GetValue(AStmt.StepExpr);
+    LFirst := true;
+    LDelta := 0;
+    LDirectionTestFunc := nil;
+    case AStmt.ForOp of
+      foTo:
+        begin
+          LDelta := 1;
+          LDirectionTestFunc := ForToCond;
+        end;
+      foDownto:
+        begin
+          LDelta := -1;
+          LDirectionTestFunc := ForDownToCond;
+        end
+    else
       begin
-        LFirst := false;
-        if AStmt.OnBeginContainer <> nil then
-          AcceptVisitor(AStmt.OnBeginContainer, self);
-      end
-      else
-      begin
-        if AStmt.BetweenItemsContainer <> nil then
-          AcceptVisitor(AStmt.BetweenItemsContainer, self);
+        RaiseErrorRes(AStmt, @STypeNotSupported);
       end;
-      exclude(FLoopOptions, coContinue);
-      CheckRunTime(AStmt);
-      AcceptVisitor(AStmt.Container, self);
-      inc(LIdx, LDelta);
-      inc(i);
+    end;
+    if LStep <> -1 then
+    begin
+      LDelta := LDelta * abs(LStep);
+    end;
+    FStackFrames.push(FStackFrames.peek.Clone);
+    LIdx := LStartVal;
+    i := 0;
+    try
+      while LDirectionTestFunc(LIdx, LEndVal) do
+      begin
+        FStackFrames.peek[LVariable] := LIdx;
+        FStackFrames.peek[LOOP_IDX_NAME] := i;
+        if coBreak in FLoopOptions then
+          break;
+        if LFirst then
+        begin
+          LFirst := false;
+          if AStmt.OnBeginContainer <> nil then
+            AcceptVisitor(AStmt.OnBeginContainer, self);
+        end
+        else
+        begin
+          if AStmt.BetweenItemsContainer <> nil then
+            AcceptVisitor(AStmt.BetweenItemsContainer, self);
+        end;
+        exclude(FLoopOptions, coContinue);
+        CheckRunTime(AStmt);
+        AcceptVisitor(AStmt.Container, self);
+        inc(LIdx, LDelta);
+        inc(i);
+      end;
+    finally
+      FStackFrames.pop;
+    end;
+    if i = 0 then
+    begin
+      if AStmt.OnEmptyContainer <> nil then
+        AcceptVisitor(AStmt.OnEmptyContainer, self);
+    end
+    else
+    begin
+      if AStmt.OnEndContainer <> nil then
+        AcceptVisitor(AStmt.OnEndContainer, self);
     end;
   finally
-    FStackFrames.pop;
-  end;
-  if i = 0 then
-  begin
-    if AStmt.OnEmptyContainer <> nil then
-      AcceptVisitor(AStmt.OnEmptyContainer, self);
-  end
-  else
-  begin
-    if AStmt.OnEndContainer <> nil then
-      AcceptVisitor(AStmt.OnEndContainer, self);
+    FLoopOptions := LLoopOptions;
   end;
 end;
 
@@ -1112,12 +1139,26 @@ var
   LObjType: TRttiType;
   LObject: TValue;
   LMethod: TRttiMethod;
+  LIntf: IInterface;
 begin
-  LObjType := FContext.RttiContext.GetType(AObject.TypeInfo);
-  LMethod := LObjType.GetMethod(AExpr.Method);
+  LObjType := FContext.RttiContext().GetType(AObject.TypeInfo);
   LObject := AObject;
-  if AObject.IsType<TValue> then
-    LObject := AObject.AsType<TValue>;
+  if LObject.Kind = tkInterface then
+  begin
+    LIntf := LObject.AsInterface;
+    LObject := TObject(LIntf);
+    LObjType := FContext.RttiContext.GetType(LObject.TypeInfo);
+  end
+  else
+  begin
+    if AObject.IsType<TValue> then
+      LObject := AObject.AsType<TValue>;
+  end;
+  LMethod := LObjType.GetMethod(AExpr.Method);
+  if LMethod = nil then
+  begin
+    RaiseErrorRes(AExpr, @SMethodNotRegisteredOnObject, [LObject.TypeInfo.Name, AExpr.Method]);
+  end;
   exit(DoInvoke(AExpr, LMethod, LObject, AArgs, AHasResult));
 end;
 
@@ -1155,6 +1196,8 @@ begin
       LResult := '';
     FEvalStack.push(LResult);
   except
+    on ETemplateEvaluationError do
+      raise;
     on e: exception do
       RaiseError(AExpr, AExpr.Method + ':' + e.Message);
   end;
@@ -1197,7 +1240,7 @@ var
 begin
   if HasBreakOrContinue then
     exit;
-  LInputType := FContext.RttiContext.GetType(FStackFrames.peek['_'].TypeInfo).Name.ToLower;
+  LInputType := FContext.RttiContext().GetType(FStackFrames.peek['_'].TypeInfo).Name.ToLower;
   LExprs := ExprListArgs(AStmt.exprlist);
   if length(LExprs) = 0 then
     exit;
@@ -1355,6 +1398,32 @@ begin
   end;
   LValue := TValue.From<IMapExpr>(LMapExpr);
   FEvalStack.push(LValue);
+end;
+
+procedure TEvaluationTemplateVisitor.Visit(const AStmt: IIgnoreWSStmt);
+var
+  LStripWS: boolean;
+begin
+  LStripWS := FStreamWriter.Stripws;
+  FStreamWriter.Stripws := true;
+  try
+    AcceptVisitor(AStmt.Container, self);
+  finally
+    FStreamWriter.Stripws := LStripWS;
+  end;
+end;
+
+procedure TEvaluationTemplateVisitor.Visit(const AStmt: IIgnoreNLStmt);
+var
+  LStripNL: boolean;
+begin
+  LStripNL := FStreamWriter.StripNL;
+  FStreamWriter.StripNL := true;
+  try
+    AcceptVisitor(AStmt.Container, self);
+  finally
+    FStreamWriter.StripNL := LStripNL;
+  end;
 end;
 
 end.

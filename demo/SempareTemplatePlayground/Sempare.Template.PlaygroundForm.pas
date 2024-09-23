@@ -16,11 +16,11 @@
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
- * Licensed under the GPL Version 3.0 or the Sempare Commercial License                             *
+ * Licensed under the Apache Version 2.0 or the Sempare Commercial License                          *
  * You may not use this file except in compliance with one of these Licenses.                       *
  * You may obtain a copy of the Licenses at                                                         *
  *                                                                                                  *
- * https://www.gnu.org/licenses/gpl-3.0.en.html                                                     *
+ * https://www.apache.org/licenses/LICENSE-2.0                                                      *
  * https://github.com/sempare/sempare-delphi-template-engine/blob/master/docs/commercial.license.md *
  *                                                                                                  *
  * Unless required by applicable law or agreed to in writing, software                              *
@@ -136,11 +136,13 @@ type
     procedure butExtractVarsClick(Sender: TObject);
   private
     { Private declarations }
+    FLastContent: string;
     FEncoding: TEncoding;
     FContext: ITemplateContext;
     FTemplate: ITemplate;
     FFilename: string;
-    Finit: boolean;
+    FInit: boolean;
+    FForce: boolean;
     procedure Process;
     procedure GridPropsToContext;
     procedure WriteTmpHtml;
@@ -248,21 +250,29 @@ end;
 procedure TFormTemplateEnginePlayground.cbConvertTabsToSpacesClick(Sender: TObject);
 begin
   SetOption(cbConvertTabsToSpaces.Checked, eoConvertTabsToSpaces);
+  FForce := true;
+  Eval;
 end;
 
 procedure TFormTemplateEnginePlayground.cbEvalEarlyClick(Sender: TObject);
 begin
   SetOption(cbEvalEarly.Checked, eoEvalEarly);
+  FForce := true;
+  Eval;
 end;
 
 procedure TFormTemplateEnginePlayground.cbEvalVarsEarlyClick(Sender: TObject);
 begin
   SetOption(cbEvalVarsEarly.Checked, eoEvalVarsEarly);
+  FForce := true;
+  Eval;
 end;
 
 procedure TFormTemplateEnginePlayground.cbFlattenTemplateClick(Sender: TObject);
 begin
   SetOption(cbFlattenTemplate.Checked, eoFlattenTemplate);
+  FForce := true;
+  Eval;
 end;
 
 function DefaultEncoder(const AValue: string): string;
@@ -276,6 +286,7 @@ begin
     FContext.UseHtmlVariableEncoder
   else
     FContext.VariableEncoder := DefaultEncoder;
+  FForce := true;
   Eval;
 end;
 
@@ -284,26 +295,36 @@ begin
   SetOption(cbOptimiseTemplate.Checked, eoOptimiseTemplate);
   if cbOptimiseTemplate.Checked then
     cbFlattenTemplate.Checked := true;
+  FForce := true;
+  Eval;
 end;
 
 procedure TFormTemplateEnginePlayground.cbRaiseErrorWhenVariableNotFoundClick(Sender: TObject);
 begin
   SetOption(cbRaiseErrorWhenVariableNotFound.Checked, eoRaiseErrorWhenVariableNotFound);
+  FForce := true;
+  Eval;
 end;
 
 procedure TFormTemplateEnginePlayground.cbStripRecurringNewlinesClick(Sender: TObject);
 begin
   SetOption(cbStripRecurringNewlines.Checked, eoStripRecurringNewlines);
+  FForce := true;
+  Eval;
 end;
 
 procedure TFormTemplateEnginePlayground.cbStripRecurringSpacesClick(Sender: TObject);
 begin
   SetOption(cbStripRecurringSpaces.Checked, eoStripRecurringSpaces);
+  FForce := true;
+  Eval;
 end;
 
 procedure TFormTemplateEnginePlayground.cbTrimLinesClick(Sender: TObject);
 begin
   SetOption(cbTrimLines.Checked, eoTrimLines);
+  FForce := true;
+  Eval;
 end;
 
 procedure TFormTemplateEnginePlayground.cbUseCustomScriptTagsClick(Sender: TObject);
@@ -320,12 +341,15 @@ begin
     FContext.NewLine := '<br>'#13#10
   else
     FContext.NewLine := #13#10;
+  FForce := true;
+  Eval;
 end;
 
 procedure TFormTemplateEnginePlayground.cmbCustomScriptTagsChange(Sender: TObject);
 begin
   cbUseCustomScriptTags.Checked := true;
   SetScriptTags(cmbCustomScriptTags.ItemIndex);
+  FForce := true;
   Eval;
 end;
 
@@ -336,7 +360,13 @@ begin
   try
     if FFilename <> '' then
       butSave.Enabled := true;
-    FTemplate := Template.Parse(FContext, memoTemplate.Lines.Text);
+
+    if FForce or (FLastContent <> memoTemplate.Lines.Text) then
+    begin
+      FTemplate := Template.Parse(FContext, memoTemplate.Lines.Text);
+      FLastContent := memoTemplate.Lines.Text;
+    end;
+
     Process;
     // this is a hack so that app does not throw an exception
     // during shutdown. it seems that the webbrowser must be visible
@@ -366,15 +396,22 @@ begin
   end
   else
     FEncoding := TEncoding.UTF8WithoutBOM;
+  FForce := true;
   Eval;
 end;
 
 procedure TFormTemplateEnginePlayground.cbShowWhitespaceClick(Sender: TObject);
 begin
   if cbShowWhitespace.Checked then
-    FContext.WhitespaceChar := #183
+  begin
+    if cbHtml.Checked then
+      FContext.WhitespaceChar := '&bull;'
+    else
+      FContext.WhitespaceChar := #183
+  end
   else
     FContext.WhitespaceChar := ' ';
+  FForce := true;
   Eval;
 end;
 
@@ -396,7 +433,7 @@ begin
   WebBrowser1.Enabled := true;
   tsGithubHelp.TabVisible := false;
   wbHelp.Enabled := false; // Doesn't work on github at this stage
-  //  wbHelp.Navigate('https://github.com/sempare/sempare-delphi-template-engine#Introduction');
+  // wbHelp.Navigate('https://github.com/sempare/sempare-delphi-template-engine#Introduction');
 {$IF defined(RELEASE)}
   FContext.MaxRunTimeMs := 5000;
 {$ENDIF}
@@ -453,7 +490,7 @@ begin
     '  ' + #13#10 + //
     ' If you like this project, please consider supporting enhancements via a commercial license which also entitles you to priority support.<p> ' + #13#10;
 
-  Finit := true;
+  FInit := true;
 end;
 
 procedure TFormTemplateEnginePlayground.GridPropsToContext;
@@ -519,7 +556,7 @@ var
   end;
 
 begin
-  if not Finit then
+  if not FInit then
     exit;
   GridPropsToContext;
   LPrettyOk := false;

@@ -16,11 +16,11 @@
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
- * Licensed under the GPL Version 3.0 or the Sempare Commercial License                             *
+ * Licensed under the Apache Version 2.0 or the Sempare Commercial License                          *
  * You may not use this file except in compliance with one of these Licenses.                       *
  * You may obtain a copy of the Licenses at                                                         *
  *                                                                                                  *
- * https://www.gnu.org/licenses/gpl-3.0.en.html                                                     *
+ * https://www.apache.org/licenses/LICENSE-2.0                                                      *
  * https://github.com/sempare/sempare-delphi-template-engine/blob/master/docs/commercial.license.md *
  *                                                                                                  *
  * Unless required by applicable law or agreed to in writing, software                              *
@@ -95,9 +95,6 @@ type
       Eof: Boolean;
       constructor Create(const AInput: char; const AEof: Boolean);
     end;
-  private
-    class var FIDRegex: TRegEx;
-    class constructor Create; overload;
   private
     FReader: TStreamReader;
     FNextToken: TQueue<ITemplateSymbol>;
@@ -193,11 +190,6 @@ begin
   FAccumulator := TStringBuilder.Create;
 end;
 
-class constructor TTemplateLexer.Create;
-begin
-  FIDRegex := TRegEx.Create('^[a-zA-Z_][a-zA-Z_0-9]*$');
-end;
-
 destructor TTemplateLexer.Destroy;
 begin
   FNextToken.Free;
@@ -267,11 +259,6 @@ var
       GetInput;
   end;
 
-  function IsValidId(const AId: string): Boolean;
-  begin
-    exit(FIDRegex.IsMatch(AId));
-  end;
-
   function ValueToken(const ASymbol: TTemplateSymbol): ITemplateSymbol;
   var
     LId: string;
@@ -279,7 +266,7 @@ var
   begin
     LId := FAccumulator.ToString;
     LPosition := MakePosition;
-    if (ASymbol = vsID) and not IsValidId(LId) then
+    if (ASymbol = vsID) and not IsValidIdent(LId) then
     begin
       RaiseErrorRes(LPosition, @SInvalidCharacterDetected);
     end;
@@ -438,12 +425,7 @@ begin
         '?':
           exit(SimpleToken(vsQUESTION));
         '+':
-          begin
-            if isEndOfScript('+', Result, [saWhitespace, saNL, saKeepOneSpace]) then
-              exit
-            else
-              exit(SimpleToken(vsPLUS, [], false));
-          end;
+          exit(SimpleToken(vsPLUS));
         '-':
           begin
             if isEndOfScript('-', Result, [saWhitespace]) then
@@ -452,12 +434,7 @@ begin
               exit(SimpleToken(vsMinus, [], false));
           end;
         '*':
-          begin
-            if isEndOfScript('*', Result, [saWhitespace, saNL]) then
-              exit
-            else
-              exit(SimpleToken(vsMULT, [], false));
-          end;
+          exit(SimpleToken(vsMULT));
         '/':
           exit(SimpleToken(vsSLASH));
         '!':
@@ -568,7 +545,7 @@ var
 type
   TTransformFunc = reference to function(const Achar: char; out aResult: string): Boolean;
 
-  procedure AccumulateChars(const Achars: TCharSet; const ATransform: TTransformFunc);
+  procedure AccumulateChars(const Achars: TCharSet; const ATransform: TTransformFunc; const AGreedy: Boolean);
   var
     LChar: string;
   begin
@@ -577,10 +554,12 @@ type
       if ATransform(FCurrent.Input, LChar) then
         FAccumulator.Append(LChar);
       GetInput;
+      if not AGreedy then
+        break;
     end;
   end;
 
-  function CanProduceToken(const AToken: TTemplateSymbol; const Achars: TCharSet; out ASymbol: ITemplateSymbol; const ATransform: TTransformFunc; const AFinal: TFunc<string, string>): Boolean;
+  function CanProduceToken(const AToken: TTemplateSymbol; const Achars: TCharSet; out ASymbol: ITemplateSymbol; const ATransform: TTransformFunc; const AFinal: TFunc<string, string>; const AGreedy: Boolean = True): Boolean;
   var
     lstr: string;
   begin
@@ -590,7 +569,7 @@ type
     if FAccumulator.length > 0 then
     begin
       ASymbol := ValueToken(vsText, false);
-      AccumulateChars(Achars, ATransform);
+      AccumulateChars(Achars, ATransform, AGreedy);
       lstr := AFinal(FAccumulator.ToString);
       FAccumulator.Clear;
       FAccumulator.Append(lstr);
@@ -598,7 +577,7 @@ type
     end
     else
     begin
-      AccumulateChars(Achars, ATransform);
+      AccumulateChars(Achars, ATransform, AGreedy);
       lstr := AFinal(FAccumulator.ToString);
       FAccumulator.Clear;
       FAccumulator.Append(lstr);
@@ -628,14 +607,8 @@ begin
             FNextToken.enqueue(SimpleToken(vsComment));
             exit;
           end;
-        // '_':
-        // LState := TStripAction.saUnindent;
         '-':
           LState := [saWhitespace];
-        '+':
-          LState := [saWhitespace, saNL, saKeepOneSpace];
-        '*':
-          LState := [saWhitespace, saNL];
       else
         LState := [];
       end;
@@ -660,7 +633,7 @@ begin
           exit(FContext.NewLine)
         else
           exit(s);
-      end) then
+      end, false) then
     begin
       FCurrent.Input := FCurrent.Input;
       exit;
@@ -861,8 +834,6 @@ AddHashedKeyword('onempty', vsOnEmpty);
 AddHashedKeyword('betweenitems', vsBetweenItem);
 AddHashedKeyword('extends', vsExtends);
 AddHashedKeyword('block', vsBlock);
-AddHashedKeyword('validate', vsValidate);
-AddHashedKeyword('singleton', vsSingleton);
 
 AddSymKeyword('<%', VsStartScript);
 AddSymKeyword('%>', VsEndScript);

@@ -16,11 +16,11 @@
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
- * Licensed under the GPL Version 3.0 or the Sempare Commercial License                             *
+ * Licensed under the Apache Version 2.0 or the Sempare Commercial License                          *
  * You may not use this file except in compliance with one of these Licenses.                       *
  * You may obtain a copy of the Licenses at                                                         *
  *                                                                                                  *
- * https://www.gnu.org/licenses/gpl-3.0.en.html                                                     *
+ * https://www.apache.org/licenses/LICENSE-2.0                                                      *
  * https://github.com/sempare/sempare-delphi-template-engine/blob/master/docs/commercial.license.md *
  *                                                                                                  *
  * Unless required by applicable law or agreed to in writing, software                              *
@@ -137,6 +137,10 @@ type
     procedure TestDomId;
     [Test]
     procedure TestFormatWithFloat;
+    [Test]
+    procedure TestCallingNonExistingMethod;
+    [Test]
+    procedure TestCallingNonExistingFunction;
   end;
 
 type
@@ -716,6 +720,28 @@ begin
   finally
     LRec3.Free;
   end;
+end;
+
+procedure TFunctionTest.TestCallingNonExistingMethod;
+var
+  LRec1: TMyId1;
+begin
+  Assert.WillRaiseWithMessage(
+    procedure
+    begin
+      Template.Eval('<% _.nonexisting() %>', LRec1);
+    end, ETemplateEvaluationError, ' (Line 1, Column 18) Method TMyId1.nonexisting does not exist.');
+end;
+
+procedure TFunctionTest.TestCallingNonExistingFunction;
+var
+  LRec1: TMyId1;
+begin
+  Assert.WillRaiseWithMessage(
+    procedure
+    begin
+      Template.Eval('<% nonexisting() %>', LRec1);
+    end, ETemplateEvaluationError, ' (Line 1, Column 16) Function nonexisting not registered in context.');
 end;
 
 initialization

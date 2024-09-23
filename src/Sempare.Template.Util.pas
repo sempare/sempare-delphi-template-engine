@@ -16,11 +16,11 @@
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
- * Licensed under the GPL Version 3.0 or the Sempare Commercial License                             *
+ * Licensed under the Apache Version 2.0 or the Sempare Commercial License                          *
  * You may not use this file except in compliance with one of these Licenses.                       *
  * You may obtain a copy of the Licenses at                                                         *
  *                                                                                                  *
- * https://www.gnu.org/licenses/gpl-3.0.en.html                                                     *
+ * https://www.apache.org/licenses/LICENSE-2.0                                                      *
  * https://github.com/sempare/sempare-delphi-template-engine/blob/master/docs/commercial.license.md *
  *                                                                                                  *
  * Unless required by applicable law or agreed to in writing, software                              *
@@ -36,48 +36,63 @@ interface
 
 uses
   System.Rtti,
+  System.Classes,
+  System.SysUtils,
   Sempare.Template.JSON,
   System.Generics.Collections;
 
 {$I 'Sempare.Template.Compiler.inc'}
 
-// This is copied from Sempare.Boot.Common.PreserveValue to make standalone.
 type
-  IPreserveValue<T> = interface
-
-    // A helper to allow a reference to be maintained
-    // so that the object does not get optimised out
-    procedure KeepAlive;
-    procedure SetValue(const AValue: T);
-    procedure NoReset; overload;
-    procedure NoReset(const AValue: T); overload;
-  end;
-
-type
-  Preserve = class
-  public
-    class function Value<T>(var AValue: T): IPreserveValue<T>; overload; static;
-    class function Value<T>(var AValue: T; const NewValue: T): IPreserveValue<T>; overload; static;
-  end;
-
-type
-
-  TPreserveValue<T> = class(TInterfacedObject, IPreserveValue<T>)
-  type
-    PT = ^T;
+  TTemplateStreamWriter = class(TTextWriter)
   private
-    FOldValue: T;
-    FValuePtr: PT;
-    FReset: boolean;
-  public
-    constructor Create(var AValue: T); overload;
-    constructor Create(var AValue: T; const NewValue: T); overload;
-    destructor Destroy; override;
+    FWriter: TStreamWriter;
+    FStripWS: boolean;
+    FStripNL: boolean;
+    FTrimLines: boolean;
+    FWS: string;
+    FLineBuffer: TStringBuilder;
+    procedure SetStripNL(const Value: boolean);
+    procedure SetStripWS(const Value: boolean);
+    procedure NotSupported;
 
-    procedure KeepAlive;
-    procedure SetValue(const AValue: T); inline;
-    procedure NoReset; overload;
-    procedure NoReset(const AValue: T); overload;
+  public
+    constructor Create(const AWriter: TStreamWriter); overload;
+    destructor Destroy; override;
+    procedure Close; override;
+    procedure Flush; override;
+    procedure OwnStream; inline;
+    procedure Write(Value: boolean); override;
+    procedure Write(Value: Char); override;
+    procedure Write(const Value: TCharArray); override;
+    procedure Write(Value: double); override;
+    procedure Write(Value: integer); override;
+    procedure Write(Value: int64); override;
+    procedure Write(Value: TObject); override;
+    procedure Write(Value: single); override;
+    procedure Write(const Value: string); override;
+    procedure Write(Value: Cardinal); override;
+    procedure Write(Value: UInt64); override;
+    procedure Write(const Format: string; Args: array of const); override;
+    procedure Write(const Value: TCharArray; Index, Count: integer); override;
+    procedure WriteLine; override;
+    procedure WriteLine(Value: boolean); override;
+    procedure WriteLine(Value: Char); override;
+    procedure WriteLine(const Value: TCharArray); override;
+    procedure WriteLine(Value: double); override;
+    procedure WriteLine(Value: integer); override;
+    procedure WriteLine(Value: int64); override;
+    procedure WriteLine(Value: TObject); override;
+    procedure WriteLine(Value: single); override;
+    procedure WriteLine(const Value: string); override;
+    procedure WriteLine(Value: Cardinal); override;
+    procedure WriteLine(Value: UInt64); override;
+    procedure WriteLine(const Format: string; Args: array of const); override;
+    procedure WriteLine(const Value: TCharArray; Index, Count: integer); override;
+
+    property StripWS: boolean read FStripWS write SetStripWS;
+    property StripNL: boolean read FStripNL write SetStripNL;
+    property TrimLines: boolean read FTrimLines write FTrimLines;
   end;
 
   TMap = record
@@ -121,8 +136,7 @@ uses
   Sempare.Template.Rtti,
   System.TypInfo,
   System.JSON,
-  System.Math,
-  System.SysUtils
+  System.Math
 {$IFDEF MSWINDOWS}
     , WinAPI.Windows
 {$IFDEF SUPPORT_WIN_REGISTRY}, System.Win.Registry{$ELSE}, Registry{$ENDIF};
@@ -182,61 +196,6 @@ begin
   exit(AHypervisorTime)
 end;
 {$ENDIF}
-{ TPreserveValue<T> }
-
-constructor TPreserveValue<T>.Create(var AValue: T);
-begin
-  FOldValue := AValue;
-  FValuePtr := @AValue;
-  FReset := True;
-end;
-
-constructor TPreserveValue<T>.Create(var AValue: T; const NewValue: T);
-begin
-  Create(AValue);
-  AValue := NewValue;
-end;
-
-procedure TPreserveValue<T>.SetValue(const AValue: T);
-begin
-  FValuePtr^ := AValue;
-end;
-
-destructor TPreserveValue<T>.Destroy;
-begin
-  if FReset then
-    SetValue(FOldValue);
-  inherited;
-end;
-
-procedure TPreserveValue<T>.KeepAlive;
-begin
-  // do nothing
-end;
-
-procedure TPreserveValue<T>.NoReset(const AValue: T);
-begin
-  NoReset();
-  SetValue(AValue);
-end;
-
-procedure TPreserveValue<T>.NoReset;
-begin
-  FReset := False;
-end;
-
-{ Preseve }
-
-class function Preserve.Value<T>(var AValue: T): IPreserveValue<T>;
-begin
-  exit(TPreserveValue<T>.Create(AValue));
-end;
-
-class function Preserve.Value<T>(var AValue: T; const NewValue: T): IPreserveValue<T>;
-begin
-  exit(TPreserveValue<T>.Create(AValue, NewValue));
-end;
-
 { TMap }
 
 function TMap.Add(const AKey: string; const AValue: TValue): boolean;
@@ -399,8 +358,8 @@ begin
 end;
 
 function TMap.ToJSON: string;
-  function ToExpr(const AValue: TValue): TJsonValue; forward;
-  function ToArray(const AValue: TArray<TValue>): TJsonArray; forward;
+function ToExpr(const AValue: TValue): TJsonValue; forward;
+function ToArray(const AValue: TArray<TValue>): TJsonArray; forward;
 
   function ToMap(const AMap: TMap): TJsonObject;
   var
@@ -463,7 +422,7 @@ var
 begin
   LObject := ToMap(self);
   try
-    exit(LObject.ToJson);
+    exit(LObject.ToJSON);
   finally
     LObject.Free;
   end;
@@ -500,6 +459,263 @@ begin
     end;
   end;
   exit(False);
+end;
+
+{ TTemplateStreamWriter }
+
+procedure TTemplateStreamWriter.Close;
+begin
+  Flush;
+  FWriter.Close;
+end;
+
+constructor TTemplateStreamWriter.Create(const AWriter: TStreamWriter);
+begin
+  inherited Create;
+  FWriter := AWriter;
+  FLineBuffer := TStringBuilder.Create;
+end;
+
+destructor TTemplateStreamWriter.Destroy;
+begin
+  FLineBuffer.Free;
+  FWriter.Free;
+  inherited;
+end;
+
+procedure TTemplateStreamWriter.Flush;
+begin
+  if FTrimLines then
+  begin
+    if FLineBuffer.length > 0 then
+    begin
+      var
+      Line := FLineBuffer.ToString.Trim;
+      FWriter.Write(Line);
+      FLineBuffer.Clear;
+    end;
+  end;
+  FWriter.Flush;
+end;
+
+procedure TTemplateStreamWriter.NotSupported;
+begin
+  raise ENotSupportedException.Create('TTemplateStreamWriter.Write');
+end;
+
+procedure TTemplateStreamWriter.OwnStream;
+begin
+  FWriter.OwnStream;
+end;
+
+procedure TTemplateStreamWriter.SetStripNL(const Value: boolean);
+begin
+  FStripNL := Value;
+  if Value then
+  begin // when we enable stripping, we preseve the old nl
+    FWS := FWriter.newline;
+    FWriter.newline := '';
+  end
+  else
+  begin
+    FWriter.newline := FWS;
+  end;
+end;
+
+procedure TTemplateStreamWriter.SetStripWS(const Value: boolean);
+begin
+  FStripWS := Value;
+end;
+
+procedure TTemplateStreamWriter.Write(Value: Cardinal);
+begin
+  NotSupported;
+end;
+
+procedure TTemplateStreamWriter.Write(const Value: string);
+var
+  LStartIdx, LEndIdx: integer;
+begin
+  if FTrimLines then
+  begin
+    LStartIdx := 1;
+    LEndIdx := 1;
+    while LEndIdx <= length(Value) do
+    begin
+      if CharInSet(Value[LEndIdx], [#10, #13]) then
+      begin
+        FWriter.Write(copy(Value, LStartIdx, LEndIdx - LStartIdx).Trim);
+        FWriter.Write(Value[LEndIdx]);
+        LStartIdx := LEndIdx + 1;
+      end;
+      Inc(LEndIdx);
+    end;
+
+    if LStartIdx <= length(Value) then
+    begin
+      FWriter.Write(copy(Value, LStartIdx, length(Value) - LStartIdx + 1).Trim);
+    end;
+  end
+  else
+  begin
+    if FStripWS or FStripNL then
+    begin
+      for var LChar in Value do
+        Write(LChar);
+    end
+    else
+    begin
+      FWriter.Write(Value);
+    end;
+  end;
+end;
+
+procedure TTemplateStreamWriter.Write(Value: boolean);
+begin
+  NotSupported;
+end;
+
+procedure TTemplateStreamWriter.Write(const Value: TCharArray; Index, Count: integer);
+begin
+  NotSupported;
+end;
+
+procedure TTemplateStreamWriter.Write(const Format: string; Args: array of const);
+begin
+  NotSupported;
+end;
+
+procedure TTemplateStreamWriter.Write(Value: UInt64);
+begin
+  NotSupported;
+end;
+
+procedure TTemplateStreamWriter.Write(Value: Char);
+begin
+  if FTrimLines then
+  begin
+    FLineBuffer.Append(Value);
+    if Value = #10 then
+    begin
+      var
+      Line := FLineBuffer.ToString.Trim;
+      FWriter.Write(Line);
+      FLineBuffer.Clear;
+    end;
+  end
+  else
+  begin
+    case Value of
+      ' ', #9:
+        if FStripWS then
+          exit;
+      #10, #13:
+        if FStripNL then
+          exit;
+    end;
+    FWriter.Write(Value);
+  end;
+end;
+
+procedure TTemplateStreamWriter.Write(Value: int64);
+begin
+  NotSupported;
+end;
+
+procedure TTemplateStreamWriter.Write(Value: TObject);
+begin
+  NotSupported;
+end;
+
+procedure TTemplateStreamWriter.Write(Value: single);
+begin
+  NotSupported;
+end;
+
+procedure TTemplateStreamWriter.Write(const Value: TCharArray);
+begin
+  NotSupported;
+end;
+
+procedure TTemplateStreamWriter.Write(Value: double);
+begin
+  NotSupported;
+end;
+
+procedure TTemplateStreamWriter.Write(Value: integer);
+begin
+  NotSupported;
+end;
+
+procedure TTemplateStreamWriter.WriteLine(const Value: TCharArray);
+
+begin
+  NotSupported;
+end;
+
+procedure TTemplateStreamWriter.WriteLine(Value: double);
+begin
+  NotSupported;
+end;
+
+procedure TTemplateStreamWriter.WriteLine(Value: integer);
+begin
+  NotSupported;
+end;
+
+procedure TTemplateStreamWriter.WriteLine;
+begin
+  NotSupported;
+end;
+
+procedure TTemplateStreamWriter.WriteLine(Value: boolean);
+begin
+  NotSupported;
+end;
+
+procedure TTemplateStreamWriter.WriteLine(Value: Char);
+begin
+  NotSupported;
+end;
+
+procedure TTemplateStreamWriter.WriteLine(Value: int64);
+begin
+  NotSupported;
+end;
+
+procedure TTemplateStreamWriter.WriteLine(Value: UInt64);
+begin
+  NotSupported;
+end;
+
+procedure TTemplateStreamWriter.WriteLine(const Format: string; Args: array of const);
+begin
+  NotSupported;
+end;
+
+procedure TTemplateStreamWriter.WriteLine(const Value: TCharArray; Index, Count: integer);
+begin
+  NotSupported;
+end;
+
+procedure TTemplateStreamWriter.WriteLine(Value: Cardinal);
+begin
+  NotSupported;
+end;
+
+procedure TTemplateStreamWriter.WriteLine(Value: TObject);
+begin
+  NotSupported;
+end;
+
+procedure TTemplateStreamWriter.WriteLine(Value: single);
+begin
+  NotSupported;
+end;
+
+procedure TTemplateStreamWriter.WriteLine(const Value: string);
+begin
+  NotSupported;
 end;
 
 initialization
