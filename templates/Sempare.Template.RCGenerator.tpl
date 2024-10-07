@@ -1,3 +1,3 @@
-<%- for filename in files *%>
-<% RCName(filename) %> RCDATA "<% EscapeBackslash(filename) %>"
-<%- end *%>
+<%- for filename in files %>
+<%- RCName(filename) %> RCDATA "<% EscapeBackslash(filename) %>"
+<% end %>
