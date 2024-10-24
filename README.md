@@ -61,6 +61,18 @@ Please 'star' the project on github.
 
 ![](./images/sempare-template-engine-start-cta.png)
 
+<a name="Articles"><h2>Articles</h3></a>
+
+- [Accessing data from the Sempare Template Engine for Delphi](https://dev.to/sempare/accessing-data-from-the-sempare-template-engine-for-delphi-5dg8)
+- [Accessing a FireDAC dataset from the Sempare Template Engine for Delphi](https://dev.to/sempare/accessing-a-firedac-dataset-from-the-sempare-template-engine-for-delphi-4j3g)
+- [Using the Sempare Template Engine for Delphi](https://dev.to/sempare/using-the-sempare-template-engine-for-delphi-29nn)
+- [Configuring the Sempare Template Engine for Delphi](https://dev.to/sempare/configuring-the-sempare-template-engine-for-delphi-27pn)
+- [Creating helper functions for the Sempare Template Engine](https://dev.to/sempare/creating-helper-functions-for-the-sempare-template-engine-3nla)
+- [Functional templates with the Sempare Template Engine for Delphi](https://dev.to/sempare/functional-templates-with-the-sempare-template-engine-for-delphi-2p3d)
+- [Creating layouts using the Sempare Template Engine for Delphi](https://dev.to/sempare/creating-layouts-using-the-sempare-template-engine-3ah8)
+- [Using loops in the Sempare Template Engine for Delphi](https://dev.to/sempare/using-loops-in-the-sempare-template-engine-for-delphi-417m)
+- [Eliminating whitespace in Sempare Template Engine for Delphi templates](https://dev.to/sempare/eliminating-whitespace-in-sempare-template-engine-for-delphi-templates-3e0o)
+- [Introducing the Sempare Template Engine Playground Wizard for the Delphi RAD Studio IDE](https://dev.to/sempare/introducing-the-sempare-template-engine-playground-wizard-for-the-delphi-rad-studio-ide-1jmn)
 
 ## Contents
 - [Introduction](#Introduction)
