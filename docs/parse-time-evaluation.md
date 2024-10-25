@@ -4,6 +4,8 @@ Copyright (c) 2019-2024 [Sempare Limited](http://www.sempare.ltd)
 
 ## Parse Time Evaluation
 
+Parse time evaluation is different to normal template evaluation, as it allows for 'constant-like' variables to be substituted, and in some cases, expressions can be evalutated and some statements (if statements where the condition can be evaluated) can result in some template code being eliminated. It is a light weight pre-evaluation step in the template, which means the resulting template AST can be smaller.
+
 Parse time evaluation is done by enabling the options eoEvalEarly and eoEvalVarsEarly in the _context_ options.
 
 The requirement for parse time evaluation is that variables must be defined within the context. This is useful when you know certain information is _static_ and is unlikely to change.
