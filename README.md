@@ -67,6 +67,7 @@ Please 'star' the project on github.
 - [Accessing a FireDAC dataset from the Sempare Template Engine for Delphi](https://dev.to/sempare/accessing-a-firedac-dataset-from-the-sempare-template-engine-for-delphi-4j3g)
 - [Using the Sempare Template Engine for Delphi](https://dev.to/sempare/using-the-sempare-template-engine-for-delphi-29nn)
 - [Configuring the Sempare Template Engine for Delphi](https://dev.to/sempare/configuring-the-sempare-template-engine-for-delphi-27pn)
+- [The Sempare Template Engine for Delphi: Advanced Template Registry Features](https://dev.to/sempare/the-sempare-template-engine-advanced-template-registry-features-29o9)
 - [Creating helper functions for the Sempare Template Engine](https://dev.to/sempare/creating-helper-functions-for-the-sempare-template-engine-3nla)
 - [Functional templates with the Sempare Template Engine for Delphi](https://dev.to/sempare/functional-templates-with-the-sempare-template-engine-for-delphi-2p3d)
 - [Creating layouts using the Sempare Template Engine for Delphi](https://dev.to/sempare/creating-layouts-using-the-sempare-template-engine-3ah8)
