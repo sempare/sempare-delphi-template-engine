@@ -292,7 +292,7 @@ begin
 
   c := Template.parse( //
     '<% suffix := ''er''%><% include (''head'' + suffix) %>' + //
-    '<%for v in content %>' + '<% v %>' + //
+    '<%for v of content %>' + '<% v %>' + //
     '<% end %>' + //
     '<% include (''foot'' + suffix) %>');
 
