@@ -94,6 +94,7 @@
         <DCCReference Include="tests\Sempare.Template.TestFunctions.pas"/>
         <DCCReference Include="tests\Sempare.Template.TestVirtualMethods.pas"/>
         <DCCReference Include="tests\Sempare.Template.TestMap.pas"/>
+        <DCCReference Include="tests\Sempare.Template.TestSupport.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -187,6 +188,7 @@
                 <ProjectRoot Platform="OSXARM64" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Win32" Name="$(PROJECTNAME)"/>
                 <ProjectRoot Platform="Win64" Name="$(PROJECTNAME)"/>
+                <ProjectRoot Platform="Win64x" Name="$(PROJECTNAME)"/>
             </Deployment>
             <Platforms>
                 <Platform value="Android">False</Platform>
