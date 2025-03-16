@@ -307,15 +307,10 @@ object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
     Anchors = [akLeft, akTop, akRight, akBottom]
     Caption = 'Panel1'
     TabOrder = 4
-    ExplicitWidth = 1144
-    ExplicitHeight = 267
     object Splitter1: TSplitter
       Left = 465
       Top = 1
       Height = 271
-      ExplicitLeft = 504
-      ExplicitTop = 48
-      ExplicitHeight = 100
     end
     object pcTemplate: TPageControl
       Left = 1
@@ -325,7 +320,6 @@ object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
       ActivePage = tsTemplate
       Align = alLeft
       TabOrder = 0
-      ExplicitHeight = 265
       object tsTemplate: TTabSheet
         Caption = 'Template'
         object Panel2: TPanel
@@ -337,7 +331,6 @@ object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
           BevelOuter = bvNone
           Caption = 'Panel2'
           TabOrder = 0
-          ExplicitHeight = 237
           object memoTemplate: TMemo
             Left = 0
             Top = 23
@@ -350,7 +343,6 @@ object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
             OnChange = memoTemplateChange
             OnKeyUp = memoTemplateKeyUp
             OnMouseDown = memoTemplateMouseDown
-            ExplicitHeight = 214
           end
           object Panel3: TPanel
             Left = 0
@@ -380,8 +372,6 @@ object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
               ParentColor = False
               ParentFont = False
               Transparent = True
-              ExplicitTop = 1
-              ExplicitHeight = 9
             end
             object lblTiming: TLabel
               AlignWithMargins = True
@@ -402,9 +392,6 @@ object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
               ParentColor = False
               ParentFont = False
               Transparent = True
-              ExplicitLeft = 3
-              ExplicitTop = 1
-              ExplicitHeight = 21
             end
           end
         end
@@ -415,8 +402,8 @@ object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
         object memoPrettyPrint: TMemo
           Left = 0
           Top = 0
-          Width = 456
-          Height = 243
+          Width = 448
+          Height = 230
           Align = alClient
           Lines.Strings = (
             'memoPrettyPrint')
@@ -434,15 +421,13 @@ object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
       ActivePage = tsGithubHelp
       Align = alClient
       TabOrder = 1
-      ExplicitWidth = 675
-      ExplicitHeight = 265
       object tsOutput: TTabSheet
         Caption = 'Output'
         object memoOutput: TMemo
           Left = 0
           Top = 0
-          Width = 673
-          Height = 243
+          Width = 665
+          Height = 230
           Align = alClient
           Lines.Strings = (
             'Memo1')
@@ -461,8 +446,6 @@ object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
           Height = 243
           Align = alClient
           TabOrder = 0
-          ExplicitWidth = 655
-          ExplicitHeight = 224
           ControlData = {
             4C0000008E4500001D1900000000000000000000000000000000000000000000
             000000004C000000000000000000000001000000E0D057007335CF11AE690800
@@ -483,8 +466,6 @@ object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
           Align = alClient
           TabOrder = 0
           SelectedEngine = EdgeOnly
-          ExplicitWidth = 667
-          ExplicitHeight = 237
           ControlData = {
             4C0000008E4500001D1900000000000000000000000000000000000000000000
             000000004C000000000000000000000001000000E0D057007335CF11AE690800
@@ -503,7 +484,6 @@ object FormTemplateEnginePlayground: TFormTemplateEnginePlayground
     Anchors = [akLeft, akTop, akRight]
     Caption = 'Context Options'
     TabOrder = 5
-    ExplicitWidth = 678
     object cbConvertTabsToSpaces: TCheckBox
       Left = 18
       Top = 23
