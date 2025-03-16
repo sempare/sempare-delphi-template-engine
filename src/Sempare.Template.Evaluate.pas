@@ -503,7 +503,10 @@ var
 
     while not LDataSetEOFProperty.GetValue(LObj).AsBoolean and ((LLimit = -1) or (LLoops < LLimit)) do
     begin
-      FStackFrames.peek[LVariableName] := LIdx;
+      if AStmt.ForOp = foIn then
+        FStackFrames.peek[LVariableName] := LIdx - 1
+      else
+        FStackFrames.peek[LVariableName] := LLoopExpr;
       if HandleLoop then
         break;
       LDataSetNextMethod.Invoke(LObj, []);

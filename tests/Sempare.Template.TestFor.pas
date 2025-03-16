@@ -147,6 +147,7 @@ procedure TTestTemplateFor.TestDataSet;
 var
   ds: TDataSet;
 begin
+  // traditional
   ds := CreateMockUsersTable();
   try
     Assert.AreEqual('joe pete jane ', //
@@ -154,12 +155,30 @@ begin
   finally
     ds.Free;
   end;
+  // index in
+  ds := CreateMockUsersTable();
+  try
+    Assert.AreEqual('0 1 2 ', //
+      Template.Eval('<% for i in _ %><% i %> <%end%>', ds));
+  finally
+    ds.Free;
+  end;
+  // index of
+  ds := CreateMockUsersTable();
+  try
+    Assert.AreEqual('joe pete jane ', //
+      Template.Eval('<% for i of _ %><% i[''name''] %> <%end%>', ds));
+  finally
+    ds.Free;
+  end;
+
 end;
 
 procedure TTestTemplateFor.TestDataSetWithEvent;
 var
   ds: TDataSet;
 begin
+  // traditional
   ds := CreateMockUsersTable();
   try
     Assert.AreEqual('<ul><li>joe</li><li>pete</li><li>jane</li></ul>', //
@@ -171,6 +190,40 @@ begin
 
     Assert.AreEqual('<h1>No values</h1>', //
       Template.Eval('<% for i in _ %><li><% _[''name''] %></li><% onbegin%><ul><%onend%></ul><% onempty%><h1>No values</h1><%end%>', ds));
+
+  finally
+    ds.Free;
+  end;
+
+  // using index in
+  ds := CreateMockUsersTable();
+  try
+    Assert.AreEqual('<ul><li>0</li><li>1</li><li>2</li></ul>', //
+      Template.Eval('<% for i in _ %><li><% i %></li><% onbegin%><ul><%onend%></ul><%end%>', ds));
+
+    ds.Delete();
+    ds.Delete();
+    ds.Delete();
+
+    Assert.AreEqual('<h1>No values</h1>', //
+      Template.Eval('<% for i in _ %><li><% i %></li><% onbegin%><ul><%onend%></ul><% onempty%><h1>No values</h1><%end%>', ds));
+
+  finally
+    ds.Free;
+  end;
+
+  // using index of
+  ds := CreateMockUsersTable();
+  try
+    Assert.AreEqual('<ul><li>joe</li><li>pete</li><li>jane</li></ul>', //
+      Template.Eval('<% for i of _ %><li><% i[''name''] %></li><% onbegin%><ul><%onend%></ul><%end%>', ds));
+
+    ds.Delete();
+    ds.Delete();
+    ds.Delete();
+
+    Assert.AreEqual('<h1>No values</h1>', //
+      Template.Eval('<% for i in _ %><li><% [''name''] %></li><% onbegin%><ul><%onend%></ul><% onempty%><h1>No values</h1><%end%>', ds));
 
   finally
     ds.Free;
