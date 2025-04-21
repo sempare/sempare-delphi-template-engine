@@ -66,11 +66,18 @@ type
     [test]
     procedure TestJsonDerefAV;
 
+    [test]
+    procedure TestJsonIn;
+
+    [test]
+    procedure TestJsonOf;
+
   end;
 
 implementation
 
 uses
+  System.SysUtils,
   Sempare.Template.JSON,
   Sempare.Template;
 
@@ -119,13 +126,38 @@ begin
   o.Free;
 end;
 
+procedure TTestTemplateJson.TestJsonIn;
+var
+  LScript: string;
+  LResult: string;
+  LExpect: string;
+  LJsonArray: TJSONArray;
+begin
+  LScript := //
+    '<% arr := [5,4,3]; ' + sLineBreak + //
+    sLineBreak + //
+    'for x in arr ; x ; betweenitems %>, <% end %>' + sLineBreak; //
+  LExpect := '0, 1, 2' + sLineBreak;
+  LResult := Template.Eval(LScript);
+  Assert.AreEqual(LExpect, LResult);
+
+  LJsonArray := TJsonValue.ParseJSONValue('[5,4,3]') as TJSONArray;
+  LScript := '<% for x in _ ; x ; betweenitems %>, <% end %>' + sLineBreak;
+  try
+    LResult := Template.Eval(LScript, LJsonArray);
+    Assert.AreEqual(LExpect, LResult);
+  finally
+    LJsonArray.Free;
+  end;
+end;
+
 procedure TTestTemplateJson.TestJsonArray;
 var
   o: TJsonValue;
 begin
   o := TJsonValue.ParseJSONValue('[1,2,3,4,5]');
-  Assert.AreEqual('1 2 3 4 5 ', Template.Eval('<% for i in _ %><% i %> <% end %>', o));
-
+  Assert.AreEqual('0 1 2 3 4 ', Template.Eval('<% for i in _ %><% i %> <% end %>', o));
+  Assert.AreEqual('1 2 3 4 5 ', Template.Eval('<% for i of _ %><% i %> <% end %>', o));
   o.Free;
 end;
 
@@ -144,6 +176,31 @@ begin
   o.AddPair('object', o2);
   Assert.AreEqual('string true  123 value', Template.Eval('<% _.str %> <% _.bool%> <% _.null%> <% _.num%> <% _.object.subval %>', o));
   o.Free;
+end;
+
+procedure TTestTemplateJson.TestJsonOf;
+var
+  LScript: string;
+  LResult: string;
+  LExpect: string;
+  LJsonArray: TJSONArray;
+begin
+  LScript := //
+    '<% arr := [5,4,3]; ' + sLineBreak + //
+    sLineBreak + //
+    'for x of arr ; x ; betweenitems %>, <% end %>' + sLineBreak; //
+  LExpect := '5, 4, 3' + sLineBreak;
+  LResult := Template.Eval(LScript);
+  Assert.AreEqual(LExpect, LResult);
+
+  LJsonArray := TJsonValue.ParseJSONValue('[5,4,3]') as TJSONArray;
+  LScript := '<% for x of _ ; x ; betweenitems %>, <% end %>' + sLineBreak;
+  try
+    LResult := Template.Eval(LScript, LJsonArray);
+    Assert.AreEqual(LExpect, LResult);
+  finally
+    LJsonArray.Free;
+  end;
 end;
 
 procedure TTestTemplateJson.TestParseJson;

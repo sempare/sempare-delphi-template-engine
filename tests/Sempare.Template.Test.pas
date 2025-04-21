@@ -321,7 +321,8 @@ begin
     Assert.AreEqual('2', Template.Eval('<% _.count %>', LList));
     Assert.AreEqual('2', Template.Eval('<% data.count %>', LContainer));
     Assert.AreEqual('System.Generics.Collections.TObjectList<Sempare.Template.Test.TTestClass>', Template.Eval('<% typeof(data) %>', LContainer));
-    Assert.AreEqual(' a b', Template.Eval('<% for x in data %> <% x.data %><% end %>', LContainer));
+    Assert.AreEqual(' 0 1', Template.Eval('<% for x in data %> <% x %><% end %>', LContainer));
+    Assert.AreEqual(' a b', Template.Eval('<% for x of data %> <% x.data %><% end %>', LContainer));
   finally
     LList.free;
   end;
@@ -858,7 +859,8 @@ begin
   L := TList<string>.Create;
   try
     L.AddRange(['1', '2', '3']);
-    Assert.AreEqual('123', Template.Eval('<% for v in _ %><% v %><% end %>', L));
+    Assert.AreEqual('012', Template.Eval('<% for v in _ %><% v %><% end %>', L));
+    Assert.AreEqual('123', Template.Eval('<% for v of _ %><% v %><% end %>', L));
   finally
     L.free;
   end;

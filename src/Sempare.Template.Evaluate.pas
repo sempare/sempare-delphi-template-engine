@@ -503,7 +503,10 @@ var
 
     while not LDataSetEOFProperty.GetValue(LObj).AsBoolean and ((LLimit = -1) or (LLoops < LLimit)) do
     begin
-      FStackFrames.peek[LVariableName] := LIdx;
+      if AStmt.ForOp = foIn then
+        FStackFrames.peek[LVariableName] := LIdx - 1
+      else
+        FStackFrames.peek[LVariableName] := LLoopExpr;
       if HandleLoop then
         break;
       LDataSetNextMethod.Invoke(LObj, []);
@@ -521,6 +524,7 @@ var
     LValue: TValue;
     LValue2: TValue;
     LRaiseIfMissing: boolean;
+    LIdx: integer;
   begin
     if LLoopExprType.AsInstance.MetaclassType.InheritsFrom(TDataSet) then
     begin
@@ -534,6 +538,7 @@ var
     if LEnumValue.IsEmpty then
       RaiseErrorRes(AStmt, @SValueIsNotEnumerable);
     LEnumObj := LEnumValue.AsObject;
+    LIdx := 0;
     try
       LLoopExprType := FContext.RttiContext().GetType(LEnumObj.ClassType);
       LEnumMoveNextMethod := LLoopExprType.GetMethod('MoveNext');
@@ -543,9 +548,14 @@ var
       begin
         LValue := LEnumCurrentProperty.GetValue(LEnumObj);
         TryDeref(AStmt, LValue, LRaiseIfMissing, FContext, LValue2);
-        FStackFrames.peek[LVariableName] := LValue2;
+
+        if AStmt.ForOp = foIn then
+          FStackFrames.peek[LVariableName] := LIdx
+        else
+          FStackFrames.peek[LVariableName] := LValue2;
         if HandleLoop then
           break;
+        inc(LIdx);
       end;
     finally
       LEnumObj.Free;
