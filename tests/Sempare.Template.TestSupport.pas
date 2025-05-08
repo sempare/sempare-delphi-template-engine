@@ -1,3 +1,4 @@
+unit Sempare.Template.TestSupport;
 (*%*************************************************************************************************
  *                 ___                                                                              *
  *                / __|  ___   _ __    _ __   __ _   _ _   ___                                      *
@@ -30,64 +31,70 @@
  * limitations under the License.                                                                   *
  *                                                                                                  *
  *************************************************************************************************%*)
-unit Sempare.Template.TestDictionary;
 
 interface
 
 uses
-  DUnitX.TestFramework,
-  System.Generics.Collections;
+  DUnitX.TestFramework;
 
 type
 
   [TestFixture]
-  TTestTemplateDict = class
+  TTestSupport = class
   public
-    [Test]
-    procedure TestDictionary;
-    [Test]
-    procedure TestNestedDictionary;
-  end;
 
-type
-  TStringDictionary = TDictionary<string, string>;
-  TNestedDictionary = TObjectDictionary<integer, TDictionary<string, string>>;
+    [Test]
+    procedure TestSuspectedArrayNumbersNotHandledGHIssue219;
+
+  end;
 
 implementation
 
 uses
-
+  System.SysUtils,
   Sempare.Template;
 
-procedure TTestTemplateDict.TestDictionary;
+{ TTestSupport }
+
+procedure TTestSupport.TestSuspectedArrayNumbersNotHandledGHIssue219;
 var
-  D: TDictionary<string, string>;
+  LTemplate: string;
+  LResult: string;
+  LExpected: string;
 begin
-  D := TDictionary<string, string>.create;
-  D.Add('a', 'value');
-  Assert.AreEqual('value', Template.Eval('<% a %>', D));
-  D.Free;
-end;
+  LTemplate := //
+    '<% arr := [4,5,6] %>' + sLineBreak + //
+    sLineBreak + //
+    '<%- for x of arr %>' + sLineBreak + //
+    '<% x %>' + sLineBreak + //
+    '<% end %>';
 
-procedure TTestTemplateDict.TestNestedDictionary;
-var
-  dict: TNestedDictionary;
-begin
-  dict := TNestedDictionary.create([doOwnsValues]);
-  dict.Add(1, TStringDictionary.create());
-  dict.Add(2, TStringDictionary.create());
+  LExpected := //
+    sLineBreak + //
+    sLineBreak + //
+    '4' + sLineBreak + //
+    '5' + sLineBreak + //
+    '6' + sLineBreak; //
 
-  dict[1].Add('v', 'value');
-  dict[2].Add('v', 'another');
+  LResult := Template.Eval(LTemplate);
 
-  Assert.AreEqual('value', Template.Eval('<% _[1][''v'']%>', dict));
-  Assert.AreEqual('another', Template.Eval('<% _[2][''v'']%>', dict));
+  Assert.AreEqual(LExpected, LResult);
 
-  dict.Free;
+  LTemplate := //
+    '<% arr := [''4'',''5'',''6''] %>' + sLineBreak + //
+    sLineBreak + //
+    '<%- for x of arr %>' + sLineBreak + //
+    '<% x %>' + sLineBreak + //
+    '<% end %>';
+
+  LResult := Template.Eval(LTemplate);
+
+  Assert.AreEqual(LExpected, LResult);
+
 end;
 
 initialization
 
-TDUnitX.RegisterTestFixture(TTestTemplateDict);
+TDUnitX.RegisterTestFixture(TTestSupport);
 
 end.

@@ -12,7 +12,7 @@
  *         https://github.com/sempare/sempare-delphi-template-engine                                *
  ****************************************************************************************************
  *                                                                                                  *
- * Copyright (c) 2019-2024 Sempare Limited                                                          *
+ * Copyright (c) 2019-2025 Sempare Limited                                                          *
  *                                                                                                  *
  * Contact: info@sempare.ltd                                                                        *
  *                                                                                                  *
@@ -60,7 +60,8 @@ uses
   Sempare.Template.TestLexer in 'tests\Sempare.Template.TestLexer.pas',
   Sempare.Template.TestFunctions in 'tests\Sempare.Template.TestFunctions.pas',
   Sempare.Template.TestVirtualMethods in 'tests\Sempare.Template.TestVirtualMethods.pas',
-  Sempare.Template.TestMap in 'tests\Sempare.Template.TestMap.pas';
+  Sempare.Template.TestMap in 'tests\Sempare.Template.TestMap.pas',
+  Sempare.Template.TestSupport in 'tests\Sempare.Template.TestSupport.pas';
 
 var
   runner: ITestRunner;
