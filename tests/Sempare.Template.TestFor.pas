@@ -147,6 +147,7 @@ procedure TTestTemplateFor.TestDataSet;
 var
   ds: TDataSet;
 begin
+  // traditional
   ds := CreateMockUsersTable();
   try
     Assert.AreEqual('joe pete jane ', //
@@ -154,12 +155,30 @@ begin
   finally
     ds.Free;
   end;
+  // index in
+  ds := CreateMockUsersTable();
+  try
+    Assert.AreEqual('0 1 2 ', //
+      Template.Eval('<% for i in _ %><% i %> <%end%>', ds));
+  finally
+    ds.Free;
+  end;
+  // index of
+  ds := CreateMockUsersTable();
+  try
+    Assert.AreEqual('joe pete jane ', //
+      Template.Eval('<% for i of _ %><% i[''name''] %> <%end%>', ds));
+  finally
+    ds.Free;
+  end;
+
 end;
 
 procedure TTestTemplateFor.TestDataSetWithEvent;
 var
   ds: TDataSet;
 begin
+  // traditional
   ds := CreateMockUsersTable();
   try
     Assert.AreEqual('<ul><li>joe</li><li>pete</li><li>jane</li></ul>', //
@@ -171,6 +190,40 @@ begin
 
     Assert.AreEqual('<h1>No values</h1>', //
       Template.Eval('<% for i in _ %><li><% _[''name''] %></li><% onbegin%><ul><%onend%></ul><% onempty%><h1>No values</h1><%end%>', ds));
+
+  finally
+    ds.Free;
+  end;
+
+  // using index in
+  ds := CreateMockUsersTable();
+  try
+    Assert.AreEqual('<ul><li>0</li><li>1</li><li>2</li></ul>', //
+      Template.Eval('<% for i in _ %><li><% i %></li><% onbegin%><ul><%onend%></ul><%end%>', ds));
+
+    ds.Delete();
+    ds.Delete();
+    ds.Delete();
+
+    Assert.AreEqual('<h1>No values</h1>', //
+      Template.Eval('<% for i in _ %><li><% i %></li><% onbegin%><ul><%onend%></ul><% onempty%><h1>No values</h1><%end%>', ds));
+
+  finally
+    ds.Free;
+  end;
+
+  // using index of
+  ds := CreateMockUsersTable();
+  try
+    Assert.AreEqual('<ul><li>joe</li><li>pete</li><li>jane</li></ul>', //
+      Template.Eval('<% for i of _ %><li><% i[''name''] %></li><% onbegin%><ul><%onend%></ul><%end%>', ds));
+
+    ds.Delete();
+    ds.Delete();
+    ds.Delete();
+
+    Assert.AreEqual('<h1>No values</h1>', //
+      Template.Eval('<% for i in _ %><li><% [''name''] %></li><% onbegin%><ul><%onend%></ul><% onempty%><h1>No values</h1><%end%>', ds));
 
   finally
     ds.Free;
@@ -232,6 +285,9 @@ begin
   try
     x.range.AddRange([1, 10, 100]);
     c := Template.parse('<% for i in range %> <% i %> <% end %>');
+    Assert.AreEqual(' 0  1  2 ', Template.Eval(c, x));
+
+    c := Template.parse('<% for i of range %> <% i %> <% end %>');
     Assert.AreEqual(' 1  10  100 ', Template.Eval(c, x));
   finally
     x.range.Free;
@@ -250,14 +306,24 @@ begin
   x.range := TList<integer>.Create;
   try
     x.range.AddRange([3, 5, 7, 9]);
+
     c := Template.parse('<% for i in range %><li><%i%></li><%onbegin%><ul><%onend%></ul><%onempty%>empty<%end%>');
+    Assert.AreEqual('<ul><li>0</li><li>1</li><li>2</li><li>3</li></ul>', Template.Eval(c, x));
+
+    c := Template.parse('<% for i of range %><li><%i%></li><%onbegin%><ul><%onend%></ul><%onempty%>empty<%end%>');
     Assert.AreEqual('<ul><li>3</li><li>5</li><li>7</li><li>9</li></ul>', Template.Eval(c, x));
 
     c := Template.parse('<% for i in range %><%i%><%betweenitems%>|<%onbegin%>begin<%onend%>end<%onempty%>empty<%end%>');
+    Assert.AreEqual('begin0|1|2|3end', Template.Eval(c, x));
+
+    c := Template.parse('<% for i of range %><%i%><%betweenitems%>|<%onbegin%>begin<%onend%>end<%onempty%>empty<%end%>');
     Assert.AreEqual('begin3|5|7|9end', Template.Eval(c, x));
 
     x.range.Clear;
     c := Template.parse('<% for i in range %><li><%i%></li><%onbegin%><ul><%onend%></ul><%onempty%>empty<% end %>');
+    Assert.AreEqual('empty', Template.Eval(c, x));
+
+    c := Template.parse('<% for i of range %><li><%i%></li><%onbegin%><ul><%onend%></ul><%onempty%>empty<% end %>');
     Assert.AreEqual('empty', Template.Eval(c, x));
 
   finally
@@ -323,7 +389,11 @@ begin
   try
     x.range.AddRange([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     c := Template.parse('<% for i in range offset 5 %> <% i %> <% end %>');
+    Assert.AreEqual(' 5  6  7  8  9 ', Template.Eval(c, x));
+
+    c := Template.parse('<% for i of range offset 5 %> <% i %> <% end %>');
     Assert.AreEqual(' 6  7  8  9  10 ', Template.Eval(c, x));
+
   finally
     x.range.Free;
   end;
@@ -342,7 +412,11 @@ begin
   try
     x.range.AddRange([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     c := Template.parse('<% for i in range offset 5 limit 2 %> <% i %> <% end %>');
+    Assert.AreEqual(' 5  6 ', Template.Eval(c, x));
+
+    c := Template.parse('<% for i of range offset 5 limit 2 %> <% i %> <% end %>');
     Assert.AreEqual(' 6  7 ', Template.Eval(c, x));
+
   finally
     x.range.Free;
   end;
@@ -465,7 +539,9 @@ begin
   info := TList<TInfo>.Create;
   try
     info.AddRange([TInfo.Create('conrad', 10), TInfo.Create('christa', 20)]);
-    Assert.AreEqual(' conrad 10 christa 20', Template.Eval('<%for i in _ %> <% i.name %> <% i.age %><%end%>', info));
+    Assert.AreEqual(' 0 1', Template.Eval('<%for i in _ %> <% i%><%end%>', info));
+
+    Assert.AreEqual(' conrad 10 christa 20', Template.Eval('<%for i of _ %> <% i.name %> <% i.age %><%end%>', info));
   finally
     info.Free;
   end;
@@ -480,7 +556,9 @@ begin
   try
     LDict.Add('a', 1);
     LDict.Add('b', 2);
-    Assert.AreEqual(' b 2 a 1', Template.Eval('<%for i in _ %> <% i.key %> <% i.value %><%end%>', LDict));
+    Assert.AreEqual(' 0 1', Template.Eval('<%for i in _ %> <% i %><%end%>', LDict));
+
+    Assert.AreEqual(' b 2 a 1', Template.Eval('<%for i of _ %> <% i.key %> <% i.value %><%end%>', LDict));
   finally
     LDict.Free;
   end;
