@@ -291,7 +291,7 @@ begin
 {$ELSE}
   FRefreshIntervalS := 10;
   setlength(FLoadStrategy, 1);
-  FLoadStrategy[1] := tlsLoadResource;
+  FLoadStrategy[0] := tlsLoadResource;
   AutomaticRefresh := false;
 {$ENDIF}
 end;
