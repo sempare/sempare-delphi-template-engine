@@ -1,0 +1,55 @@
+﻿package Sempare.TemplateR;
+
+{$R *.res}
+{$IFDEF IMPLICITBUILDING This IFDEF should not be used by users}
+{$ALIGN 8}
+{$ASSERTIONS ON}
+{$BOOLEVAL OFF}
+{$DEBUGINFO ON}
+{$EXTENDEDSYNTAX ON}
+{$IMPORTEDDATA ON}
+{$IOCHECKS ON}
+{$LOCALSYMBOLS ON}
+{$LONGSTRINGS ON}
+{$OPENSTRINGS ON}
+{$OPTIMIZATION OFF}
+{$OVERFLOWCHECKS OFF}
+{$RANGECHECKS OFF}
+{$REFERENCEINFO ON}
+{$SAFEDIVIDE OFF}
+{$STACKFRAMES ON}
+{$TYPEDADDRESS OFF}
+{$VARSTRINGCHECKS ON}
+{$WRITEABLECONST OFF}
+{$MINENUMSIZE 1}
+{$IMAGEBASE $400000}
+{$DEFINE DEBUG}
+{$ENDIF IMPLICITBUILDING}
+{$LIBSUFFIX AUTO}
+{$RUNONLY}
+{$IMPLICITBUILD OFF}
+
+requires
+  rtl,
+  dbrtl;
+
+contains
+  Sempare.Template.AST in '..\..\Src\Sempare.Template.AST.pas',
+  Sempare.Template.BlockResolver in '..\..\Src\Sempare.Template.BlockResolver.pas',
+  Sempare.Template.Common in '..\..\Src\Sempare.Template.Common.pas',
+  Sempare.Template.Context in '..\..\Src\Sempare.Template.Context.pas',
+  Sempare.Template.Evaluate in '..\..\Src\Sempare.Template.Evaluate.pas',
+  Sempare.Template.Functions in '..\..\Src\Sempare.Template.Functions.pas',
+  Sempare.Template.JSON in '..\..\Src\Sempare.Template.JSON.pas',
+  Sempare.Template.Lexer in '..\..\Src\Sempare.Template.Lexer.pas',
+  Sempare.Template.Parser in '..\..\Src\Sempare.Template.Parser.pas',
+  Sempare.Template in '..\..\Src\Sempare.Template.pas',
+  Sempare.Template.PrettyPrint in '..\..\Src\Sempare.Template.PrettyPrint.pas',
+  Sempare.Template.ResourceStrings in '..\..\Src\Sempare.Template.ResourceStrings.pas',
+  Sempare.Template.Rtti in '..\..\Src\Sempare.Template.Rtti.pas',
+  Sempare.Template.StackFrame in '..\..\Src\Sempare.Template.StackFrame.pas',
+  Sempare.Template.TemplateRegistry in '..\..\Src\Sempare.Template.TemplateRegistry.pas',
+  Sempare.Template.Util in '..\..\Src\Sempare.Template.Util.pas',
+  Sempare.Template.VariableExtraction in '..\..\Src\Sempare.Template.VariableExtraction.pas',
+  Sempare.Template.Visitor in '..\..\Src\Sempare.Template.Visitor.pas';
+end.
